@@ -1,1 +1,5 @@
-.idea
+/.idea/
+/node_modules/
+/backstop_data/
+/backstop_data/bitmaps_reference/**/*.png
+/backstop_data/bitmaps_test/**/*.png
