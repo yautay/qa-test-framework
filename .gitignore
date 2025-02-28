@@ -3,3 +3,4 @@
 /backstop_data/
 /backstop_data/bitmaps_reference/**/*.png
 /backstop_data/bitmaps_test/**/*.png
+/package-lock.json
