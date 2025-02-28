@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="6" failures="6" errors="6" skipped="0">
+  <testsuite name="BackstopJS" tests="6" failures="6" errors="6" skipped="0">
+    <testcase classname="document" name=" ›› home_page - komputronik_pl home_page navigation_bar no_html_cache">
+      <failure message="Design deviation ›› home_page - komputronik_pl home_page navigation_bar no_html_cache (document) component"/>
+      <error message="Design deviation ›› home_page - komputronik_pl home_page navigation_bar no_html_cache (document) component"/>
+    </testcase>
+    <testcase classname="document" name=" ›› home_page - komputronik_pl home_page navigation_bar no_html_cache">
+      <failure message="Design deviation ›› home_page - komputronik_pl home_page navigation_bar no_html_cache (document) component"/>
+      <error message="Design deviation ›› home_page - komputronik_pl home_page navigation_bar no_html_cache (document) component"/>
+    </testcase>
+    <testcase classname="document" name=" ›› home_page - komputronik_pl home_page navigation_bar no_html_cache">
+      <failure message="Design deviation ›› home_page - komputronik_pl home_page navigation_bar no_html_cache (document) component"/>
+      <error message="Design deviation ›› home_page - komputronik_pl home_page navigation_bar no_html_cache (document) component"/>
+    </testcase>
+    <testcase classname="document" name=" ›› home_page - komputronik_pl home_page navigation_bar no_html_cache">
+      <failure message="Design deviation ›› home_page - komputronik_pl home_page navigation_bar no_html_cache (document) component"/>
+      <error message="Design deviation ›› home_page - komputronik_pl home_page navigation_bar no_html_cache (document) component"/>
+    </testcase>
+    <testcase classname="document" name=" ›› home_page - komputronik_pl home_page navigation_bar no_html_cache">
+      <failure message="Design deviation ›› home_page - komputronik_pl home_page navigation_bar no_html_cache (document) component"/>
+      <error message="Design deviation ›› home_page - komputronik_pl home_page navigation_bar no_html_cache (document) component"/>
+    </testcase>
+    <testcase classname="document" name=" ›› home_page - komputronik_pl home_page navigation_bar no_html_cache">
+      <failure message="Design deviation ›› home_page - komputronik_pl home_page navigation_bar no_html_cache (document) component"/>
+      <error message="Design deviation ›› home_page - komputronik_pl home_page navigation_bar no_html_cache (document) component"/>
+    </testcase>
+  </testsuite>
+</testsuites>

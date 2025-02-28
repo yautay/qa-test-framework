@@ -1,0 +1,12 @@
+{
+  "defaultResource": "/account.html",
+  "scenarios": [
+    {
+      "label": "Sprawdzenie logowania",
+      "selectors": ["body"],
+      "delay": 500,
+      "misMatchThreshold": 0.1,
+      "requireSameDimensions": true
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "defaultResource": "/",
+  "scenarios": [
+    {
+      "label": "home_page navigation_bar no_html_cache",
+      "selectors": [
+        "[data-name='categoryListMobile']",
+        "[data-name='megamenuDesktop']"
+      ],
+      "delay": 500,
+      "misMatchThreshold": 0.1,
+      "requireSameDimensions": true
+    },
+    {
+      "label": "home_page navigation_bar no_html_cache",
+      "resource": "/?test=1",
+      "selectors": [
+        "[data-name='categoryListMobile']",
+        "[data-name='megamenuDesktop']"
+      ],
+      "delay": 500,
+      "misMatchThreshold": 0.1,
+      "requireSameDimensions": true
+    }
+  ]
+}
