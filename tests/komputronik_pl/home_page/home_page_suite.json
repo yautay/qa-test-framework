@@ -6,7 +6,8 @@
       "selectors": [],
       "delay": 5000,
       "misMatchThreshold": 0.1,
-      "requireSameDimensions": true
+      "requireSameDimensions": true,
+      "report": ["browser", "CI"]
     },
     {
       "label": "komputronik_pl home_page navigation_bar no_html_cache",
@@ -14,7 +15,8 @@
       "selectors": [],
       "delay": 5000,
       "misMatchThreshold": 0.1,
-      "requireSameDimensions": true
+      "requireSameDimensions": true,
+      "report": ["browser", "CI"]
     }
   ]
 }
