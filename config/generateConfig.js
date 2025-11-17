@@ -4,7 +4,10 @@ const path = require('path');
 const urls = require('./urls');
 
 function loadScenarios(site) {
+// katalog projektu, np. tests/komputronik_pl
     const siteDir = path.join(__dirname, '..', 'tests', site);
+    // katalog z kontekstami testów, np. tests/komputronik_pl/tests
+    const testsRootDir = path.join(siteDir, 'tests');
 
     // konfiguracja projektu
     const siteConfig = require(path.join(siteDir, 'config.json'));
@@ -12,21 +15,30 @@ function loadScenarios(site) {
 
     let scenarios = [];
 
-    // kontekst testów
-    const contexts = fs.readdirSync(siteDir).filter(item => {
-        const itemPath = path.join(siteDir, item);
+    // konteksty testów – TYLKO podfoldery w testsRootDir
+    // (czyli np. test_account, test_home_page, test_landing_pages)
+    const contexts = fs.readdirSync(testsRootDir).filter(item => {
+        const itemPath = path.join(testsRootDir, item);
         return fs.statSync(itemPath).isDirectory();
     });
 
     contexts.forEach(context => {
-        const contextDir = path.join(siteDir, context);
+        const contextDir = path.join(testsRootDir, context);
+
+        // pliki .json bezpośrednio w danym kontekście
         const files = fs.readdirSync(contextDir).filter(file => path.extname(file) === '.json');
+
         files.forEach(file => {
             const suitePath = path.join(contextDir, file);
+
+            // (opcjonalnie, przydatne gdy generator odpalany wiele razy w jednym procesie)
+            // delete require.cache[require.resolve(suitePath)];
+
             const suiteConfig = require(suitePath);
 
             let defaultResource = null;
             let suiteScenarios = [];
+
             if (Array.isArray(suiteConfig)) {
                 suiteScenarios = suiteConfig;
             } else if (typeof suiteConfig === 'object' && suiteConfig !== null) {
@@ -37,7 +49,7 @@ function loadScenarios(site) {
             suiteScenarios.forEach(scenario => {
                 scenario.label = scenario.label ? `${context} - ${scenario.label}` : context;
 
-                let { testUrl, referenceUrl } = urls.buildUrl(channel);
+                let {testUrl, referenceUrl} = urls.buildUrl(channel);
 
                 let resource = scenario.resource || defaultResource;
                 if (resource) {
@@ -48,6 +60,7 @@ function loadScenarios(site) {
 
                 scenario.url = testUrl;
                 scenario.referenceUrl = referenceUrl;
+
                 scenarios.push(scenario);
             });
         });
@@ -63,9 +76,10 @@ const komputronikPl_scenarios = loadScenarios('komputronik_pl');
 module.exports = {
     id: "backstop_default",
     viewports: [
-        { label: "desktop", width: 1200, height: 800 },
-        { label: "tablet", width: 768, height: 1024 },
-        { label: "mobile", width: 375, height: 667 }
+        {label: "desktop", width: 1920, height: 1080},
+        {label: "tabletL", width: 1200, height: 800},
+        {label: "tabletM", width: 768, height: 1024},
+        {label: "mobile", width: 375, height: 667}
     ],
     scenarios: [
         ...komputronikPl_scenarios,

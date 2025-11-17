@@ -4,8 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "backstop test --config=./config/generateConfig.js",
-    "report": "backstop openReport --config=./config/generateConfig.js"
+    "test_pl": "backstop test --configPath=backstop.komputronik_pl.config.js",
+    "reference_pl": "backstop reference --configPath=backstop.komputronik_pl.config.js",
+    "report_pl": "backstop openReport --configPath=backstop.komputronik_pl.config.js"
 
   },
   "keywords": [],
