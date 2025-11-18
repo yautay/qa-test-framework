@@ -7,13 +7,14 @@
     "test_pl": "backstop test --configPath=backstop.komputronik_pl.config.js",
     "reference_pl": "backstop reference --configPath=backstop.komputronik_pl.config.js",
     "report_pl": "backstop openReport --configPath=backstop.komputronik_pl.config.js"
-
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
-    "backstopjs": "^6.3.25"
+    "@playwright/test": "^1.56.1",
+    "backstopjs": "^6.3.25",
+    "playwright": "^1.56.1"
   }
 }

@@ -2,6 +2,8 @@
 const fs = require('fs');
 const path = require('path');
 const urls = require('./urls');
+const findChrome = require('../lib/findChrome');
+const chromePath = findChrome();
 
 function loadScenarios(site) {
 // katalog projektu, np. tests/komputronik_pl
@@ -92,7 +94,29 @@ module.exports = {
         html_report: "backstop_data/html_report",
         ci_report: "backstop_data/ci_report"
     },
-    engine: "puppeteer",
+    engine: "playwright",
+    engineOptions: chromePath
+        ? {
+            executablePath: chromePath,
+            headless: true,
+            args: [
+                '--no-sandbox',
+                '--disable-web-security',
+                '--allow-running-insecure-content',
+                '--disable-features=IsolateOrigins,site-per-process'
+            ]
+        }
+        : {
+            launchOptions: {
+                channel: 'chrome',
+                headless: true,
+                args: [
+                    '--disable-web-security',
+                    '--allow-running-insecure-content',
+                    '--disable-features=IsolateOrigins,site-per-process'
+                ]
+            }
+        },
     report: ["CI"],
     debug: false,
     debugWindow: false,
