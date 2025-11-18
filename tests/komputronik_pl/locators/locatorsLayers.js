@@ -1,3 +1,3 @@
 module.exports = {
-    loginLayer: "//div[@data-name='loginForm']"
+    loginLayer: 'div[data-name="loginForm"]'
 };

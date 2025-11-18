@@ -3,6 +3,6 @@ const utils = require('../../../lib/helpers');
 
 
 module.exports = async (page) => {
-    await utils.clickXPath(page, locators.buttonCloseCookie);
+    await utils.click(page, locators.buttonCloseCookie);
     await page.waitForTimeout(3000);
 };

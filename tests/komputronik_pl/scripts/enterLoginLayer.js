@@ -7,7 +7,7 @@ module.exports = async (page) => {
     console.log('>>> enterLoginLayer start');
 
     await close_cookies(page);
-    await utils.clickXPath(page, locatorsHomePage.buttonLoginToAccount);
-    await utils.isVisibleXPath(page, locatorsLayers.loginLayer);
+    await utils.click(page, locatorsHomePage.buttonLoginToAccount);
+    await utils.isVisible(page, locatorsLayers.loginLayer);
     await page.waitForTimeout(2000);
 };

@@ -6,19 +6,14 @@ const findChrome = require('../lib/findChrome');
 const chromePath = findChrome();
 
 function loadScenarios(site) {
-// katalog projektu, np. tests/komputronik_pl
     const siteDir = path.join(__dirname, '..', 'tests', site);
-    // katalog z kontekstami testów, np. tests/komputronik_pl/tests
     const testsRootDir = path.join(siteDir, 'tests');
 
-    // konfiguracja projektu
     const siteConfig = require(path.join(siteDir, 'config.json'));
     const channel = siteConfig.channel;
 
     let scenarios = [];
 
-    // konteksty testów – TYLKO podfoldery w testsRootDir
-    // (czyli np. test_account, test_home_page, test_landing_pages)
     const contexts = fs.readdirSync(testsRootDir).filter(item => {
         const itemPath = path.join(testsRootDir, item);
         return fs.statSync(itemPath).isDirectory();
@@ -27,14 +22,20 @@ function loadScenarios(site) {
     contexts.forEach(context => {
         const contextDir = path.join(testsRootDir, context);
 
-        // pliki .json bezpośrednio w danym kontekście
-        const files = fs.readdirSync(contextDir).filter(file => path.extname(file) === '.json');
+        // zaakceptuj .json i .js
+        const files = fs.readdirSync(contextDir).filter(file => {
+            const ext = path.extname(file).toLowerCase();
+            return ext === '.json' || ext === '.js';
+        });
 
         files.forEach(file => {
             const suitePath = path.join(contextDir, file);
 
-            // (opcjonalnie, przydatne gdy generator odpalany wiele razy w jednym procesie)
-            // delete require.cache[require.resolve(suitePath)];
+            try {
+                delete require.cache[require.resolve(suitePath)];
+            } catch (e) {
+                // ignore if not resolvable
+            }
 
             const suiteConfig = require(suitePath);
 
@@ -70,6 +71,7 @@ function loadScenarios(site) {
 
     return scenarios;
 }
+
 
 const komputronikPl_scenarios = loadScenarios('komputronik_pl');
 // const dktr_scenarios = loadScenarios('dktr');
