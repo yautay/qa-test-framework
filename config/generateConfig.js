@@ -75,6 +75,13 @@ const komputronikPl_scenarios = loadScenarios('komputronik_pl');
 // const dktr_scenarios = loadScenarios('dktr');
 // const b2c_scenarios = loadScenarios('techrol_b2c');
 
+const baseArgs = [
+    '--no-sandbox',
+    '--disable-web-security',
+    '--allow-running-insecure-content',
+    '--disable-features=IsolateOrigins,site-per-process'
+];
+
 module.exports = {
     id: "backstop_default",
     viewports: [
@@ -98,23 +105,14 @@ module.exports = {
     engineOptions: chromePath
         ? {
             executablePath: chromePath,
-            headless: false,
-            args: [
-                '--no-sandbox',
-                '--disable-web-security',
-                '--allow-running-insecure-content',
-                '--disable-features=IsolateOrigins,site-per-process'
-            ]
+            headless: true,
+            args: baseArgs
         }
         : {
             launchOptions: {
                 channel: 'chrome',
                 headless: true,
-                args: [
-                    '--disable-web-security',
-                    '--allow-running-insecure-content',
-                    '--disable-features=IsolateOrigins,site-per-process'
-                ]
+                args: baseArgs
             }
         },
     report: ["CI"],
