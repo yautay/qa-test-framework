@@ -4,7 +4,7 @@
 const serverTypeTest = "test"; // "prod", "demo", "test"
 const serverTypeReference = "test"; // "prod", "demo", "test"
 
-const hostReference = "selenium.alfa";
+const hostReference = "czysta.alfa";
 const testHost = "weryfikacja.alfa";
 
 const hardcodedUrlsProd = {

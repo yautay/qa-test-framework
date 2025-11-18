@@ -98,7 +98,7 @@ module.exports = {
     engineOptions: chromePath
         ? {
             executablePath: chromePath,
-            headless: true,
+            headless: false,
             args: [
                 '--no-sandbox',
                 '--disable-web-security',
@@ -109,7 +109,7 @@ module.exports = {
         : {
             launchOptions: {
                 channel: 'chrome',
-                headless: true,
+                headless: false,
                 args: [
                     '--disable-web-security',
                     '--allow-running-insecure-content',
