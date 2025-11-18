@@ -98,7 +98,7 @@ module.exports = {
     engineOptions: chromePath
         ? {
             executablePath: chromePath,
-            headless: true,
+            headless: false,
             args: [
                 '--no-sandbox',
                 '--disable-web-security',
