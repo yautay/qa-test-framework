@@ -1,2 +1,2 @@
 // backstop.config.js
-module.exports = require('./config/generateConfig');
+module.exports = require('./config/generate-config');

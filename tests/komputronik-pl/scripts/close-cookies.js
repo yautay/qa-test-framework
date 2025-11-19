@@ -1,4 +1,4 @@
-const locators = require('../locators/locatorsHomePage');
+const locators = require('../locators/locators-home-page');
 const utils = require('../../../lib/helpers');
 
 

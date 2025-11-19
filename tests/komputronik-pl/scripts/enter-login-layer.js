@@ -1,7 +1,7 @@
-const locatorsHomePage = require('../locators/locatorsHomePage');
-const locatorsLayers = require('../locators/locatorsLayers');
+const locatorsHomePage = require('../locators/locators-home-page');
+const locatorsLayers = require('../locators/locators-layers');
 const utils = require('../../../lib/helpers');
-const close_cookies = require('../scripts/closeCookies');
+const close_cookies = require('./close-cookies');
 
 module.exports = async (page) => {
     console.log('>>> enterLoginLayer start');
