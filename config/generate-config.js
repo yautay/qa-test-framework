@@ -53,7 +53,7 @@ function loadScenarios(site) {
 
             scenario.url = testUrl;
             scenario.referenceUrl = referenceUrl;
-
+            scenario.onBeforeScript = scenario.onBeforeScript || '../scripts/silence-browser-console.js';
             scenarios.push(scenario);
         });
     }
@@ -96,6 +96,7 @@ function loadScenarios(site) {
 
     return scenarios;
 }
+
 
 
 const komputronikPl_scenarios = loadScenarios('komputronik-pl');
