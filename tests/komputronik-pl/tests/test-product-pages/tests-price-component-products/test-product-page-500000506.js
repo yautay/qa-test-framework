@@ -5,7 +5,7 @@ module.exports = {
     {
       label: 'komputronik-pl product-page html-cache 500000506',
       resource: "/product/500000506",
-      delay: 5000,
+      delay: 10000,
       misMatchThreshold: 0.1,
       requireSameDimensions: true,
       report: ['browser', 'CI'],
@@ -14,7 +14,7 @@ module.exports = {
     {
       label: 'komputronik-pl product-page no-html-cache 500000506',
       resource: '/product/500000506?test=1',
-      delay: 5000,
+      delay: 10000,
       misMatchThreshold: 0.1,
       requireSameDimensions: true,
       report: ['browser', 'CI'],
