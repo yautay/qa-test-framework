@@ -1,7 +1,6 @@
   // tests/komputronik-pl/tests/test-account/login_check.js
 
   const layerLocators = require('../../locators/locators-layers');
-  const utils = require('../../../../lib/helpers');
   module.exports = {
     defaultResource: "/",
 
