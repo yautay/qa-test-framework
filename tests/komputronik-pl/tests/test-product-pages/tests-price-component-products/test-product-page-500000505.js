@@ -1,18 +1,20 @@
+// tests/komputronik-pl/tests/test-product-pages/tests-price-component-products/test-product-page-500000505.js
+
 module.exports = {
   scenarios: [
     {
-      label: 'komputronik-pl karta_produktu html_cache 500000505',
+      label: 'komputronik-pl product-page html-cache 500000505',
       resource: "/product/500000505",
-      delay: 500,
+      delay: 5000,
       misMatchThreshold: 0.1,
       requireSameDimensions: true,
       report: ['browser', 'CI'],
       onReadyScript: '../scripts/close-cookies.js'
     },
     {
-      label: 'komputronik-pl karta_produktu no_html_cache 500000505',
+      label: 'komputronik-pl product-page no-html-cache 500000505',
       resource: '/product/500000505?test=1',
-      delay: 500,
+      delay: 5000,
       misMatchThreshold: 0.1,
       requireSameDimensions: true,
       report: ['browser', 'CI'],

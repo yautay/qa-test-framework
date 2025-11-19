@@ -1,10 +1,10 @@
-// tests/komputronik-pl/tests/test-product-pages/tests-price-component-products/test-product-page-500000501.js
+// tests/komputronik-pl/tests/test-product-pages/tests-rwd-front-products/test-product-page-54244159.js
 
 module.exports = {
   scenarios: [
     {
-      label: 'komputronik-pl product-page html-cache 500000501',
-      resource: "/product/500000501",
+      label: 'komputronik-pl product-page html-cache 54244159',
+      resource: "/product/54244159",
       delay: 5000,
       misMatchThreshold: 0.1,
       requireSameDimensions: true,
@@ -12,8 +12,8 @@ module.exports = {
       onReadyScript: '../scripts/close-cookies.js'
     },
     {
-      label: 'komputronik-pl product-page no-html-cache 500000501',
-      resource: '/product/500000501?test=1',
+      label: 'komputronik-pl product-page no-html-cache 54244159',
+      resource: '/product/54244159?test=1',
       delay: 5000,
       misMatchThreshold: 0.1,
       requireSameDimensions: true,
