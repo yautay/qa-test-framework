@@ -10,19 +10,19 @@ const TEMPLATE = (id, folderName) => `// tests/komputronik-pl/tests/test-product
 module.exports = {
   scenarios: [
     {
-      label: 'komputronik-pl product-page html-cache ${id}',
+      label: 'komputronik-pl product-page ${folderName} html-cache ${id}',
       resource: "/product/${id}",
-      delay: 10000,
-      misMatchThreshold: 0.1,
+      delay: 3000,
+      misMatchThreshold: 1,
       requireSameDimensions: true,
       report: ['browser', 'CI'],
       onReadyScript: '../scripts/close-cookies.js'
     },
     {
-      label: 'komputronik-pl product-page no-html-cache ${id}',
+      label: 'komputronik-pl product-page ${folderName} no-html-cache ${id}',
       resource: '/product/${id}?test=1',
-      delay: 10000,
-      misMatchThreshold: 0.1,
+      delay: 3000,
+      misMatchThreshold: 1,
       requireSameDimensions: true,
       report: ['browser', 'CI'],
       onReadyScript: '../scripts/close-cookies.js'

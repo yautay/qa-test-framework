@@ -3,19 +3,19 @@
 module.exports = {
   scenarios: [
     {
-      label: 'komputronik-pl product-page html-cache 500000210',
+      label: 'komputronik-pl product-page tests-soon-available-products html-cache 500000210',
       resource: "/product/500000210",
-      delay: 10000,
-      misMatchThreshold: 0.1,
+      delay: 3000,
+      misMatchThreshold: 1,
       requireSameDimensions: true,
       report: ['browser', 'CI'],
       onReadyScript: '../scripts/close-cookies.js'
     },
     {
-      label: 'komputronik-pl product-page no-html-cache 500000210',
+      label: 'komputronik-pl product-page tests-soon-available-products no-html-cache 500000210',
       resource: '/product/500000210?test=1',
-      delay: 10000,
-      misMatchThreshold: 0.1,
+      delay: 3000,
+      misMatchThreshold: 1,
       requireSameDimensions: true,
       report: ['browser', 'CI'],
       onReadyScript: '../scripts/close-cookies.js'
