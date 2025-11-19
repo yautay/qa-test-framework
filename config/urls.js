@@ -5,7 +5,7 @@ const serverTypeTest = "test"; // "prod", "demo", "test"
 const serverTypeReference = "test"; // "prod", "demo", "test"
 
 const hostReference = "czysta.alfa";
-const testHost = "weryfikacja.alfa";
+const testHost = "skrzat.alfa";
 
 const hardcodedUrlsProd = {
     komputronikPl: "https://komputronik.pl",
