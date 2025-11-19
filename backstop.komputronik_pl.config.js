@@ -6,5 +6,9 @@ const config = require('./config/generateConfig');
 config.scenarios = config.scenarios.filter(scenario =>
     scenario.label.includes('komputronik_pl')
 );
+config.paths = {
+    ...config.paths,
+    engine_scripts: 'tests/komputronik_pl/scripts'
+};
 
 module.exports = config;
