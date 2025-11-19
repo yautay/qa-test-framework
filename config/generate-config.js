@@ -1,3 +1,4 @@
+// javascript
 // config/generate-config.js
 const fs = require('fs');
 const path = require('path');
@@ -19,52 +20,76 @@ function loadScenarios(site) {
         return fs.statSync(itemPath).isDirectory();
     });
 
+    function processSuiteFile(suitePath, labelPrefix) {
+        try {
+            delete require.cache[require.resolve(suitePath)];
+        } catch (e) {
+            // ignore if not resolvable
+        }
+
+        const suiteConfig = require(suitePath);
+
+        let defaultResource = null;
+        let suiteScenarios = [];
+
+        if (Array.isArray(suiteConfig)) {
+            suiteScenarios = suiteConfig;
+        } else if (typeof suiteConfig === 'object' && suiteConfig !== null) {
+            defaultResource = suiteConfig.defaultResource || null;
+            suiteScenarios = suiteConfig.scenarios || [];
+        }
+
+        suiteScenarios.forEach(scenario => {
+            scenario.label = scenario.label ? `${labelPrefix} - ${scenario.label}` : labelPrefix;
+
+            let {testUrl, referenceUrl} = urls.buildUrl(channel);
+
+            let resource = scenario.resource || defaultResource;
+            if (resource) {
+                resource = resource.startsWith('/') ? resource : '/' + resource;
+                testUrl += resource;
+                referenceUrl += resource;
+            }
+
+            scenario.url = testUrl;
+            scenario.referenceUrl = referenceUrl;
+
+            scenarios.push(scenario);
+        });
+    }
+
     contexts.forEach(context => {
         const contextDir = path.join(testsRootDir, context);
 
-        // zaakceptuj .json i .js
-        const files = fs.readdirSync(contextDir).filter(file => {
+        // Przejrzyj pliki bezpośrednio w kontekście
+        const rootFiles = fs.readdirSync(contextDir).filter(file => {
+            const filePath = path.join(contextDir, file);
             const ext = path.extname(file).toLowerCase();
-            return ext === '.json' || ext === '.js';
+            return fs.statSync(filePath).isFile() && (ext === '.json' || ext === '.js');
         });
 
-        files.forEach(file => {
+        rootFiles.forEach(file => {
             const suitePath = path.join(contextDir, file);
+            processSuiteFile(suitePath, context);
+        });
 
-            try {
-                delete require.cache[require.resolve(suitePath)];
-            } catch (e) {
-                // ignore if not resolvable
-            }
+        // Obsłuż jeden poziom podkatalogów (context/subcontext)
+        const subdirs = fs.readdirSync(contextDir).filter(item => {
+            const itemPath = path.join(contextDir, item);
+            return fs.statSync(itemPath).isDirectory();
+        });
 
-            const suiteConfig = require(suitePath);
+        subdirs.forEach(sub => {
+            const subDirPath = path.join(contextDir, sub);
+            const subFiles = fs.readdirSync(subDirPath).filter(file => {
+                const filePath = path.join(subDirPath, file);
+                const ext = path.extname(file).toLowerCase();
+                return fs.statSync(filePath).isFile() && (ext === '.json' || ext === '.js');
+            });
 
-            let defaultResource = null;
-            let suiteScenarios = [];
-
-            if (Array.isArray(suiteConfig)) {
-                suiteScenarios = suiteConfig;
-            } else if (typeof suiteConfig === 'object' && suiteConfig !== null) {
-                defaultResource = suiteConfig.defaultResource || null;
-                suiteScenarios = suiteConfig.scenarios || [];
-            }
-
-            suiteScenarios.forEach(scenario => {
-                scenario.label = scenario.label ? `${context} - ${scenario.label}` : context;
-
-                let {testUrl, referenceUrl} = urls.buildUrl(channel);
-
-                let resource = scenario.resource || defaultResource;
-                if (resource) {
-                    resource = resource.startsWith('/') ? resource : '/' + resource;
-                    testUrl += resource;
-                    referenceUrl += resource;
-                }
-
-                scenario.url = testUrl;
-                scenario.referenceUrl = referenceUrl;
-
-                scenarios.push(scenario);
+            subFiles.forEach(file => {
+                const suitePath = path.join(subDirPath, file);
+                processSuiteFile(suitePath, `${context}/${sub}`);
             });
         });
     });
