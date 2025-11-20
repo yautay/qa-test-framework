@@ -1,13 +1,12 @@
-// javascript
 // tools/product.tests.generator/product-tests-generator.js
 const fs = require("fs");
 const path = require("path");
 
 const BASE_DIR = __dirname;
 const OUTPUT_ROOT = path.join(BASE_DIR, "..", "..", "tests", "komputronik-pl", "tests", "test-product-pages");
-const MANIFEST_BASENAME = ".generated-manifest"; // bez rozszerzenia
+const MANIFEST_BASENAME = ".generated-manifest";
 const MANIFEST_FILE = path.join(OUTPUT_ROOT, MANIFEST_BASENAME);
-const MANIFEST_JSON_FILE = MANIFEST_FILE + ".json"; // kompatybilność z poprzednim plikiem
+const MANIFEST_JSON_FILE = MANIFEST_FILE + ".json";
 const IDS_PREFIX = "ids-";
 
 const TEMPLATE = (id, folderName) => `// tests/komputronik-pl/tests/test-product-pages/${folderName}/test-product-page-${id}.js
@@ -59,7 +58,6 @@ function writeManifest(entries) {
     try {
         fs.mkdirSync(OUTPUT_ROOT, { recursive: true });
         fs.writeFileSync(MANIFEST_FILE, JSON.stringify(entries, null, 2), "utf8");
-        // usuń stary plik z .json jeśli istnieje
         try { if (fs.existsSync(MANIFEST_JSON_FILE)) fs.unlinkSync(MANIFEST_JSON_FILE); } catch (e) {}
     } catch (e) {
         console.warn("(i) Nie udało się zapisać manifestu:", e.message);
@@ -100,7 +98,6 @@ function removeEmptyDirsUpToRoot(dir) {
 function cleanOldGenerated() {
     const oldEntries = readManifest(); // entries are relative to OUTPUT_ROOT
     if (oldEntries.length === 0) {
-        // usuń ewentualny stary manifest .json, jeśli już nie używany
         try { if (fs.existsSync(MANIFEST_JSON_FILE)) fs.unlinkSync(MANIFEST_JSON_FILE); } catch (e) {}
         return;
     }
@@ -114,7 +111,6 @@ function cleanOldGenerated() {
         }
     });
 
-    // usuń manifesty po czyszczeniu
     try { if (fs.existsSync(MANIFEST_FILE)) fs.unlinkSync(MANIFEST_FILE); } catch (e) {}
     try { if (fs.existsSync(MANIFEST_JSON_FILE)) fs.unlinkSync(MANIFEST_JSON_FILE); } catch (e) {}
 }
