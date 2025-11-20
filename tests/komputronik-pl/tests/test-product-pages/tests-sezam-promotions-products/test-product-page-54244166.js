@@ -1,9 +1,9 @@
-// tests/komputronik-pl/tests/test-product-pages/tests-rwd-front-products/test-product-page-54244166.js
+// tests/komputronik-pl/tests/test-product-pages/tests-sezam-promotions-products/test-product-page-54244166.js
 
 module.exports = {
   scenarios: [
     {
-      label: 'komputronik-pl product-page tests-rwd-front-products html-cache 54244166',
+      label: 'komputronik-pl product-page tests-sezam-promotions-products html-cache 54244166',
       resource: "/product/54244166",
       delay: 3000,
       misMatchThreshold: 1,
@@ -12,7 +12,7 @@ module.exports = {
       onReadyScript: '../scripts/close-cookies.js'
     },
     {
-      label: 'komputronik-pl product-page tests-rwd-front-products no-html-cache 54244166',
+      label: 'komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244166',
       resource: '/product/54244166?test=1',
       delay: 3000,
       misMatchThreshold: 1,
