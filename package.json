@@ -6,7 +6,8 @@
   "scripts": {
     "test_pl": "backstop test --configPath=backstop.komputronik_pl.config.js",
     "reference_pl": "backstop reference --configPath=backstop.komputronik_pl.config.js",
-    "report_pl": "backstop openReport --configPath=backstop.komputronik_pl.config.js"
+    "report_pl": "backstop openReport --configPath=backstop.komputronik_pl.config.js",
+    "generate_tests": "node tools/product.tests.generator/product-tests-generator.js"
   },
   "keywords": [],
   "author": "",
