@@ -53,7 +53,7 @@ function loadScenarios(site) {
 
             scenario.url = testUrl;
             scenario.referenceUrl = referenceUrl;
-            scenario.onBeforeScript = scenario.onBeforeScript || '../scripts/silence-browser-console.js';
+            scenario.onBeforeScript = scenario.onBeforeScript || '../../../lib/silence-browser-console.js';
             scenarios.push(scenario);
         });
     }
