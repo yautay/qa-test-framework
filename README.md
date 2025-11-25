@@ -1,7 +1,9 @@
 # Uruchamianie testów wizualnych BackstopJS
 
 ## Generowanie pliku konfiguracyjnego testów 
-Umożliwia wybór kanału sprzedaży, zakresu testów oraz dodatkowych opcji filtrowania scenariuszy.
+Umożliwia wybór kanału sprzedaży, zakresu testów oraz dodatkowych opcji filtrowania scenariuszy oraz skonfigurowanie adresów testówek.
+
+```npx lib/system/write-backstop-config.js --testHost="selenium.alfa --referenceHost="platnosci.test" --filter="product-page"```
 
 ```npx lib/system/write-backstop-config.js --filter="product-page"```
 
@@ -12,11 +14,18 @@ Umożliwia wybór kanału sprzedaży, zakresu testów oraz dodatkowych opcji fil
 ```npm run backstop:config -- --filter="product-page no-html-cache" --site=komputronik-pl --outFile=my_backstop_config.json```
 
 ### argumenty:
-```--filter "token-1 token-2 ... token-n"``` - (opcjonalne) filtr scenariuszy po etykietach (label). Tokeny rozdzielone spacją. Logika AND.
 
-```--site "komputronik-pl"``` - (opcjonalne) wybór kanału sprzedaży, domyślnie PL.
+```--testHost``` - (opcjonalnie) definicja testówki np "selenium.alfa" (domyślnie)
 
-```--outFile "test_config_file"``` - (opcjonalne) nazwa pliku wyjściowego z konfiguracją BackstopJS, domyślnie "backstop_config_run_timestamp.json
+```--referenceHost``` - (opcjonalnie) definicja testówki referencyjnej np "selenium.alfa", pominięta porównuje względem repozytorium obrazów (TO DO)
+
+```--filter``` - (opcjonalne) filtr scenariuszy po etykietach (label). Tokeny rozdzielone spacją. Logika AND.
+
+```--site``` - (opcjonalne) wybór kanału sprzedaży, domyślnie PL.
+
+```--outFile``` - (opcjonalne) nazwa pliku wyjściowego z konfiguracją BackstopJS, domyślnie "backstop_config_run_timestamp.json
+
+
 
 ## Tworzenie obrazów referencyjnych
 ```npx backstop reference --config=<wygenerowany plik konfiguracyjny>.json```

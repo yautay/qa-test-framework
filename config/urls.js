@@ -4,28 +4,29 @@
 const serverTypeTest = "test"; // "prod", "demo", "test"
 const serverTypeReference = "test"; // "prod", "demo", "test"
 
-const hostReference = "krem.test";
-const testHost = "selenium.alfa";
-
 const hardcodedUrlsProd = {
-    komputronikPl: "https://komputronik.pl",
+    komputronik: "https://komputronik.pl",
     dktr: "https://d.ktr.pl",
 };
 
 const hardcodedUrlsDemo = {
-    komputronikPl: "https://sklep3-demo.komputronik.dev",
+    komputronik: "https://sklep3-demo.komputronik.dev",
     dktr: "https://ktr-demo.ktr.pl",
 };
 
-function buildUrl(channel) {
+function buildUrl(channel, hosts) {
     let testUrl, referenceUrl;
+
+    if (channel === "komputronik-pl") {
+        channel = "komputronik";
+    }
 
     if (serverTypeTest === "prod" && hardcodedUrlsProd[channel]) {
         testUrl = hardcodedUrlsProd[channel];
     } else if (serverTypeTest === "demo" && hardcodedUrlsDemo[channel]) {
         testUrl = hardcodedUrlsDemo[channel];
     } else {
-        testUrl = `https://${channel}-${testHost}.netcorner.pl`;
+        testUrl = `https://${channel}-${hosts.test}.netcorner.pl`;
     }
 
     if (serverTypeReference === "prod" && hardcodedUrlsProd[channel]) {
@@ -33,7 +34,7 @@ function buildUrl(channel) {
     } else if (serverTypeReference === "demo" && hardcodedUrlsDemo[channel]) {
         referenceUrl = hardcodedUrlsDemo[channel];
     } else {
-        referenceUrl = `https://${channel}-${hostReference}.netcorner.pl`;
+        referenceUrl = `https://${channel}-${hosts.reference}.netcorner.pl`;
     }
 
     return { testUrl, referenceUrl };
