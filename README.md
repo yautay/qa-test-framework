@@ -3,15 +3,17 @@
 ## Generowanie pliku konfiguracyjnego testów 
 Umożliwia wybór kanału sprzedaży, zakresu testów oraz dodatkowych opcji filtrowania scenariuszy oraz skonfigurowanie adresów testówek.
 
-```npx lib/system/write-backstop-config.js --testHost="selenium.alfa --referenceHost="platnosci.test" --filter="product-page"```
+```node lib/system/write-backstop-config.js --outFile="my_test_config" --testHost="selenium.alfa" --referenceHost="platnosci.test" --filter="komputronik-pl html-cache"```
 
-```npx lib/system/write-backstop-config.js --filter="product-page"```
+```node lib/system/write-backstop-config.js --testHost="selenium.alfa" --referenceHost="platnosci.test" --filter="product-page"```
 
-```npx lib/system/write-backstop-config.js```
+```node lib/system/write-backstop-config.js --filter="product-page"```
 
-```npx lib/system/write-backstop-config.js --filter="product-page" --site=komputronik-pl --outFile=my_backstop_config.json```
+```node lib/system/write-backstop-config.js```
 
-```npm run backstop:config -- --filter="product-page no-html-cache" --site=komputronik-pl --outFile=my_backstop_config.json```
+```node lib/system/write-backstop-config.js --filter="product-page" --site="komputronik-pl" --outFile=my_backstop_config.json```
+
+```npm run backstop:config -- --filter="product-page no-html-cache" --site="komputronik-pl" --outFile=my_backstop_config.json```
 
 ### argumenty:
 

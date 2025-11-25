@@ -34,10 +34,13 @@ function buildUrl(channel, hosts) {
     } else if (serverTypeReference === "demo" && hardcodedUrlsDemo[channel]) {
         referenceUrl = hardcodedUrlsDemo[channel];
     } else {
-        referenceUrl = `https://${channel}-${hosts.reference}.netcorner.pl`;
+        if (hosts.reference) {
+            referenceUrl = `https://${channel}-${hosts.reference}.netcorner.pl`;
+        } else {
+            referenceUrl = undefined;
+        }
     }
-
-    return { testUrl, referenceUrl };
+    return {testUrl, referenceUrl};
 }
 
 module.exports = {
