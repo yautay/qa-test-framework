@@ -5,6 +5,12 @@ Umożliwia wybór kanału sprzedaży, zakresu testów oraz dodatkowych opcji fil
 
 ```npx lib/system/write-backstop-config.js --filter="product-page"```
 
+```npx lib/system/write-backstop-config.js```
+
+```npx lib/system/write-backstop-config.js --filter="product-page" --site=komputronik-pl --outFile=my_backstop_config.json```
+
+```npm run backstop:config -- --filter="product-page no-html-cache" --site=komputronik-pl --outFile=my_backstop_config.json```
+
 ### argumenty:
 ```--filter "token-1 token-2 ... token-n"``` - (opcjonalne) filtr scenariuszy po etykietach (label). Tokeny rozdzielone spacją. Logika AND.
 
