@@ -13,7 +13,7 @@
         misMatchThreshold: 0.1,
         requireSameDimensions: true,
         report: ["browser", "CI"],
-        onReadyScript: "../scripts/enter-login-layer.js"
+        onReadyScript: "./../../tests/komputronik-pl/scripts/enter-login-layer.js"
       }
     ]
   };

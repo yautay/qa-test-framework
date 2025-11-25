@@ -19,8 +19,8 @@ module.exports = {
       delay: 3000,
       misMatchThreshold: 1,
       requireSameDimensions: true,
-      report: ['browser', 'CI'],
-      onReadyScript: '../scripts/close-cookies.js'
+      report: ['browser'],
+      onReadyScript: './../../tests/komputronik-pl/scripts/close-cookies.js'
     },
     {
       label: 'komputronik-pl product-page ${folderName} no-html-cache ${id}',
@@ -28,8 +28,8 @@ module.exports = {
       delay: 3000,
       misMatchThreshold: 1,
       requireSameDimensions: true,
-      report: ['browser', 'CI'],
-      onReadyScript: '../scripts/close-cookies.js'
+      report: ['browser'],
+      onReadyScript: './../../tests/komputronik-pl/scripts/close-cookies.js'
     }
   ]
 };
@@ -141,7 +141,7 @@ function generateFromTxtFile(txtFile, manifestEntries) {
 
         fs.writeFileSync(filePath, jsContent, "utf8");
         manifestEntries.push(fileRel);
-        console.log(`✔ ${txtFile} -> ${path.relative(BASE_DIR, filePath)}`);
+        console.log(` ${txtFile} -> ${path.relative(BASE_DIR, filePath)}`);
     });
 }
 

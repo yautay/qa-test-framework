@@ -1,5 +1,5 @@
 const locators = require('../locators/locators-home-page');
-const utils = require('../../../lib/helpers');
+const utils = require('../../../lib/functional/helpers');
 
 
 module.exports = async (page) => {

@@ -3,8 +3,3 @@
 /backstop_data/
 /package-lock.json
 /tests/komputronik-pl/tests/test-product-pages/.generated-manifest.json
-/tests/komputronik-pl/tests/test-product-pages/tests-price-component-products/
-/tests/komputronik-pl/tests/test-product-pages/tests-product-labels-products/
-/tests/komputronik-pl/tests/test-product-pages/tests-rwd-front-products/
-/tests/komputronik-pl/tests/test-product-pages/tests-sezam-promotions-products/
-/tests/komputronik-pl/tests/test-product-pages/tests-soon-available-products/

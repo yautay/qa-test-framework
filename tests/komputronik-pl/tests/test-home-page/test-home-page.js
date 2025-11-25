@@ -11,7 +11,7 @@ module.exports = {
       misMatchThreshold: 0.1,
       requireSameDimensions: true,
       report: ["browser", "CI"],
-      onReadyScript: "close-cookies.js"
+      onReadyScript: "./../../tests/komputronik-pl/scripts/close-cookies.js"
     },
 
     {
@@ -22,7 +22,7 @@ module.exports = {
       misMatchThreshold: 0.1,
       requireSameDimensions: true,
       report: ["browser", "CI"],
-      onReadyScript: "close-cookies.js"
+      onReadyScript: "./../../tests/komputronik-pl/scripts/close-cookies.js"
     }
   ]
 };
