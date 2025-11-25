@@ -1,6 +1,6 @@
 const locatorsHomePage = require('../locators/locators-home-page');
 const locatorsLayers = require('../locators/locators-layers');
-const utils = require('../../../lib/helpers');
+const utils = require('../../../lib/functional/helpers');
 const close_cookies = require('./close-cookies');
 
 module.exports = async (page) => {
