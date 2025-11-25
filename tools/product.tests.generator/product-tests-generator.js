@@ -141,7 +141,7 @@ function generateFromTxtFile(txtFile, manifestEntries) {
 
         fs.writeFileSync(filePath, jsContent, "utf8");
         manifestEntries.push(fileRel);
-        console.log(`✔ ${txtFile} -> ${path.relative(BASE_DIR, filePath)}`);
+        console.log(` ${txtFile} -> ${path.relative(BASE_DIR, filePath)}`);
     });
 }
 
