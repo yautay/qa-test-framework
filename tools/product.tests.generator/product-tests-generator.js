@@ -19,7 +19,7 @@ module.exports = {
       delay: 3000,
       misMatchThreshold: 1,
       requireSameDimensions: true,
-      report: ['browser', 'CI'],
+      report: ['browser'],
       onReadyScript: 'close-cookies.js'
     },
     {
@@ -28,7 +28,7 @@ module.exports = {
       delay: 3000,
       misMatchThreshold: 1,
       requireSameDimensions: true,
-      report: ['browser', 'CI'],
+      report: ['browser'],
       onReadyScript: 'close-cookies.js'
     }
   ]
