@@ -20,7 +20,7 @@ module.exports = {
       misMatchThreshold: 1,
       requireSameDimensions: true,
       report: ['browser'],
-      onReadyScript: 'close-cookies.js'
+      onReadyScript: './../../tests/komputronik-pl/scripts/close-cookies.js'
     },
     {
       label: 'komputronik-pl product-page ${folderName} no-html-cache ${id}',
@@ -29,7 +29,7 @@ module.exports = {
       misMatchThreshold: 1,
       requireSameDimensions: true,
       report: ['browser'],
-      onReadyScript: 'close-cookies.js'
+      onReadyScript: './../../tests/komputronik-pl/scripts/close-cookies.js'
     }
   ]
 };

@@ -11,7 +11,7 @@ module.exports = {
       misMatchThreshold: 0.1,
       requireSameDimensions: true,
       report: ['browser', 'CI'],
-      onReadyScript: '../scripts/close-cookies.js'
+      onReadyScript: './../../tests/komputronik-pl/scripts/close-cookies.js'
     },
     {
       label: 'komputronik-pl product-page tests-demo-bugs no-html-cache 914916',
@@ -20,7 +20,7 @@ module.exports = {
       misMatchThreshold: 0.1,
       requireSameDimensions: true,
       report: ['browser', 'CI'],
-      onReadyScript: '../scripts/close-cookies.js'
+      onReadyScript: './../../tests/komputronik-pl/scripts/close-cookies.js'
     }
   ]
 };
