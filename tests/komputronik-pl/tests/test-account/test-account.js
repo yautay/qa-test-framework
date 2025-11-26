@@ -12,7 +12,7 @@
         delay: 500,
         misMatchThreshold: 0.1,
         requireSameDimensions: true,
-        report: ["browser", "CI"],
+        report: ["browser"],
         onReadyScript: "./../../tests/komputronik-pl/scripts/enter-login-layer.js"
       }
     ]
