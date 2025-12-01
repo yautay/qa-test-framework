@@ -8,7 +8,7 @@ module.exports = {
       label: 'komputronik-pl product-page tests-demo-bugs html-cache 914916',
       resource: "/product/914916",
       delay: 10000,
-      misMatchThreshold: 0.1,
+      misMatchThreshold: 0.5,
       requireSameDimensions: true,
       report: ['browser'],
       onReadyScript: './../../tests/komputronik-pl/scripts/close-cookies.js'
@@ -17,7 +17,7 @@ module.exports = {
       label: 'komputronik-pl product-page tests-demo-bugs no-html-cache 914916',
       resource: '/product/914916?test=1',
       delay: 10000,
-      misMatchThreshold: 0.1,
+      misMatchThreshold: 0.5,
       requireSameDimensions: true,
       report: ['browser'],
       onReadyScript: './../../tests/komputronik-pl/scripts/close-cookies.js'

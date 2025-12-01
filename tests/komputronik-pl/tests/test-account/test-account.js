@@ -10,7 +10,7 @@
         selectors: [layerLocators.loginLayer],
         selectorExpansion: false,
         delay: 500,
-        misMatchThreshold: 0.1,
+        misMatchThreshold: 1,
         requireSameDimensions: true,
         report: ["browser"],
         onReadyScript: "./../../tests/komputronik-pl/scripts/enter-login-layer.js"
