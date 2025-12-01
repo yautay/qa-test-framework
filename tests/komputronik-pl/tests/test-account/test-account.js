@@ -6,7 +6,7 @@
 
     scenarios: [
       {
-        label: "komputronik-pl Sprawdzenie logowania",
+        label: "komputronik-pl login-layer",
         selectors: [layerLocators.loginLayer],
         selectorExpansion: false,
         delay: 500,
