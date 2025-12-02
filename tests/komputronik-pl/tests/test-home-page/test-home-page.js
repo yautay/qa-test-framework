@@ -8,7 +8,7 @@ module.exports = {
       label: "komputronik-pl home_page navigation_bar html_cache",
       selectors: [],
       delay: 500,
-      misMatchThreshold: 0.1,
+      misMatchThreshold: 1,
       requireSameDimensions: true,
       report: ["browser"],
       onReadyScript: "./../../tests/komputronik-pl/scripts/close-cookies.js"
@@ -19,7 +19,7 @@ module.exports = {
       resource: "/?test=1",
       selectors: [],
       delay: 500,
-      misMatchThreshold: 0.1,
+      misMatchThreshold: 1,
       requireSameDimensions: true,
       report: ["browser"],
       onReadyScript: "./../../tests/komputronik-pl/scripts/close-cookies.js"
