@@ -22,7 +22,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings configurator configurator-psu disabled-js",
-            resource: "/advanced-configurator/power_supply?test=1",
+            resource: "/advanced-configurator/power_supply",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,

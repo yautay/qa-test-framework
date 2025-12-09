@@ -22,7 +22,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings producer-category-listing apple disabled-js",
-            resource: "/category/5022/laptopy,apple.html?test=1",
+            resource: "/category/5022/laptopy,apple.html",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,

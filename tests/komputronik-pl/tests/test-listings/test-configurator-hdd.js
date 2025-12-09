@@ -22,7 +22,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings configurator configurator-hdd disabled-js",
-            resource: "/advanced-configurator/hdd?test=1",
+            resource: "/advanced-configurator/hdd",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,

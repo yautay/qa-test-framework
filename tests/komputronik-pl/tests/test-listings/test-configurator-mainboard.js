@@ -22,7 +22,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings configurator configurator-motherboard disabled-js",
-            resource: "/advanced-configurator/motherboard?test=1",
+            resource: "/advanced-configurator/motherboard",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,

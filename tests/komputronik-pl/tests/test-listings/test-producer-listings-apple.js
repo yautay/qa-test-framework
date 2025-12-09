@@ -22,7 +22,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings producer-listing apple disabled-js",
-            resource: "/producer/7/apple.html?test=1",
+            resource: "/producer/7/apple.html",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,

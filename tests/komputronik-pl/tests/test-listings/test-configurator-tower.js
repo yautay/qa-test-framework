@@ -22,7 +22,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings configurator configurator-tower disabled-js",
-            resource: "/advanced-configurator/case?test=1",
+            resource: "/advanced-configurator/case",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,

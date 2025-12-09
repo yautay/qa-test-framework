@@ -22,7 +22,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings configurator configurator-main disabled-js",
-            resource: "/advanced-configurator?test=1",
+            resource: "/advanced-configurator",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,
