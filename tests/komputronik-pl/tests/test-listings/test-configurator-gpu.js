@@ -27,8 +27,7 @@ module.exports = {
             delay: 500,
             misMatchThreshold: 1,
             requireSameDimensions: true,
-            disableJavaScript: true,
-            report: ["browser"],
+            report: ["browser"]
         },
     ]
 };

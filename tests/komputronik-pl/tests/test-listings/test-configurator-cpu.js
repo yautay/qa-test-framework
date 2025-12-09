@@ -21,15 +21,13 @@ module.exports = {
             onReadyScript: "./../../tests/komputronik-pl/scripts/close-cookies.js"
         },
         {
-            engine: "puppeteer",
             label: "komputronik-pl listings configurator configurator-cpu disabled-js",
             resource: "/advanced-configurator/cpu",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,
             requireSameDimensions: true,
-            disableJavaScript: true,
-            report: ["browser"],
+            report: ["browser"]
         }
     ]
 };
