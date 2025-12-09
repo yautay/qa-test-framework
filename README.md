@@ -11,9 +11,9 @@ Umożliwia wybór kanału sprzedaży, zakresu testów oraz dodatkowych opcji fil
 
 ```node lib/system/write-backstop-config.js```
 
-```node lib/system/write-backstop-config.js --filter="product-page" --site="komputronik-pl" --outFile=my_backstop_config.json```
+```node lib/system/write-backstop-config.js --filter="product-page" --site="komputronik-pl" --outFile=my_backstop_config```
 
-```npm run backstop:config -- --filter="product-page no-html-cache" --site="komputronik-pl" --outFile=my_backstop_config.json```
+```npm run config -- --filter="product-page no-html-cache" --site="komputronik-pl" --outFile=my_backstop_config```
 
 ### argumenty:
 

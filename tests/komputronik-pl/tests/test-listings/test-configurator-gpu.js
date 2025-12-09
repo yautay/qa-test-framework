@@ -10,7 +10,6 @@ module.exports = {
             report: ["browser"],
             onReadyScript: "./../../tests/komputronik-pl/scripts/close-cookies.js"
         },
-
         {
             label: "komputronik-pl listings configurator configurator-gpu no_html_cache",
             resource: "/advanced-configurator/graphics_card?test=1",
@@ -20,7 +19,17 @@ module.exports = {
             requireSameDimensions: true,
             report: ["browser"],
             onReadyScript: "./../../tests/komputronik-pl/scripts/close-cookies.js"
-        }
+        },
+        {
+            label: "komputronik-pl listings configurator configurator-gpu disabled-js",
+            resource: "/advanced-configurator/graphics_card",
+            selectors: [],
+            delay: 500,
+            misMatchThreshold: 1,
+            requireSameDimensions: true,
+            disableJavaScript: true,
+            report: ["browser"],
+        },
     ]
 };
 
