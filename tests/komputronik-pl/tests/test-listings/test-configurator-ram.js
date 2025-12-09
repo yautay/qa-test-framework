@@ -22,7 +22,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings configurator configurator-ram disabled-js",
-            resource: "/advanced-configurator/dram_memory?test=1",
+            resource: "/advanced-configurator/dram_memory",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,

@@ -22,7 +22,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings search-filter dual-sim disabled-js",
-            resource: "search-filter/1596/smartfony-z-dual-sim?test=1",
+            resource: "search-filter/1596/smartfony-z-dual-sim",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,
