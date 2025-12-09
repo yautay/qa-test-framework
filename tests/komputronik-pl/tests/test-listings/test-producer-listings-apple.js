@@ -10,7 +10,6 @@ module.exports = {
             report: ["browser"],
             onReadyScript: "./../../tests/komputronik-pl/scripts/close-cookies.js"
         },
-
         {
             label: "komputronik-pl listings producer-listing apple no_html_cache",
             resource: "/producer/7/apple.html?test=1",
@@ -20,7 +19,25 @@ module.exports = {
             requireSameDimensions: true,
             report: ["browser"],
             onReadyScript: "./../../tests/komputronik-pl/scripts/close-cookies.js"
+        },
+        {
+            label: "komputronik-pl listings producer-listing apple disabled-js",
+            resource: "/producer/7/apple.html?test=1",
+            selectors: [],
+            delay: 500,
+            misMatchThreshold: 1,
+            requireSameDimensions: true,
+            report: ["browser"],
+        },
+        {
+            label: "komputronik-pl listings producer-listing apple no_html_cache",
+            resource: "/producer/7/apple.html?p=2",
+            selectors: [],
+            delay: 500,
+            misMatchThreshold: 1,
+            requireSameDimensions: true,
+            report: ["browser"],
+            onReadyScript: "./../../tests/komputronik-pl/scripts/close-cookies.js"
         }
     ]
 };
-
