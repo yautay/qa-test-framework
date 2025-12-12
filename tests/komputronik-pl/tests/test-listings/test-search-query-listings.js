@@ -1,7 +1,7 @@
 module.exports = {
     scenarios: [
         {
-            label: "komputronik-pl listings search-query no_html_cache",
+            label: "komputronik-pl listings search-query no_html_cache smoke",
             resource: "search/category/1?query=promo:tp_layout_context",
             selectors: [],
             delay: 500,

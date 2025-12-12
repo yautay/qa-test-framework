@@ -3,7 +3,7 @@
 module.exports = {
   scenarios: [
     {
-      label: 'komputronik-pl product-page tests-price-component-products html-cache 500000501',
+      label: 'komputronik-pl product-page tests-price-component-products html-cache 500000501 smoke',
       resource: "/product/500000501",
       delay: 3000,
       misMatchThreshold: 1,
