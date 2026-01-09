@@ -31,7 +31,7 @@ module.exports = {
             onReadyScript: "./../../tests/komputronik-pl/scripts/close-cookies.js"
         },
         {
-            label: "komputronik-pl listings product-listing pendrives disabled-js",
+            label: "komputronik-pl listings product-listing pendrives disabled-js smoke",
             resource: "/category/686/pendrive.html",
             selectors: [],
             delay: 500,

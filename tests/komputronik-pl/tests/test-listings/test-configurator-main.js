@@ -1,7 +1,7 @@
 module.exports = {
     scenarios: [
         {
-            label: "komputronik-pl listings configurator configurator-main html_cache",
+            label: "komputronik-pl listings configurator configurator-main html_cache smoke",
             resource: "/advanced-configurator",
             selectors: [],
             delay: 500,

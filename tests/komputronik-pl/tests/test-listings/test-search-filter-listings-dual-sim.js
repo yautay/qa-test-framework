@@ -1,7 +1,7 @@
 module.exports = {
     scenarios: [
         {
-            label: "komputronik-pl listings search-filter dual-sim html_cache",
+            label: "komputronik-pl listings search-filter dual-sim html_cache smoke",
             resource: "search-filter/1596/smartfony-z-dual-sim",
             selectors: [],
             delay: 500,

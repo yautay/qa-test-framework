@@ -6,7 +6,7 @@
 
     scenarios: [
       {
-        label: "komputronik-pl login-layer",
+        label: "komputronik-pl login-layer smoke",
         selectors: [layerLocators.loginLayer],
         selectorExpansion: false,
         delay: 500,

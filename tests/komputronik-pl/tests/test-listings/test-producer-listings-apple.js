@@ -1,7 +1,7 @@
 module.exports = {
     scenarios: [
         {
-            label: "komputronik-pl listings producer-listing apple html_cache",
+            label: "komputronik-pl listings producer-listing apple html_cache smoke",
             resource: "/producer/7/apple.html",
             selectors: [],
             delay: 500,

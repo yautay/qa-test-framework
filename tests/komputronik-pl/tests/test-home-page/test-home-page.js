@@ -5,7 +5,7 @@ module.exports = {
 
   scenarios: [
     {
-      label: "komputronik-pl home_page navigation_bar html_cache",
+      label: "komputronik-pl home_page navigation_bar html_cache smoke",
       selectors: [],
       delay: 500,
       misMatchThreshold: 1,
