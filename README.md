@@ -1,5 +1,13 @@
 # Uruchamianie testów wizualnych BackstopJS
 
+## SMOKE TESTS:
+Aby uruchomić testy z puli "smoke tests", należy uruchomić polecenie:
+
+```npm run config -- --filter="smoke" --outFile=smoke-tests-config --testHost="november.alfa" --referenceHost="zakwas.alfa"```
+
+a następnie postępować zgodnie z instrukcjami.
+
+
 ## Generowanie pliku konfiguracyjnego testów 
 Umożliwia wybór kanału sprzedaży, zakresu testów oraz dodatkowych opcji filtrowania scenariuszy oraz skonfigurowanie adresów testówek.
 
