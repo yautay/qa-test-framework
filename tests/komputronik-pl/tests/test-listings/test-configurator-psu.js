@@ -12,7 +12,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings configurator configurator-psu no_html_cache",
-            resource: "/advanced-configurator/power_supply?test=1",
+            resource: "/advanced-configurator/power_supply?a=0",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,

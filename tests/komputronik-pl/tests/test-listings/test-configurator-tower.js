@@ -12,7 +12,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings configurator configurator-tower no_html_cache",
-            resource: "/advanced-configurator/case?test=1",
+            resource: "/advanced-configurator/case?a=0",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,

@@ -12,7 +12,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings producer-category-listing apple no_html_cache",
-            resource: "/category/5022/laptopy,apple.html?test=1",
+            resource: "/category/5022/laptopy,apple.html?a=0",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,

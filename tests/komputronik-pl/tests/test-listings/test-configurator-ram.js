@@ -12,7 +12,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings configurator configurator-ram no_html_cache",
-            resource: "/advanced-configurator/dram_memory?test=1",
+            resource: "/advanced-configurator/dram_memory?a=0",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,
