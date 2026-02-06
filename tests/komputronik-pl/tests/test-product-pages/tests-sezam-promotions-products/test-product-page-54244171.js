@@ -13,7 +13,7 @@ module.exports = {
     },
     {
       label: 'komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244171',
-      resource: '/product/54244171?test=1',
+      resource: '/product/54244171?a=0',
       delay: 3000,
       misMatchThreshold: 1,
       requireSameDimensions: true,

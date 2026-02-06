@@ -16,7 +16,7 @@ module.exports = {
 
     {
       label: "komputronik-pl home_page navigation_bar no_html_cache",
-      resource: "/?test=1",
+      resource: "/?a=0",
       selectors: [],
       delay: 500,
       misMatchThreshold: 1,

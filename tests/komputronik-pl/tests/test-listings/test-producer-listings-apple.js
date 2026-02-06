@@ -12,7 +12,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings producer-listing apple no_html_cache",
-            resource: "/producer/7/apple.html?test=1",
+            resource: "/producer/7/apple.html?a=0",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,

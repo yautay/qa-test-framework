@@ -12,7 +12,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings configurator configurator-gpu no_html_cache",
-            resource: "/advanced-configurator/graphics_card?test=1",
+            resource: "/advanced-configurator/graphics_card?a=0",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,

@@ -12,7 +12,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings configurator configurator-motherboard no_html_cache",
-            resource: "/advanced-configurator/motherboard?test=1",
+            resource: "/advanced-configurator/motherboard?a=0",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,

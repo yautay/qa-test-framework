@@ -41,7 +41,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings product-listing pendrives no_html_cache",
-            resource: "category/686/pendrive.html?test=1",
+            resource: "category/686/pendrive.html?a=0",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,

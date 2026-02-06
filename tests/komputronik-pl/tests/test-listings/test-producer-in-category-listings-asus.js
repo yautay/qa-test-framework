@@ -13,7 +13,7 @@ module.exports = {
 
         {
             label: "komputronik-pl listings producer-category-listing asus no_html_cache",
-            resource: "/category/1251/monitory,asus.html?test=1",
+            resource: "/category/1251/monitory,asus.html?a=0",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,
