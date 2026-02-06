@@ -13,7 +13,7 @@ module.exports = {
 
         {
             label: "komputronik-pl listings product-listing phones no_html_cache",
-            resource: "/category/1596/telefony.html?test=1",
+            resource: "/category/1596/telefony.html?a=0",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,

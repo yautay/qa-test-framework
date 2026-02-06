@@ -13,7 +13,7 @@ module.exports = {
     },
     {
       label: 'komputronik-pl product-page tests-rwd-front-products no-html-cache 54244125',
-      resource: '/product/54244125?test=1',
+      resource: '/product/54244125?a=0',
       delay: 3000,
       misMatchThreshold: 1,
       requireSameDimensions: true,

@@ -31,7 +31,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings product-listing laptops no_html_cache",
-            resource: "/category/5022/laptopy.html?test=1",
+            resource: "/category/5022/laptopy.html?a=0",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,

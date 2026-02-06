@@ -12,7 +12,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings configurator configurator-main no_html_cache",
-            resource: "/advanced-configurator?test=1",
+            resource: "/advanced-configurator?a=0",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,

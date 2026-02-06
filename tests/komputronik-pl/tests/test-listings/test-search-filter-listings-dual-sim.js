@@ -12,7 +12,7 @@ module.exports = {
         },
         {
             label: "komputronik-pl listings search-filter dual-sim no_html_cache",
-            resource: "search-filter/1596/smartfony-z-dual-sim?test=1",
+            resource: "search-filter/1596/smartfony-z-dual-sim?a=0",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,

@@ -15,7 +15,7 @@ module.exports = {
     },
     {
       label: 'komputronik-pl product-page tests-demo-bugs no-html-cache 914916',
-      resource: '/product/914916?test=1',
+      resource: '/product/914916?a=0',
       delay: 10000,
       misMatchThreshold: 0.5,
       requireSameDimensions: true,

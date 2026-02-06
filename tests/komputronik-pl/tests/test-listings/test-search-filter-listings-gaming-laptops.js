@@ -13,7 +13,7 @@ module.exports = {
 
         {
             label: "komputronik-pl listings search-filter gaming no_html_cache",
-            resource: "search-filter/5022/laptopy-do-gier?test=1",
+            resource: "search-filter/5022/laptopy-do-gier?a=0",
             selectors: [],
             delay: 500,
             misMatchThreshold: 1,

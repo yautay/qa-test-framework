@@ -13,7 +13,7 @@ module.exports = {
     },
     {
       label: 'komputronik-pl product-page tests-price-component-products no-html-cache 500000511',
-      resource: '/product/500000511?test=1',
+      resource: '/product/500000511?a=0',
       delay: 3000,
       misMatchThreshold: 1,
       requireSameDimensions: true,
