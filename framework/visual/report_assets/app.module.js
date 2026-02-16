@@ -2,7 +2,9 @@ import { fmt } from "./format.js";
 import { createStore, filteredSorted, resetFilters } from "./store.js";
 import {
   createViewerState, ensureModal, openViewer,
-  getAvailableModes, getModeSrc, refreshSlots
+  getAvailableModes, getModeSrc, refreshSlots,
+  setPresentationMode, setZoomPreset, navigateRow,
+  setCursorPosition, toggleTag
 } from "./viewer.js";
 
 const { createApp } = window.Vue;
@@ -82,8 +84,8 @@ createApp({
               <th>Artifacts</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-for="r in rows" :key="r.scenario_id">
+            <tbody>
+             <tr v-for="(r, index) in rows" :key="r.scenario_id">
               <td class="mono">{{ r.scenario_id }}</td>
 
               <td class="small-col">
@@ -104,11 +106,11 @@ createApp({
 
               <td style="min-width: 430px;">
                 <div class="d-flex flex-wrap gap-2">
-                  <button v-if="r.baseline_path" class="btn btn-sm btn-outline-primary" @click="show(r,'ref')">ref</button>
-                  <button v-if="r.actual_path" class="btn btn-sm btn-outline-primary" @click="show(r,'test')">test</button>
-                  <button v-if="r.diff_path" class="btn btn-sm btn-outline-primary" @click="show(r,'diff')">pixel_diff</button>
-                  <button v-if="r.heatmap_path" class="btn btn-sm btn-outline-primary" @click="show(r,'lpips')">lpips</button>
-                  <button v-if="r.baseline_path && r.actual_path" class="btn btn-sm btn-outline-success" @click="show(r,'compare')">compare</button>
+                  <button v-if="r.baseline_path" class="btn btn-sm btn-outline-primary" @click="show(r,'ref', index)">ref</button>
+                  <button v-if="r.actual_path" class="btn btn-sm btn-outline-primary" @click="show(r,'test', index)">test</button>
+                  <button v-if="r.diff_path" class="btn btn-sm btn-outline-primary" @click="show(r,'diff', index)">pixel_diff</button>
+                  <button v-if="r.heatmap_path" class="btn btn-sm btn-outline-primary" @click="show(r,'lpips', index)">lpips</button>
+                  <button v-if="r.baseline_path && r.actual_path" class="btn btn-sm btn-outline-success" @click="show(r,'compare', index)">compare</button>
                 </div>
               </td>
             </tr>
@@ -125,7 +127,7 @@ createApp({
     <div class="modal fade" id="vrtModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-full">
         <div class="modal-content">
-          <div class="modal-header">
+          <div class="modal-header justify-content-between align-items-start">
             <div>
               <div class="mono fw-semibold">{{ viewer.modalTitle }}</div>
               <div class="text-muted small mono">{{ viewer.modalSubtitle }}</div>
@@ -133,40 +135,66 @@ createApp({
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
 
-          <div class="modal-body">
+          <div class="modal-body d-flex flex-column" ref="modalBody"
+               @mousemove="handleMouseMove"
+               @mouseleave="resetCursor">
 
-            <div class="d-flex flex-wrap gap-3 align-items-center mb-3">
-              <div class="d-flex align-items-center gap-2">
-                <span class="text-muted small">Zdjęć w wierszu:</span>
-                <div class="btn-group btn-group-sm">
-                  <button v-for="count in [1,2,3,4]" :key="count"
-                          class="btn"
-                          :class="viewer.columns===count ? 'btn-primary' : 'btn-outline-secondary'"
-                          @click="setColumns(count)">
-                    {{ count }}
-                  </button>
-                </div>
+            <div class="d-flex flex-wrap gap-2 align-items-center mb-3 toolbar">
+              <div class="btn-group btn-group-sm" role="group">
+                <button v-for="count in [1,2,3,4]" :key="count"
+                        type="button"
+                        class="btn"
+                        :class="viewer.columns===count ? 'btn-primary' : 'btn-outline-secondary'"
+                        @click="setColumns(count)">
+                  {{ count }}
+                </button>
               </div>
-              <div class="text-muted small mono ms-auto">Każdy slot wybiera REF/TEST/HEAT.</div>
+
+              <select class="form-select form-select-sm" v-model="viewer.presentationMode" @change="handlePresentation">
+                <option v-for="mode in modalModes" :key="mode.value" :value="mode.value" :disabled="!mode.available">
+                  {{ mode.label }}
+                </option>
+              </select>
+
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-secondary" @click="navigate(-1)">← K-A</button>
+                <button type="button" class="btn btn-outline-secondary" @click="navigate(1)">K-D →</button>
+              </div>
+
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn" :class="viewer.zoomPreset===130 ? 'btn-primary' : 'btn-outline-secondary'" @click="applyZoom(130)">> K-Q</button>
+                <button type="button" class="btn" :class="viewer.zoomPreset===160 ? 'btn-primary' : 'btn-outline-secondary'" @click="applyZoom(160)">O K-W</button>
+                <button type="button" class="btn" :class="viewer.zoomPreset===190 ? 'btn-primary' : 'btn-outline-secondary'" @click="applyZoom(190)">< K-E</button>
+              </div>
+
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn" :class="viewer.tags.bug ? 'btn-danger' : 'btn-outline-danger'" @click="tag('bug')">BUG! (K-S)</button>
+                <button type="button" class="btn" :class="viewer.tags.aso ? 'btn-warning text-dark' : 'btn-outline-warning text-dark'" @click="tag('aso')">ASO (K-C)</button>
+              </div>
+
+              <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" @click="closeModal">Exit (K-LSHIFT)</button>
             </div>
 
+            <div class="text-muted small mb-2">Keys: 1‑4 layout, A/D navigate, Q/W/E zoom, S/C tags, Shift = exit</div>
+
             <div class="flex-grow-1 overflow-auto pb-2">
-              <div class="d-grid gap-3" :style="gridStyle">
-                <div v-for="slot in viewer.slots" :key="slot.id" class="card h-100 shadow-sm">
-                  <div class="card-body d-flex flex-column gap-2">
-                    <div class="d-flex gap-2 align-items-center justify-content-between">
-                      <div class="mono small text-muted">Slot {{ slot.id }}</div>
-                      <select class="form-select form-select-sm w-auto" v-model="slot.mode">
-                        <option v-for="mode in modalModes" :key="mode.value" :value="mode.value" :disabled="!mode.available">
-                          {{ mode.label }}
-                        </option>
-                      </select>
+              <div class="slot-grid" :style="gridStyle">
+                <div v-for="slot in viewer.slots" :key="slot.id" class="slot-card">
+                  <div class="slot-header d-flex justify-content-between align-items-center">
+                    <div class="mono small">Slot {{ slot.id }}</div>
+                    <div class="d-flex gap-1">
+                      <span v-if="viewer.tags.bug" class="badge bg-danger">BUG</span>
+                      <span v-if="viewer.tags.aso" class="badge bg-warning text-dark">ASO</span>
                     </div>
-                    <div class="border rounded bg-white flex-grow-1 position-relative overflow-hidden" style="min-height: 210px;">
-                      <img v-if="slotImage(slot)" :src="slotImage(slot)" class="d-block w-100 h-100" style="object-fit: contain;" />
-                      <div v-else class="text-muted small text-center position-absolute top-50 start-50 translate-middle">
-                        Brak obrazu dla {{ modeLabel(slot.mode) || 'wybranego rodzaju' }}
-                      </div>
+                  </div>
+                  <div class="slot-divider"></div>
+                  <div class="slot-media">
+                    <img v-if="slotImage(slot)" :src="slotImage(slot)"
+                         class="w-100 h-100"
+                         :style="imageStyle"
+                         style="object-fit: contain;" />
+                    <div v-else class="text-muted small text-center position-absolute top-50 start-50 translate-middle">
+                      Brak obrazu dla {{ viewer.presentationMode }}
                     </div>
                   </div>
                 </div>
@@ -198,34 +226,96 @@ createApp({
       const columns = requested === 4 ? 2 : requested;
       return {
         gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+        alignContent: requested === 4 ? "center" : "start",
         gridAutoRows: "1fr",
       };
+    },
+    zoomScale() {
+      return (this.viewer.zoomPreset || 100) / 100;
     }
   },
   methods: {
     fmt,
     reset() { resetFilters(this.store); },
 
-    show(row, mode) {
-      openViewer(this.viewer, row, mode);
+    show(row, mode, index = null) {
+      const fallbackMode = this.viewer.presentationMode || "test";
+      const normalizedMode = mode === "compare" ? fallbackMode : (mode || fallbackMode);
+      setPresentationMode(this.viewer, normalizedMode);
+      openViewer(this.viewer, row, normalizedMode, index);
       ensureModal(this.viewer, "vrtModal").show();
     },
-    slotImage(slot) {
-      return getModeSrc(this.viewer, slot.mode);
+    slotImage(_slot) {
+      return getModeSrc(this.viewer, this.viewer.presentationMode) || this.viewer.modalImgSrc;
     },
-    modeLabel(value) {
-      return this.modalModes.find((mode) => mode.value === value)?.label;
+    imageStyle() {
+      const scale = this.zoomScale;
+      return {
+        transform: `scale(${scale})`,
+        transformOrigin: `${this.viewer.cursorX}% ${this.viewer.cursorY}%`,
+      };
+    },
+    handlePresentation(evt) {
+      setPresentationMode(this.viewer, evt.target.value);
     },
     setColumns(value) {
       this.viewer.columns = value;
       refreshSlots(this.viewer, value);
     },
     handleKeydown(evt) {
-      if (evt.key !== "Escape") return;
       const modalEl = document.getElementById("vrtModal");
-      if (modalEl && modalEl.classList.contains("show")) {
+      const isOpen = modalEl && modalEl.classList.contains("show");
+      if (!isOpen) return;
+
+      const k = evt.key;
+
+      if (["1","2","3","4"].includes(k)) {
+        this.setColumns(Number(k));
+      } else if (k.toUpperCase() === "A") {
+        evt.preventDefault();
+        this.navigate(-1);
+      } else if (k.toUpperCase() === "D") {
+        evt.preventDefault();
+        this.navigate(1);
+      } else if (k.toUpperCase() === "Q") {
+        this.applyZoom(130);
+      } else if (k.toUpperCase() === "W") {
+        this.applyZoom(160);
+      } else if (k.toUpperCase() === "E") {
+        this.applyZoom(190);
+      } else if (k.toUpperCase() === "S") {
+        this.tag("bug");
+      } else if (k.toUpperCase() === "C") {
+        this.tag("aso");
+      } else if (evt.code === "ShiftLeft") {
+        this.closeModal();
+      } else if (k === "Escape") {
         this.viewer.modal?.hide();
       }
+    },
+    applyZoom(value) {
+      setZoomPreset(this.viewer, value);
+    },
+    navigate(offset) {
+      const next = navigateRow(this.viewer, this.rows, offset);
+      if (next) {
+        this.show(next.row, this.viewer.presentationMode, next.index);
+      }
+    },
+    tag(type) {
+      toggleTag(this.viewer, this.viewer.modalRow, type);
+    },
+    closeModal() {
+      this.viewer.modal?.hide();
+    },
+    handleMouseMove(evt) {
+      const body = this.$refs.modalBody;
+      if (!body) return;
+      setCursorPosition(this.viewer, body.getBoundingClientRect(), evt);
+    },
+    resetCursor() {
+      this.viewer.cursorX = 50;
+      this.viewer.cursorY = 50;
     },
   },
   mounted() {

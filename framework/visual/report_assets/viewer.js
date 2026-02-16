@@ -6,6 +6,8 @@ const MODE_META = {
 };
 const MODE_ORDER = ["ref", "test", "diff", "lpips"];
 const DEFAULT_SLOT_COUNT = 3;
+const DEFAULT_ZOOM = 160;
+const ZOOM_PRESETS = [130, 160, 190];
 
 export function createViewerState() {
   return {
@@ -27,6 +29,13 @@ export function createViewerState() {
     modalLpipsSrc: "", // u Ciebie LPIPS = heatmap_path
 
     columns: DEFAULT_SLOT_COUNT,
+    presentationMode: "test",
+    zoomPreset: DEFAULT_ZOOM,
+    cursorX: 50,
+    cursorY: 50,
+    tags: { bug: false, aso: false },
+    tagLog: {},
+    currentIndex: null,
     slots: [],
 
     // do zoom pod kursorem
@@ -51,7 +60,7 @@ export function ensureModal(viewer, modalElementId = "vrtModal") {
   return viewer.modal;
 }
 
-export function openViewer(viewer, row, mode) {
+export function openViewer(viewer, row, mode, index = null) {
   // reset
   viewer.modalRow = row;
 
@@ -78,6 +87,7 @@ export function openViewer(viewer, row, mode) {
 
   // ustaw finalny tryb
   viewer.viewerMode = mode;
+  viewer.presentationMode = viewer.presentationMode || mode;
 
   // wybór obrazu dla trybów single
   if (mode === "ref") viewer.modalImgSrc = viewer.modalRefSrc;
@@ -87,6 +97,11 @@ export function openViewer(viewer, row, mode) {
   else viewer.modalImgSrc = ""; // compare
 
   refreshSlots(viewer);
+  viewer.currentIndex = index;
+  if (row) {
+    const key = getRowTagKey(row);
+    viewer.tags = viewer.tagLog[key] ? { ...viewer.tagLog[key] } : { bug: false, aso: false };
+  }
 }
 
 export function setMode(viewer, mode) {
@@ -173,14 +188,8 @@ function getFirstAvailableMode(viewer, fallbackMode) {
 }
 
 function buildSlots(viewer, slotCount = viewer.columns || DEFAULT_SLOT_COUNT) {
-  const availableModes = getModeList(viewer).filter((m) => m.available);
-  const fallbackMode = getFirstAvailableMode(viewer, viewer.viewerMode);
-  const modeValues = availableModes.length ? availableModes.map((m) => m.value) : [fallbackMode];
   const count = Math.max(1, slotCount);
-  return Array.from({ length: count }, (_, idx) => ({
-    id: idx + 1,
-    mode: modeValues[idx % modeValues.length] || fallbackMode,
-  }));
+  return Array.from({ length: count }, (_, idx) => ({ id: idx + 1 }));
 }
 
 export function getAvailableModes(viewer) {
@@ -189,4 +198,41 @@ export function getAvailableModes(viewer) {
 
 export function refreshSlots(viewer, slotCount) {
   viewer.slots = buildSlots(viewer, slotCount);
+}
+
+export function setPresentationMode(viewer, mode) {
+  if (!MODE_META[mode]) return;
+  viewer.presentationMode = mode;
+  viewer.viewerMode = mode;
+  refreshSlots(viewer);
+}
+
+export function setZoomPreset(viewer, value) {
+  if (!ZOOM_PRESETS.includes(value)) return;
+  viewer.zoomPreset = value;
+}
+
+export function navigateRow(viewer, rows, offset) {
+  if (!Array.isArray(rows) || rows.length === 0) return null;
+  if (viewer.currentIndex === null) return null;
+  const nextIndex = viewer.currentIndex + offset;
+  if (nextIndex < 0 || nextIndex >= rows.length) return null;
+  return { row: rows[nextIndex], index: nextIndex };
+}
+
+export function setCursorPosition(viewer, bounds, evt) {
+  if (!bounds || !evt) return;
+  viewer.cursorX = Math.min(100, Math.max(0, ((evt.clientX - bounds.left) / bounds.width) * 100));
+  viewer.cursorY = Math.min(100, Math.max(0, ((evt.clientY - bounds.top) / bounds.height) * 100));
+}
+
+function getRowTagKey(row) {
+  return `${row.scenario_id || ""}-${row.message || ""}`;
+}
+
+export function toggleTag(viewer, row, tagKey) {
+  if (!row) return;
+  viewer.tags[tagKey] = !viewer.tags[tagKey];
+  const key = getRowTagKey(row);
+  viewer.tagLog[key] = { ...viewer.tags };
 }
