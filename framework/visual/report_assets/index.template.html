@@ -64,6 +64,35 @@
     .slot-media img {
       transition: transform 0.15s ease;
     }
+    .prompt-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    .prompt-card {
+      background: #fff;
+      padding: 1.25rem 1.5rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 20px 45px rgba(0,0,0,0.2);
+      text-align: center;
+      max-width: 360px;
+      width: 100%;
+    }
+    .prompt-title {
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .prompt-text {
+      margin-bottom: 0.5rem;
+    }
+    .prompt-hints {
+      color: #6c757d;
+      font-size: 0.85rem;
+    }
   </style>
 
   <script>

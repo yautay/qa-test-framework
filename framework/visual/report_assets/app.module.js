@@ -157,27 +157,28 @@ createApp({
               </select>
 
               <div class="btn-group btn-group-sm" role="group">
-                <button type="button" class="btn btn-outline-secondary" @click="navigate(-1)">← K-A</button>
-                <button type="button" class="btn btn-outline-secondary" @click="navigate(1)">K-D →</button>
+                <button type="button" class="btn" :class="keyHeld.a ? 'btn-primary' : 'btn-outline-secondary'" @mousedown="keyHeld.a=true" @mouseup="keyHeld.a=false" @click="navigate(-1)">← K-A</button>
+                <button type="button" class="btn" :class="keyHeld.d ? 'btn-primary' : 'btn-outline-secondary'" @mousedown="keyHeld.d=true" @mouseup="keyHeld.d=false" @click="navigate(1)">K-D →</button>
               </div>
 
               <div class="btn-group btn-group-sm" role="group">
-                <button type="button" class="btn" :class="viewer.zoomPreset===130 ? 'btn-primary' : 'btn-outline-secondary'" @click="applyZoom(130)">> K-Q</button>
-                <button type="button" class="btn" :class="viewer.zoomPreset===160 ? 'btn-primary' : 'btn-outline-secondary'" @click="applyZoom(160)">O K-W</button>
-                <button type="button" class="btn" :class="viewer.zoomPreset===190 ? 'btn-primary' : 'btn-outline-secondary'" @click="applyZoom(190)">< K-E</button>
+                <button type="button" class="btn" :class="zoomClass(130)" @mousedown="startZoomHold(130)" @mouseup="stopZoomHold" @mouseleave="stopZoomHold">> K-Q</button>
+                <button type="button" class="btn" :class="middleZoomClass()" @mousedown="startZoomHold(160)" @mouseup="stopZoomHold" @mouseleave="stopZoomHold">O</button>
+                <button type="button" class="btn" :class="zoomClass(190)" @mousedown="startZoomHold(190)" @mouseup="stopZoomHold" @mouseleave="stopZoomHold">< K-E</button>
               </div>
+              <button type="button" class="btn ms-1" :class="[superZoomActive ? 'btn-primary' : 'btn-outline-secondary']" @mousedown="activateSuperZoom" @mouseup="deactivateSuperZoom" @mouseleave="deactivateSuperZoom">🔍 K-W</button>
 
-              <div class="btn-group btn-group-sm" role="group">
-                <button type="button" class="btn" :class="viewer.tags.bug ? 'btn-danger' : 'btn-outline-danger'" @click="tag('bug')">BUG! (K-S)</button>
-                <button type="button" class="btn" :class="viewer.tags.aso ? 'btn-warning text-dark' : 'btn-outline-warning text-dark'" @click="tag('aso')">ASO (K-C)</button>
-              </div>
+               <div class="btn-group btn-group-sm" role="group">
+                 <button v-if="!viewer.tags.bug" type="button" class="btn btn-outline-danger" @click="promptTag('bug')">BUG! (K-S)</button>
+                 <button v-if="!viewer.tags.aso" type="button" class="btn btn-outline-warning text-dark" @click="promptTag('aso')">ASO (K-C)</button>
+               </div>
 
               <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" @click="closeModal">Exit (K-LSHIFT)</button>
             </div>
 
-            <div class="text-muted small mb-2">Keys: 1‑4 layout, A/D navigate, Q/W/E zoom, S/C tags, Shift = exit</div>
+              <div class="text-muted small mb-2">Keys: 1‑4 layout, A/D navigate, hold Q/E zoom, hold W super zoom, S/C tags, Shift = exit</div>
 
-            <div class="flex-grow-1 overflow-auto pb-2">
+            <div class="flex-grow-1 overflow-auto pb-2 position-relative">
               <div class="slot-grid" :style="gridStyle">
                 <div v-for="slot in viewer.slots" :key="slot.id" class="slot-card">
                   <div class="slot-header d-flex justify-content-between align-items-center">
@@ -199,6 +200,14 @@ createApp({
                   </div>
                 </div>
               </div>
+
+              <div v-if="prompt.active" class="prompt-overlay">
+                <div class="prompt-card">
+                  <div class="prompt-title">Potwierdzenie</div>
+                  <div class="prompt-text">Czy na pewno oznaczyć to jako {{ prompt.type === 'bug' ? 'BUG' : 'ASO' }}?</div>
+                  <div class="prompt-hints">Space = TAK &nbsp;•&nbsp; Shift = NIE</div>
+                </div>
+              </div>
             </div>
 
           </div>
@@ -212,6 +221,10 @@ createApp({
     return {
       store: createStore(),
       viewer: createViewerState(),
+      activeZoomValue: null,
+      superZoomActive: false,
+      keyHeld: { a: false, d: false, q: false, e: false, w: false, s: false, c: false },
+      prompt: { active: false, type: null },
     };
   },
   computed: {
@@ -231,7 +244,8 @@ createApp({
       };
     },
     zoomScale() {
-      return (this.viewer.zoomPreset || 100) / 100;
+      if (this.superZoomActive) return 3;
+      return (this.activeZoomValue || this.viewer.zoomPreset || 160) / 100;
     }
   },
   methods: {
@@ -267,34 +281,86 @@ createApp({
       const isOpen = modalEl && modalEl.classList.contains("show");
       if (!isOpen) return;
 
+      if (this.prompt.active) {
+        if (evt.code === "Space") {
+          this.confirmPrompt();
+        } else if (evt.code === "ShiftLeft") {
+          this.cancelPrompt();
+        }
+        return;
+      }
+
       const k = evt.key;
 
       if (["1","2","3","4"].includes(k)) {
         this.setColumns(Number(k));
       } else if (k.toUpperCase() === "A") {
         evt.preventDefault();
+        this.keyHeld.a = true;
         this.navigate(-1);
       } else if (k.toUpperCase() === "D") {
         evt.preventDefault();
+        this.keyHeld.d = true;
         this.navigate(1);
       } else if (k.toUpperCase() === "Q") {
-        this.applyZoom(130);
-      } else if (k.toUpperCase() === "W") {
-        this.applyZoom(160);
+        this.keyHeld.q = true;
+        this.startZoomHold(130);
       } else if (k.toUpperCase() === "E") {
-        this.applyZoom(190);
+        this.keyHeld.e = true;
+        this.startZoomHold(190);
+      } else if (k.toUpperCase() === "W") {
+        if (!this.superZoomActive) {
+          this.keyHeld.w = true;
+          this.activateSuperZoom();
+        }
       } else if (k.toUpperCase() === "S") {
-        this.tag("bug");
+        this.promptTag("bug");
       } else if (k.toUpperCase() === "C") {
-        this.tag("aso");
+        this.promptTag("aso");
       } else if (evt.code === "ShiftLeft") {
         this.closeModal();
       } else if (k === "Escape") {
         this.viewer.modal?.hide();
       }
     },
-    applyZoom(value) {
+    handleKeyup(evt) {
+      const k = evt.key;
+      if (k.toUpperCase() === "A") this.keyHeld.a = false;
+      if (k.toUpperCase() === "D") this.keyHeld.d = false;
+      if (k.toUpperCase() === "Q") {
+        this.keyHeld.q = false;
+        this.stopZoomHold();
+      }
+      if (k.toUpperCase() === "E") {
+        this.keyHeld.e = false;
+        this.stopZoomHold();
+      }
+      if (k.toUpperCase() === "W") {
+        this.keyHeld.w = false;
+        this.deactivateSuperZoom();
+      }
+    },
+    startZoomHold(value) {
+      this.activeZoomValue = value;
       setZoomPreset(this.viewer, value);
+    },
+    stopZoomHold() {
+      this.activeZoomValue = null;
+      setZoomPreset(this.viewer, 160);
+    },
+    zoomClass(value) {
+      return this.activeZoomValue === value ? 'btn-primary' : 'btn-outline-secondary';
+    },
+    middleZoomClass() {
+      const active = this.activeZoomValue === 160;
+      const fallback = !this.activeZoomValue && !this.superZoomActive;
+      return (active || fallback) ? 'btn-primary' : 'btn-outline-secondary';
+    },
+    activateSuperZoom() {
+      this.superZoomActive = true;
+    },
+    deactivateSuperZoom() {
+      this.superZoomActive = false;
     },
     navigate(offset) {
       const next = navigateRow(this.viewer, this.rows, offset);
@@ -302,11 +368,24 @@ createApp({
         this.show(next.row, this.viewer.presentationMode, next.index);
       }
     },
-    tag(type) {
-      toggleTag(this.viewer, this.viewer.modalRow, type);
+    promptTag(type) {
+      if (this.prompt.active) return;
+      this.prompt = { active: true, type };
+    },
+    confirmPrompt() {
+      if (!this.prompt.active) return;
+      toggleTag(this.viewer, this.viewer.modalRow, this.prompt.type);
+      this.prompt = { active: false, type: null };
+    },
+    cancelPrompt() {
+      if (!this.prompt.active) return;
+      this.prompt = { active: false, type: null };
     },
     closeModal() {
       this.viewer.modal?.hide();
+      this.deactivateSuperZoom();
+      this.stopZoomHold();
+      this.cancelPrompt();
     },
     handleMouseMove(evt) {
       const body = this.$refs.modalBody;
@@ -320,8 +399,10 @@ createApp({
   },
   mounted() {
     window.addEventListener("keydown", this.handleKeydown);
+    window.addEventListener("keyup", this.handleKeyup);
   },
   beforeUnmount() {
     window.removeEventListener("keydown", this.handleKeydown);
+    window.removeEventListener("keyup", this.handleKeyup);
   }
 }).mount("#app");
