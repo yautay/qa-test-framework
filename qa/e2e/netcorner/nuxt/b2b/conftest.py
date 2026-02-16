@@ -1,11 +1,15 @@
-from __future__ import annotations
-
 from dataclasses import replace
-
 import pytest
-
 from framework.env import RuntimeEnv
-from qa.auxiliary.url_netcorner_b2b import resolve_b2b_nuxt_base_url
+from framework.url_resolver.url_resolver import url_resolver, EnvUrls
+
+resolve_pl = url_resolver(
+    EnvUrls(
+        prod="https://bi-to-bi.pl",
+        demo="https://sklep-bi-to-bi-demo.komputronik.dev",
+        test_template="https://bi-to-bi-{server}.netcorner.pl",
+    )
+)
 
 
 @pytest.hookimpl(trylast=True)
@@ -17,11 +21,9 @@ def pytest_configure(config: pytest.Config) -> None:
     if (env.base_url or "").strip():
         return
 
-    resolved = resolve_b2b_nuxt_base_url(env.server_type, env.server_name)
-    if not resolved:
-        pytest.exit(
-            "base_url is empty. Provide --base-url or valid --server-type/--server-name",
-            returncode=2,
-        )
+    try:
+        resolved = resolve_pl(env.server_type, env.server_name).rstrip("/")
+    except ValueError as e:
+        raise pytest.UsageError(f"Cannot resolve base_url for env={env!r}: {e}") from e
 
     config._runtime_env = replace(env, base_url=resolved)

@@ -20,13 +20,13 @@ class ReceiverProviderFactory:
 
         if kind == DeliveryKind.STOREHOUSE.value:
             return PickupReceiverProvider(self.checkout_page)
-        if kind == "inpost":
+        if kind == DeliveryKind.INPOST.value:
             return InpostReceiverProvider(self.checkout_page)
-        if kind == "dhlpop":
+        if kind == DeliveryKind.DHLPOP.value:
             return DhlPopReceiverProvider(self.checkout_page)
-        if kind == "courier_with_lift":
+        if kind == DeliveryKind.COURIER_BIG_SIZE_WITH_lIFT.value:
             return LiftReceiverProvider(self.checkout_page, with_lift=True)
-        if kind == "courier_without_lift":
+        if kind == DeliveryKind.COURIER_BIG_SIZE_WITHOUT_lIFT.value:
             return LiftReceiverProvider(self.checkout_page, with_lift=False)
         if kind == DeliveryKind.DIGITAL.value:
             return DigitalReceiverProvider(self.checkout_page)

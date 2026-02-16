@@ -12,8 +12,13 @@ class OrderAs(StrEnum):
 
 class DeliveryKind(StrEnum):
     COURIER = "courier"
+    COURIER_BIG_SIZE_WITH_lIFT = "courier_big_size_with_lift"
+    COURIER_BIG_SIZE_WITHOUT_lIFT = "courier_big_size_without_lift"
     STOREHOUSE = "storehouse"
     DIGITAL = "digital"
+    INPOST = "inpost"
+    DHLPOP = "dhlpop"
+
 
 
 class PaymentKind(StrEnum):

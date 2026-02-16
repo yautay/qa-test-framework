@@ -40,10 +40,10 @@ class _CheckoutPageSpy:
         (DeliveryKind.COURIER, CourierReceiverProvider),
         (DeliveryKind.STOREHOUSE, PickupReceiverProvider),
         (DeliveryKind.DIGITAL, DigitalReceiverProvider),
-        ("inpost", InpostReceiverProvider),
-        ("dhlpop", DhlPopReceiverProvider),
-        ("courier_with_lift", LiftReceiverProvider),
-        ("courier_without_lift", LiftReceiverProvider),
+        (DeliveryKind.INPOST, InpostReceiverProvider),
+        (DeliveryKind.DHLPOP, DhlPopReceiverProvider),
+        (DeliveryKind.COURIER_BIG_SIZE_WITH_lIFT, LiftReceiverProvider),
+        (DeliveryKind.COURIER_BIG_SIZE_WITHOUT_lIFT, LiftReceiverProvider),
     ],
 )
 def test_receiver_factory_builds_expected_provider(delivery_kind, expected_type):
