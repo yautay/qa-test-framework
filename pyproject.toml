@@ -28,19 +28,19 @@ dev = [
 packages = { find = { where = ["."], include = ["qa*", "framework*"], exclude = ["tools*", ".venv*", ".python*", ".tmp*"] } }
 
 [tool.black]
-line-length = 100
+line-length = 120
 target-version = ["py311"]
 include = "\\.pyi?$"
 exclude = '''
 /(
-    legacy
+  .*legacy.*
 )/
 '''
 
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py311"
-exclude = ["legacy"]
+exclude = ["**/*legacy*/**"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "N", "W"]
@@ -53,4 +53,4 @@ warn_unused_configs = true
 ignore_missing_imports = true
 check_untyped_defs = true
 no_implicit_optional = true
-exclude = ["legacy/"]
+exclude = '.*legacy.*'

@@ -1,22 +1,22 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 
-class OrderAs(str, Enum):
+class OrderAs(StrEnum):
     REGISTERED = "registered"
     LOGGED_IN_CART = "logged_in_cart"
     NON_REGISTERED = "non_registered"
 
 
-class DeliveryKind(str, Enum):
+class DeliveryKind(StrEnum):
     COURIER = "courier"
     STOREHOUSE = "storehouse"
     DIGITAL = "digital"
 
 
-class PaymentKind(str, Enum):
+class PaymentKind(StrEnum):
     ELECTRONIC_TRANSFER = "electronic_transfer"
     CASH = "cash"
 
