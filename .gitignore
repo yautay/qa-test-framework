@@ -1,0 +1,20 @@
+.pytest_cache
+.idea
+__pycache__
+Screenshots
+geckodriver.log
+*.png
+artifacts/
+!tools/artifacts/
+!tools/artifacts/*.py
+venv
+
+#ignore dla build_window
+*DS_STORE
+history.yml
+.env
+log/
+logs/*
+/tools/InsertsGenerator/komercja/nexterio/data/provision*
+/tools/InsertsGenerator/komputronik/data/
+/.venv/
