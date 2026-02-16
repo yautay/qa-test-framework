@@ -156,16 +156,30 @@ createApp({
                 </option>
               </select>
 
-              <div class="btn-group btn-group-sm" role="group">
-                <button type="button" class="btn" :class="keyHeld.a ? 'btn-primary' : 'btn-outline-secondary'" @mousedown="keyHeld.a=true" @mouseup="keyHeld.a=false" @click="navigate(-1)">← K-A</button>
-                <button type="button" class="btn" :class="keyHeld.d ? 'btn-primary' : 'btn-outline-secondary'" @mousedown="keyHeld.d=true" @mouseup="keyHeld.d=false" @click="navigate(1)">K-D →</button>
-              </div>
+                <div class="btn-group btn-group-sm" role="group">
+                  <button type="button" class="btn" :class="keyHeld.a ? 'btn-primary' : 'btn-outline-secondary'" @mousedown="keyHeld.a=true" @mouseup="keyHeld.a=false" @click="navigate(-1)">← K-A</button>
+                  <button type="button" class="btn" :class="keyHeld.d ? 'btn-primary' : 'btn-outline-secondary'" @mousedown="keyHeld.d=true" @mouseup="keyHeld.d=false" @click="navigate(1)">K-D →</button>
+                </div>
 
-              <div class="btn-group btn-group-sm" role="group">
-                <button type="button" class="btn" :class="zoomClass(30)" @mousedown.prevent="handleZoomMouse(30,$event)" @mouseup.prevent="clearZoomMouse" @mouseleave.prevent="clearZoomMouse">> K-Q</button>
-                <button type="button" class="btn" :class="middleZoomClass()" @click="clearZoomMouse">O</button>
-                <button type="button" class="btn" :class="zoomClass(90)" @mousedown.prevent="handleZoomMouse(90,$event)" @mouseup.prevent="clearZoomMouse" @mouseleave.prevent="clearZoomMouse">< K-E</button>
-              </div>
+                <div class="btn-group btn-group-sm" role="group">
+                  <button type="button"
+                          class="btn"
+                          :class="zoomClass(30,'q')"
+                          @pointerdown.prevent="handleZoomPress(30,'q')"
+                          @pointerup.prevent="releaseZoom('q')"
+                          @pointerleave.prevent="releaseZoom('q')">
+                    > K-Q
+                  </button>
+                  <button type="button" class="btn" :class="middleZoomClass()" @click="resetDelta">O</button>
+                  <button type="button"
+                          class="btn"
+                          :class="zoomClass(90,'e')"
+                          @pointerdown.prevent="handleZoomPress(90,'e')"
+                          @pointerup.prevent="releaseZoom('e')"
+                          @pointerleave.prevent="releaseZoom('e')">
+                    < K-E
+                  </button>
+                </div>
               <div class="btn-group btn-group-sm fit-group" role="group">
                 <button v-for="fit in fitModes" :key="fit.key" type="button"
                         class="btn"
@@ -174,7 +188,12 @@ createApp({
                   {{ fit.label }}
                 </button>
               </div>
-              <button type="button" :class="superZoomActive ? 'btn btn-primary ms-1' : 'btn btn-outline-secondary ms-1'" @mousedown.prevent="activateSuperZoom" @mouseup.prevent="deactivateSuperZoom" @mouseleave.prevent="deactivateSuperZoom">🔍 K-W</button>
+               <button type="button" :class="superZoomActive ? 'btn btn-primary ms-1' : 'btn btn-outline-secondary ms-1'"
+                       @pointerdown.prevent="handleSuperZoomPointerDown"
+                       @pointerup.prevent="handleSuperZoomPointerUp"
+                       @pointerleave.prevent="handleSuperZoomPointerUp">
+                 🔍 K-W
+               </button>
 
                <div class="btn-group btn-group-sm" role="group">
                  <button v-if="!viewer.tags.bug" type="button" class="btn btn-outline-danger" @click="promptTag('bug')">BUG! (K-S)</button>
@@ -390,18 +409,37 @@ createApp({
       this.setZoomDelta(this.storedDelta);
       this.storedDelta = 0;
     },
-    zoomClass(value) {
-      return this.zoomDelta === value && !this.superZoomActive ? 'btn-primary' : 'btn-outline-secondary';
+    zoomClass(value, key) {
+      const keyActive = key ? this.keyHeld[key] : false;
+      const presetActive = this.zoomDelta === value && !this.superZoomActive;
+      return keyActive || presetActive ? 'btn-primary' : 'btn-outline-secondary';
     },
     middleZoomClass() {
       return this.zoomDelta === 0 && !this.superZoomActive ? 'btn-primary' : 'btn-outline-secondary';
     },
-    handleZoomMouse(value, evt) {
-      if (evt.button !== 0) return;
+    handleZoomPress(value, key) {
+      if (key) {
+        this.keyHeld[key] = true;
+      }
       this.startDelta(value);
     },
-    clearZoomMouse() {
+    releaseZoom(key) {
+      if (key) {
+        this.keyHeld[key] = false;
+      }
       this.resetDelta();
+    },
+    handleSuperZoomPointerDown() {
+      if (!this.superZoomActive) {
+        this.keyHeld.w = true;
+        this.activateSuperZoom();
+      }
+    },
+    handleSuperZoomPointerUp() {
+      if (this.superZoomActive) {
+        this.keyHeld.w = false;
+        this.deactivateSuperZoom();
+      }
     },
     activateSuperZoom() {
       this.superZoomActive = true;
