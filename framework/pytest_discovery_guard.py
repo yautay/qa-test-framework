@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Guard that verifies pytest collects a minimum number of tests before running."""
+
 import os
 import re
 import subprocess
@@ -7,6 +9,8 @@ import sys
 
 
 def main() -> int:
+    """Check pytest collection count and exit non-zero when expectations fail."""
+
     min_expected = int(os.getenv("MIN_EXPECTED_TESTS", "1"))
     result = subprocess.run(
         [sys.executable, "-m", "pytest", "--collect-only", "-q"],

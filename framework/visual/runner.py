@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Driver for executing visual regression scenarios and emitting comparison results."""
+
 import base64
 from pathlib import Path
 from typing import Any
@@ -14,6 +16,8 @@ from framework.visual.perceptual_client import PerceptualClient, PerceptualServi
 
 
 class VisualRunner:
+    """Capture actual screenshots, compare to baselines, and return VisualResult."""
+
     def __init__(self, env: RuntimeEnv, repo_root: Path, output_dir: Path) -> None:
         self._env = env
         self._store = BaselineStore(env, repo_root)
@@ -28,9 +32,13 @@ class VisualRunner:
 
     @property
     def perceptual_client(self) -> PerceptualClient:
+        """Expose the latent perceptual client for custom checks or tests."""
+
         return self._perceptual
 
     def run(self, page: Page, scenario: VisualScenario, viewport: str, approve: bool) -> VisualResult:
+        """Execute the scenario, compare captures, and either approve or evaluate."""
+
         self._navigate(page, scenario)
         actual_path = self._actual_dir / f"{scenario.scenario_id}.png"
         self._capture(page, scenario, actual_path)
@@ -151,6 +159,8 @@ class VisualRunner:
         )
 
     def _navigate(self, page: Page, scenario: VisualScenario) -> None:
+        """Navigate to the scenario URL and execute all preparatory steps."""
+
         if scenario.target_url:
             if scenario.target_url.startswith("http://") or scenario.target_url.startswith("https://"):
                 page.goto(scenario.target_url)
@@ -161,6 +171,8 @@ class VisualRunner:
             self._run_step(page, step.action, step.selector, step.value, step.timeout_ms, step.url)
 
     def _run_step(self, page: Page, action: str, selector: str, value: str, timeout_ms: int, url: str) -> None:
+        """Perform a single action specified in the scenario, such as click or fill."""
+
         if action == "click" and selector:
             page.locator(selector).first.click(timeout=timeout_ms)
             return
@@ -177,6 +189,8 @@ class VisualRunner:
             page.goto(url or value, timeout=timeout_ms)
 
     def _capture(self, page: Page, scenario: VisualScenario, output_path: Path) -> None:
+        """Capture the screenshot based on capture settings while masking selectors."""
+
         output_path.parent.mkdir(parents=True, exist_ok=True)
         cleanup_js = _inject_masks(page, list(scenario.mask.selectors), scenario.mask.color)
         try:
@@ -189,6 +203,8 @@ class VisualRunner:
 
 
 def _inject_masks(page: Page, selectors: list[str], color: str) -> list[str]:
+    """Overlay the given selectors with translucent masks and return their DOM IDs."""
+
     if not selectors:
         return []
     script = """
@@ -226,6 +242,8 @@ def _inject_masks(page: Page, selectors: list[str], color: str) -> list[str]:
 
 
 def _remove_masks(page: Page, ids: list[str]) -> None:
+    """Clean up DOM masks that were injected for the capture."""
+
     if not ids:
         return
     script = """
@@ -251,6 +269,8 @@ def _evaluate(
     lpips_max: float,
     dists_max: float,
 ) -> tuple[str, str]:
+    """Assess thresholds and return the status/message tuple."""
+
     if mode == "pixel":
         if pixel_changed_ratio <= pixel_max:
             return "passed", "Pixel threshold passed"

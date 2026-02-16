@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Helpers for trimming fail videos with ffmpeg and keeping retention size."""
+
 import shutil
 import subprocess
 from pathlib import Path
@@ -8,6 +10,8 @@ from loguru import logger
 
 
 def ensure_min_fail_video(raw_video: Path, target_video: Path, min_seconds: int) -> Path:
+    """Trim the raw sample to at least `min_seconds`, or keep the full capture if unavailable."""
+
     ffmpeg_bin = shutil.which("ffmpeg")
     if ffmpeg_bin is None:
         logger.warning("ffmpeg not found; preserving full video")

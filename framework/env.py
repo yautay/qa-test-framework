@@ -1,18 +1,26 @@
 from __future__ import annotations
+
+"""Build a frozen RuntimeEnv using CLI settings, env vars, and dotenv files."""
+
 import os
 from dataclasses import dataclass
 from pathlib import Path
+
 import settings_cli
 import settings
 
 
 def _as_bool(value: str | None, default: bool) -> bool:
+    """Interpret common truthy/falsey tokens and fall back to the provided default."""
+
     if value is None:
         return default
     return value.strip() in {"1", "true", "True", "yes", "on"}
 
 
 def _load_dotenv_file(env_file: str = ".env") -> dict[str, str]:
+    """Parse a dotenv-style file into a string dictionary, ignoring comments."""
+
     path = Path(env_file)
     if not path.is_file():
         return {}
@@ -23,7 +31,7 @@ def _load_dotenv_file(env_file: str = ".env") -> dict[str, str]:
         if not line or line.startswith("#"):
             continue
         if line.startswith("export "):
-            line = line[len("export "):].strip()
+            line = line[len("export ") :].strip()
         if "=" not in line:
             continue
         key, value = line.split("=", 1)
@@ -36,6 +44,8 @@ def _load_dotenv_file(env_file: str = ".env") -> dict[str, str]:
 
 @dataclass(frozen=True)
 class RuntimeEnv:
+    """All runtime knobs that steer browser sessions, reporting, and visual checks."""
+
     browser: str
     is_grid_available: bool
     grid_ws_endpoint: str
@@ -91,6 +101,8 @@ class RuntimeEnv:
 
 
 def load_env() -> RuntimeEnv:
+    """Construct RuntimeEnv by combining os.environ, dotenv, and settings defaults."""
+
     dotenv_values = _load_dotenv_file()
 
     def env_value(name: str, default: str | None = None) -> str | None:
@@ -117,7 +129,7 @@ def load_env() -> RuntimeEnv:
     configured_browser = env_value("BROWSER", getattr(settings, "browser", "chromium")) or "chromium"
     browser = configured_browser.strip().lower()
     reporting_source_origin = (
-            env_value("REPORTING_SOURCE_ORIGIN", getattr(settings, "reporting_source_origin", "")) or ""
+        env_value("REPORTING_SOURCE_ORIGIN", getattr(settings, "reporting_source_origin", "")) or ""
     )
     if not reporting_source_origin:
         reporting_source_origin = "ci" if os.getenv("CI") else "local"
@@ -146,35 +158,35 @@ def load_env() -> RuntimeEnv:
             "REPORTING_SCHEMA_VERSION",
             getattr(settings, "reporting_schema_version", "2.0"),
         )
-                                 or "2.0",
+        or "2.0",
         reporting_source_project=env_value(
             "REPORTING_SOURCE_PROJECT",
             getattr(settings, "reporting_source_project", Path.cwd().name),
         )
-                                 or Path.cwd().name,
+        or Path.cwd().name,
         reporting_source_origin=reporting_source_origin,
         framework_version=env_value(
             "FRAMEWORK_VERSION",
             getattr(settings, "framework_version", "1.0.0"),
         )
-                          or "1.0.0",
+        or "1.0.0",
         reporting_api_url=env_value("REPORTING_API_URL", settings.reporting_api_url) or "",
         reporting_api_token=env_value("REPORTING_API_TOKEN", settings.reporting_api_token) or "",
         reporting_api_run_start_endpoint=env_value(
             "REPORTING_API_RUN_START_ENDPOINT",
             settings.reporting_api_run_start_endpoint,
         )
-                                         or settings.reporting_api_run_start_endpoint,
+        or settings.reporting_api_run_start_endpoint,
         reporting_api_test_result_endpoint=env_value(
             "REPORTING_API_TEST_RESULT_ENDPOINT",
             settings.reporting_api_test_result_endpoint,
         )
-                                           or settings.reporting_api_test_result_endpoint,
+        or settings.reporting_api_test_result_endpoint,
         reporting_api_run_finish_endpoint=env_value(
             "REPORTING_API_RUN_FINISH_ENDPOINT",
             settings.reporting_api_run_finish_endpoint,
         )
-                                          or settings.reporting_api_run_finish_endpoint,
+        or settings.reporting_api_run_finish_endpoint,
         reporting_api_timeout_seconds=int(
             env_value("REPORTING_API_TIMEOUT_SECONDS", str(settings.reporting_api_timeout_seconds))
             or str(settings.reporting_api_timeout_seconds)
@@ -191,48 +203,42 @@ def load_env() -> RuntimeEnv:
             bool(getattr(settings, "visual_enabled", getattr(settings, "visual_enabled", False))),
         ),
         visual_compare_mode=(
-                env_value(
-                    "VISUAL_COMPARE_MODE",
-                    str(getattr(settings, "visual_compare_mode", getattr(settings, "visual_compare_mode", "hybrid"))),
-                )
-                or "hybrid"
+            env_value(
+                "VISUAL_COMPARE_MODE",
+                str(getattr(settings, "visual_compare_mode", getattr(settings, "visual_compare_mode", "hybrid"))),
+            )
+            or "hybrid"
         )
         .strip()
         .lower(),
         visual_baseline_provider=(
-                env_value(
-                    "VISUAL_BASELINE_PROVIDER",
-                    str(
-                        getattr(
-                            settings, "visual_baseline_provider", getattr(settings, "visual_baseline_provider", "minio")
-                        )
-                    ),
-                )
-                or "minio"
+            env_value(
+                "VISUAL_BASELINE_PROVIDER",
+                str(
+                    getattr(
+                        settings, "visual_baseline_provider", getattr(settings, "visual_baseline_provider", "minio")
+                    )
+                ),
+            )
+            or "minio"
         )
         .strip()
         .lower(),
         visual_baseline_profile=env_value(
             "VISUAL_BASELINE_PROFILE",
-            str(
-                getattr(
-                    settings, "visual_baseline_profile", getattr(settings, "visual_baseline_profile", "test-ref")
-                )
-            ),
+            str(getattr(settings, "visual_baseline_profile", getattr(settings, "visual_baseline_profile", "test-ref"))),
         )
-                                or "test-ref",
+        or "test-ref",
         visual_baseline_version=env_value(
             "VISUAL_BASELINE_VERSION",
-            str(
-                getattr(settings, "visual_baseline_version", getattr(settings, "visual_baseline_version", "latest"))
-            ),
+            str(getattr(settings, "visual_baseline_version", getattr(settings, "visual_baseline_version", "latest"))),
         )
-                                or "latest",
+        or "latest",
         visual_cache_dir=env_value(
             "VISUAL_CACHE_DIR",
             str(getattr(settings, "visual_cache_dir", getattr(settings, "visual_cache_dir", ".visual_cache"))),
         )
-                         or ".visual_cache",
+        or ".visual_cache",
         visual_fail_on_missing_baseline=_as_bool(
             env_value("VISUAL_FAIL_ON_MISSING_BASELINE"),
             bool(
@@ -251,26 +257,22 @@ def load_env() -> RuntimeEnv:
             "VISUAL_MINIO_ENDPOINT",
             str(getattr(settings, "visual_minio_endpoint", getattr(settings, "visual_minio_endpoint", ""))),
         )
-                              or "",
+        or "",
         visual_minio_access_key=env_value(
             "VISUAL_MINIO_ACCESS_KEY",
             str(getattr(settings, "visual_minio_access_key", getattr(settings, "visual_minio_access_key", ""))),
         )
-                                or "",
+        or "",
         visual_minio_secret_key=env_value(
             "VISUAL_MINIO_SECRET_KEY",
             str(getattr(settings, "visual_minio_secret_key", getattr(settings, "visual_minio_secret_key", ""))),
         )
-                                or "",
+        or "",
         visual_minio_bucket=env_value(
             "VISUAL_MINIO_BUCKET",
-            str(
-                getattr(
-                    settings, "visual_minio_bucket", getattr(settings, "visual_minio_bucket", "visual-baselines")
-                )
-            ),
+            str(getattr(settings, "visual_minio_bucket", getattr(settings, "visual_minio_bucket", "visual-baselines"))),
         )
-                            or "visual-baselines",
+        or "visual-baselines",
         visual_minio_secure=_as_bool(
             env_value("VISUAL_MINIO_SECURE"),
             bool(getattr(settings, "visual_minio_secure", getattr(settings, "visual_minio_secure", True))),
@@ -299,7 +301,7 @@ def load_env() -> RuntimeEnv:
             "VISUAL_PERCEPTUAL_API_URL",
             str(getattr(settings, "visual_perceptual_api_url", getattr(settings, "visual_perceptual_api_url", ""))),
         )
-                                  or "",
+        or "",
         visual_perceptual_timeout_seconds=int(
             env_value(
                 "VISUAL_PERCEPTUAL_TIMEOUT_SECONDS",
@@ -353,32 +355,32 @@ def load_env() -> RuntimeEnv:
             or "3"
         ),
         visual_perceptual_fallback_mode=(
-                env_value(
-                    "VISUAL_PERCEPTUAL_FALLBACK_MODE",
-                    str(
-                        getattr(
-                            settings,
-                            "visual_perceptual_fallback_mode",
-                            getattr(settings, "visual_perceptual_fallback_mode", "pixel"),
-                        )
-                    ),
-                )
-                or "pixel"
+            env_value(
+                "VISUAL_PERCEPTUAL_FALLBACK_MODE",
+                str(
+                    getattr(
+                        settings,
+                        "visual_perceptual_fallback_mode",
+                        getattr(settings, "visual_perceptual_fallback_mode", "pixel"),
+                    )
+                ),
+            )
+            or "pixel"
         )
         .strip()
         .lower(),
         visual_perceptual_force_device=(
-                env_value(
-                    "VISUAL_PERCEPTUAL_FORCE_DEVICE",
-                    str(
-                        getattr(
-                            settings,
-                            "visual_perceptual_force_device",
-                            getattr(settings, "visual_perceptual_force_device", ""),
-                        )
-                    ),
-                )
-                or ""
+            env_value(
+                "VISUAL_PERCEPTUAL_FORCE_DEVICE",
+                str(
+                    getattr(
+                        settings,
+                        "visual_perceptual_force_device",
+                        getattr(settings, "visual_perceptual_force_device", ""),
+                    )
+                ),
+            )
+            or ""
         )
         .strip()
         .lower(),
@@ -396,17 +398,17 @@ def load_env() -> RuntimeEnv:
             or "1024"
         ),
         visual_perceptual_overlay_on=(
-                env_value(
-                    "VISUAL_PERCEPTUAL_OVERLAY_ON",
-                    str(
-                        getattr(
-                            settings,
-                            "visual_perceptual_overlay_on",
-                            getattr(settings, "visual_perceptual_overlay_on", "test"),
-                        )
-                    ),
-                )
-                or "test"
+            env_value(
+                "VISUAL_PERCEPTUAL_OVERLAY_ON",
+                str(
+                    getattr(
+                        settings,
+                        "visual_perceptual_overlay_on",
+                        getattr(settings, "visual_perceptual_overlay_on", "test"),
+                    )
+                ),
+            )
+            or "test"
         )
         .strip()
         .lower(),
@@ -424,17 +426,17 @@ def load_env() -> RuntimeEnv:
             or "0.45"
         ),
         visual_perceptual_lpips_net=(
-                env_value(
-                    "VISUAL_PERCEPTUAL_LPIPS_NET",
-                    str(
-                        getattr(
-                            settings,
-                            "visual_perceptual_lpips_net",
-                            getattr(settings, "visual_perceptual_lpips_net", "vgg"),
-                        )
-                    ),
-                )
-                or "vgg"
+            env_value(
+                "VISUAL_PERCEPTUAL_LPIPS_NET",
+                str(
+                    getattr(
+                        settings,
+                        "visual_perceptual_lpips_net",
+                        getattr(settings, "visual_perceptual_lpips_net", "vgg"),
+                    )
+                ),
+            )
+            or "vgg"
         )
         .strip()
         .lower(),

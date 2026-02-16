@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Client that speaks to the perceptual comparison API when visual perceptual mode is enabled."""
+
 import base64
 import time
 from pathlib import Path
@@ -10,10 +12,12 @@ from framework.env import RuntimeEnv
 
 
 class PerceptualServiceError(RuntimeError):
-    pass
+    """Raised when the perceptual API reports a failure or is unreachable."""
 
 
 class PerceptualClient:
+    """Handles availability checks, payload construction, and retries against the perceptual API."""
+
     def __init__(self, env: RuntimeEnv) -> None:
         self._env = env
         self._checked = False
@@ -22,9 +26,13 @@ class PerceptualClient:
 
     @property
     def enabled(self) -> bool:
+        """True when the perceptual API endpoint is configured and enabled via RuntimeEnv."""
+
         return self._env.visual_perceptual_enabled and bool(self._env.visual_perceptual_api_url)
 
     def ensure_ready(self, required: bool) -> bool:
+        """Run a healthcheck once and optionally raise if the service is required but unavailable."""
+
         if not self.enabled:
             return False
         if self._checked:
@@ -45,6 +53,8 @@ class PerceptualClient:
         return self._available
 
     def _request_payload(self, baseline_path: Path, actual_path: Path) -> dict:
+        """Encode screenshots to base64 and attach the configured perceptual options."""
+
         baseline_b64 = base64.b64encode(baseline_path.read_bytes()).decode("ascii")
         actual_b64 = base64.b64encode(actual_path.read_bytes()).decode("ascii")
         cfg: dict[str, object] = {
@@ -62,6 +72,8 @@ class PerceptualClient:
         }
 
     def compare(self, baseline_path: Path, actual_path: Path) -> dict[str, object]:
+        """Invoke the remote compare endpoint and return parsed JSON if successful."""
+
         if not self.enabled:
             raise PerceptualServiceError("Perceptual API is not enabled")
         if self._consecutive_failures >= self._env.visual_perceptual_fail_fast_errors:

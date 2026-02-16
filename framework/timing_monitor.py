@@ -1,16 +1,22 @@
 from __future__ import annotations
 
+"""Persist and analyze recorded test durations to flag slowdowns."""
+
 import json
 from pathlib import Path
 
 
 def save_run_timings(file_path: Path, timings: dict[str, float]) -> None:
+    """Store the current run durations as JSON for future comparison."""
+
     file_path.parent.mkdir(parents=True, exist_ok=True)
     payload = {"cases": dict(sorted(timings.items()))}
     file_path.write_text(json.dumps(payload, indent=2, ensure_ascii=True), encoding="utf-8")
 
 
 def load_previous_timings(current_run_dir: Path) -> dict[str, float]:
+    """Load the most recent persisted timings from previous runs, if available."""
+
     runs_root = current_run_dir.parent
     run_dirs = sorted([p for p in runs_root.iterdir() if p.is_dir() and p.name != current_run_dir.name])
     if not run_dirs:
@@ -32,6 +38,8 @@ def detect_slow_regressions(
     previous: dict[str, float],
     threshold_ratio: float = 0.2,
 ) -> list[dict[str, float | str]]:
+    """Compare runs and report regressions that exceed the threshold ratio."""
+
     regressions: list[dict[str, float | str]] = []
     for nodeid, current_time in current.items():
         previous_time = previous.get(nodeid)

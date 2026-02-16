@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Load visual regression scenario definitions from JSON files."""
+
 import json
 from pathlib import Path
 
@@ -13,6 +15,8 @@ from framework.visual.models import (
 
 
 def _as_steps(raw_steps: list[dict]) -> tuple[VisualStep, ...]:
+    """Translate raw dicts into typed VisualStep dataclasses."""
+
     steps: list[VisualStep] = []
     for raw in raw_steps:
         steps.append(
@@ -28,6 +32,8 @@ def _as_steps(raw_steps: list[dict]) -> tuple[VisualStep, ...]:
 
 
 def _load_scenario(file_path: Path) -> VisualScenario:
+    """Deserialize a single JSON file into a VisualScenario instance."""
+
     payload = json.loads(file_path.read_text(encoding="utf-8"))
     scenario_id = str(payload.get("id") or file_path.stem)
     capture_raw = payload.get("capture", {})
@@ -60,6 +66,8 @@ def _load_scenario(file_path: Path) -> VisualScenario:
 
 
 def load_scenarios(scenarios_dir: Path, scenario_filter: str = "") -> list[VisualScenario]:
+    """Load and optionally filter all scenario definitions located under a directory."""
+
     scenarios: list[VisualScenario] = []
     filter_value = scenario_filter.strip().lower()
     for file_path in sorted(scenarios_dir.glob("*.json")):

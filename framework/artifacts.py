@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Helper for preparing directories that collect test artifacts."""
+
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -7,6 +9,8 @@ from pathlib import Path
 
 @dataclass(frozen=True)
 class RunArtifacts:
+    """Paths for all artifact subdirectories belonging to a single run."""
+
     run_id: str
     root: Path
     traces: Path
@@ -16,6 +20,19 @@ class RunArtifacts:
 
 
 def build_run_artifacts(base_dir: str) -> RunArtifacts:
+    """Ensure artifact directories exist and return their paths.
+
+    Parameters
+    ----------
+    base_dir:
+        Top-level directory under which a timestamped run folder is created.
+
+    Returns
+    -------
+    RunArtifacts
+        Object containing the paths to every artifact subdirectory.
+    """
+
     run_id = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
     root = Path(base_dir) / run_id
     traces = root / "traces"

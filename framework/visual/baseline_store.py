@@ -1,27 +1,38 @@
 from __future__ import annotations
 
+"""Store and resolve baselines with optional Minio/local providers."""
+
 from pathlib import Path
 
 from framework.env import RuntimeEnv
 
 
 class BaselineStore:
+    """Encapsulate caching and optional uploads for visual baselines."""
+
     def __init__(self, env: RuntimeEnv, repo_root: Path) -> None:
+        """Prepare cache directory derived from repo location and runtime settings."""
+
         self._env = env
         self._repo_root = repo_root
         self._cache_dir = (repo_root / env.visual_cache_dir).resolve()
 
     def baseline_key(self, suite_id: str, scenario_id: str, viewport: str, browser: str) -> str:
+        """Return the object key path that uniquely identifies a baseline image."""
+
         file_name = f"{scenario_id}__{viewport}__{browser}.png"
         return (
-            f"{suite_id.strip('/')}/{self._env.visual_baseline_profile}/"
-            f"{self._env.visual_baseline_version}/{file_name}"
+            f"{suite_id.strip('/')}/{self._env.visual_baseline_profile}/{self._env.visual_baseline_version}/{file_name}"
         )
 
     def local_cache_path(self, object_key: str) -> Path:
+        """Return the local disk path mirroring the object key structure."""
+
         return self._cache_dir / object_key
 
     def resolve_baseline(self, suite_id: str, scenario_id: str, viewport: str, browser: str) -> Path | None:
+        """Resolve and download a baseline image, falling back to the configured provider."""
+
         object_key = self.baseline_key(suite_id, scenario_id, viewport, browser)
         local_path = self.local_cache_path(object_key)
         if local_path.is_file():
@@ -38,6 +49,8 @@ class BaselineStore:
         return None
 
     def store_baseline(self, suite_id: str, scenario_id: str, viewport: str, browser: str, source: Path) -> Path:
+        """Persist the actual capture to cache and optionally upload it."""
+
         object_key = self.baseline_key(suite_id, scenario_id, viewport, browser)
         target = self.local_cache_path(object_key)
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -47,6 +60,8 @@ class BaselineStore:
         return target
 
     def _download_minio_object(self, object_key: str, local_path: Path) -> bool:
+        """Pull a baseline object from Minio into the local cache."""
+
         if not self._env.visual_minio_endpoint:
             return False
         try:
@@ -68,6 +83,8 @@ class BaselineStore:
             return False
 
     def _upload_minio_object(self, object_key: str, local_path: Path) -> None:
+        """Ensure bucket existence and upload the cached baseline."""
+
         if not self._env.visual_minio_endpoint:
             return
         try:

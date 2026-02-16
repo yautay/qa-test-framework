@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Utilities that enrich failure screenshots with highlights and metadata text."""
+
 import re
 from datetime import UTC, datetime
 from pathlib import Path
@@ -8,6 +10,8 @@ import cv2
 
 
 def extract_selector_from_error(longrepr: str) -> str | None:
+    """Try to parse the locator or xpath string from a Playwright failure message."""
+
     patterns = [
         r'locator\("(.*?)"\)',
         r"Element not found:\s*(xpath=.*)",
@@ -25,6 +29,8 @@ def annotate_fail_screenshot(
     metadata: dict[str, str],
     highlight_box: dict[str, float] | None,
 ) -> None:
+    """Draw a highlight box and overlay metadata text onto the failure capture."""
+
     image = cv2.imread(str(raw_path), cv2.IMREAD_COLOR)
     if image is None:
         return

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Emit JSON/HTML summaries for visual regression results."""
+
 import json
 from pathlib import Path
 
@@ -7,6 +9,8 @@ from framework.visual.models import VisualResult
 
 
 def write_visual_report(report_dir: Path, results: list[VisualResult]) -> None:
+    """Persist JSON + HTML artifacts that describe visual comparison outcomes."""
+
     report_dir.mkdir(parents=True, exist_ok=True)
     rows = []
     for result in results:

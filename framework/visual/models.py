@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+"""Data models that describe visual scenarios, captures, and comparison results."""
+
 from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)
 class VisualThresholds:
+    """Allowable thresholds for pixel, LPIPS, and DISTS measurements."""
+
     pixel_max: float
     lpips_max: float
     dists_max: float
@@ -12,12 +16,16 @@ class VisualThresholds:
 
 @dataclass(frozen=True)
 class VisualMask:
+    """Optional DOM selectors that receive translucent overlay masking."""
+
     selectors: tuple[str, ...] = ()
     color: str = "#00FF00"
 
 
 @dataclass(frozen=True)
 class VisualCapture:
+    """Defines how screenshots should be captured (page/viewport/element)."""
+
     capture_type: str = "page"  # page|viewport|element
     selector: str = ""
     full_page: bool = True
@@ -25,6 +33,8 @@ class VisualCapture:
 
 @dataclass(frozen=True)
 class VisualStep:
+    """Represents a UI interaction that can run before capturing."""
+
     action: str
     selector: str = ""
     value: str = ""
@@ -34,6 +44,8 @@ class VisualStep:
 
 @dataclass(frozen=True)
 class VisualScenario:
+    """Describes a single visual regression scenario, its capture, and thresholds."""
+
     scenario_id: str
     name: str
     target_url: str
@@ -48,6 +60,8 @@ class VisualScenario:
 
 @dataclass
 class VisualResult:
+    """Outcome record produced by running a VisualScenario."""
+
     scenario_id: str
     status: str
     message: str

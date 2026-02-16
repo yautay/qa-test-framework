@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Client that delivers test-run metadata and screenshots to the reporting API."""
+
 import json
 import time
 from dataclasses import dataclass
@@ -11,6 +13,8 @@ from loguru import logger
 
 @dataclass
 class ReportingClient:
+    """Encapsulates reporting endpoints, retries, and authentication headers."""
+
     enabled: bool
     base_url: str
     token: str
@@ -21,6 +25,8 @@ class ReportingClient:
     retries: int = 2
 
     def _build_headers(self, payload: dict, json_content_type: bool = True) -> dict[str, str]:
+        """Compose HTTP headers with optional authorization and idempotency data."""
+
         headers: dict[str, str] = {}
         if json_content_type:
             headers["Content-Type"] = "application/json"
@@ -33,6 +39,8 @@ class ReportingClient:
 
     @staticmethod
     def _is_failure_with_screenshots(payload: dict) -> bool:
+        """Recognize failed results that provide screenshot paths for multipart upload."""
+
         if payload.get("status") != "failed":
             return False
         artifacts = payload.get("artifacts", {})
@@ -41,6 +49,8 @@ class ReportingClient:
         return bool(artifacts.get("screenshot_raw") or artifacts.get("screenshot_annotated"))
 
     def _post(self, path: str, payload: dict) -> None:
+        """Send JSON payload to the configured reporting endpoint with retries."""
+
         if not self.enabled or not self.base_url:
             return
         url = f"{self.base_url.rstrip('/')}{path}"
@@ -57,6 +67,8 @@ class ReportingClient:
                 time.sleep(0.5 * (attempt + 1))
 
     def _post_test_result_with_screenshots(self, payload: dict) -> None:
+        """Send multipart payload when screenshots accompany a failed test."""
+
         if not self.enabled or not self.base_url:
             return
 
@@ -108,13 +120,19 @@ class ReportingClient:
         self._post(self.test_result_endpoint, payload)
 
     def run_start(self, payload: dict) -> None:
+        """Signal the start of a test run to the remote reporting service."""
+
         self._post(self.run_start_endpoint, payload)
 
     def test_result(self, payload: dict) -> None:
+        """Notify reporting about a specific test outcome, uploading screenshots when needed."""
+
         if self._is_failure_with_screenshots(payload):
             self._post_test_result_with_screenshots(payload)
             return
         self._post(self.test_result_endpoint, payload)
 
     def run_finish(self, payload: dict) -> None:
+        """Wrap up the run with a completion payload."""
+
         self._post(self.run_finish_endpoint, payload)

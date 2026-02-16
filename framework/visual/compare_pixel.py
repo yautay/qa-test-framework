@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Pixel-based comparison that highlights differences in screenshot pairs."""
+
 from pathlib import Path
 
 import cv2
@@ -7,6 +9,8 @@ import numpy as np
 
 
 def compare_images(baseline_path: Path, actual_path: Path, diff_path: Path) -> float:
+    """Compare two images, write a red diff overlay, and return the changed pixel ratio."""
+
     baseline = cv2.imread(str(baseline_path), cv2.IMREAD_COLOR)
     actual = cv2.imread(str(actual_path), cv2.IMREAD_COLOR)
     if baseline is None or actual is None:

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""Loguru helpers that bind execution context and channel logs to stdout + file."""
+
 import os
 import socket
 import sys
@@ -11,6 +13,8 @@ import settings_cli
 
 
 def _resolve_console_log_level() -> str:
+    """Normalize console log level from env/settings, falling back to INFO."""
+
     value = os.getenv("CONSOLE_LOG_LEVEL", getattr(settings_cli, "console_log_level", "INFO"))
     normalized = str(value).strip().upper()
     allowed = {"TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"}
@@ -27,6 +31,8 @@ def configure_logging(
     git_user_name: str | None,
     git_user_email: str | None,
 ) -> None:
+    """Prepare console + file sinks and attach tracer metadata for Loguru."""
+
     logger.remove()
     run_log_file.parent.mkdir(parents=True, exist_ok=True)
     base_extra = {
@@ -53,4 +59,6 @@ def configure_logging(
 
 
 def bind_test_context(nodeid: str):
+    """Tag the logger with a pytest nodeid so subsequent logs carry the test context."""
+
     return logger.bind(nodeid=nodeid)
