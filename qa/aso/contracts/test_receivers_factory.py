@@ -92,8 +92,7 @@ def test_pickup_provider_applies_pickup_selection():
 def test_lift_provider_selects_lift_variant():
     checkout = _CheckoutPageSpy()
     provider = LiftReceiverProvider(checkout, with_lift=True)
-    request = ReceiverSelectionRequest(delivery_kind="courier_with_lift",
-                                       receiver_data={"name": "Jan"})
+    request = ReceiverSelectionRequest(delivery_kind="courier_with_lift", receiver_data={"name": "Jan"})
 
     provider.apply(request)
 

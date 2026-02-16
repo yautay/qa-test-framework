@@ -49,15 +49,15 @@ def apply_parametrization(metafunc: pytest.Metafunc, scenarios_dir: Path) -> Non
 
 
 def execute_visual_scenario(
-    *,
-    request: pytest.FixtureRequest,
-    page,
-    scenario: VisualScenario,
-    visual_viewport: str,
-    runtime_env: RuntimeEnv,
-    visual_output_dir: Path,
-    visual_results: list,
-    pytestconfig: pytest.Config,
+        *,
+        request: pytest.FixtureRequest,
+        page,
+        scenario: VisualScenario,
+        visual_viewport: str,
+        runtime_env: RuntimeEnv,
+        visual_output_dir: Path,
+        visual_results: list,
+        pytestconfig: pytest.Config,
 ) -> None:
     if not runtime_env.base_url and not scenario.target_url.startswith(("http://", "https://")):
         pytest.skip("BASE_URL is not configured for relative visual target_url")

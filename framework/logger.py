@@ -20,12 +20,12 @@ def _resolve_console_log_level() -> str:
 
 
 def configure_logging(
-        run_log_file: Path,
-        run_id: str,
-        browser: str,
-        worker_id: str,
-        git_user_name: str | None,
-        git_user_email: str | None,
+    run_log_file: Path,
+    run_id: str,
+    browser: str,
+    worker_id: str,
+    git_user_name: str | None,
+    git_user_email: str | None,
 ) -> None:
     logger.remove()
     run_log_file.parent.mkdir(parents=True, exist_ok=True)

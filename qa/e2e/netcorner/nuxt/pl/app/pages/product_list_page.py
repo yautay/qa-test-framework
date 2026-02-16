@@ -19,8 +19,9 @@ class ProductListPage(BasePage):
 
     def apply_digital_filter_if_visible(self) -> None:
         try:
-            self.page.get_by_text(ProductListSelectors.DIGITAL_LICENSE_FILTER_TEXT,
-                                  exact=False).first.click(timeout=2000)
+            self.page.get_by_text(ProductListSelectors.DIGITAL_LICENSE_FILTER_TEXT, exact=False).first.click(
+                timeout=2000
+            )
         except Exception:
             return
 

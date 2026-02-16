@@ -77,15 +77,13 @@ class BasePage:
         try:
             overlay = self.locator(CookieSelectors.OVERLAY)
             if overlay.count() > 0 and overlay.first.is_visible():
-                self.page.evaluate(
-                    """
+                self.page.evaluate("""
                     () => {
                         const el = document.querySelector('#onetrust-consent-sdk');
                         if (el) {
                             el.remove();
                         }
                     }
-                    """
-                )
+                    """)
         except Exception:
             return

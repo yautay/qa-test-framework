@@ -2,27 +2,26 @@ from __future__ import annotations
 
 from dataclasses import replace
 
+import pytest
+
 from framework.env import RuntimeEnv
+from qa.auxiliary.url_netcorner_b2b import resolve_b2b_nuxt_base_url
 
 
-def _resolve_b2b_nuxt_base_url(server_type: str, server_name: str) -> str:
-    env_type = server_type.strip().lower()
-
-    if env_type == "test":
-        return f"https://komputronik-{server_name}.netcorner.pl"
-    if env_type == "demo":
-        return "https://sklep3-demo.komputronik.dev"
-    if env_type == "prod":
-        return "https://komputronik.pl"
-    if env_type == "local":
-        return "https://komputronik.local"
-    return ""
-
-
-def pytest_configure(config) -> None:
-    runtime_env: RuntimeEnv | None = getattr(config, "_runtime_env", None)
-    if runtime_env is None or runtime_env.base_url:
+@pytest.hookimpl(trylast=True)
+def pytest_configure(config: pytest.Config) -> None:
+    env: RuntimeEnv | None = getattr(config, "_runtime_env", None)
+    if env is None:
         return
 
-    resolved_base_url = _resolve_b2b_nuxt_base_url(runtime_env.server_type, runtime_env.server_name)
-    config._runtime_env = replace(runtime_env, base_url=resolved_base_url)
+    if (env.base_url or "").strip():
+        return
+
+    resolved = resolve_b2b_nuxt_base_url(env.server_type, env.server_name)
+    if not resolved:
+        pytest.exit(
+            "base_url is empty. Provide --base-url or valid --server-type/--server-name",
+            returncode=2,
+        )
+
+    config._runtime_env = replace(env, base_url=resolved)

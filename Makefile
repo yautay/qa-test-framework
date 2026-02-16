@@ -70,8 +70,6 @@ verify-scenarios: ## Weryfikacja scenariuszy
 scenario-report: ## Raport scenariuszy
 	$(PYTHON) tools/scenarios/scenario_report.py
 
-test-api: ## Test API reportingu
-	$(PYTHON) tools/reporting/test_api.py
 
 ##@ Regresja wizualna
 
@@ -94,18 +92,21 @@ clean-artifacts-older: ## Usuń artefakty starsze niż DAYS (domyślnie 14)
 
 ##@ Debug
 
-remote-up: ## Start grid remote (docker)
+debug-test-api: ## Test API reportingu
+	$(PYTHON) tools/reporting/test_api.py
+
+debug-remote-grid-up: ## Start grid remote (docker)
 	docker compose -f tools/remote/docker-compose.yml up -d
 
-remote-down: ## Stop grid remote (docker)
+debug-remote-grid-down: ## Stop grid remote (docker)
 	docker compose -f tools/remote/docker-compose.yml down
 
-remote-smoke: ## Smoke testy na remote grid
+debug-remote-smoke: ## Smoke testy na remote grid
 	IS_GRID_AVAILABLE=1 GRID_WS_ENDPOINT=ws://127.0.0.1:9323/ $(PYTEST) -m smoke -q
 
-minio-up: ## Start MinIO
+debug-minio-up: ## Start MinIO
 	docker compose -f tools/minio/docker-compose.yml up -d
 
-minio-down: ## Stop MinIO
+debug-minio-down: ## Stop MinIO
 	docker compose -f tools/minio/docker-compose.yml down
 

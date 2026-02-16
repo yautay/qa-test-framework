@@ -29,3 +29,21 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default="",
         help="Comma-separated visual viewport presets, e.g. mobile,tablet,fhd",
     )
+    parser.addoption(
+        "--server-type",
+        action="store",
+        default="",
+        help="test|demo|prod|local",
+    )
+    parser.addoption(
+        "--server-name",
+        action="store",
+        default="",
+        help="server name for test env",
+    )
+    parser.addoption(
+        "--base-url",
+        action="store",
+        default="",
+        help="override resolved base url",
+    )

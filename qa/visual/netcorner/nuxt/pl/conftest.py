@@ -1,9 +1,5 @@
-from __future__ import annotations
-
 from dataclasses import replace
-
 import pytest
-
 from framework.env import RuntimeEnv
 from qa.auxiliary.url_netcorner_pl import resolve_pl_nuxt_base_url
 

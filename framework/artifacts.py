@@ -24,5 +24,4 @@ def build_run_artifacts(base_dir: str) -> RunArtifacts:
     logs = root / "logs"
     for path in (root, traces, screenshots, videos, logs):
         path.mkdir(parents=True, exist_ok=True)
-    return RunArtifacts(run_id=run_id, root=root, traces=traces, screenshots=screenshots,
-                        videos=videos, logs=logs)
+    return RunArtifacts(run_id=run_id, root=root, traces=traces, screenshots=screenshots, videos=videos, logs=logs)

@@ -31,8 +31,7 @@ def write_visual_report(report_dir: Path, results: list[VisualResult]) -> None:
             }
         )
 
-    (report_dir / "results.json").write_text(json.dumps({"results": rows}, indent=2),
-                                             encoding="utf-8")
+    (report_dir / "results.json").write_text(json.dumps({"results": rows}, indent=2), encoding="utf-8")
 
     lines = [
         "<html><head><meta charset='utf-8'><title>Visual Report</title></head><body>",

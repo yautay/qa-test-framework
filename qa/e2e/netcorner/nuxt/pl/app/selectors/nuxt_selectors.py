@@ -105,12 +105,9 @@ class CheckoutSelectors:
     ]
     TEXT_CANDIDATES = ["Dostawa", "Płatność", "Twój koszyk", "Wróć do zakupów"]
     DELIVERY_TILES = {
-        "courier": "//div[@data-name='orderShippingPicker']//p[contains(text(), 'kurier')]/"
-                   "ancestor::article",
-        "storehouse": "//div[@data-name='orderShippingPicker']//p[contains(text(), 'Salony')]/"
-                      "ancestor::article",
-        "digital": "//div[@data-name='orderShippingPicker']//p[contains(text(), 'elektroniczna')]/"
-                   "ancestor::article",
+        "courier": "//div[@data-name='orderShippingPicker']//p[contains(text(), 'kurier')]/" "ancestor::article",
+        "storehouse": "//div[@data-name='orderShippingPicker']//p[contains(text(), 'Salony')]/" "ancestor::article",
+        "digital": "//div[@data-name='orderShippingPicker']//p[contains(text(), 'elektroniczna')]/" "ancestor::article",
     }
     RECEIVER_INPUTS = {
         "name": ["input[name*='name']", "input[id*='name']"],
@@ -120,8 +117,7 @@ class CheckoutSelectors:
         "postal_code": ["input[name*='postal']", "input[id*='postal']"],
         "city": ["input[name*='city']", "input[id*='city']"],
         "street_name": ["input[name*='street']", "input[id*='street']"],
-        "street_number": ["input[name*='building']", "input[name*='streetNumber']",
-                          "input[id*='streetNumber']"],
+        "street_number": ["input[name*='building']", "input[name*='streetNumber']", "input[id*='streetNumber']"],
     }
     PICKUP_LOCATION_INPUTS = ["input[name*='localization']", "input[placeholder*='kod']"]
     PICKUP_SEARCH_BUTTONS = [
@@ -141,8 +137,9 @@ class CheckoutSelectors:
     )
     DELIVERY_WITH_LIFT_CHECKBOX = "//input[@id='deliveryBringing']"
     DELIVERY_WITH_LIFT_TILE = "//span[contains(text(), 'Bezpieczne wniesienie')]"
-    PAYMENT_TILE_BY_TEXT = ("//div[@data-name='orderPaymentPicker']//"
-                            "p[contains(text(), '{payment}')]/ancestor::article")
+    PAYMENT_TILE_BY_TEXT = (
+        "//div[@data-name='orderPaymentPicker']//" "p[contains(text(), '{payment}')]/ancestor::article"
+    )
     TERMS_CHECKBOX_IDS = [
         "#regulation",
         "#outletTerms",

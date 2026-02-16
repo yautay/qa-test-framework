@@ -29,7 +29,7 @@ packages = { find = { where = ["."], include = ["qa*", "framework*"], exclude = 
 
 [tool.black]
 line-length = 120
-target-version = ["py311"]
+target-version = ["py313"]
 include = "\\.pyi?$"
 exclude = '''
 /(
@@ -39,7 +39,7 @@ exclude = '''
 
 [tool.ruff]
 line-length = 120
-target-version = "py311"
+target-version = "py313"
 exclude = ["**/*legacy*/**"]
 
 [tool.ruff.lint]
@@ -47,7 +47,7 @@ select = ["E", "F", "I", "B", "UP", "N", "W"]
 ignore = ["E203"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.13"
 warn_return_any = true
 warn_unused_configs = true
 ignore_missing_imports = true

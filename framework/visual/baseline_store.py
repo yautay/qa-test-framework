@@ -21,8 +21,7 @@ class BaselineStore:
     def local_cache_path(self, object_key: str) -> Path:
         return self._cache_dir / object_key
 
-    def resolve_baseline(self, suite_id: str, scenario_id: str, viewport: str,
-                         browser: str) -> Path | None:
+    def resolve_baseline(self, suite_id: str, scenario_id: str, viewport: str, browser: str) -> Path | None:
         object_key = self.baseline_key(suite_id, scenario_id, viewport, browser)
         local_path = self.local_cache_path(object_key)
         if local_path.is_file():
@@ -34,13 +33,11 @@ class BaselineStore:
                 return local_fallback
             return None
 
-        if self._env.visual_baseline_provider == "minio" and self._download_minio_object(object_key,
-                                                                                         local_path):
+        if self._env.visual_baseline_provider == "minio" and self._download_minio_object(object_key, local_path):
             return local_path
         return None
 
-    def store_baseline(self, suite_id: str, scenario_id: str, viewport: str, browser: str,
-                       source: Path) -> Path:
+    def store_baseline(self, suite_id: str, scenario_id: str, viewport: str, browser: str, source: Path) -> Path:
         object_key = self.baseline_key(suite_id, scenario_id, viewport, browser)
         target = self.local_cache_path(object_key)
         target.parent.mkdir(parents=True, exist_ok=True)

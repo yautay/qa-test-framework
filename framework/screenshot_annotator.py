@@ -20,10 +20,10 @@ def extract_selector_from_error(longrepr: str) -> str | None:
 
 
 def annotate_fail_screenshot(
-        raw_path: Path,
-        out_path: Path,
-        metadata: dict[str, str],
-        highlight_box: dict[str, float] | None,
+    raw_path: Path,
+    out_path: Path,
+    metadata: dict[str, str],
+    highlight_box: dict[str, float] | None,
 ) -> None:
     image = cv2.imread(str(raw_path), cv2.IMREAD_COLOR)
     if image is None:
@@ -48,10 +48,8 @@ def annotate_fail_screenshot(
 
     y = 26
     for line in lines:
-        cv2.putText(image, line[:180], (12, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 3,
-                    cv2.LINE_AA)
-        cv2.putText(image, line[:180], (12, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1,
-                    cv2.LINE_AA)
+        cv2.putText(image, line[:180], (12, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 3, cv2.LINE_AA)
+        cv2.putText(image, line[:180], (12, y), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
         y += 22
 
     cv2.imwrite(str(out_path), image)

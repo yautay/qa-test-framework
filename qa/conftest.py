@@ -1,13 +1,13 @@
 from __future__ import annotations
-
+from dataclasses import replace
 import getpass
 import os
 import socket
 import time
 import uuid
 from datetime import UTC, datetime
-
 import pytest
+import settings_cli
 from loguru import logger
 
 from framework.artifacts import RunArtifacts, build_run_artifacts
@@ -88,6 +88,30 @@ def _derive_test_status(item: pytest.Item) -> str:
         return "xpassed" if wasxfail else "passed"
     return "error"
 
+def _base_url_resolver(config: pytest.Config):
+    env: RuntimeEnv | None = getattr(config, "_runtime_env", None)
+    if env is None:
+        return
+
+    cli_server_type = (config.getoption("--server-type") or "").strip()
+    cli_server_name = (config.getoption("--server-name") or "").strip()
+    cli_base_url = (config.getoption("--base-url") or "").strip()
+
+    if cli_server_type:
+        env = replace(env, server_type=cli_server_type)
+    if cli_server_name:
+        env = replace(env, server_name=cli_server_name)
+
+    if cli_base_url:
+        config._runtime_env = replace(env, base_url=cli_base_url)
+        return
+
+    if settings_cli.base_url_override != "":
+        config._runtime_env = replace(env, base_url=settings_cli.base_url_override)
+        return
+
+    if env.base_url:
+        config._runtime_env = replace(env, base_url=env.base_url)
 
 def pytest_configure(config: pytest.Config) -> None:
     env = load_env()
@@ -141,7 +165,6 @@ def pytest_configure(config: pytest.Config) -> None:
             "collectonly",
         )
     )
-
 
 def pytest_sessionstart(session: pytest.Session) -> None:
     if getattr(session.config, "_reporting_suspended", False):
@@ -208,8 +231,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         "run_finished_at": _utc_now(),
         "exit_status": exitstatus,
         "duration_ms": int(
-            max(0.0, time.time() - float(getattr(session.config, "_session_started", time.time())))
-            * 1000
+            max(0.0, time.time() - float(getattr(session.config, "_session_started", time.time()))) * 1000
         ),
         "summary": session.config._result_counters,
         "quality_signals": {

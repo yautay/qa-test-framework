@@ -13,8 +13,7 @@ def compare_images(baseline_path: Path, actual_path: Path, diff_path: Path) -> f
         return 1.0
 
     if baseline.shape != actual.shape:
-        actual = cv2.resize(actual, (baseline.shape[1], baseline.shape[0]),
-                            interpolation=cv2.INTER_AREA)
+        actual = cv2.resize(actual, (baseline.shape[1], baseline.shape[0]), interpolation=cv2.INTER_AREA)
 
     abs_diff = cv2.absdiff(baseline, actual)
     gray = cv2.cvtColor(abs_diff, cv2.COLOR_BGR2GRAY)

@@ -114,15 +114,13 @@ def collect_smoke_nodeids() -> set[str]:
     return nodeids
 
 
-def validate_smoke_mapping(scenarios: list[ScenarioDefinition], collected_nodeids: set[str]) -> \
-list[str]:
+def validate_smoke_mapping(scenarios: list[ScenarioDefinition], collected_nodeids: set[str]) -> list[str]:
     expected = expected_smoke_nodeids(scenarios)
     missing = sorted(expected - collected_nodeids)
     extra = sorted(
         nodeid
         for nodeid in collected_nodeids
-        if
-        "test_orders_smoke_full_process.py::test_order_full_process" in nodeid and nodeid not in expected
+        if "test_orders_smoke_full_process.py::test_order_full_process" in nodeid and nodeid not in expected
     )
 
     errors: list[str] = []

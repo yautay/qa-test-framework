@@ -27,8 +27,7 @@ def _run_orders_case(page, context, runtime_env, case):
         assert cart_page.is_ready(), f"Navigation failed for scenario {case['id']}"
 
 
-DELIVERY_CASES = [case for case in ORDER_SMOKE_CASES if
-                  case["legacy_group"] == "test_order_delivery"]
+DELIVERY_CASES = [case for case in ORDER_SMOKE_CASES if case["legacy_group"] == "test_order_delivery"]
 PICKUP_CASES = [case for case in ORDER_SMOKE_CASES if case["legacy_group"] == "test_order_pickup"]
 DIGITAL_CASES = [case for case in ORDER_SMOKE_CASES if case["legacy_group"] == "test_order_digital"]
 MIXED_CASES = [case for case in ORDER_SMOKE_CASES if case["legacy_group"] == "test_order_mixed"]
@@ -39,9 +38,9 @@ MIXED_CASES = [case for case in ORDER_SMOKE_CASES if case["legacy_group"] == "te
 def test_order_delivery(page, context, runtime_env, case):
     _run_orders_case(page, context, runtime_env, case)
     checkout_page = CheckoutPage(page, runtime_env.base_url)
-    assert checkout_page.has_interactive_checkout_surface(), (
-        f"Checkout form surface not detected for scenario {case['id']}"
-    )
+    assert (
+        checkout_page.has_interactive_checkout_surface()
+    ), f"Checkout form surface not detected for scenario {case['id']}"
 
 
 @pytest.mark.parametrize("case", PICKUP_CASES, ids=[case["id"] for case in PICKUP_CASES])
@@ -49,9 +48,7 @@ def test_order_delivery(page, context, runtime_env, case):
 def test_order_pickup(page, context, runtime_env, case):
     _run_orders_case(page, context, runtime_env, case)
     cart_page = CartPage(page, runtime_env.base_url)
-    assert cart_page.has_interactive_cart_surface(), (
-        f"Cart interactive surface not detected for scenario {case['id']}"
-    )
+    assert cart_page.has_interactive_cart_surface(), f"Cart interactive surface not detected for scenario {case['id']}"
 
 
 @pytest.mark.parametrize("case", DIGITAL_CASES, ids=[case["id"] for case in DIGITAL_CASES])

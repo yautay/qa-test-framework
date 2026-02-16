@@ -58,16 +58,14 @@ def _dismiss_cookie_popup_at_test_start(page: Page, timeout_ms: int = 10000) -> 
         time.sleep(0.25)
 
     try:
-        page.evaluate(
-            """
+        page.evaluate("""
             () => {
                 const overlay = document.querySelector('#onetrust-consent-sdk');
                 if (overlay) {
                     overlay.remove();
                 }
             }
-            """
-        )
+            """)
     except Exception:
         return
 
@@ -92,8 +90,7 @@ def browser(playwright_instance: Playwright, runtime_env: RuntimeEnv) -> Browser
             timeout=runtime_env.grid_connect_timeout_ms,
         )
     elif runtime_env.browser == "chrome":
-        browser = playwright_instance.chromium.launch(channel="chrome",
-                                                      headless=runtime_env.headless)
+        browser = playwright_instance.chromium.launch(channel="chrome", headless=runtime_env.headless)
     else:
         browser_type = getattr(playwright_instance, runtime_env.browser)
         browser = browser_type.launch(headless=runtime_env.headless)

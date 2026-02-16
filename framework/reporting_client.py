@@ -47,8 +47,7 @@ class ReportingClient:
         headers = self._build_headers(payload, json_content_type=True)
         for attempt in range(self.retries + 1):
             try:
-                response = requests.post(url, json=payload, headers=headers,
-                                         timeout=self.timeout_seconds)
+                response = requests.post(url, json=payload, headers=headers, timeout=self.timeout_seconds)
                 if response.ok:
                     return
                 logger.warning("reporting api non-2xx", status=response.status_code, url=url)

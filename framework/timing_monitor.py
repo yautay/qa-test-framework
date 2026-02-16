@@ -12,8 +12,7 @@ def save_run_timings(file_path: Path, timings: dict[str, float]) -> None:
 
 def load_previous_timings(current_run_dir: Path) -> dict[str, float]:
     runs_root = current_run_dir.parent
-    run_dirs = sorted(
-        [p for p in runs_root.iterdir() if p.is_dir() and p.name != current_run_dir.name])
+    run_dirs = sorted([p for p in runs_root.iterdir() if p.is_dir() and p.name != current_run_dir.name])
     if not run_dirs:
         return {}
     latest = run_dirs[-1]
@@ -29,9 +28,9 @@ def load_previous_timings(current_run_dir: Path) -> dict[str, float]:
 
 
 def detect_slow_regressions(
-        current: dict[str, float],
-        previous: dict[str, float],
-        threshold_ratio: float = 0.2,
+    current: dict[str, float],
+    previous: dict[str, float],
+    threshold_ratio: float = 0.2,
 ) -> list[dict[str, float | str]]:
     regressions: list[dict[str, float | str]] = []
     for nodeid, current_time in current.items():

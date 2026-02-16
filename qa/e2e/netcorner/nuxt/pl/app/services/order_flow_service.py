@@ -47,8 +47,7 @@ class OrderFlowService:
                 self.product_list_page.search_product(case.search_phrase)
                 self.product_list_page.dismiss_cookie_banner()
                 if not self.product_list_page.add_buyable_product_to_cart():
-                    raise AssertionError(
-                        f"Could not add buyable product to cart from {category_path}")
+                    raise AssertionError(f"Could not add buyable product to cart from {category_path}")
             self.layer_page.close_recommendation_if_visible()
             self.layer_page.go_to_cart_if_visible()
 

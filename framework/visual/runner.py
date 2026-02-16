@@ -30,8 +30,7 @@ class VisualRunner:
     def perceptual_client(self) -> PerceptualClient:
         return self._perceptual
 
-    def run(self, page: Page, scenario: VisualScenario, viewport: str,
-            approve: bool) -> VisualResult:
+    def run(self, page: Page, scenario: VisualScenario, viewport: str, approve: bool) -> VisualResult:
         self._navigate(page, scenario)
         actual_path = self._actual_dir / f"{scenario.scenario_id}.png"
         self._capture(page, scenario, actual_path)
@@ -153,8 +152,7 @@ class VisualRunner:
 
     def _navigate(self, page: Page, scenario: VisualScenario) -> None:
         if scenario.target_url:
-            if scenario.target_url.startswith("http://") or scenario.target_url.startswith(
-                    "https://"):
+            if scenario.target_url.startswith("http://") or scenario.target_url.startswith("https://"):
                 page.goto(scenario.target_url)
             else:
                 base = self._env.base_url.rstrip("/")
@@ -162,8 +160,7 @@ class VisualRunner:
         for step in scenario.steps:
             self._run_step(page, step.action, step.selector, step.value, step.timeout_ms, step.url)
 
-    def _run_step(self, page: Page, action: str, selector: str, value: str, timeout_ms: int,
-                  url: str) -> None:
+    def _run_step(self, page: Page, action: str, selector: str, value: str, timeout_ms: int, url: str) -> None:
         if action == "click" and selector:
             page.locator(selector).first.click(timeout=timeout_ms)
             return
@@ -246,13 +243,13 @@ def _remove_masks(page: Page, ids: list[str]) -> None:
 
 
 def _evaluate(
-        mode: str,
-        pixel_changed_ratio: float,
-        lpips: float | None,
-        dists: float | None,
-        pixel_max: float,
-        lpips_max: float,
-        dists_max: float,
+    mode: str,
+    pixel_changed_ratio: float,
+    lpips: float | None,
+    dists: float | None,
+    pixel_max: float,
+    lpips_max: float,
+    dists_max: float,
 ) -> tuple[str, str]:
     if mode == "pixel":
         if pixel_changed_ratio <= pixel_max:

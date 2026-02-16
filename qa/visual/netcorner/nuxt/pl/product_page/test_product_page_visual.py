@@ -10,6 +10,8 @@ from qa.visual.netcorner.nuxt.pl.visual_suite import apply_parametrization, exec
 
 SCENARIOS_DIR = Path(__file__).resolve().parent
 
+pytestmark = [pytest.mark.visual]
+
 
 def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     apply_parametrization(metafunc, scenarios_dir=SCENARIOS_DIR)
