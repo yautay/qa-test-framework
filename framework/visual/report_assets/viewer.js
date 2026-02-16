@@ -214,11 +214,6 @@ export function setPresentationMode(viewer, mode) {
   refreshSlots(viewer);
 }
 
-export function setZoomPreset(viewer, value) {
-  if (!ZOOM_PRESETS.includes(value)) return;
-  viewer.zoomPreset = value;
-}
-
 export function navigateRow(viewer, rows, offset) {
   if (!Array.isArray(rows) || rows.length === 0) return null;
   if (viewer.currentIndex === null) return null;

@@ -3,7 +3,7 @@ import { createStore, filteredSorted, resetFilters } from "./store.js";
 import {
   createViewerState, ensureModal, openViewer,
   getAvailableModes, getModeSrc, refreshSlots,
-  setPresentationMode, setZoomPreset, navigateRow,
+  setPresentationMode, navigateRow,
   setCursorPosition, toggleTag, getRowTagKey
 } from "./viewer.js";
 
@@ -162,9 +162,9 @@ createApp({
               </div>
 
               <div class="btn-group btn-group-sm" role="group">
-                <button type="button" class="btn" :class="zoomClass(130)" @mousedown="startZoomHold(130)" @mouseup="stopZoomHold" @mouseleave="stopZoomHold">> K-Q</button>
-                <button type="button" class="btn" :class="middleZoomClass()" @mousedown="startZoomHold(160)" @mouseup="stopZoomHold" @mouseleave="stopZoomHold">O</button>
-                <button type="button" class="btn" :class="zoomClass(190)" @mousedown="startZoomHold(190)" @mouseup="stopZoomHold" @mouseleave="stopZoomHold">< K-E</button>
+                <button type="button" class="btn" :class="zoomClass(30)" @mousedown.prevent="handleZoomMouse(30,$event)" @mouseup.prevent="clearZoomMouse" @mouseleave.prevent="clearZoomMouse">> K-Q</button>
+                <button type="button" class="btn" :class="middleZoomClass()" @click="clearZoomMouse">O</button>
+                <button type="button" class="btn" :class="zoomClass(90)" @mousedown.prevent="handleZoomMouse(90,$event)" @mouseup.prevent="clearZoomMouse" @mouseleave.prevent="clearZoomMouse">< K-E</button>
               </div>
               <div class="btn-group btn-group-sm fit-group" role="group">
                 <button v-for="fit in fitModes" :key="fit.key" type="button"
@@ -174,7 +174,7 @@ createApp({
                   {{ fit.label }}
                 </button>
               </div>
-              <button type="button" :class="superZoomActive ? 'btn btn-primary ms-1' : 'btn btn-outline-secondary ms-1'" @mousedown="activateSuperZoom" @mouseup="deactivateSuperZoom" @mouseleave="deactivateSuperZoom">🔍 K-W</button>
+              <button type="button" :class="superZoomActive ? 'btn btn-primary ms-1' : 'btn btn-outline-secondary ms-1'" @mousedown.prevent="activateSuperZoom" @mouseup.prevent="deactivateSuperZoom" @mouseleave.prevent="deactivateSuperZoom">🔍 K-W</button>
 
                <div class="btn-group btn-group-sm" role="group">
                  <button v-if="!viewer.tags.bug" type="button" class="btn btn-outline-danger" @click="promptTag('bug')">BUG! (K-S)</button>
@@ -228,7 +228,9 @@ createApp({
     return {
       store: createStore(),
       viewer: createViewerState(),
-      activeZoomValue: null,
+      baseZoom: 160,
+      zoomDelta: 0,
+      storedDelta: 0,
       superZoomActive: false,
       keyHeld: { a: false, d: false, q: false, e: false, w: false, s: false, c: false },
       prompt: { active: false, type: null },
@@ -252,8 +254,8 @@ createApp({
       };
     },
     zoomScale() {
-      if (this.superZoomActive) return 3;
-      return (this.activeZoomValue || this.viewer.zoomPreset || 160) / 100;
+      const level = this.superZoomActive ? this.baseZoom + 200 : this.baseZoom + this.zoomDelta;
+      return level / 100;
     },
     fitModes() {
       return [
@@ -280,9 +282,6 @@ createApp({
       }
       return style;
     },
-    presentationFitMultiplier() {
-      return this.presentationFit === "CENTER" ? 1.2 : 1;
-    },
   },
   methods: {
     fmt,
@@ -299,7 +298,7 @@ createApp({
       return getModeSrc(this.viewer, this.viewer.presentationMode) || this.viewer.modalImgSrc;
     },
     imageStyle() {
-      const scale = this.zoomScale * this.presentationFitMultiplier;
+      const scale = this.zoomScale;
       return {
         transform: `scale(${scale})`,
         transformOrigin: `${this.viewer.cursorX}% ${this.viewer.cursorY}%`,
@@ -340,10 +339,10 @@ createApp({
         this.navigate(1);
       } else if (k.toUpperCase() === "Q") {
         this.keyHeld.q = true;
-        this.startZoomHold(130);
+        this.startDelta(30);
       } else if (k.toUpperCase() === "E") {
         this.keyHeld.e = true;
-        this.startZoomHold(190);
+        this.startDelta(90);
       } else if (k.toUpperCase() === "W") {
         if (!this.superZoomActive) {
           this.keyHeld.w = true;
@@ -369,38 +368,50 @@ createApp({
       if (k.toUpperCase() === "D") this.keyHeld.d = false;
       if (k.toUpperCase() === "Q") {
         this.keyHeld.q = false;
-        this.stopZoomHold();
+        this.resetDelta();
       }
       if (k.toUpperCase() === "E") {
         this.keyHeld.e = false;
-        this.stopZoomHold();
+        this.resetDelta();
       }
       if (k.toUpperCase() === "W") {
         this.keyHeld.w = false;
         this.deactivateSuperZoom();
       }
     },
-    startZoomHold(value) {
-      this.activeZoomValue = value;
-      setZoomPreset(this.viewer, value);
+    setZoomDelta(value) {
+      this.zoomDelta = value;
     },
-    stopZoomHold() {
-      this.activeZoomValue = null;
-      setZoomPreset(this.viewer, 160);
+    startDelta(value) {
+      this.storedDelta = this.zoomDelta;
+      this.setZoomDelta(value);
+    },
+    resetDelta() {
+      this.setZoomDelta(this.storedDelta);
+      this.storedDelta = 0;
     },
     zoomClass(value) {
-      return this.activeZoomValue === value ? 'btn-primary' : 'btn-outline-secondary';
+      return this.zoomDelta === value && !this.superZoomActive ? 'btn-primary' : 'btn-outline-secondary';
     },
     middleZoomClass() {
-      const active = this.activeZoomValue === 160;
-      const fallback = !this.activeZoomValue && !this.superZoomActive;
-      return (active || fallback) ? 'btn-primary' : 'btn-outline-secondary';
+      return this.zoomDelta === 0 && !this.superZoomActive ? 'btn-primary' : 'btn-outline-secondary';
+    },
+    handleZoomMouse(value, evt) {
+      if (evt.button !== 0) return;
+      this.startDelta(value);
+    },
+    clearZoomMouse() {
+      this.resetDelta();
     },
     activateSuperZoom() {
       this.superZoomActive = true;
+      this.storedDelta = this.zoomDelta;
+      this.zoomDelta = 200;
     },
     deactivateSuperZoom() {
       this.superZoomActive = false;
+      this.zoomDelta = this.storedDelta;
+      this.storedDelta = 0;
     },
     navigate(offset) {
       const next = navigateRow(this.viewer, this.rows, offset);
@@ -421,6 +432,23 @@ createApp({
     },
     setPresentationFit(mode) {
       this.presentationFit = mode;
+      const base = this.computeBaseZoom();
+      this.baseZoom = base;
+      if (!this.superZoomActive) {
+        this.zoomDelta = 0;
+      }
+    },
+    computeBaseZoom() {
+      switch (this.presentationFit) {
+        case "VERT":
+          return 170;
+        case "HORIZ":
+          return 170;
+        case "CENTER":
+          return 192;
+        default:
+          return 160;
+      }
     },
     confirmPrompt() {
       if (!this.prompt.active) return;
@@ -434,7 +462,6 @@ createApp({
     closeModal() {
       this.viewer.modal?.hide();
       this.deactivateSuperZoom();
-      this.stopZoomHold();
       this.cancelPrompt();
     },
     handleMouseMove(evt) {
