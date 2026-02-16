@@ -5,9 +5,9 @@ from dataclasses import dataclass, field
 
 @dataclass(frozen=True)
 class VisualThresholds:
-    pixel_max: float = 0.005
-    lpips_max: float = 0.08
-    dists_max: float = 0.08
+    pixel_max: float
+    lpips_max: float
+    dists_max: float
 
 
 @dataclass(frozen=True)

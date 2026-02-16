@@ -47,8 +47,8 @@ def _load_scenario(file_path: Path) -> VisualScenario:
         ),
         thresholds=VisualThresholds(
             pixel_max=float(thresholds_raw.get("pixel_max", 0.005)),
-            lpips_max=float(thresholds_raw.get("lpips_max", 0.12)),
-            dists_max=float(thresholds_raw.get("dists_max", 0.12)),
+            lpips_max=float(thresholds_raw.get("lpips_max", 0.08)),
+            dists_max=float(thresholds_raw.get("dists_max", 0.08)),
         ),
         mask=VisualMask(
             selectors=tuple(mask_raw.get("selectors", [])),
