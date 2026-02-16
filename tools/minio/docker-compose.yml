@@ -1,0 +1,17 @@
+services:
+  minio:
+    image: minio/minio:RELEASE.2026-01-28T01-07-00Z
+    container_name: nc-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    restart: unless-stopped
+
+volumes:
+  minio-data:

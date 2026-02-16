@@ -1,0 +1,3144 @@
+{
+  "id": "backstop_default",
+  "viewports": [
+    {
+      "label": "desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "label": "tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "label": "mobile",
+      "width": 360,
+      "height": 667
+    }
+  ],
+  "scenarios": [
+    {
+      "label": "test-account - komputronik-pl login-layer smoke",
+      "selectors": [
+        "div[data-name=\"loginForm\"]"
+      ],
+      "selectorExpansion": false,
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/enter-login-layer.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-home-page - komputronik-pl home_page navigation_bar html_cache smoke",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-home-page - komputronik-pl home_page navigation_bar no_html_cache",
+      "resource": "/?a=0",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-cpu html_cache smoke",
+      "resource": "/advanced-configurator/cpu",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/cpu",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/cpu",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-cpu no_html_cache",
+      "resource": "/advanced-configurator/cpu?a=0",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/cpu?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/cpu?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-gpu html_cache",
+      "resource": "/advanced-configurator/graphics_card",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/graphics_card",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/graphics_card",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-gpu no_html_cache",
+      "resource": "/advanced-configurator/graphics_card?a=0",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/graphics_card?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/graphics_card?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-hdd html_cache",
+      "resource": "/advanced-configurator/hdd",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/hdd",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/hdd",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-hdd no_html_cache",
+      "resource": "/advanced-configurator/hdd?a=0",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/hdd?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/hdd?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-main html_cache smoke",
+      "resource": "/advanced-configurator",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-main no_html_cache",
+      "resource": "/advanced-configurator?a=0",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-motherboard html_cache",
+      "resource": "/advanced-configurator/motherboard",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/motherboard",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/motherboard",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-motherboard no_html_cache",
+      "resource": "/advanced-configurator/motherboard?a=0",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/motherboard?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/motherboard?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-psu html_cache",
+      "resource": "/advanced-configurator/power_supply",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/power_supply",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/power_supply",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-psu no_html_cache",
+      "resource": "/advanced-configurator/power_supply?a=0",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/power_supply?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/power_supply?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-ram html_cache",
+      "resource": "/advanced-configurator/dram_memory",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/dram_memory",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/dram_memory",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-ram no_html_cache",
+      "resource": "/advanced-configurator/dram_memory?a=0",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/dram_memory?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/dram_memory?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-tower html_cache",
+      "resource": "/advanced-configurator/case",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/case",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/case",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-tower no_html_cache",
+      "resource": "/advanced-configurator/case?a=0",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/case?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/case?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings producer-category-listing apple html_cache smoke",
+      "resource": "/category/5022/laptopy,apple.html",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/category/5022/laptopy,apple.html",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/category/5022/laptopy,apple.html",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings producer-category-listing apple no_html_cache",
+      "resource": "/category/5022/laptopy,apple.html?a=0",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/category/5022/laptopy,apple.html?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/category/5022/laptopy,apple.html?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings producer-category-listing apple no_html_cache",
+      "resource": "/category/5022/laptopy,apple.html?p=2",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/category/5022/laptopy,apple.html?p=2",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/category/5022/laptopy,apple.html?p=2",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings producer-category-listing asus html_cache",
+      "resource": "/category/1251/monitory,asus.html",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/category/1251/monitory,asus.html",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/category/1251/monitory,asus.html",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings producer-category-listing asus no_html_cache",
+      "resource": "/category/1251/monitory,asus.html?a=0",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/category/1251/monitory,asus.html?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/category/1251/monitory,asus.html?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings producer-listing apple html_cache smoke",
+      "resource": "/producer/7/apple.html",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/producer/7/apple.html",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/producer/7/apple.html",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings producer-listing apple no_html_cache",
+      "resource": "/producer/7/apple.html?a=0",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/producer/7/apple.html?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/producer/7/apple.html?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings producer-listing apple no_html_cache",
+      "resource": "/producer/7/apple.html?p=2",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/producer/7/apple.html?p=2",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/producer/7/apple.html?p=2",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings producer-listing samsung html_cache",
+      "resource": "/producer/24/samsung.html",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/producer/24/samsung.html",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/producer/24/samsung.html",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings producer-listing samsung no_html_cache",
+      "resource": "/producer/24/samsung.html?a=0",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/producer/24/samsung.html?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/producer/24/samsung.html?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings product-listing laptops html_cache smoke",
+      "resource": "/category/5022/laptopy.html",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/category/5022/laptopy.html",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/category/5022/laptopy.html",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings product-listing laptops no_html_cache",
+      "resource": "/category/5022/laptopy.html?p=2",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/category/5022/laptopy.html?p=2",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/category/5022/laptopy.html?p=2",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings product-listing laptops no_html_cache",
+      "resource": "/category/5022/laptopy.html?a=0",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/category/5022/laptopy.html?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/category/5022/laptopy.html?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings product-listing pendrives promotion-labels html_cache",
+      "resource": "/category/686/pendrive.html",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/category/686/pendrive.html",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/category/686/pendrive.html",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings product-listing pendrives promotion-labels no_html_cache",
+      "resource": "/category/686/pendrive.html?p=2",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/category/686/pendrive.html?p=2",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/category/686/pendrive.html?p=2",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings product-listing pendrives promotion-labels no_html_cache",
+      "resource": "/category/686/pendrive.html?p=4",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/category/686/pendrive.html?p=4",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/category/686/pendrive.html?p=4",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings product-listing pendrives no_html_cache",
+      "resource": "category/686/pendrive.html?a=0",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/category/686/pendrive.html?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/category/686/pendrive.html?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings product-listing phones html_cache",
+      "resource": "/category/1596/telefony.html",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/category/1596/telefony.html",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/category/1596/telefony.html",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings product-listing phones no_html_cache",
+      "resource": "/category/1596/telefony.html?a=0",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/category/1596/telefony.html?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/category/1596/telefony.html?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings search-filter dual-sim html_cache smoke",
+      "resource": "search-filter/1596/smartfony-z-dual-sim",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/search-filter/1596/smartfony-z-dual-sim",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/search-filter/1596/smartfony-z-dual-sim",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings search-filter dual-sim no_html_cache",
+      "resource": "search-filter/1596/smartfony-z-dual-sim?a=0",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/search-filter/1596/smartfony-z-dual-sim?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/search-filter/1596/smartfony-z-dual-sim?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings search-filter dual-sim no_html_cache",
+      "resource": "search-filter/1596/smartfony-z-dual-sim?p=2",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/search-filter/1596/smartfony-z-dual-sim?p=2",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/search-filter/1596/smartfony-z-dual-sim?p=2",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings search-filter gaming html_cache",
+      "resource": "search-filter/5022/laptopy-do-gier",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/search-filter/5022/laptopy-do-gier",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/search-filter/5022/laptopy-do-gier",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings search-filter gaming no_html_cache",
+      "resource": "search-filter/5022/laptopy-do-gier?a=0",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/search-filter/5022/laptopy-do-gier?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/search-filter/5022/laptopy-do-gier?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings search-query no_html_cache smoke",
+      "resource": "search/category/1?query=promo:tp_layout_context",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/search/category/1?query=promo:tp_layout_context",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/search/category/1?query=promo:tp_layout_context",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings search-query no_html_cache",
+      "resource": "search/category/1?query=klawiatura+czarna",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/search/category/1?query=klawiatura+czarna",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/search/category/1?query=klawiatura+czarna",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings search-query no_html_cache",
+      "resource": "search/category/1?query=klawiatura+czarna&showBuyActiveOnly=1&p=20",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/search/category/1?query=klawiatura+czarna&showBuyActiveOnly=1&p=20",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/search/category/1?query=klawiatura+czarna&showBuyActiveOnly=1&p=20",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-demo-bugs - komputronik-pl product-page tests-demo-bugs html-cache 914916 smoke",
+      "resource": "/product/914916",
+      "delay": 10000,
+      "misMatchThreshold": 0.5,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/914916",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/914916",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-demo-bugs - komputronik-pl product-page tests-demo-bugs no-html-cache 914916",
+      "resource": "/product/914916?a=0",
+      "delay": 10000,
+      "misMatchThreshold": 0.5,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/914916?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/914916?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products html-cache 500000501 smoke",
+      "resource": "/product/500000501",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000501",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000501",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products no-html-cache 500000501",
+      "resource": "/product/500000501?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000501?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000501?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products html-cache 500000502 smoke",
+      "resource": "/product/500000502",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000502",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000502",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products no-html-cache 500000502",
+      "resource": "/product/500000502?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000502?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000502?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products html-cache 500000503 smoke",
+      "resource": "/product/500000503",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000503",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000503",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products no-html-cache 500000503",
+      "resource": "/product/500000503?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000503?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000503?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products html-cache 500000504 smoke",
+      "resource": "/product/500000504",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000504",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000504",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products no-html-cache 500000504",
+      "resource": "/product/500000504?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000504?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000504?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products html-cache 500000505",
+      "resource": "/product/500000505",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000505",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000505",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products no-html-cache 500000505",
+      "resource": "/product/500000505?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000505?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000505?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products html-cache 500000506",
+      "resource": "/product/500000506",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000506",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000506",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products no-html-cache 500000506",
+      "resource": "/product/500000506?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000506?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000506?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products html-cache 500000507",
+      "resource": "/product/500000507",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000507",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000507",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products no-html-cache 500000507",
+      "resource": "/product/500000507?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000507?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000507?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products html-cache 500000508",
+      "resource": "/product/500000508",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000508",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000508",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products no-html-cache 500000508",
+      "resource": "/product/500000508?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000508?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000508?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products html-cache 500000509",
+      "resource": "/product/500000509",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000509",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000509",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products no-html-cache 500000509",
+      "resource": "/product/500000509?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000509?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000509?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products html-cache 500000510",
+      "resource": "/product/500000510",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000510",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000510",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products no-html-cache 500000510",
+      "resource": "/product/500000510?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000510?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000510?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products html-cache 500000511",
+      "resource": "/product/500000511",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000511",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000511",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products no-html-cache 500000511",
+      "resource": "/product/500000511?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000511?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000511?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products html-cache 500000512",
+      "resource": "/product/500000512",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000512",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000512",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products no-html-cache 500000512",
+      "resource": "/product/500000512?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000512?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000512?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products html-cache 500000513 smoke",
+      "resource": "/product/500000513",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000513",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000513",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-price-component-products - komputronik-pl product-page tests-price-component-products no-html-cache 500000513",
+      "resource": "/product/500000513?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000513?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000513?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-product-labels-products - komputronik-pl product-page tests-product-labels-products html-cache 530000001",
+      "resource": "/product/530000001",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/530000001",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/530000001",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-product-labels-products - komputronik-pl product-page tests-product-labels-products no-html-cache 530000001",
+      "resource": "/product/530000001?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/530000001?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/530000001?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-product-labels-products - komputronik-pl product-page tests-product-labels-products html-cache 530000002",
+      "resource": "/product/530000002",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/530000002",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/530000002",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-product-labels-products - komputronik-pl product-page tests-product-labels-products no-html-cache 530000002",
+      "resource": "/product/530000002?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/530000002?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/530000002?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244111",
+      "resource": "/product/54244111",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244111",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244111",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244111",
+      "resource": "/product/54244111?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244111?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244111?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244112",
+      "resource": "/product/54244112",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244112",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244112",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244112",
+      "resource": "/product/54244112?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244112?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244112?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244113",
+      "resource": "/product/54244113",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244113",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244113",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244113",
+      "resource": "/product/54244113?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244113?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244113?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244116",
+      "resource": "/product/54244116",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244116",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244116",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244116",
+      "resource": "/product/54244116?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244116?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244116?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244117",
+      "resource": "/product/54244117",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244117",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244117",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244117",
+      "resource": "/product/54244117?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244117?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244117?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244118",
+      "resource": "/product/54244118",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244118",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244118",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244118",
+      "resource": "/product/54244118?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244118?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244118?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244119",
+      "resource": "/product/54244119",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244119",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244119",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244119",
+      "resource": "/product/54244119?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244119?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244119?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244120",
+      "resource": "/product/54244120",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244120",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244120",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244120",
+      "resource": "/product/54244120?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244120?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244120?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244121",
+      "resource": "/product/54244121",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244121",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244121",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244121",
+      "resource": "/product/54244121?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244121?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244121?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244122",
+      "resource": "/product/54244122",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244122",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244122",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244122",
+      "resource": "/product/54244122?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244122?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244122?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244123",
+      "resource": "/product/54244123",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244123",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244123",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244123",
+      "resource": "/product/54244123?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244123?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244123?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244124",
+      "resource": "/product/54244124",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244124",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244124",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244124",
+      "resource": "/product/54244124?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244124?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244124?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244125",
+      "resource": "/product/54244125",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244125",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244125",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244125",
+      "resource": "/product/54244125?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244125?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244125?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244126",
+      "resource": "/product/54244126",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244126",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244126",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244126",
+      "resource": "/product/54244126?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244126?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244126?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244127",
+      "resource": "/product/54244127",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244127",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244127",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244127",
+      "resource": "/product/54244127?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244127?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244127?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244128",
+      "resource": "/product/54244128",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244128",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244128",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244128",
+      "resource": "/product/54244128?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244128?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244128?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244129",
+      "resource": "/product/54244129",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244129",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244129",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244129",
+      "resource": "/product/54244129?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244129?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244129?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244130 smoke",
+      "resource": "/product/54244130",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244130",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244130",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244130",
+      "resource": "/product/54244130?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244130?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244130?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244131 smoke",
+      "resource": "/product/54244131",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244131",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244131",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244131",
+      "resource": "/product/54244131?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244131?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244131?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244132 smoke",
+      "resource": "/product/54244132",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244132",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244132",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244132",
+      "resource": "/product/54244132?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244132?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244132?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244133 smoke",
+      "resource": "/product/54244133",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244133",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244133",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244133",
+      "resource": "/product/54244133?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244133?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244133?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244134 smoke",
+      "resource": "/product/54244134",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244134",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244134",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244134",
+      "resource": "/product/54244134?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244134?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244134?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244135 smoke",
+      "resource": "/product/54244135",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244135",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244135",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244135",
+      "resource": "/product/54244135?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244135?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244135?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244181",
+      "resource": "/product/54244181",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244181",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244181",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244181",
+      "resource": "/product/54244181?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244181?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244181?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244182",
+      "resource": "/product/54244182",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244182",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244182",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244182",
+      "resource": "/product/54244182?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244182?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244182?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244183",
+      "resource": "/product/54244183",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244183",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244183",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244183",
+      "resource": "/product/54244183?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244183?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244183?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244184",
+      "resource": "/product/54244184",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244184",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244184",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244184",
+      "resource": "/product/54244184?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244184?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244184?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244185",
+      "resource": "/product/54244185",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244185",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244185",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244185",
+      "resource": "/product/54244185?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244185?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244185?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244186",
+      "resource": "/product/54244186",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244186",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244186",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244186",
+      "resource": "/product/54244186?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244186?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244186?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244187",
+      "resource": "/product/54244187",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244187",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244187",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244187",
+      "resource": "/product/54244187?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244187?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244187?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products html-cache 54244188",
+      "resource": "/product/54244188",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244188",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244188",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-rwd-front-products - komputronik-pl product-page tests-rwd-front-products no-html-cache 54244188",
+      "resource": "/product/54244188?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244188?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244188?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244143",
+      "resource": "/product/54244143",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244143",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244143",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244143",
+      "resource": "/product/54244143?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244143?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244143?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244145",
+      "resource": "/product/54244145",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244145",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244145",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244145",
+      "resource": "/product/54244145?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244145?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244145?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244146",
+      "resource": "/product/54244146",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244146",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244146",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244146",
+      "resource": "/product/54244146?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244146?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244146?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244150",
+      "resource": "/product/54244150",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244150",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244150",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244150",
+      "resource": "/product/54244150?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244150?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244150?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244151",
+      "resource": "/product/54244151",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244151",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244151",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244151",
+      "resource": "/product/54244151?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244151?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244151?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244152",
+      "resource": "/product/54244152",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244152",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244152",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244152",
+      "resource": "/product/54244152?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244152?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244152?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244153",
+      "resource": "/product/54244153",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244153",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244153",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244153",
+      "resource": "/product/54244153?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244153?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244153?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244154",
+      "resource": "/product/54244154",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244154",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244154",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244154",
+      "resource": "/product/54244154?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244154?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244154?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244155",
+      "resource": "/product/54244155",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244155",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244155",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244155",
+      "resource": "/product/54244155?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244155?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244155?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244156",
+      "resource": "/product/54244156",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244156",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244156",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244156",
+      "resource": "/product/54244156?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244156?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244156?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244157",
+      "resource": "/product/54244157",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244157",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244157",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244157",
+      "resource": "/product/54244157?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244157?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244157?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244158",
+      "resource": "/product/54244158",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244158",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244158",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244158",
+      "resource": "/product/54244158?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244158?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244158?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244159",
+      "resource": "/product/54244159",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244159",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244159",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244159",
+      "resource": "/product/54244159?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244159?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244159?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244160",
+      "resource": "/product/54244160",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244160",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244160",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244160",
+      "resource": "/product/54244160?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244160?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244160?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244161",
+      "resource": "/product/54244161",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244161",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244161",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244161",
+      "resource": "/product/54244161?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244161?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244161?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244162",
+      "resource": "/product/54244162",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244162",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244162",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244162",
+      "resource": "/product/54244162?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244162?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244162?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244163",
+      "resource": "/product/54244163",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244163",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244163",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244163",
+      "resource": "/product/54244163?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244163?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244163?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244164",
+      "resource": "/product/54244164",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244164",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244164",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244164",
+      "resource": "/product/54244164?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244164?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244164?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244165",
+      "resource": "/product/54244165",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244165",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244165",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244165",
+      "resource": "/product/54244165?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244165?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244165?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244166",
+      "resource": "/product/54244166",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244166",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244166",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244166",
+      "resource": "/product/54244166?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244166?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244166?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244167",
+      "resource": "/product/54244167",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244167",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244167",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244167",
+      "resource": "/product/54244167?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244167?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244167?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244168",
+      "resource": "/product/54244168",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244168",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244168",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244168",
+      "resource": "/product/54244168?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244168?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244168?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244169",
+      "resource": "/product/54244169",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244169",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244169",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244169",
+      "resource": "/product/54244169?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244169?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244169?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244170",
+      "resource": "/product/54244170",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244170",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244170",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244170",
+      "resource": "/product/54244170?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244170?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244170?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244171",
+      "resource": "/product/54244171",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244171",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244171",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244171",
+      "resource": "/product/54244171?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244171?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244171?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244172",
+      "resource": "/product/54244172",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244172",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244172",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244172",
+      "resource": "/product/54244172?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244172?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244172?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244173",
+      "resource": "/product/54244173",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244173",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244173",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244173",
+      "resource": "/product/54244173?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244173?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244173?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244174",
+      "resource": "/product/54244174",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244174",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244174",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244174",
+      "resource": "/product/54244174?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244174?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244174?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products html-cache 54244175",
+      "resource": "/product/54244175",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244175",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244175",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-sezam-promotions-products - komputronik-pl product-page tests-sezam-promotions-products no-html-cache 54244175",
+      "resource": "/product/54244175?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/54244175?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/54244175?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products html-cache 500000201",
+      "resource": "/product/500000201",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000201",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000201",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products no-html-cache 500000201",
+      "resource": "/product/500000201?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000201?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000201?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products html-cache 500000202",
+      "resource": "/product/500000202",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000202",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000202",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products no-html-cache 500000202",
+      "resource": "/product/500000202?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000202?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000202?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products html-cache 500000203",
+      "resource": "/product/500000203",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000203",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000203",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products no-html-cache 500000203",
+      "resource": "/product/500000203?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000203?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000203?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products html-cache 500000204",
+      "resource": "/product/500000204",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000204",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000204",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products no-html-cache 500000204",
+      "resource": "/product/500000204?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000204?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000204?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products html-cache 500000205",
+      "resource": "/product/500000205",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000205",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000205",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products no-html-cache 500000205",
+      "resource": "/product/500000205?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000205?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000205?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products html-cache 500000206",
+      "resource": "/product/500000206",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000206",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000206",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products no-html-cache 500000206",
+      "resource": "/product/500000206?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000206?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000206?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products html-cache 500000207",
+      "resource": "/product/500000207",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000207",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000207",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products no-html-cache 500000207",
+      "resource": "/product/500000207?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000207?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000207?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products html-cache 500000208",
+      "resource": "/product/500000208",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000208",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000208",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products no-html-cache 500000208",
+      "resource": "/product/500000208?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000208?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000208?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products html-cache 500000209",
+      "resource": "/product/500000209",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000209",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000209",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products no-html-cache 500000209",
+      "resource": "/product/500000209?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000209?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000209?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products html-cache 500000210",
+      "resource": "/product/500000210",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000210",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000210",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    },
+    {
+      "label": "test-product-pages/tests-soon-available-products - komputronik-pl product-page tests-soon-available-products no-html-cache 500000210",
+      "resource": "/product/500000210?a=0",
+      "delay": 3000,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "onReadyScript": "./../../tests/komputronik-pl/scripts/close-cookies.js",
+      "url": "https://komputronik-november.alfa.netcorner.pl/product/500000210?a=0",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/product/500000210?a=0",
+      "onBeforeScript": "./../../lib/engine-scripts/silence-browser-console.js"
+    }
+  ],
+  "paths": {
+    "bitmaps_reference": "backstop_data/bitmaps_reference_smoke-tests-config",
+    "bitmaps_test": "backstop_data/bitmaps_test_smoke-tests-config",
+    "html_report": "backstop_data/html_report_smoke-tests-config",
+    "ci_report": "backstop_data/ci_report_smoke-tests-config",
+    "engine_scripts": "backstop_data/engine_scripts_smoke-tests-config"
+  },
+  "engine": "playwright",
+  "engineOptions": {
+    "executablePath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "headless": true,
+    "args": [
+      "--no-sandbox",
+      "--disable-web-security",
+      "--allow-running-insecure-content",
+      "--disable-features=IsolateOrigins,site-per-process"
+    ]
+  },
+  "report": [
+    "CI"
+  ],
+  "debug": false,
+  "debugWindow": false
+}

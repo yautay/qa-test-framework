@@ -1,0 +1,24 @@
+{
+  "id": "vrt-netcorner-nuxt-pl-layers-login",
+  "name": "Login page visual",
+  "suite_id": "netcorner/nuxt/pl/layers",
+  "target_url": "/login",
+  "compare_mode": "hybrid",
+  "capture": {
+    "type": "page",
+    "full_page": true
+  },
+  "mask": {
+    "selectors": [
+      ".cookie-banner",
+      "[data-testid='dynamic-banner']"
+    ],
+    "color": "#00FF00"
+  },
+  "thresholds": {
+    "pixel_max": 0.01,
+    "lpips_max": 0.12,
+    "dists_max": 0.12
+  },
+  "steps": []
+}

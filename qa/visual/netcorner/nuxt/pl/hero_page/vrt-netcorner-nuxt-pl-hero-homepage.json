@@ -1,0 +1,24 @@
+{
+  "id": "vrt-netcorner-nuxt-pl-hero-homepage",
+  "name": "Homepage main visual",
+  "suite_id": "netcorner/nuxt/pl/hero_page",
+  "target_url": "/",
+  "compare_mode": "hybrid",
+  "capture": {
+    "type": "page",
+    "full_page": true
+  },
+  "mask": {
+    "selectors": [
+      "[data-testid='dynamic-banner']",
+      ".cookie-banner"
+    ],
+    "color": "#00FF00"
+  },
+  "thresholds": {
+    "pixel_max": 0.01,
+    "lpips_max": 0.12,
+    "dists_max": 0.12
+  },
+  "steps": []
+}

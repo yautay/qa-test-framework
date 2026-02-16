@@ -1,0 +1,227 @@
+{
+  "id": "backstop_default",
+  "viewports": [
+    {
+      "label": "desktop",
+      "width": 1920,
+      "height": 1080
+    },
+    {
+      "label": "tablet",
+      "width": 768,
+      "height": 1024
+    },
+    {
+      "label": "mobile",
+      "width": 360,
+      "height": 667
+    }
+  ],
+  "scenarios": [
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-cpu disabled-js",
+      "resource": "/advanced-configurator/cpu",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/cpu",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/cpu",
+      "onBeforeScript": "./../../lib/engine-scripts/disable-js.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-gpu disabled-js",
+      "resource": "/advanced-configurator/graphics_card",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/graphics_card",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/graphics_card",
+      "onBeforeScript": "./../../lib/engine-scripts/disable-js.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-hdd disabled-js",
+      "resource": "/advanced-configurator/hdd",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/hdd",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/hdd",
+      "onBeforeScript": "./../../lib/engine-scripts/disable-js.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-main disabled-js",
+      "resource": "/advanced-configurator",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator",
+      "onBeforeScript": "./../../lib/engine-scripts/disable-js.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-motherboard disabled-js",
+      "resource": "/advanced-configurator/motherboard",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/motherboard",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/motherboard",
+      "onBeforeScript": "./../../lib/engine-scripts/disable-js.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-psu disabled-js",
+      "resource": "/advanced-configurator/power_supply",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/power_supply",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/power_supply",
+      "onBeforeScript": "./../../lib/engine-scripts/disable-js.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-ram disabled-js",
+      "resource": "/advanced-configurator/dram_memory",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/dram_memory",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/dram_memory",
+      "onBeforeScript": "./../../lib/engine-scripts/disable-js.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings configurator configurator-tower disabled-js",
+      "resource": "/advanced-configurator/case",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "url": "https://komputronik-november.alfa.netcorner.pl/advanced-configurator/case",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/advanced-configurator/case",
+      "onBeforeScript": "./../../lib/engine-scripts/disable-js.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings producer-category-listing apple disabled-js",
+      "resource": "/category/5022/laptopy,apple.html",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "url": "https://komputronik-november.alfa.netcorner.pl/category/5022/laptopy,apple.html",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/category/5022/laptopy,apple.html",
+      "onBeforeScript": "./../../lib/engine-scripts/disable-js.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings producer-listing apple disabled-js",
+      "resource": "/producer/7/apple.html",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "url": "https://komputronik-november.alfa.netcorner.pl/producer/7/apple.html",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/producer/7/apple.html",
+      "onBeforeScript": "./../../lib/engine-scripts/disable-js.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings product-listing laptops disabled-js",
+      "resource": "/category/5022/laptopy.html",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "url": "https://komputronik-november.alfa.netcorner.pl/category/5022/laptopy.html",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/category/5022/laptopy.html",
+      "onBeforeScript": "./../../lib/engine-scripts/disable-js.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings product-listing pendrives disabled-js smoke",
+      "resource": "/category/686/pendrive.html",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "url": "https://komputronik-november.alfa.netcorner.pl/category/686/pendrive.html",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/category/686/pendrive.html",
+      "onBeforeScript": "./../../lib/engine-scripts/disable-js.js"
+    },
+    {
+      "label": "test-listings - komputronik-pl listings search-filter dual-sim disabled-js",
+      "resource": "search-filter/1596/smartfony-z-dual-sim",
+      "selectors": [],
+      "delay": 500,
+      "misMatchThreshold": 1,
+      "requireSameDimensions": true,
+      "report": [
+        "browser"
+      ],
+      "url": "https://komputronik-november.alfa.netcorner.pl/search-filter/1596/smartfony-z-dual-sim",
+      "referenceUrl": "https://komputronik-zakwas.alfa.netcorner.pl/search-filter/1596/smartfony-z-dual-sim",
+      "onBeforeScript": "./../../lib/engine-scripts/disable-js.js"
+    }
+  ],
+  "paths": {
+    "bitmaps_reference": "backstop_data/bitmaps_reference_smoke-tests-config",
+    "bitmaps_test": "backstop_data/bitmaps_test_smoke-tests-config",
+    "html_report": "backstop_data/html_report_smoke-tests-config",
+    "ci_report": "backstop_data/ci_report_smoke-tests-config",
+    "engine_scripts": "backstop_data/engine_scripts_smoke-tests-config"
+  },
+  "engine": "puppeteer",
+  "engineOptions": {
+    "executablePath": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+    "headless": true,
+    "args": [
+      "--no-sandbox",
+      "--disable-web-security",
+      "--allow-running-insecure-content",
+      "--disable-features=IsolateOrigins,site-per-process"
+    ]
+  },
+  "report": [
+    "CI"
+  ],
+  "debug": false,
+  "debugWindow": false
+}
