@@ -4,7 +4,7 @@ import {
   createViewerState, ensureModal, openViewer,
   getAvailableModes, getModeSrc, refreshSlots,
   setPresentationMode, setZoomPreset, navigateRow,
-  setCursorPosition, toggleTag
+  setCursorPosition, toggleTag, getRowTagKey
 } from "./viewer.js";
 
 const { createApp } = window.Vue;
@@ -166,7 +166,15 @@ createApp({
                 <button type="button" class="btn" :class="middleZoomClass()" @mousedown="startZoomHold(160)" @mouseup="stopZoomHold" @mouseleave="stopZoomHold">O</button>
                 <button type="button" class="btn" :class="zoomClass(190)" @mousedown="startZoomHold(190)" @mouseup="stopZoomHold" @mouseleave="stopZoomHold">< K-E</button>
               </div>
-              <button type="button" class="btn ms-1" :class="[superZoomActive ? 'btn-primary' : 'btn-outline-secondary']" @mousedown="activateSuperZoom" @mouseup="deactivateSuperZoom" @mouseleave="deactivateSuperZoom">🔍 K-W</button>
+              <div class="btn-group btn-group-sm fit-group" role="group">
+                <button v-for="fit in fitModes" :key="fit.key" type="button"
+                        class="btn"
+                        :class="presentationFit===fit.key ? 'btn-primary' : 'btn-outline-secondary'"
+                        @click="setPresentationFit(fit.key)">
+                  {{ fit.label }}
+                </button>
+              </div>
+              <button type="button" :class="superZoomActive ? 'btn btn-primary ms-1' : 'btn btn-outline-secondary ms-1'" @mousedown="activateSuperZoom" @mouseup="deactivateSuperZoom" @mouseleave="deactivateSuperZoom">🔍 K-W</button>
 
                <div class="btn-group btn-group-sm" role="group">
                  <button v-if="!viewer.tags.bug" type="button" class="btn btn-outline-danger" @click="promptTag('bug')">BUG! (K-S)</button>
@@ -176,7 +184,7 @@ createApp({
               <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" @click="closeModal">Exit (K-LSHIFT)</button>
             </div>
 
-              <div class="text-muted small mb-2">Keys: 1‑4 layout, A/D navigate, hold Q/E zoom, hold W super zoom, S/C tags, Shift = exit</div>
+              <div class="text-muted small mb-2">Keys: 1‑4 layout, A/D navigate, hold Q/E zoom, hold W super zoom, S/C tags prompt, Shift = exit</div>
 
             <div class="flex-grow-1 overflow-auto pb-2 position-relative">
               <div class="slot-grid" :style="gridStyle">
@@ -192,8 +200,7 @@ createApp({
                   <div class="slot-media">
                     <img v-if="slotImage(slot)" :src="slotImage(slot)"
                          class="w-100 h-100"
-                         :style="imageStyle"
-                         style="object-fit: contain;" />
+                         :style="[presentationStyle, imageStyle]" />
                     <div v-else class="text-muted small text-center position-absolute top-50 start-50 translate-middle">
                       Brak obrazu dla {{ viewer.presentationMode }}
                     </div>
@@ -225,6 +232,7 @@ createApp({
       superZoomActive: false,
       keyHeld: { a: false, d: false, q: false, e: false, w: false, s: false, c: false },
       prompt: { active: false, type: null },
+      presentationFit: "FIT",
     };
   },
   computed: {
@@ -246,7 +254,35 @@ createApp({
     zoomScale() {
       if (this.superZoomActive) return 3;
       return (this.activeZoomValue || this.viewer.zoomPreset || 160) / 100;
-    }
+    },
+    fitModes() {
+      return [
+        { key: "FIT", label: "FIT" },
+        { key: "VERT", label: "VERT" },
+        { key: "HORIZ", label: "HORIZ" },
+        { key: "CENTER", label: "CENTER" },
+      ];
+    },
+    presentationStyle() {
+      const mode = this.presentationFit;
+      const style = {
+        width: "100%",
+        height: "100%",
+        objectFit: "contain",
+        objectPosition: "center",
+      };
+      if (mode === "VERT") {
+        style.width = "auto";
+        style.height = "100%";
+      } else if (mode === "HORIZ") {
+        style.width = "100%";
+        style.height = "auto";
+      }
+      return style;
+    },
+    presentationFitMultiplier() {
+      return this.presentationFit === "CENTER" ? 1.2 : 1;
+    },
   },
   methods: {
     fmt,
@@ -263,7 +299,7 @@ createApp({
       return getModeSrc(this.viewer, this.viewer.presentationMode) || this.viewer.modalImgSrc;
     },
     imageStyle() {
-      const scale = this.zoomScale;
+      const scale = this.zoomScale * this.presentationFitMultiplier;
       return {
         transform: `scale(${scale})`,
         transformOrigin: `${this.viewer.cursorX}% ${this.viewer.cursorY}%`,
@@ -314,9 +350,13 @@ createApp({
           this.activateSuperZoom();
         }
       } else if (k.toUpperCase() === "S") {
-        this.promptTag("bug");
+        if (!this.isTagLocked("bug")) {
+          this.promptTag("bug");
+        }
       } else if (k.toUpperCase() === "C") {
-        this.promptTag("aso");
+        if (!this.isTagLocked("aso")) {
+          this.promptTag("aso");
+        }
       } else if (evt.code === "ShiftLeft") {
         this.closeModal();
       } else if (k === "Escape") {
@@ -368,9 +408,19 @@ createApp({
         this.show(next.row, this.viewer.presentationMode, next.index);
       }
     },
+    isTagLocked(type) {
+      const row = this.viewer.modalRow;
+      if (!row) return false;
+      const key = getRowTagKey(row);
+      return !!this.viewer.tagLocked?.[key]?.[type];
+    },
     promptTag(type) {
       if (this.prompt.active) return;
+      if (this.isTagLocked(type)) return;
       this.prompt = { active: true, type };
+    },
+    setPresentationFit(mode) {
+      this.presentationFit = mode;
     },
     confirmPrompt() {
       if (!this.prompt.active) return;

@@ -35,6 +35,7 @@ export function createViewerState() {
     cursorY: 50,
     tags: { bug: false, aso: false },
     tagLog: {},
+    tagLocked: {},
     currentIndex: null,
     slots: [],
 
@@ -101,6 +102,12 @@ export function openViewer(viewer, row, mode, index = null) {
   if (row) {
     const key = getRowTagKey(row);
     viewer.tags = viewer.tagLog[key] ? { ...viewer.tagLog[key] } : { bug: false, aso: false };
+    viewer.tagLocked = viewer.tagLocked || {};
+    const existingLock = viewer.tagLocked[key] || { bug: false, aso: false };
+    viewer.tagLocked[key] = {
+      bug: existingLock.bug || !!viewer.tags.bug,
+      aso: existingLock.aso || !!viewer.tags.aso,
+    };
   }
 }
 
@@ -226,13 +233,15 @@ export function setCursorPosition(viewer, bounds, evt) {
   viewer.cursorY = Math.min(100, Math.max(0, ((evt.clientY - bounds.top) / bounds.height) * 100));
 }
 
-function getRowTagKey(row) {
+export function getRowTagKey(row) {
   return `${row.scenario_id || ""}-${row.message || ""}`;
 }
 
 export function toggleTag(viewer, row, tagKey) {
   if (!row) return;
-  viewer.tags[tagKey] = !viewer.tags[tagKey];
+  viewer.tags[tagKey] = true;
   const key = getRowTagKey(row);
   viewer.tagLog[key] = { ...viewer.tags };
+  viewer.tagLocked[key] = viewer.tagLocked[key] || { bug: false, aso: false };
+  viewer.tagLocked[key][tagKey] = true;
 }
