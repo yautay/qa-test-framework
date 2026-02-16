@@ -1,7 +1,10 @@
 import re
 from dataclasses import dataclass
 
-_DNS_LABEL = re.compile(r"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$")
+_DNS_HOSTNAME = re.compile(
+    r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?"
+    r"(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$"
+)
 
 
 @dataclass(frozen=True)
@@ -16,16 +19,21 @@ def url_resolver(cfg: EnvUrls):
         env_key = env.strip().lower()
 
         if env_key == "prod":
-            return cfg.prod
+            return cfg.prod.rstrip("/")
         elif env_key == "demo":
-            return cfg.demo
+            return cfg.demo.rstrip("/")
         elif env_key == "test":
             name = server_name.strip().lower()
             if not name:
                 raise ValueError("server_name is required for test environment")
-            if not _DNS_LABEL.match(name):
-                raise ValueError(f"Invalid server_name (DNS label expected): {server_name!r}")
-            return cfg.test_template.format(host=name)
+            if not _DNS_HOSTNAME.match(name):
+                raise ValueError(f"Invalid server_name (DNS hostname expected): {server_name!r}")
+            try:
+                return cfg.test_template.format(host=name).rstrip("/")
+            except KeyError as e:
+                raise ValueError(
+                    f"Invalid test_template {cfg.test_template!r}; expected placeholder {{host}}"
+                ) from e
 
         raise ValueError(f"Unknown environment: {env!r}")
 

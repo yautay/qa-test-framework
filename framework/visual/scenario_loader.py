@@ -72,12 +72,12 @@ def _as_str_list(v: Any, file_path: Path, field: str) -> list[str]:
     raise _err(file_path, f"{field} must be a list of strings")
 
 
-def _as_steps(raw_steps: Any, file_path: Path) -> tuple[VisualStep, ...]:
+def _as_steps(raw_steps: Any, file_path: Path, field_prefix: str) -> tuple[VisualStep, ...]:
     """Translate raw dicts into typed VisualStep dataclasses."""
     if raw_steps is None:
         return ()
     if not isinstance(raw_steps, list) or not all(isinstance(x, dict) for x in raw_steps):
-        raise _err(file_path, "steps must be a list of objects")
+        raise _err(file_path, f"{field_prefix}steps must be a list of objects")
 
     steps: list[VisualStep] = []
     for i, raw in enumerate(raw_steps):
@@ -86,54 +86,49 @@ def _as_steps(raw_steps: Any, file_path: Path) -> tuple[VisualStep, ...]:
                 action=_as_str(raw.get("action", "")).strip(),
                 selector=_as_str(raw.get("selector", "")).strip(),
                 value=_as_str(raw.get("value", "")),
-                timeout_ms=_as_int(raw.get("timeout_ms", 5000), 5000, file_path, f"steps[{i}].timeout_ms"),
+                timeout_ms=_as_int(raw.get("timeout_ms", 5000), 5000, file_path,
+                                   f"{field_prefix}steps[{i}].timeout_ms"),
                 url=_as_str(raw.get("url", "")).strip(),
             )
         )
     return tuple(steps)
 
 
-def _load_scenario(file_path: Path) -> VisualScenario:
-    """Deserialize a single JSON file into a VisualScenario instance."""
-    try:
-        payload = json.loads(file_path.read_text(encoding="utf-8"))
-    except json.JSONDecodeError as e:
-        raise _err(file_path, f"invalid JSON: {e}") from e
+def _scenario_from_payload(payload: dict[str, Any], file_path: Path, idx: int) -> VisualScenario:
+    """Deserialize a single scenario object (dict) into a VisualScenario instance."""
+    pfx = f"scenarios[{idx}]."
 
-    if not isinstance(payload, dict):
-        raise _err(file_path, "top-level JSON must be an object")
-
-    scenario_id = _as_str(payload.get("id") or file_path.stem).strip()
+    scenario_id = _as_str(payload.get("id") or f"{file_path.stem}__{idx + 1}").strip()
     if not scenario_id:
-        raise _err(file_path, "id must be non-empty")
+        raise _err(file_path, f"{pfx}id must be non-empty")
 
     name = _as_str(payload.get("name") or scenario_id).strip()
     suite_id = _as_str(payload.get("suite_id", "")).strip()
     target_url = _as_str(payload.get("target_url", "")).strip()
     if not suite_id:
-        raise _err(file_path, "suite_id must be non-empty")
+        raise _err(file_path, f"{pfx}suite_id must be non-empty")
     if not target_url:
-        raise _err(file_path, "target_url must be non-empty")
+        raise _err(file_path, f"{pfx}target_url must be non-empty")
 
     compare_mode = _as_str(payload.get("compare_mode", "hybrid")).strip().lower()
     if compare_mode not in {"pixel", "perceptual", "hybrid"}:
-        raise _err(file_path, f"compare_mode must be pixel|perceptual|hybrid (got {compare_mode!r})")
+        raise _err(file_path, f"{pfx}compare_mode must be pixel|perceptual|hybrid (got {compare_mode!r})")
 
     capture_raw = payload.get("capture") or {}
     if not isinstance(capture_raw, dict):
-        raise _err(file_path, "capture must be an object")
+        raise _err(file_path, f"{pfx}capture must be an object")
 
     capture_type = _as_str(capture_raw.get("type", "page")).strip().lower()
     if capture_type not in {"page", "viewport", "element"}:
-        raise _err(file_path, f"capture.type must be page|viewport|element (got {capture_type!r})")
+        raise _err(file_path, f"{pfx}capture.type must be page|viewport|element (got {capture_type!r})")
 
     mask_raw = payload.get("mask") or {}
     if not isinstance(mask_raw, dict):
-        raise _err(file_path, "mask must be an object")
+        raise _err(file_path, f"{pfx}mask must be an object")
 
     thresholds_raw = payload.get("thresholds") or {}
     if not isinstance(thresholds_raw, dict):
-        raise _err(file_path, "thresholds must be an object")
+        raise _err(file_path, f"{pfx}thresholds must be an object")
 
     return VisualScenario(
         scenario_id=scenario_id,
@@ -144,25 +139,52 @@ def _load_scenario(file_path: Path) -> VisualScenario:
         capture=VisualCapture(
             capture_type=capture_type,
             selector=_as_str(capture_raw.get("selector", "")).strip(),
-            full_page=_as_bool(capture_raw.get("full_page", True), True, file_path, "capture.full_page"),
+            full_page=_as_bool(capture_raw.get("full_page", True), True, file_path, f"{pfx}capture.full_page"),
         ),
         thresholds=VisualThresholds(
-            pixel_max=_as_float(thresholds_raw.get("pixel_max", 0.005), 0.005, file_path, "thresholds.pixel_max"),
-            lpips_max=_as_float(thresholds_raw.get("lpips_max", 0.08), 0.08, file_path, "thresholds.lpips_max"),
-            dists_max=_as_float(thresholds_raw.get("dists_max", 0.08), 0.08, file_path, "thresholds.dists_max"),
+            pixel_max=_as_float(thresholds_raw.get("pixel_max", 0.005), 0.005, file_path, f"{pfx}thresholds.pixel_max"),
+            lpips_max=_as_float(thresholds_raw.get("lpips_max", 0.08), 0.08, file_path, f"{pfx}thresholds.lpips_max"),
+            dists_max=_as_float(thresholds_raw.get("dists_max", 0.08), 0.08, file_path, f"{pfx}thresholds.dists_max"),
         ),
         mask=VisualMask(
-            selectors=tuple(_as_str_list(mask_raw.get("selectors"), file_path, "mask.selectors")),
+            selectors=tuple(_as_str_list(mask_raw.get("selectors"), file_path, f"{pfx}mask.selectors")),
             color=_as_str(mask_raw.get("color", "#00FF00")),
         ),
-        steps=_as_steps(payload.get("steps", []), file_path),
-        perceptual_required=_as_bool(payload.get("perceptual_required", False), False, file_path, "perceptual_required"),
+        steps=_as_steps(payload.get("steps", []), file_path, pfx),
+        perceptual_required=_as_bool(payload.get("perceptual_required", False), False, file_path,
+                                     f"{pfx}perceptual_required"),
     )
 
 
+def _load_scenarios(file_path: Path) -> list[VisualScenario]:
+    """Deserialize a JSON file into one-or-many VisualScenario instances (Variant B)."""
+    try:
+        payload = json.loads(file_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        raise _err(file_path, f"invalid JSON: {e}") from e
+
+    # Accept:
+    # - dict scenario
+    # - list[dict] scenarios
+    # - {"scenarios": list[dict]}
+    if isinstance(payload, dict) and "scenarios" in payload:
+        raw = payload["scenarios"]
+    else:
+        raw = payload
+
+    if isinstance(raw, dict):
+        raw_list: list[dict[str, Any]] = [raw]
+    elif isinstance(raw, list) and all(isinstance(x, dict) for x in raw):
+        raw_list = raw  # type: ignore[assignment]
+    else:
+        raise _err(file_path, "top-level JSON must be an object, a list of objects, or {'scenarios': [...]}")
+
+    return [_scenario_from_payload(item, file_path, idx) for idx, item in enumerate(raw_list)]
+
+
 def load_scenarios_with_errors(
-    scenarios_dir: Path,
-    scenario_filter: str = "",
+        scenarios_dir: Path,
+        scenario_filter: str = "",
 ) -> tuple[list[VisualScenario], list[ScenarioLoadError]]:
     """Load scenarios and collect errors instead of raising immediately."""
     scenarios: list[VisualScenario] = []
@@ -171,12 +193,23 @@ def load_scenarios_with_errors(
 
     for file_path in sorted(scenarios_dir.glob("*.json")):
         try:
-            scenario = _load_scenario(file_path)
-            if filter_value and filter_value not in scenario.scenario_id.lower():
-                continue
-            scenarios.append(scenario)
+            loaded = _load_scenarios(file_path)
+            for scenario in loaded:
+                if filter_value and filter_value not in scenario.scenario_id.lower():
+                    continue
+                scenarios.append(scenario)
         except Exception as exc:
             errors.append(ScenarioLoadError(file=file_path, message=str(exc)))
+
+    # Detect duplicate ids (prevents file overwrites / confusing diffs)
+    seen: set[str] = set()
+    dups: set[str] = set()
+    for s in scenarios:
+        if s.scenario_id in seen:
+            dups.add(s.scenario_id)
+        seen.add(s.scenario_id)
+    for sid in sorted(dups):
+        errors.append(ScenarioLoadError(file=scenarios_dir, message=f"Duplicate scenario id: {sid!r}"))
 
     return scenarios, errors
 

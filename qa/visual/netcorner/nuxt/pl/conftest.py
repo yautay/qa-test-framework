@@ -7,7 +7,7 @@ resolve_pl = url_resolver(
     EnvUrls(
         prod="https://komputronik.pl",
         demo="https://sklep3-demo.komputronik.dev",
-        test_template="https://komputronik-{server}.netcorner.pl",
+        test_template="https://komputronik-{host}.netcorner.pl",
     )
 )
 

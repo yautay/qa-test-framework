@@ -11,7 +11,6 @@ Typical structure:
 - `artifacts/<run_id>/videos/`
 - `artifacts/<run_id>/traces/`
 - `artifacts/<run_id>/visual/`
-- `artifacts/<run_id>/visual-report/`
 
 ## Logs
 
@@ -56,8 +55,8 @@ Visual runs write:
 - `visual/actual/` - captured images,
 - `visual/diff/` - pixel-diff overlays,
 - `visual/heatmap/` - LPIPS heatmaps (when perceptual API is used),
-- `visual-report/results.json` - structured result summary,
-- `visual-report/index.html` - local interactive report.
+- `visual/results.json` - structured result summary,
+- `visual/index.html` - local interactive report.
 
 ## Retention recommendation
 

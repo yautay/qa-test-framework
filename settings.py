@@ -1,6 +1,6 @@
 # Console log level for Loguru output in new framework.
 # Allowed values: TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL
-console_log_level = "ERROR"
+console_log_level = "WARNING"
 ignore_https_errors = True
 
 # Remote Playwright grid compatibility defaults.

@@ -42,7 +42,7 @@ def visual_results(pytestconfig: pytest.Config) -> list:
     """Collects visual scenario results and writes local report on session end."""
     results: list = []
     yield results
-    report_dir = pytestconfig._run_artifacts.root / "visual-report"
+    report_dir = pytestconfig._run_artifacts.root / "visual"
     write_visual_report(report_dir, results)
 
 

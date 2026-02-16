@@ -1,24 +1,153 @@
-{
-  "id": "vrt-netcorner-nuxt-pl-hero-homepage",
-  "name": "Homepage main visual",
-  "suite_id": "netcorner/nuxt/pl/hero_page",
-  "target_url": "/",
-  "compare_mode": "hybrid",
-  "capture": {
-    "type": "page",
-    "full_page": true
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-full_page",
+    "name": "Homepage main visual",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "[data-name='heroSlider']",
+        "[alt]",
+        ".swiper-wrapper"
+      ],
+      "color": "#00FF00"
+    }
   },
-  "mask": {
-    "selectors": [
-      "[data-testid='dynamic-banner']",
-      ".cookie-banner"
-    ],
-    "color": "#00FF00"
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-ozo",
+    "name": "OzO Component",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='DailyDealWidget']"
+    }
   },
-  "thresholds": {
-    "pixel_max": 0.01,
-    "lpips_max": 0.12,
-    "dists_max": 0.12
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-header",
+    "name": "Header Component",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='headerBar']"
+    }
   },
-  "steps": []
-}
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-nav",
+    "name": "Nav Component",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "nav"
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-configurator",
+    "name": "Configurator Component",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='subsidiaryBanner']"
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-services",
+    "name": "Services Component",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='services']"
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-categories",
+    "name": "Categories Component",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='categoryListDesktop']"
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-brands",
+    "name": "Brands Component",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='brandZone']"
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-contact",
+    "name": "Contact Component",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='contactUs']"
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-newsletter",
+    "name": "Newsletter Component",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='newsletterSignup']"
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-links",
+    "name": "Links Component",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='linksCloud']"
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-about_us",
+    "name": "AboutUs Component",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='aboutUs']"
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-footer",
+    "name": "Footer Component",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='footer']"
+    }
+  }
+]

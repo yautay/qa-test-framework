@@ -22,9 +22,14 @@ def _repo_root_from(test_file: Path) -> Path:
 
 def scenario_params(pytestconfig: pytest.Config, scenarios_dir: Path) -> list[VisualScenario]:
     scenario_filter = str(pytestconfig.getoption("visual_scenario") or "")
-    scenarios, errors = load_scenarios_with_errors(scenarios_dir, scenario_filter=scenario_filter)
+    scenarios, errors = load_scenarios_with_errors(
+        scenarios_dir,
+        scenario_filter=scenario_filter
+    )
+
     if errors:
-        print(format_load_errors(errors))
+        raise pytest.UsageError(format_load_errors(errors))
+
     return scenarios
 
 

@@ -1,31 +1,29 @@
 from __future__ import annotations
 
-"""Emit JSON/HTML summaries for visual regression results."""
+"""Emit JSON/HTML summaries for visual regression results (offline-friendly).
+
+Outputs:
+- results.json (machine-readable)
+- index.html (offline, no fetch; embeds results inline)
+- assets/ (bootstrap + vue + app.js)
+"""
 
 import json
-from html import escape
+import shutil
 from pathlib import Path
+from typing import Any
 
 from framework.visual.models import VisualResult
 
 
-def _fmt_float(value: float | None, digits: int = 6) -> str:
-    if value is None:
-        return ""
-    try:
-        return f"{float(value):.{digits}f}"
-    except (TypeError, ValueError):
-        return ""
-
-
-def _as_str_path(value) -> str:
+def _as_str_path(value: Any) -> str:
     if value is None:
         return ""
     return str(value)
 
 
 def _maybe_relpath(path_str: str, report_dir: Path) -> str:
-    """Return a relative path (posix) if path is within report_dir, else original string."""
+    """Return a relative posix path if path is within report_dir, else original string."""
     if not path_str:
         return ""
     try:
@@ -36,14 +34,40 @@ def _maybe_relpath(path_str: str, report_dir: Path) -> str:
         return path_str
 
 
-def write_visual_report(report_dir: Path, results: list[VisualResult]) -> None:
-    """Persist JSON + HTML artifacts that describe visual comparison outcomes."""
+def _copy_report_assets(report_dir: Path) -> None:
+    """Copy offline UI assets into report_dir/assets/."""
+    assets_src = Path(__file__).resolve().parent / "report_assets"
+    assets_dst = report_dir / "assets"
+    assets_dst.mkdir(parents=True, exist_ok=True)
 
-    report_dir.mkdir(parents=True, exist_ok=True)
+    required = (
+        "bootstrap.min.css",
+        "bootstrap.bundle.min.js",
+        "vue.global.prod.js",
+        "index.template.html",
+        "app.module.js",
+        "store.js",
+        "viewer.js",
+        "format.js",
+    )
 
-    rows: list[dict] = []
+    for name in required:
+        src = assets_src / name
+        if not src.exists():
+            raise FileNotFoundError(f"Missing report asset: {src}")
+        shutil.copyfile(src, assets_dst / name)
+
+
+def _build_rows(report_dir: Path, results: list[VisualResult]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
     for result in results:
         thresholds = getattr(result, "thresholds", None)
+
+        baseline = _maybe_relpath(_as_str_path(result.baseline_path), report_dir)
+        actual = _maybe_relpath(_as_str_path(result.actual_path), report_dir)
+        diff = _maybe_relpath(_as_str_path(getattr(result, "diff_path", None)), report_dir)
+        heatmap = _maybe_relpath(_as_str_path(getattr(result, "heatmap_path", None)), report_dir)
+
         rows.append(
             {
                 "scenario_id": result.scenario_id,
@@ -53,10 +77,10 @@ def write_visual_report(report_dir: Path, results: list[VisualResult]) -> None:
                 "pixel_changed_ratio": result.pixel_changed_ratio,
                 "lpips": result.lpips,
                 "dists": result.dists,
-                "baseline_path": _as_str_path(result.baseline_path),
-                "actual_path": _as_str_path(result.actual_path),
-                "diff_path": _as_str_path(getattr(result, "diff_path", None)),
-                "heatmap_path": _as_str_path(getattr(result, "heatmap_path", None)),
+                "baseline_path": baseline,
+                "actual_path": actual,
+                "diff_path": diff,
+                "heatmap_path": heatmap,
                 "thresholds": {
                     "pixel_max": getattr(thresholds, "pixel_max", None),
                     "lpips_max": getattr(thresholds, "lpips_max", None),
@@ -64,49 +88,42 @@ def write_visual_report(report_dir: Path, results: list[VisualResult]) -> None:
                 },
             }
         )
+    return rows
 
+
+def _write_results_json(report_dir: Path, rows: list[dict[str, Any]]) -> None:
     (report_dir / "results.json").write_text(
         json.dumps({"results": rows}, indent=2, ensure_ascii=False),
         encoding="utf-8",
     )
 
-    lines = [
-        "<html><head><meta charset='utf-8'><title>Visual Report</title></head><body>",
-        "<h1>Visual Regression Report</h1>",
-        "<table border='1' cellspacing='0' cellpadding='6'>",
-        "<tr><th>Scenario</th><th>Status</th><th>Mode</th><th>Pixel</th><th>LPIPS</th><th>DISTS</th><th>Message</th><th>Artifacts</th></tr>",
-    ]
 
-    for row in rows:
-        artifacts = []
-        for key in ("baseline_path", "actual_path", "diff_path", "heatmap_path"):
-            value = row.get(key) or ""
-            if not value:
-                continue
+def _write_offline_index_html(report_dir: Path, rows: list[dict[str, Any]]) -> None:
+    """Generate index.html that works in file:// and http(s):// by embedding results inline."""
+    template_path = report_dir / "assets" / "index.template.html"
+    tpl = template_path.read_text(encoding="utf-8")
 
-            href = _maybe_relpath(value, report_dir)
-            label = escape(key)
+    # Safe JSON embedding: avoid "</script>" breaking out of script tag
+    inline_json = json.dumps({"results": rows}, ensure_ascii=False).replace("</", "<\\/")
 
-            # If it looks like a file path, make it clickable; otherwise show text
-            if href and ("/" in href or "." in href):
-                artifacts.append(f"{label}: <a href='{escape(href)}'>{escape(Path(href).name)}</a>")
-            else:
-                artifacts.append(f"{label}: {escape(value)}")
+    html = tpl.replace("__VRT_INLINE_RESULTS__", inline_json)
 
-        artifacts_text = "<br/>".join(artifacts)
+    # Write main entry
+    (report_dir / "index.html").write_text(html, encoding="utf-8")
 
-        lines.append(
-            "<tr>"
-            f"<td>{escape(str(row.get('scenario_id', '')))}</td>"
-            f"<td>{escape(str(row.get('status', '')))}</td>"
-            f"<td>{escape(str(row.get('compare_mode', '')))}</td>"
-            f"<td>{escape(_fmt_float(row.get('pixel_changed_ratio')))}</td>"
-            f"<td>{escape(_fmt_float(row.get('lpips'), digits=6))}</td>"
-            f"<td>{escape(_fmt_float(row.get('dists'), digits=6))}</td>"
-            f"<td>{escape(str(row.get('message', '') or ''))}</td>"
-            f"<td>{artifacts_text}</td>"
-            "</tr>"
-        )
 
-    lines.append("</table></body></html>")
-    (report_dir / "index.html").write_text("\n".join(lines), encoding="utf-8")
+def write_visual_report(report_dir: Path, results: list[VisualResult]) -> None:
+    """Persist JSON + offline HTML report artifacts."""
+    report_dir.mkdir(parents=True, exist_ok=True)
+
+    # 1) Copy assets for offline usage
+    _copy_report_assets(report_dir)
+
+    # 2) Build rows with relative artifact paths (when possible)
+    rows = _build_rows(report_dir, results)
+
+    # 3) Machine-readable results
+    _write_results_json(report_dir, rows)
+
+    # 4) Offline-friendly index.template.html (no fetch)
+    _write_offline_index_html(report_dir, rows)

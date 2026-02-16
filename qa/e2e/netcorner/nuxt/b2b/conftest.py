@@ -7,7 +7,7 @@ resolve_pl = url_resolver(
     EnvUrls(
         prod="https://bi-to-bi.pl",
         demo="https://sklep-bi-to-bi-demo.komputronik.dev",
-        test_template="https://bi-to-bi-{server}.netcorner.pl",
+        test_template="https://bi-to-bi-{host}.netcorner.pl",
     )
 )
 

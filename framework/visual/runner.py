@@ -279,12 +279,12 @@ def _inject_masks(page: Page, selectors: list[str], color: str) -> list[str]:
     if not selectors:
         return []
 
-    rgba = _hex_to_rgba(color, alpha=0.35)
+    rgba = _hex_to_rgba(color, alpha=1)
 
     script = """
     (params) => {
       const ids = [];
-      const color = params.color || 'rgba(0,255,0,0.35)';
+      const color = params.color || 'rgba(0,255,0,1)';
       for (const selector of params.selectors) {
         document.querySelectorAll(selector).forEach((el) => {
           const rect = el.getBoundingClientRect();
