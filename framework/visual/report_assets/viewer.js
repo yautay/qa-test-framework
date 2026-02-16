@@ -26,7 +26,7 @@ export function createViewerState() {
     modalDiffSrc: "",
     modalLpipsSrc: "", // u Ciebie LPIPS = heatmap_path
 
-    columns: 1,
+    columns: DEFAULT_SLOT_COUNT,
     slots: [],
 
     // do zoom pod kursorem
@@ -86,7 +86,7 @@ export function openViewer(viewer, row, mode) {
   else if (mode === "lpips") viewer.modalImgSrc = viewer.modalLpipsSrc;
   else viewer.modalImgSrc = ""; // compare
 
-  viewer.slots = buildSlots(viewer);
+  refreshSlots(viewer);
 }
 
 export function setMode(viewer, mode) {
@@ -172,19 +172,21 @@ function getFirstAvailableMode(viewer, fallbackMode) {
   return modes[0].value;
 }
 
-function buildSlots(viewer) {
+function buildSlots(viewer, slotCount = viewer.columns || DEFAULT_SLOT_COUNT) {
   const availableModes = getModeList(viewer).filter((m) => m.available);
-  const slotCount = Math.max(DEFAULT_SLOT_COUNT, availableModes.length || 1);
   const fallbackMode = getFirstAvailableMode(viewer, viewer.viewerMode);
-  const slots = Array.from({ length: slotCount }, (_, idx) => {
-    const mode = availableModes.length
-      ? availableModes[idx % availableModes.length].value
-      : fallbackMode;
-    return { id: idx + 1, mode };
-  });
-  return slots;
+  const modeValues = availableModes.length ? availableModes.map((m) => m.value) : [fallbackMode];
+  const count = Math.max(1, slotCount);
+  return Array.from({ length: count }, (_, idx) => ({
+    id: idx + 1,
+    mode: modeValues[idx % modeValues.length] || fallbackMode,
+  }));
 }
 
 export function getAvailableModes(viewer) {
   return getModeList(viewer);
+}
+
+export function refreshSlots(viewer, slotCount) {
+  viewer.slots = buildSlots(viewer, slotCount);
 }

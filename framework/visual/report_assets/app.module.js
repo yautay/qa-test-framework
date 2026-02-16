@@ -2,7 +2,7 @@ import { fmt } from "./format.js";
 import { createStore, filteredSorted, resetFilters } from "./store.js";
 import {
   createViewerState, ensureModal, openViewer,
-  getAvailableModes, getModeSrc
+  getAvailableModes, getModeSrc, refreshSlots
 } from "./viewer.js";
 
 const { createApp } = window.Vue;
@@ -123,7 +123,7 @@ createApp({
 
     <!-- Modal -->
     <div class="modal fade" id="vrtModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-95">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-full">
         <div class="modal-content">
           <div class="modal-header">
             <div>
@@ -139,7 +139,7 @@ createApp({
               <div class="d-flex align-items-center gap-2">
                 <span class="text-muted small">Zdjęć w wierszu:</span>
                 <div class="btn-group btn-group-sm">
-                  <button v-for="count in [1,2,3]" :key="count"
+                  <button v-for="count in [1,2,3,4]" :key="count"
                           class="btn"
                           :class="viewer.columns===count ? 'btn-primary' : 'btn-outline-secondary'"
                           @click="setColumns(count)">
@@ -150,21 +150,23 @@ createApp({
               <div class="text-muted small mono ms-auto">Każdy slot wybiera REF/TEST/HEAT.</div>
             </div>
 
-            <div class="d-grid gap-3" :style="gridStyle">
-              <div v-for="slot in viewer.slots" :key="slot.id" class="card h-100 shadow-sm">
-                <div class="card-body d-flex flex-column gap-2">
-                  <div class="d-flex gap-2 align-items-center justify-content-between">
-                    <div class="mono small text-muted">Slot {{ slot.id }}</div>
-                    <select class="form-select form-select-sm w-auto" v-model="slot.mode">
-                      <option v-for="mode in modalModes" :key="mode.value" :value="mode.value" :disabled="!mode.available">
-                        {{ mode.label }}
-                      </option>
-                    </select>
-                  </div>
-                  <div class="border rounded bg-white flex-grow-1 position-relative overflow-hidden" style="min-height: 210px;">
-                    <img v-if="slotImage(slot)" :src="slotImage(slot)" class="d-block w-100 h-100" style="object-fit: contain;" />
-                    <div v-else class="text-muted small text-center position-absolute top-50 start-50 translate-middle">
-                      Brak obrazu dla {{ modeLabel(slot.mode) || 'wybranego rodzaju' }}
+            <div class="flex-grow-1 overflow-auto pb-2">
+              <div class="d-grid gap-3" :style="gridStyle">
+                <div v-for="slot in viewer.slots" :key="slot.id" class="card h-100 shadow-sm">
+                  <div class="card-body d-flex flex-column gap-2">
+                    <div class="d-flex gap-2 align-items-center justify-content-between">
+                      <div class="mono small text-muted">Slot {{ slot.id }}</div>
+                      <select class="form-select form-select-sm w-auto" v-model="slot.mode">
+                        <option v-for="mode in modalModes" :key="mode.value" :value="mode.value" :disabled="!mode.available">
+                          {{ mode.label }}
+                        </option>
+                      </select>
+                    </div>
+                    <div class="border rounded bg-white flex-grow-1 position-relative overflow-hidden" style="min-height: 210px;">
+                      <img v-if="slotImage(slot)" :src="slotImage(slot)" class="d-block w-100 h-100" style="object-fit: contain;" />
+                      <div v-else class="text-muted small text-center position-absolute top-50 start-50 translate-middle">
+                        Brak obrazu dla {{ modeLabel(slot.mode) || 'wybranego rodzaju' }}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -192,8 +194,11 @@ createApp({
       return getAvailableModes(this.viewer);
     },
     gridStyle() {
+      const requested = Math.max(1, this.viewer.columns || 1);
+      const columns = requested === 4 ? 2 : requested;
       return {
-        gridTemplateColumns: `repeat(${this.viewer.columns}, minmax(0, 1fr))`,
+        gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+        gridAutoRows: "1fr",
       };
     }
   },
@@ -213,6 +218,7 @@ createApp({
     },
     setColumns(value) {
       this.viewer.columns = value;
+      refreshSlots(this.viewer, value);
     },
     handleKeydown(evt) {
       if (evt.key !== "Escape") return;
