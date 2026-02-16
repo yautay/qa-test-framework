@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import requests
@@ -24,9 +24,10 @@ class ReportingClient:
     timeout_seconds: int = 5
     retries: int = 2
 
-    def _build_headers(self, payload: dict, json_content_type: bool = True) -> dict[str, str]:
-        """Compose HTTP headers with optional authorization and idempotency data."""
+    # Reuse TCP connections
+    session: requests.Session = field(default_factory=requests.Session, repr=False)
 
+    def _build_headers(self, payload: dict, json_content_type: bool = True) -> dict[str, str]:
         headers: dict[str, str] = {}
         if json_content_type:
             headers["Content-Type"] = "application/json"
@@ -39,8 +40,6 @@ class ReportingClient:
 
     @staticmethod
     def _is_failure_with_screenshots(payload: dict) -> bool:
-        """Recognize failed results that provide screenshot paths for multipart upload."""
-
         if payload.get("status") != "failed":
             return False
         artifacts = payload.get("artifacts", {})
@@ -48,27 +47,44 @@ class ReportingClient:
             return False
         return bool(artifacts.get("screenshot_raw") or artifacts.get("screenshot_annotated"))
 
-    def _post(self, path: str, payload: dict) -> None:
-        """Send JSON payload to the configured reporting endpoint with retries."""
+    @staticmethod
+    def _should_retry_status(status_code: int) -> bool:
+        # Retry on rate limit and server errors; avoid retrying most client errors.
+        return status_code == 429 or 500 <= status_code <= 599
 
+    @staticmethod
+    def _sleep_backoff(attempt: int) -> None:
+        # Simple linear backoff: 0.5s, 1.0s, 1.5s ...
+        time.sleep(0.5 * (attempt + 1))
+
+    def _post(self, path: str, payload: dict) -> None:
         if not self.enabled or not self.base_url:
             return
+
         url = f"{self.base_url.rstrip('/')}{path}"
         headers = self._build_headers(payload, json_content_type=True)
+
         for attempt in range(self.retries + 1):
             try:
-                response = requests.post(url, json=payload, headers=headers, timeout=self.timeout_seconds)
-                if response.ok:
-                    return
-                logger.warning("reporting api non-2xx", status=response.status_code, url=url)
-            except Exception as exc:
-                logger.warning(f"reporting api call failed: {exc}")
-            if attempt < self.retries:
-                time.sleep(0.5 * (attempt + 1))
+                response = self.session.post(url, json=payload, headers=headers, timeout=self.timeout_seconds)
+            except requests.RequestException:
+                logger.opt(exception=True).warning("reporting api call failed", url=url)
+                if attempt < self.retries:
+                    self._sleep_backoff(attempt)
+                continue
+
+            if response.ok:
+                return
+
+            logger.warning("reporting api non-2xx", status=response.status_code, url=url)
+
+            if attempt < self.retries and self._should_retry_status(response.status_code):
+                self._sleep_backoff(attempt)
+                continue
+
+            return  # do not retry non-retriable status codes
 
     def _post_test_result_with_screenshots(self, payload: dict) -> None:
-        """Send multipart payload when screenshots accompany a failed test."""
-
         if not self.enabled or not self.base_url:
             return
 
@@ -80,7 +96,8 @@ class ReportingClient:
 
         raw_path = artifacts.get("screenshot_raw")
         ann_path = artifacts.get("screenshot_annotated")
-        file_paths = [p for p in [raw_path, ann_path] if isinstance(p, str) and p]
+
+        file_paths = [p for p in (raw_path, ann_path) if isinstance(p, str) and p.strip()]
         existing_paths = [Path(p) for p in file_paths if Path(p).is_file()]
         if not existing_paths:
             self._post(self.test_result_endpoint, payload)
@@ -89,50 +106,58 @@ class ReportingClient:
         headers = self._build_headers(payload, json_content_type=False)
 
         for attempt in range(self.retries + 1):
-            files = []
-            opened_handles = []
+            opened_handles: list[object] = []
             try:
+                files = []
                 for file_path in existing_paths:
                     handle = file_path.open("rb")
                     opened_handles.append(handle)
+                    # If your backend expects always PNG, keep as-is; otherwise consider mimetypes.
                     files.append(("screenshots", (file_path.name, handle, "image/png")))
 
                 data = {"payload": json.dumps(payload)}
-                response = requests.post(
+                response = self.session.post(
                     url,
                     data=data,
                     files=files,
                     headers=headers,
                     timeout=self.timeout_seconds,
                 )
+
                 if response.ok:
                     return
+
                 logger.warning("reporting api non-2xx", status=response.status_code, url=url)
-            except Exception as exc:
-                logger.warning(f"reporting screenshot upload failed: {exc}")
+
+                if attempt < self.retries and self._should_retry_status(response.status_code):
+                    self._sleep_backoff(attempt)
+                    continue
+
+                return  # do not retry non-retriable status codes
+
+            except requests.RequestException:
+                logger.opt(exception=True).warning("reporting screenshot upload failed", url=url)
+                if attempt < self.retries:
+                    self._sleep_backoff(attempt)
+                continue
             finally:
                 for handle in opened_handles:
-                    handle.close()
+                    try:
+                        handle.close()
+                    except Exception:
+                        pass
 
-            if attempt < self.retries:
-                time.sleep(0.5 * (attempt + 1))
-
+        # Final fallback: JSON-only
         self._post(self.test_result_endpoint, payload)
 
     def run_start(self, payload: dict) -> None:
-        """Signal the start of a test run to the remote reporting service."""
-
         self._post(self.run_start_endpoint, payload)
 
     def test_result(self, payload: dict) -> None:
-        """Notify reporting about a specific test outcome, uploading screenshots when needed."""
-
         if self._is_failure_with_screenshots(payload):
             self._post_test_result_with_screenshots(payload)
             return
         self._post(self.test_result_endpoint, payload)
 
     def run_finish(self, payload: dict) -> None:
-        """Wrap up the run with a completion payload."""
-
         self._post(self.run_finish_endpoint, payload)

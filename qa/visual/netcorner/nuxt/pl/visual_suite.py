@@ -7,7 +7,7 @@ import pytest
 from framework.env import RuntimeEnv
 from framework.visual.models import VisualScenario
 from framework.visual.runner import VisualRunner
-from framework.visual.scenario_loader import load_scenarios
+from framework.visual.scenario_loader import load_scenarios_with_errors, format_load_errors
 
 ALLOWED_VIEWPORTS = {"mobile", "tablet", "fhd", "2k", "4k"}
 
@@ -22,7 +22,10 @@ def _repo_root_from(test_file: Path) -> Path:
 
 def scenario_params(pytestconfig: pytest.Config, scenarios_dir: Path) -> list[VisualScenario]:
     scenario_filter = str(pytestconfig.getoption("visual_scenario") or "")
-    return load_scenarios(scenarios_dir, scenario_filter=scenario_filter)
+    scenarios, errors = load_scenarios_with_errors(scenarios_dir, scenario_filter=scenario_filter)
+    if errors:
+        print(format_load_errors(errors))
+    return scenarios
 
 
 def viewport_params(pytestconfig: pytest.Config) -> list[str]:

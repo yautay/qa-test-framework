@@ -1,18 +1,37 @@
 from __future__ import annotations
-
-"""Driver for executing visual regression scenarios and emitting comparison results."""
-
 import base64
+import binascii
+import re
 from pathlib import Path
 from typing import Any
-
 from playwright.sync_api import Page
-
 from framework.env import RuntimeEnv
 from framework.visual.baseline_store import BaselineStore
 from framework.visual.compare_pixel import compare_images
 from framework.visual.models import VisualResult, VisualScenario
 from framework.visual.perceptual_client import PerceptualClient, PerceptualServiceError
+
+
+"""Driver for executing visual regression scenarios and emitting comparison results."""
+
+_SAFE_FILE = re.compile(r"[^a-zA-Z0-9._-]+")
+
+
+def _safe_filename(stem: str) -> str:
+    """Make a safe filename stem from scenario id."""
+    s = stem.strip()
+    s = s.replace("\\", "_").replace("/", "_")
+    s = _SAFE_FILE.sub("_", s)
+    return s or "scenario"
+
+
+def _safe_float(value: object, default: float | None = None) -> float | None:
+    try:
+        if value is None:
+            return default
+        return float(value)
+    except (TypeError, ValueError):
+        return default
 
 
 class VisualRunner:
@@ -33,17 +52,26 @@ class VisualRunner:
     @property
     def perceptual_client(self) -> PerceptualClient:
         """Expose the latent perceptual client for custom checks or tests."""
-
         return self._perceptual
 
     def run(self, page: Page, scenario: VisualScenario, viewport: str, approve: bool) -> VisualResult:
         """Execute the scenario, compare captures, and either approve or evaluate."""
 
         self._navigate(page, scenario)
-        actual_path = self._actual_dir / f"{scenario.scenario_id}.png"
+
+        file_stem = _safe_filename(scenario.scenario_id)
+        actual_path = self._actual_dir / f"{file_stem}.png"
         self._capture(page, scenario, actual_path)
 
-        browser_family = page.context.browser.browser_type.name
+        # Browser family (be defensive)
+        browser_family = "unknown"
+        try:
+            b = page.context.browser
+            if b is not None:
+                browser_family = b.browser_type.name
+        except Exception:
+            browser_family = (self._env.browser or "unknown").strip().lower()
+
         baseline_path = self._store.resolve_baseline(
             scenario.suite_id,
             scenario.scenario_id,
@@ -91,28 +119,42 @@ class VisualRunner:
                 thresholds=scenario.thresholds,
             )
 
-        diff_path = self._diff_dir / f"{scenario.scenario_id}.png"
+        diff_path = self._diff_dir / f"{file_stem}.png"
         pixel_changed_ratio = compare_images(baseline_path, actual_path, diff_path)
 
         lpips_score: float | None = None
         dists_score: float | None = None
-        heatmap_path = ""
+        heatmap_path_str = ""
         mode_effective = scenario.compare_mode
 
         requires_perceptual = scenario.compare_mode in {"perceptual", "hybrid"}
-        must_have_perceptual = self._env.visual_perceptual_required or scenario.perceptual_required
+        must_have_perceptual = bool(self._env.visual_perceptual_required or scenario.perceptual_required)
+
         if requires_perceptual:
             available = self._perceptual.ensure_ready(required=must_have_perceptual)
             if available:
                 try:
                     response = self._perceptual.compare(baseline_path, actual_path)
-                    lpips_score = float(response.get("lpips", {}).get("value", 0.0))
-                    dists_score = float(response.get("dists", {}).get("value", 0.0))
-                    heatmap_b64 = str(response.get("lpips_heatmap_png_base64", ""))
-                    if heatmap_b64:
-                        heatmap_file = self._heatmap_dir / f"{scenario.scenario_id}.png"
-                        heatmap_file.write_bytes(base64.b64decode(heatmap_b64))
-                        heatmap_path = str(heatmap_file)
+
+                    lpips_score = _safe_float(
+                        (response.get("lpips") or {}).get("value") if isinstance(response.get("lpips"), dict) else None,
+                        default=None,
+                    )
+                    dists_score = _safe_float(
+                        (response.get("dists") or {}).get("value") if isinstance(response.get("dists"), dict) else None,
+                        default=None,
+                    )
+
+                    heatmap_b64 = response.get("lpips_heatmap_png_base64", "")
+                    if isinstance(heatmap_b64, str) and heatmap_b64.strip():
+                        heatmap_file = self._heatmap_dir / f"{file_stem}.png"
+                        try:
+                            heatmap_file.write_bytes(base64.b64decode(heatmap_b64))
+                            heatmap_path_str = str(heatmap_file)
+                        except (binascii.Error, ValueError):
+                            # ignore invalid heatmap payload
+                            heatmap_path_str = ""
+
                 except PerceptualServiceError as exc:
                     if must_have_perceptual or self._env.visual_perceptual_fallback_mode == "abort":
                         return VisualResult(
@@ -123,7 +165,7 @@ class VisualRunner:
                             baseline_path=str(baseline_path),
                             actual_path=str(actual_path),
                             diff_path=str(diff_path),
-                            heatmap_path=heatmap_path,
+                            heatmap_path=heatmap_path_str,
                             pixel_changed_ratio=pixel_changed_ratio,
                             lpips=None,
                             dists=None,
@@ -151,7 +193,7 @@ class VisualRunner:
             baseline_path=str(baseline_path),
             actual_path=str(actual_path),
             diff_path=str(diff_path),
-            heatmap_path=heatmap_path,
+            heatmap_path=heatmap_path_str,
             pixel_changed_ratio=pixel_changed_ratio,
             lpips=lpips_score,
             dists=dists_score,
@@ -160,9 +202,8 @@ class VisualRunner:
 
     def _navigate(self, page: Page, scenario: VisualScenario) -> None:
         """Navigate to the scenario URL and execute all preparatory steps."""
-
         if scenario.target_url:
-            if scenario.target_url.startswith("http://") or scenario.target_url.startswith("https://"):
+            if scenario.target_url.startswith(("http://", "https://")):
                 page.goto(scenario.target_url)
             else:
                 base = self._env.base_url.rstrip("/")
@@ -172,45 +213,78 @@ class VisualRunner:
 
     def _run_step(self, page: Page, action: str, selector: str, value: str, timeout_ms: int, url: str) -> None:
         """Perform a single action specified in the scenario, such as click or fill."""
+        action = (action or "").strip().lower()
 
-        if action == "click" and selector:
+        if action == "click":
+            if not selector:
+                raise ValueError("step.click requires selector")
             page.locator(selector).first.click(timeout=timeout_ms)
             return
-        if action == "fill" and selector:
+
+        if action == "fill":
+            if not selector:
+                raise ValueError("step.fill requires selector")
             page.locator(selector).first.fill(value, timeout=timeout_ms)
             return
-        if action == "wait_for_selector" and selector:
+
+        if action in {"wait_for_selector", "wait_for"}:
+            if not selector:
+                raise ValueError("step.wait_for_selector requires selector")
             page.wait_for_selector(selector, timeout=timeout_ms)
             return
-        if action == "wait" or action == "wait_for_timeout":
+
+        if action in {"wait", "wait_for_timeout"}:
             page.wait_for_timeout(timeout_ms)
             return
+
         if action == "goto":
-            page.goto(url or value, timeout=timeout_ms)
+            target = (url or value or "").strip()
+            if not target:
+                raise ValueError("step.goto requires url or value")
+            page.goto(target, timeout=timeout_ms)
+            return
+
+        raise ValueError(f"Unknown step action: {action!r}")
 
     def _capture(self, page: Page, scenario: VisualScenario, output_path: Path) -> None:
         """Capture the screenshot based on capture settings while masking selectors."""
-
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        cleanup_js = _inject_masks(page, list(scenario.mask.selectors), scenario.mask.color)
+        cleanup_ids = _inject_masks(page, list(scenario.mask.selectors), scenario.mask.color)
         try:
             if scenario.capture.capture_type == "element" and scenario.capture.selector:
                 page.locator(scenario.capture.selector).first.screenshot(path=str(output_path))
                 return
             page.screenshot(path=str(output_path), full_page=scenario.capture.full_page)
         finally:
-            _remove_masks(page, cleanup_js)
+            _remove_masks(page, cleanup_ids)
+
+
+def _hex_to_rgba(hex_color: str, alpha: float) -> str:
+    """Convert '#RRGGBB' to 'rgba(r,g,b,a)'. Fallback to the original string if invalid."""
+    s = (hex_color or "").strip()
+    if len(s) == 7 and s.startswith("#"):
+        try:
+            r = int(s[1:3], 16)
+            g = int(s[3:5], 16)
+            b = int(s[5:7], 16)
+            a = max(0.0, min(1.0, float(alpha)))
+            return f"rgba({r},{g},{b},{a})"
+        except ValueError:
+            return s
+    return s
 
 
 def _inject_masks(page: Page, selectors: list[str], color: str) -> list[str]:
     """Overlay the given selectors with translucent masks and return their DOM IDs."""
-
     if not selectors:
         return []
+
+    rgba = _hex_to_rgba(color, alpha=0.35)
+
     script = """
     (params) => {
       const ids = [];
-      const color = params.color || '#00FF00';
+      const color = params.color || 'rgba(0,255,0,0.35)';
       for (const selector of params.selectors) {
         document.querySelectorAll(selector).forEach((el) => {
           const rect = el.getBoundingClientRect();
@@ -233,7 +307,7 @@ def _inject_masks(page: Page, selectors: list[str], color: str) -> list[str]:
     }
     """
     try:
-        data: Any = page.evaluate(script, {"selectors": selectors, "color": color})
+        data: Any = page.evaluate(script, {"selectors": selectors, "color": rgba})
         if isinstance(data, list):
             return [str(x) for x in data]
     except Exception:
@@ -243,7 +317,6 @@ def _inject_masks(page: Page, selectors: list[str], color: str) -> list[str]:
 
 def _remove_masks(page: Page, ids: list[str]) -> None:
     """Clean up DOM masks that were injected for the capture."""
-
     if not ids:
         return
     script = """
@@ -270,6 +343,7 @@ def _evaluate(
     dists_max: float,
 ) -> tuple[str, str]:
     """Assess thresholds and return the status/message tuple."""
+    mode = (mode or "").strip().lower()
 
     if mode == "pixel":
         if pixel_changed_ratio <= pixel_max:
@@ -285,6 +359,7 @@ def _evaluate(
             return "passed", "Perceptual thresholds passed"
         return "failed", "Perceptual thresholds exceeded"
 
+    # hybrid
     pixel_ok = pixel_changed_ratio <= pixel_max
     if perceptual_ok and pixel_ok:
         return "passed", "Pixel and perceptual thresholds passed"

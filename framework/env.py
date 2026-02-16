@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
+from dotenv import dotenv_values
 
 import settings_cli
 import settings
@@ -15,31 +16,29 @@ def _as_bool(value: str | None, default: bool) -> bool:
 
     if value is None:
         return default
-    return value.strip() in {"1", "true", "True", "yes", "on"}
+
+    token = value.strip().lower()
+    if token == "":
+        return default
+
+    truthy = {"1", "true", "t", "yes", "y", "on"}
+    falsey = {"0", "false", "f", "no", "n", "off"}
+
+    if token in truthy:
+        return True
+    if token in falsey:
+        return False
+
+    return default
 
 
 def _load_dotenv_file(env_file: str = ".env") -> dict[str, str]:
     """Parse a dotenv-style file into a string dictionary, ignoring comments."""
-
-    path = Path(env_file)
-    if not path.is_file():
-        return {}
-
-    values: dict[str, str] = {}
-    for raw_line in path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#"):
-            continue
-        if line.startswith("export "):
-            line = line[len("export ") :].strip()
-        if "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip().strip('"').strip("'")
-        if key:
-            values[key] = value
-    return values
+    return {
+        k: v
+        for k, v in dotenv_values(env_file).items()
+        if v is not None
+    }
 
 
 @dataclass(frozen=True)
@@ -103,341 +102,226 @@ class RuntimeEnv:
 def load_env() -> RuntimeEnv:
     """Construct RuntimeEnv by combining os.environ, dotenv, and settings defaults."""
 
-    dotenv_values = _load_dotenv_file()
+    dotenv_map = _load_dotenv_file()
 
     def env_value(name: str, default: str | None = None) -> str | None:
         if name in os.environ:
             return os.environ[name]
-        if name in dotenv_values:
-            return dotenv_values[name]
+        if name in dotenv_map:
+            return dotenv_map[name]
         return default
 
+    # --- typed helpers -------------------------------------------------
+
+    def env_str(name: str, default: str) -> str:
+        v = env_value(name)
+        return default if v is None else v
+
+    def env_int(name: str, default: int) -> int:
+        v = env_value(name)
+        return default if v is None or v.strip() == "" else int(v)
+
+    def env_float(name: str, default: float) -> float:
+        v = env_value(name)
+        return default if v is None or v.strip() == "" else float(v)
+
+    def env_bool(name: str, default: bool) -> bool:
+        return _as_bool(env_value(name), default)
+
+    # --- defaults from settings ----------------------------------------
+
     settings_headless = bool(getattr(settings, "is_session_headless", True))
-    settings_grid_available = bool(
-        getattr(settings, "is_grid_available", getattr(settings, "is_grid_available", False))
-    )
+    settings_grid_available = bool(getattr(settings, "is_grid_available", False))
     settings_grid_ws_endpoint = str(
-        getattr(settings, "grid_ws_endpoint", getattr(settings, "grid_ws_endpoint", "ws://127.0.0.1:9323/"))
+        getattr(settings, "grid_ws_endpoint", "ws://127.0.0.1:9323/")
     )
     settings_grid_connect_timeout_ms = int(
-        getattr(
-            settings,
-            "grid_connect_timeout_ms",
-            getattr(settings, "grid_connect_timeout_ms", 30000),
-        )
+        getattr(settings, "grid_connect_timeout_ms", 30000)
     )
-    configured_browser = env_value("BROWSER", getattr(settings, "browser", "chromium")) or "chromium"
+
+    configured_browser = env_str(
+        "BROWSER",
+        str(getattr(settings, "browser", "chromium")),
+    )
     browser = configured_browser.strip().lower()
-    reporting_source_origin = (
-        env_value("REPORTING_SOURCE_ORIGIN", getattr(settings, "reporting_source_origin", "")) or ""
-    )
+
+    reporting_source_origin = env_str(
+        "REPORTING_SOURCE_ORIGIN",
+        str(getattr(settings, "reporting_source_origin", "")),
+    ).strip()
+
     if not reporting_source_origin:
         reporting_source_origin = "ci" if os.getenv("CI") else "local"
+
     server_type = settings_cli.server_type
     server_name = settings_cli.server_name
 
-    base_url = env_value("BASE_URL") or env_value("BASE_URL_OVERRIDE") or settings_cli.base_url_override or ""
+    base_url = (
+            env_value("BASE_URL")
+            or env_value("BASE_URL_OVERRIDE")
+            or settings_cli.base_url_override
+            or ""
+    )
 
     return RuntimeEnv(
         browser=browser,
-        is_grid_available=_as_bool(env_value("IS_GRID_AVAILABLE"), settings_grid_available),
-        grid_ws_endpoint=env_value("GRID_WS_ENDPOINT", settings_grid_ws_endpoint) or settings_grid_ws_endpoint,
-        grid_connect_timeout_ms=int(
-            env_value("GRID_CONNECT_TIMEOUT_MS", str(settings_grid_connect_timeout_ms))
-            or str(settings_grid_connect_timeout_ms)
+        is_grid_available=env_bool("IS_GRID_AVAILABLE", settings_grid_available),
+        grid_ws_endpoint=env_str("GRID_WS_ENDPOINT", settings_grid_ws_endpoint),
+        grid_connect_timeout_ms=env_int(
+            "GRID_CONNECT_TIMEOUT_MS",
+            settings_grid_connect_timeout_ms,
         ),
-        headless=_as_bool(env_value("HEADLESS"), settings_headless),
-        ignore_https_errors=_as_bool(env_value("IGNORE_HTTPS_ERRORS"), settings.ignore_https_errors),
+        headless=env_bool("HEADLESS", settings_headless),
+        ignore_https_errors=env_bool(
+            "IGNORE_HTTPS_ERRORS",
+            settings.ignore_https_errors,
+        ),
         base_url=base_url,
         server_type=server_type,
         server_name=server_name,
-        record_video=_as_bool(env_value("RECORD_VIDEO"), True),
-        video_min_seconds=int(env_value("VIDEO_MIN_SECONDS", "30") or "30"),
-        reporting_enabled=_as_bool(env_value("REPORTING_ENABLED"), settings.reporting_enabled),
-        reporting_schema_version=env_value(
+        record_video=env_bool("RECORD_VIDEO", True),
+        video_min_seconds=env_int("VIDEO_MIN_SECONDS", 30),
+        reporting_enabled=env_bool("REPORTING_ENABLED", settings.reporting_enabled),
+        reporting_schema_version=env_str(
             "REPORTING_SCHEMA_VERSION",
-            getattr(settings, "reporting_schema_version", "2.0"),
-        )
-        or "2.0",
-        reporting_source_project=env_value(
+            str(getattr(settings, "reporting_schema_version", "2.0")),
+        ),
+        reporting_source_project=env_str(
             "REPORTING_SOURCE_PROJECT",
-            getattr(settings, "reporting_source_project", Path.cwd().name),
-        )
-        or Path.cwd().name,
+            str(getattr(settings, "reporting_source_project", Path.cwd().name)),
+        ),
         reporting_source_origin=reporting_source_origin,
-        framework_version=env_value(
+        framework_version=env_str(
             "FRAMEWORK_VERSION",
-            getattr(settings, "framework_version", "1.0.0"),
-        )
-        or "1.0.0",
-        reporting_api_url=env_value("REPORTING_API_URL", settings.reporting_api_url) or "",
-        reporting_api_token=env_value("REPORTING_API_TOKEN", settings.reporting_api_token) or "",
-        reporting_api_run_start_endpoint=env_value(
+            str(getattr(settings, "framework_version", "1.0.0")),
+        ),
+        reporting_api_url=env_str("REPORTING_API_URL", settings.reporting_api_url),
+        reporting_api_token=env_str("REPORTING_API_TOKEN", settings.reporting_api_token),
+        reporting_api_run_start_endpoint=env_str(
             "REPORTING_API_RUN_START_ENDPOINT",
             settings.reporting_api_run_start_endpoint,
-        )
-        or settings.reporting_api_run_start_endpoint,
-        reporting_api_test_result_endpoint=env_value(
+        ),
+        reporting_api_test_result_endpoint=env_str(
             "REPORTING_API_TEST_RESULT_ENDPOINT",
             settings.reporting_api_test_result_endpoint,
-        )
-        or settings.reporting_api_test_result_endpoint,
-        reporting_api_run_finish_endpoint=env_value(
+        ),
+        reporting_api_run_finish_endpoint=env_str(
             "REPORTING_API_RUN_FINISH_ENDPOINT",
             settings.reporting_api_run_finish_endpoint,
-        )
-        or settings.reporting_api_run_finish_endpoint,
-        reporting_api_timeout_seconds=int(
-            env_value("REPORTING_API_TIMEOUT_SECONDS", str(settings.reporting_api_timeout_seconds))
-            or str(settings.reporting_api_timeout_seconds)
         ),
-        reporting_api_retries=int(
-            env_value("REPORTING_API_RETRIES", str(settings.reporting_api_retries))
-            or str(settings.reporting_api_retries)
+        reporting_api_timeout_seconds=env_int(
+            "REPORTING_API_TIMEOUT_SECONDS",
+            settings.reporting_api_timeout_seconds,
         ),
-        artifacts_dir=env_value("ARTIFACTS_DIR", "artifacts") or "artifacts",
-        highlight_on_fail=_as_bool(env_value("HIGHLIGHT_ON_FAIL"), True),
-        min_expected_tests=int(env_value("MIN_EXPECTED_TESTS", "1") or "1"),
-        visual_enabled=_as_bool(
-            env_value("VISUAL_ENABLED"),
-            bool(getattr(settings, "visual_enabled", getattr(settings, "visual_enabled", False))),
+        reporting_api_retries=env_int(
+            "REPORTING_API_RETRIES",
+            settings.reporting_api_retries,
         ),
-        visual_compare_mode=(
-            env_value(
-                "VISUAL_COMPARE_MODE",
-                str(getattr(settings, "visual_compare_mode", getattr(settings, "visual_compare_mode", "hybrid"))),
-            )
-            or "hybrid"
-        )
-        .strip()
-        .lower(),
-        visual_baseline_provider=(
-            env_value(
-                "VISUAL_BASELINE_PROVIDER",
-                str(
-                    getattr(
-                        settings, "visual_baseline_provider", getattr(settings, "visual_baseline_provider", "minio")
-                    )
-                ),
-            )
-            or "minio"
-        )
-        .strip()
-        .lower(),
-        visual_baseline_profile=env_value(
+        artifacts_dir=env_str("ARTIFACTS_DIR", "artifacts"),
+        highlight_on_fail=env_bool("HIGHLIGHT_ON_FAIL", True),
+        min_expected_tests=env_int("MIN_EXPECTED_TESTS", 1),
+        visual_enabled=env_bool(
+            "VISUAL_ENABLED",
+            bool(getattr(settings, "visual_enabled", False)),
+        ),
+        visual_compare_mode=env_str(
+            "VISUAL_COMPARE_MODE",
+            str(getattr(settings, "visual_compare_mode", "hybrid")),
+        ).strip().lower(),
+        visual_baseline_provider=env_str(
+            "VISUAL_BASELINE_PROVIDER",
+            str(getattr(settings, "visual_baseline_provider", "minio")),
+        ).strip().lower(),
+        visual_baseline_profile=env_str(
             "VISUAL_BASELINE_PROFILE",
-            str(getattr(settings, "visual_baseline_profile", getattr(settings, "visual_baseline_profile", "test-ref"))),
-        )
-        or "test-ref",
-        visual_baseline_version=env_value(
+            str(getattr(settings, "visual_baseline_profile", "test-ref")),
+        ),
+        visual_baseline_version=env_str(
             "VISUAL_BASELINE_VERSION",
-            str(getattr(settings, "visual_baseline_version", getattr(settings, "visual_baseline_version", "latest"))),
-        )
-        or "latest",
-        visual_cache_dir=env_value(
+            str(getattr(settings, "visual_baseline_version", "latest")),
+        ),
+        visual_cache_dir=env_str(
             "VISUAL_CACHE_DIR",
-            str(getattr(settings, "visual_cache_dir", getattr(settings, "visual_cache_dir", ".visual_cache"))),
-        )
-        or ".visual_cache",
-        visual_fail_on_missing_baseline=_as_bool(
-            env_value("VISUAL_FAIL_ON_MISSING_BASELINE"),
-            bool(
-                getattr(
-                    settings,
-                    "visual_fail_on_missing_baseline",
-                    getattr(settings, "visual_fail_on_missing_baseline", False),
-                )
-            ),
+            str(getattr(settings, "visual_cache_dir", ".visual_cache")),
         ),
-        visual_warn_as_fail=_as_bool(
-            env_value("VISUAL_WARN_AS_FAIL"),
-            bool(getattr(settings, "visual_warn_as_fail", getattr(settings, "visual_warn_as_fail", False))),
+        visual_fail_on_missing_baseline=env_bool(
+            "VISUAL_FAIL_ON_MISSING_BASELINE",
+            bool(getattr(settings, "visual_fail_on_missing_baseline", False)),
         ),
-        visual_minio_endpoint=env_value(
+        visual_warn_as_fail=env_bool(
+            "VISUAL_WARN_AS_FAIL",
+            bool(getattr(settings, "visual_warn_as_fail", False)),
+        ),
+        visual_minio_endpoint=env_str(
             "VISUAL_MINIO_ENDPOINT",
-            str(getattr(settings, "visual_minio_endpoint", getattr(settings, "visual_minio_endpoint", ""))),
-        )
-        or "",
-        visual_minio_access_key=env_value(
+            str(getattr(settings, "visual_minio_endpoint", "")),
+        ),
+        visual_minio_access_key=env_str(
             "VISUAL_MINIO_ACCESS_KEY",
-            str(getattr(settings, "visual_minio_access_key", getattr(settings, "visual_minio_access_key", ""))),
-        )
-        or "",
-        visual_minio_secret_key=env_value(
+            str(getattr(settings, "visual_minio_access_key", "")),
+        ),
+        visual_minio_secret_key=env_str(
             "VISUAL_MINIO_SECRET_KEY",
-            str(getattr(settings, "visual_minio_secret_key", getattr(settings, "visual_minio_secret_key", ""))),
-        )
-        or "",
-        visual_minio_bucket=env_value(
+            str(getattr(settings, "visual_minio_secret_key", "")),
+        ),
+        visual_minio_bucket=env_str(
             "VISUAL_MINIO_BUCKET",
-            str(getattr(settings, "visual_minio_bucket", getattr(settings, "visual_minio_bucket", "visual-baselines"))),
-        )
-        or "visual-baselines",
-        visual_minio_secure=_as_bool(
-            env_value("VISUAL_MINIO_SECURE"),
-            bool(getattr(settings, "visual_minio_secure", getattr(settings, "visual_minio_secure", True))),
+            str(getattr(settings, "visual_minio_bucket", "visual-baselines")),
         ),
-        visual_perceptual_enabled=_as_bool(
-            env_value("VISUAL_PERCEPTUAL_ENABLED"),
-            bool(
-                getattr(
-                    settings,
-                    "visual_perceptual_enabled",
-                    getattr(settings, "visual_perceptual_enabled", False),
-                )
-            ),
+        visual_minio_secure=env_bool(
+            "VISUAL_MINIO_SECURE",
+            bool(getattr(settings, "visual_minio_secure", True)),
         ),
-        visual_perceptual_required=_as_bool(
-            env_value("VISUAL_PERCEPTUAL_REQUIRED"),
-            bool(
-                getattr(
-                    settings,
-                    "visual_perceptual_required",
-                    getattr(settings, "visual_perceptual_required", False),
-                )
-            ),
+        visual_perceptual_enabled=env_bool(
+            "VISUAL_PERCEPTUAL_ENABLED",
+            bool(getattr(settings, "visual_perceptual_enabled", False)),
         ),
-        visual_perceptual_api_url=env_value(
+        visual_perceptual_required=env_bool(
+            "VISUAL_PERCEPTUAL_REQUIRED",
+            bool(getattr(settings, "visual_perceptual_required", False)),
+        ),
+        visual_perceptual_api_url=env_str(
             "VISUAL_PERCEPTUAL_API_URL",
-            str(getattr(settings, "visual_perceptual_api_url", getattr(settings, "visual_perceptual_api_url", ""))),
-        )
-        or "",
-        visual_perceptual_timeout_seconds=int(
-            env_value(
-                "VISUAL_PERCEPTUAL_TIMEOUT_SECONDS",
-                str(
-                    getattr(
-                        settings,
-                        "visual_perceptual_timeout_seconds",
-                        getattr(settings, "visual_perceptual_timeout_seconds", 15),
-                    )
-                ),
-            )
-            or "15"
+            str(getattr(settings, "visual_perceptual_api_url", "")),
         ),
-        visual_perceptual_health_timeout_seconds=int(
-            env_value(
-                "VISUAL_PERCEPTUAL_HEALTH_TIMEOUT_SECONDS",
-                str(
-                    getattr(
-                        settings,
-                        "visual_perceptual_health_timeout_seconds",
-                        getattr(settings, "visual_perceptual_health_timeout_seconds", 2),
-                    )
-                ),
-            )
-            or "2"
+        visual_perceptual_timeout_seconds=env_int(
+            "VISUAL_PERCEPTUAL_TIMEOUT_SECONDS",
+            int(getattr(settings, "visual_perceptual_timeout_seconds", 15)),
         ),
-        visual_perceptual_retries=int(
-            env_value(
-                "VISUAL_PERCEPTUAL_RETRIES",
-                str(
-                    getattr(
-                        settings,
-                        "visual_perceptual_retries",
-                        getattr(settings, "visual_perceptual_retries", 2),
-                    )
-                ),
-            )
-            or "2"
+        visual_perceptual_health_timeout_seconds=env_int(
+            "VISUAL_PERCEPTUAL_HEALTH_TIMEOUT_SECONDS",
+            int(getattr(settings, "visual_perceptual_health_timeout_seconds", 2)),
         ),
-        visual_perceptual_fail_fast_errors=int(
-            env_value(
-                "VISUAL_PERCEPTUAL_FAIL_FAST_ERRORS",
-                str(
-                    getattr(
-                        settings,
-                        "visual_perceptual_fail_fast_errors",
-                        getattr(settings, "visual_perceptual_fail_fast_errors", 3),
-                    )
-                ),
-            )
-            or "3"
+        visual_perceptual_retries=env_int(
+            "VISUAL_PERCEPTUAL_RETRIES",
+            int(getattr(settings, "visual_perceptual_retries", 2)),
         ),
-        visual_perceptual_fallback_mode=(
-            env_value(
-                "VISUAL_PERCEPTUAL_FALLBACK_MODE",
-                str(
-                    getattr(
-                        settings,
-                        "visual_perceptual_fallback_mode",
-                        getattr(settings, "visual_perceptual_fallback_mode", "pixel"),
-                    )
-                ),
-            )
-            or "pixel"
-        )
-        .strip()
-        .lower(),
-        visual_perceptual_force_device=(
-            env_value(
-                "VISUAL_PERCEPTUAL_FORCE_DEVICE",
-                str(
-                    getattr(
-                        settings,
-                        "visual_perceptual_force_device",
-                        getattr(settings, "visual_perceptual_force_device", ""),
-                    )
-                ),
-            )
-            or ""
-        )
-        .strip()
-        .lower(),
-        visual_perceptual_max_side=int(
-            env_value(
-                "VISUAL_PERCEPTUAL_MAX_SIDE",
-                str(
-                    getattr(
-                        settings,
-                        "visual_perceptual_max_side",
-                        getattr(settings, "visual_perceptual_max_side", 1024),
-                    )
-                ),
-            )
-            or "1024"
+        visual_perceptual_fail_fast_errors=env_int(
+            "VISUAL_PERCEPTUAL_FAIL_FAST_ERRORS",
+            int(getattr(settings, "visual_perceptual_fail_fast_errors", 3)),
         ),
-        visual_perceptual_overlay_on=(
-            env_value(
-                "VISUAL_PERCEPTUAL_OVERLAY_ON",
-                str(
-                    getattr(
-                        settings,
-                        "visual_perceptual_overlay_on",
-                        getattr(settings, "visual_perceptual_overlay_on", "test"),
-                    )
-                ),
-            )
-            or "test"
-        )
-        .strip()
-        .lower(),
-        visual_perceptual_alpha=float(
-            env_value(
-                "VISUAL_PERCEPTUAL_ALPHA",
-                str(
-                    getattr(
-                        settings,
-                        "visual_perceptual_alpha",
-                        getattr(settings, "visual_perceptual_alpha", 0.45),
-                    )
-                ),
-            )
-            or "0.45"
+        visual_perceptual_fallback_mode=env_str(
+            "VISUAL_PERCEPTUAL_FALLBACK_MODE",
+            str(getattr(settings, "visual_perceptual_fallback_mode", "pixel")),
+        ).strip().lower(),
+        visual_perceptual_force_device=env_str(
+            "VISUAL_PERCEPTUAL_FORCE_DEVICE",
+            str(getattr(settings, "visual_perceptual_force_device", "")),
+        ).strip().lower(),
+        visual_perceptual_max_side=env_int(
+            "VISUAL_PERCEPTUAL_MAX_SIDE",
+            int(getattr(settings, "visual_perceptual_max_side", 1024)),
         ),
-        visual_perceptual_lpips_net=(
-            env_value(
-                "VISUAL_PERCEPTUAL_LPIPS_NET",
-                str(
-                    getattr(
-                        settings,
-                        "visual_perceptual_lpips_net",
-                        getattr(settings, "visual_perceptual_lpips_net", "vgg"),
-                    )
-                ),
-            )
-            or "vgg"
-        )
-        .strip()
-        .lower(),
+        visual_perceptual_overlay_on=env_str(
+            "VISUAL_PERCEPTUAL_OVERLAY_ON",
+            str(getattr(settings, "visual_perceptual_overlay_on", "test")),
+        ).strip().lower(),
+        visual_perceptual_alpha=env_float(
+            "VISUAL_PERCEPTUAL_ALPHA",
+            float(getattr(settings, "visual_perceptual_alpha", 0.45)),
+        ),
+        visual_perceptual_lpips_net=env_str(
+            "VISUAL_PERCEPTUAL_LPIPS_NET",
+            str(getattr(settings, "visual_perceptual_lpips_net", "vgg")),
+        ).strip().lower(),
     )

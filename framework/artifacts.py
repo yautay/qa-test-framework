@@ -33,12 +33,22 @@ def build_run_artifacts(base_dir: str) -> RunArtifacts:
         Object containing the paths to every artifact subdirectory.
     """
 
-    run_id = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-    root = Path(base_dir) / run_id
+    run_id = datetime.now(UTC).strftime("%Y%m%d_%H%M%S_%f")
+    root = (Path(base_dir) / run_id).resolve()
+
     traces = root / "traces"
     screenshots = root / "screenshots"
     videos = root / "videos"
     logs = root / "logs"
+
     for path in (root, traces, screenshots, videos, logs):
         path.mkdir(parents=True, exist_ok=True)
-    return RunArtifacts(run_id=run_id, root=root, traces=traces, screenshots=screenshots, videos=videos, logs=logs)
+
+    return RunArtifacts(
+        run_id=run_id,
+        root=root,
+        traces=traces,
+        screenshots=screenshots,
+        videos=videos,
+        logs=logs,
+    )
