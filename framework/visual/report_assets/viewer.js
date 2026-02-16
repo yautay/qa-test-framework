@@ -1,7 +1,16 @@
+const MODE_META = {
+  ref: { label: "REF", srcKey: "modalRefSrc" },
+  test: { label: "TEST", srcKey: "modalTestSrc" },
+  diff: { label: "PIXEL_DIFF", srcKey: "modalDiffSrc" },
+  lpips: { label: "LPIPS", srcKey: "modalLpipsSrc" },
+};
+const MODE_ORDER = ["ref", "test", "diff", "lpips"];
+const DEFAULT_SLOT_COUNT = 3;
+
 export function createViewerState() {
   return {
     modal: null,
-    fitMode: true, // true = fit width, false = 1:1
+    fitMode: true, // true = fit width, false = 1:1 (legacy – still used for large zooms)
     viewerMode: "test",     // ref|test|diff|lpips|compare
     modalRow: null,
 
@@ -16,6 +25,9 @@ export function createViewerState() {
     modalTestSrc: "",
     modalDiffSrc: "",
     modalLpipsSrc: "", // u Ciebie LPIPS = heatmap_path
+
+    columns: 1,
+    slots: [],
 
     // do zoom pod kursorem
     panX: 0,
@@ -73,6 +85,8 @@ export function openViewer(viewer, row, mode) {
   else if (mode === "diff") viewer.modalImgSrc = viewer.modalDiffSrc;
   else if (mode === "lpips") viewer.modalImgSrc = viewer.modalLpipsSrc;
   else viewer.modalImgSrc = ""; // compare
+
+  viewer.slots = buildSlots(viewer);
 }
 
 export function setMode(viewer, mode) {
@@ -132,4 +146,45 @@ export function panMove(viewer, evt) {
 }
 export function panEnd(viewer) {
   viewer.isPanning = false;
+}
+
+function getModeList(viewer) {
+  return MODE_ORDER.map((mode) => {
+    const meta = MODE_META[mode];
+    return {
+      value: mode,
+      label: meta.label,
+      srcKey: meta.srcKey,
+      available: Boolean(viewer[meta.srcKey]),
+    };
+  });
+}
+
+export function getModeSrc(viewer, mode) {
+  const meta = MODE_META[mode];
+  if (!meta) return "";
+  return viewer[meta.srcKey] || "";
+}
+
+function getFirstAvailableMode(viewer, fallbackMode) {
+  const modes = getModeList(viewer).filter((m) => m.available);
+  if (modes.length === 0) return fallbackMode || "";
+  return modes[0].value;
+}
+
+function buildSlots(viewer) {
+  const availableModes = getModeList(viewer).filter((m) => m.available);
+  const slotCount = Math.max(DEFAULT_SLOT_COUNT, availableModes.length || 1);
+  const fallbackMode = getFirstAvailableMode(viewer, viewer.viewerMode);
+  const slots = Array.from({ length: slotCount }, (_, idx) => {
+    const mode = availableModes.length
+      ? availableModes[idx % availableModes.length].value
+      : fallbackMode;
+    return { id: idx + 1, mode };
+  });
+  return slots;
+}
+
+export function getAvailableModes(viewer) {
+  return getModeList(viewer);
 }

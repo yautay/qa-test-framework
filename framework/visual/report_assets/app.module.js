@@ -1,10 +1,8 @@
 import { fmt } from "./format.js";
 import { createStore, filteredSorted, resetFilters } from "./store.js";
 import {
-  createViewerState, ensureModal, openViewer, setMode,
-  zoomIn, zoomOut, resetZoom, onWheelZoom,
-  panStart, panMove, panEnd,
-  toggleFit
+  createViewerState, ensureModal, openViewer,
+  getAvailableModes, getModeSrc
 } from "./viewer.js";
 
 const { createApp } = window.Vue;
@@ -125,81 +123,52 @@ createApp({
 
     <!-- Modal -->
     <div class="modal fade" id="vrtModal" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-95">
         <div class="modal-content">
           <div class="modal-header">
             <div>
               <div class="mono fw-semibold">{{ viewer.modalTitle }}</div>
               <div class="text-muted small mono">{{ viewer.modalSubtitle }}</div>
-              <div class="text-muted small mono">
-                shortcuts: 1-5 modes, +/- zoom, 0 reset, ←/→ slider, Esc close, F fit
-              </div>
             </div>
             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
 
           <div class="modal-body">
 
-            <!-- toolbar -->
-            <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
-              <div class="btn-group btn-group-sm">
-                <button class="btn btn-outline-secondary" @click="mode('ref')" :disabled="!viewer.modalRefSrc">REF</button>
-                <button class="btn btn-outline-secondary" @click="mode('test')" :disabled="!viewer.modalTestSrc">TEST</button>
-                <button class="btn btn-outline-secondary" @click="mode('diff')" :disabled="!viewer.modalDiffSrc">PIXEL_DIFF</button>
-                <button class="btn btn-outline-secondary" @click="mode('lpips')" :disabled="!viewer.modalLpipsSrc">LPIPS</button>
-                <button class="btn btn-outline-secondary" @click="mode('compare')" :disabled="!(viewer.modalRefSrc && viewer.modalTestSrc)">COMPARE</button>
+            <div class="d-flex flex-wrap gap-3 align-items-center mb-3">
+              <div class="d-flex align-items-center gap-2">
+                <span class="text-muted small">Zdjęć w wierszu:</span>
+                <div class="btn-group btn-group-sm">
+                  <button v-for="count in [1,2,3]" :key="count"
+                          class="btn"
+                          :class="viewer.columns===count ? 'btn-primary' : 'btn-outline-secondary'"
+                          @click="setColumns(count)">
+                    {{ count }}
+                  </button>
+                </div>
               </div>
-
-              <div class="btn-group btn-group-sm ms-2">
-                <button class="btn btn-outline-secondary" @click="zOut()">-</button>
-                <button class="btn btn-outline-secondary" @click="zReset()">reset</button>
-                <button class="btn btn-outline-secondary" @click="zIn()">+</button>
-                <button class="btn btn-outline-secondary" @click="toggleFitMode()">
-                  {{ viewer.fitMode ? 'FIT' : '1:1' }}
-                </button>
-              </div>
-
-              <div class="text-muted small mono">zoom={{ viewer.zoom.toFixed(2) }}x</div>
-
-              <div v-if="viewer.viewerMode==='compare'" class="ms-auto d-flex align-items-center gap-2">
-                <div class="text-muted small mono">REF</div>
-                <input type="range" class="form-range" style="width: 260px"
-                       v-model.number="viewer.slider" min="0" max="100" />
-                <div class="text-muted small mono">TEST</div>
-              </div>
+              <div class="text-muted small mono ms-auto">Każdy slot wybiera REF/TEST/HEAT.</div>
             </div>
 
-            <!-- viewer area -->
-            <div class="border rounded overflow-auto bg-white"
-                 style="min-height: 520px;"
-                 @wheel.passive="wheel"
-                 @mousedown="panStartHandler"
-                 @mousemove="panMoveHandler"
-                 @mouseup="panEndHandler"
-                 @mouseleave="panEndHandler"
-                 @dblclick="zReset">
-
-              <!-- compare -->
-              <div v-if="viewer.viewerMode==='compare'" class="position-relative"
-                   :style="transformStyle">
-                <img :src="viewer.modalTestSrc" class="d-block"
-                     :style="{ width: viewer.fitMode ? '100%' : 'auto', height: 'auto' }" />
-                <div class="position-absolute top-0 start-0 overflow-hidden"
-                     :style="{ width: viewer.slider + '%', height: '100%' }">
-                  <img :src="viewer.modalRefSrc" class="d-block"
-                       :style="{ width: viewer.fitMode ? '100%' : 'auto', height: 'auto' }" />
+            <div class="d-grid gap-3" :style="gridStyle">
+              <div v-for="slot in viewer.slots" :key="slot.id" class="card h-100 shadow-sm">
+                <div class="card-body d-flex flex-column gap-2">
+                  <div class="d-flex gap-2 align-items-center justify-content-between">
+                    <div class="mono small text-muted">Slot {{ slot.id }}</div>
+                    <select class="form-select form-select-sm w-auto" v-model="slot.mode">
+                      <option v-for="mode in modalModes" :key="mode.value" :value="mode.value" :disabled="!mode.available">
+                        {{ mode.label }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="border rounded bg-white flex-grow-1 position-relative overflow-hidden" style="min-height: 210px;">
+                    <img v-if="slotImage(slot)" :src="slotImage(slot)" class="d-block w-100 h-100" style="object-fit: contain;" />
+                    <div v-else class="text-muted small text-center position-absolute top-50 start-50 translate-middle">
+                      Brak obrazu dla {{ modeLabel(slot.mode) || 'wybranego rodzaju' }}
+                    </div>
+                  </div>
                 </div>
-                <div class="position-absolute top-0"
-                     :style="{ left: viewer.slider + '%', height: '100%', width: '2px', background: '#0d6efd' }"></div>
               </div>
-
-              <!-- single -->
-              <div v-else class="p-2" :style="transformStyle">
-                <img v-if="viewer.modalImgSrc" :src="viewer.modalImgSrc" class="d-block"
-                     :style="{ maxWidth: viewer.fitMode ? '100%' : 'none', height: 'auto' }" />
-                <div v-else class="text-muted p-4">Brak obrazu.</div>
-              </div>
-
             </div>
 
           </div>
@@ -219,11 +188,12 @@ createApp({
     rows() {
       return filteredSorted(this.store);
     },
-    transformStyle() {
+    modalModes() {
+      return getAvailableModes(this.viewer);
+    },
+    gridStyle() {
       return {
-        transform: `translate(${this.viewer.panX}px, ${this.viewer.panY}px) scale(${this.viewer.zoom})`,
-        transformOrigin: "top left",
-        cursor: this.viewer.isPanning ? "grabbing" : "grab",
+        gridTemplateColumns: `repeat(${this.viewer.columns}, minmax(0, 1fr))`,
       };
     }
   },
@@ -235,60 +205,19 @@ createApp({
       openViewer(this.viewer, row, mode);
       ensureModal(this.viewer, "vrtModal").show();
     },
-    mode(mode) {
-      setMode(this.viewer, mode);
+    slotImage(slot) {
+      return getModeSrc(this.viewer, slot.mode);
     },
-
-    toggleFitMode() {
-      toggleFit(this.viewer);
+    modeLabel(value) {
+      return this.modalModes.find((mode) => mode.value === value)?.label;
     },
-
-    zIn() { zoomIn(this.viewer); },
-    zOut() { zoomOut(this.viewer); },
-    zReset() { resetZoom(this.viewer); },
-
-    wheel(evt) {
-      // zoom tylko z CTRL — inaczej normalny scroll
-      if (!evt.ctrlKey) return;
-      onWheelZoom(this.viewer, evt);
+    setColumns(value) {
+      this.viewer.columns = value;
     },
-
-    panStartHandler(evt) {
-      if (this.viewer.zoom <= 1) return;
-      panStart(this.viewer, evt);
-    },
-    panMoveHandler(evt) { panMove(this.viewer, evt); },
-    panEndHandler() { panEnd(this.viewer); },
-
     handleKeydown(evt) {
-      // reaguj tylko gdy modal jest otwarty
+      if (evt.key !== "Escape") return;
       const modalEl = document.getElementById("vrtModal");
-      const isOpen = modalEl && modalEl.classList.contains("show");
-      if (!isOpen) return;
-
-      const k = evt.key;
-
-      if (k === "1") this.mode("ref");
-      else if (k === "2") this.mode("test");
-      else if (k === "3") this.mode("diff");
-      else if (k === "4") this.mode("lpips");
-      else if (k === "5") this.mode("compare");
-
-      else if (k === "+" || k === "=") this.zIn();
-      else if (k === "-") this.zOut();
-      else if (k === "0") this.zReset();
-
-      else if ((k === "f" || k === "F")) this.toggleFitMode();
-
-      else if (k === "ArrowLeft" && this.viewer.viewerMode === "compare") {
-        this.viewer.slider = Math.max(0, this.viewer.slider - 3);
-        evt.preventDefault();
-      } else if (k === "ArrowRight" && this.viewer.viewerMode === "compare") {
-        this.viewer.slider = Math.min(100, this.viewer.slider + 3);
-        evt.preventDefault();
-      }
-
-      else if (k === "Escape") {
+      if (modalEl && modalEl.classList.contains("show")) {
         this.viewer.modal?.hide();
       }
     },
