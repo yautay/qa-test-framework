@@ -35,7 +35,6 @@ export function createViewerState() {
     modalLpipsSrc: "",
 
     columns: DEFAULT_SLOT_COUNT,
-    presentationMode: "test",
     zoomPreset: DEFAULT_ZOOM,
     cursorX: 50,
     cursorY: 50,
@@ -90,7 +89,6 @@ export function openViewer(viewer, row, mode, index = null) {
   if (mode === "compare" && (!viewer.modalRefSrc || !viewer.modalTestSrc)) mode = "test";
 
   viewer.viewerMode = mode;
-  viewer.presentationMode = viewer.presentationMode || mode;
 
   if (mode === "ref") viewer.modalImgSrc = viewer.modalRefSrc;
   else if (mode === "test") viewer.modalImgSrc = viewer.modalTestSrc;
