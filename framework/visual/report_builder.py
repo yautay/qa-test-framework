@@ -35,27 +35,16 @@ def _maybe_relpath(path_str: str, report_dir: Path) -> str:
 
 
 def _copy_report_assets(report_dir: Path) -> None:
-    """Copy offline UI assets into report_dir/assets/."""
-    assets_src = Path(__file__).resolve().parent / "report_assets"
+    """Copy the Vite build artifacts into report_dir/assets/."""
+    build_root = Path(__file__).resolve().parent / "ui" / "dist"
+    assets_src = build_root / "assets"
+    if not assets_src.exists():
+        raise FileNotFoundError("UI build missing; run `npm run build` inside framework/visual/ui")
+
     assets_dst = report_dir / "assets"
-    assets_dst.mkdir(parents=True, exist_ok=True)
-
-    required = (
-        "bootstrap.min.css",
-        "bootstrap.bundle.min.js",
-        "vue.global.prod.js",
-        "index.template.html",
-        "app.module.js",
-        "store.js",
-        "viewer.js",
-        "format.js",
-    )
-
-    for name in required:
-        src = assets_src / name
-        if not src.exists():
-            raise FileNotFoundError(f"Missing report asset: {src}")
-        shutil.copyfile(src, assets_dst / name)
+    if assets_dst.exists():
+        shutil.rmtree(assets_dst)
+    shutil.copytree(assets_src, assets_dst)
 
 
 def _build_rows(report_dir: Path, results: list[VisualResult]) -> list[dict[str, Any]]:
@@ -99,16 +88,18 @@ def _write_results_json(report_dir: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def _write_offline_index_html(report_dir: Path, rows: list[dict[str, Any]]) -> None:
-    """Generate index.html that works in file:// and http(s):// by embedding results inline."""
-    template_path = report_dir / "assets" / "index.template.html"
-    tpl = template_path.read_text(encoding="utf-8")
+    """Generate index.html by embedding results into the Vite-built template."""
+    build_index = Path(__file__).resolve().parent / "ui" / "dist" / "index.html"
+    if not build_index.exists():
+        raise FileNotFoundError("Vite build index.html missing; run `npm run build` inside framework/visual/ui")
 
-    # Safe JSON embedding: avoid "</script>" breaking out of script tag
+    tpl = build_index.read_text(encoding="utf-8")
+    if "__VRT_INLINE_RESULTS__" not in tpl:
+        raise RuntimeError("Expected placeholder __VRT_INLINE_RESULTS__ in UI template")
+
     inline_json = json.dumps({"results": rows}, ensure_ascii=False).replace("</", "<\\/")
-
     html = tpl.replace("__VRT_INLINE_RESULTS__", inline_json)
 
-    # Write main entry
     (report_dir / "index.html").write_text(html, encoding="utf-8")
 
 
