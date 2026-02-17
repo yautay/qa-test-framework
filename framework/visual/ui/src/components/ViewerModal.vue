@@ -25,12 +25,6 @@
               </button>
             </div>
 
-            <select class="form-select form-select-sm" :value="viewer.presentationMode" @change="$emit('presentation-change', $event)">
-              <option v-for="mode in modalModes" :key="mode.value" :value="mode.value" :disabled="!mode.available">
-                {{ mode.label }}
-              </option>
-            </select>
-
             <div class="btn-group btn-group-sm" role="group">
               <button type="button" class="btn" :class="keyHeld.a ? 'btn-primary' : 'btn-outline-secondary'" @mousedown="keyHeld.a=true" @mouseup="keyHeld.a=false" @click="$emit('navigate', -1)">← K-A</button>
               <button type="button" class="btn" :class="keyHeld.d ? 'btn-primary' : 'btn-outline-secondary'" @mousedown="keyHeld.d=true" @mouseup="keyHeld.d=false" @click="$emit('navigate', 1)">K-D →</button>
@@ -58,9 +52,18 @@
               <div v-for="slot in viewer.slots" :key="slot.id" class="slot-card">
                 <div class="slot-header d-flex justify-content-between align-items-center">
                   <div class="mono small">Slot {{ slot.id }}</div>
-                  <div class="d-flex gap-1">
-                    <span v-if="viewer.tags.bug" class="badge bg-danger">BUG</span>
-                    <span v-if="viewer.tags.aso" class="badge bg-warning text-dark">ASO</span>
+                  <div class="d-flex align-items-center gap-2">
+                    <select class="form-select form-select-sm slot-mode-select"
+                            :value="slot.mode"
+                            @change="$emit('set-slot-mode', slot.id, $event.target.value)">
+                      <option v-for="mode in modeOptions" :key="mode.value" :value="mode.value">
+                        {{ mode.label }}
+                      </option>
+                    </select>
+                    <div class="d-flex gap-1">
+                      <span v-if="viewer.tags.bug" class="badge bg-danger">BUG</span>
+                      <span v-if="viewer.tags.aso" class="badge bg-warning text-dark">ASO</span>
+                    </div>
                   </div>
                 </div>
                 <div class="slot-divider"></div>
@@ -68,7 +71,7 @@
                   <img v-if="slotImage(slot)" :src="slotImage(slot)"
                        :style="[presentationStyle, imageStyle]" />
                   <div v-else class="text-muted small text-center position-absolute top-50 start-50 translate-middle">
-                    Brak obrazu dla {{ viewer.presentationMode }}
+                    Brak obrazu dla {{ slotModeLabel(slot.mode) }}
                   </div>
                 </div>
               </div>
@@ -94,7 +97,6 @@ export default {
   name: "ViewerModal",
   props: {
     viewer: { type: Object, required: true },
-    modalModes: { type: Array, default: () => [] },
     gridStyle: { type: Object, default: () => ({}) },
     presentationStyle: { type: Object, default: () => ({}) },
     imageStyle: { type: Object, default: () => ({}) },
@@ -105,7 +107,7 @@ export default {
   },
   emits: [
     "set-columns",
-    "presentation-change",
+    "set-slot-mode",
     "navigate",
     "super-zoom-down",
     "super-zoom-up",
@@ -114,10 +116,24 @@ export default {
     "reset-cursor",
     "mouse-move",
   ],
+  computed: {
+    modeOptions() {
+      return [
+        { value: "ref", label: "REF" },
+        { value: "test", label: "TEST" },
+        { value: "diff", label: "DIFF" },
+        { value: "lpips", label: "PERC" },
+      ];
+    },
+  },
   methods: {
     onMouseMove(evt) {
       const bounds = evt.currentTarget?.getBoundingClientRect();
       this.$emit('mouse-move', { bounds, evt });
+    },
+    slotModeLabel(mode) {
+      const match = this.modeOptions.find((item) => item.value === mode);
+      return match ? match.label : "";
     },
   },
 };

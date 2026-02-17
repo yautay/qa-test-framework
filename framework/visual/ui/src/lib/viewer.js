@@ -6,9 +6,14 @@ const MODE_META = {
   diff: { label: "PIXEL_DIFF", srcKey: "modalDiffSrc" },
   lpips: { label: "LPIPS", srcKey: "modalLpipsSrc" },
 };
-const MODE_ORDER = ["ref", "test", "diff", "lpips"];
 const DEFAULT_SLOT_COUNT = 3;
 const DEFAULT_ZOOM = 160;
+const SLOT_MODE_DEFAULTS = {
+  1: "ref",
+  2: "test",
+  3: "diff",
+  4: "lpips",
+};
 
 export function createViewerState() {
   return {
@@ -39,6 +44,7 @@ export function createViewerState() {
     tagLocked: {},
     currentIndex: null,
     slots: [],
+    slotModes: { 1: "ref", 2: "test", 3: "diff", 4: "lpips" },
 
     panX: 0,
     panY: 0,
@@ -161,42 +167,34 @@ export function panEnd(viewer) {
   viewer.isPanning = false;
 }
 
-function getModeList(viewer) {
-  return MODE_ORDER.map((mode) => {
-    const meta = MODE_META[mode];
-    return {
-      value: mode,
-      label: meta.label,
-      srcKey: meta.srcKey,
-      available: Boolean(viewer[meta.srcKey]),
-    };
-  });
-}
-
 export function getModeSrc(viewer, mode) {
   const meta = MODE_META[mode];
   if (!meta) return "";
   return viewer[meta.srcKey] || "";
 }
 
-function buildSlots(viewer, slotCount = viewer.columns || DEFAULT_SLOT_COUNT) {
-  const count = Math.max(1, slotCount);
-  return Array.from({ length: count }, (_, idx) => ({ id: idx + 1 }));
+function defaultSlotMode(slotId) {
+  return SLOT_MODE_DEFAULTS[slotId] || "test";
 }
 
-export function getAvailableModes(viewer) {
-  return getModeList(viewer);
+function buildSlots(viewer, slotCount = viewer.columns || DEFAULT_SLOT_COUNT) {
+  const count = Math.max(1, slotCount);
+  const existing = new Map((viewer.slots || []).map((slot) => [slot.id, slot]));
+  const slotModes = viewer.slotModes || {};
+  return Array.from({ length: count }, (_, idx) => {
+    const id = idx + 1;
+    const previous = existing.get(id);
+    const mode = slotModes[id] || previous?.mode || defaultSlotMode(id);
+    slotModes[id] = mode;
+    return {
+      id,
+      mode,
+    };
+  });
 }
 
 export function refreshSlots(viewer, slotCount) {
   viewer.slots = buildSlots(viewer, slotCount);
-}
-
-export function setPresentationMode(viewer, mode) {
-  if (!MODE_META[mode]) return;
-  viewer.presentationMode = mode;
-  viewer.viewerMode = mode;
-  refreshSlots(viewer);
 }
 
 export function navigateRow(viewer, rows, offset) {

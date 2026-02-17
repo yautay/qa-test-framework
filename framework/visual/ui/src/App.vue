@@ -12,7 +12,6 @@
     <ResultsTable :rows="rows" :fmt="fmt" @show="show" />
     <ViewerModal
       :viewer="viewer"
-      :modal-modes="modalModes"
       :grid-style="gridStyle"
       :presentation-style="presentationStyle"
       :image-style="imageStyle"
@@ -21,7 +20,7 @@
       :super-zoom-active="superZoomActive"
       :slot-image="slotImage"
       @set-columns="setColumns"
-      @presentation-change="handlePresentation"
+      @set-slot-mode="setSlotMode"
       @navigate="navigate"
       @super-zoom-down="handleSuperZoomPointerDown"
       @super-zoom-up="handleSuperZoomPointerUp"
@@ -43,10 +42,8 @@ import {
   createViewerState,
   ensureModal,
   openViewer,
-  getAvailableModes,
   getModeSrc,
   refreshSlots,
-  setPresentationMode,
   navigateRow,
   setCursorPosition,
   toggleTag,
@@ -73,9 +70,6 @@ export default {
   computed: {
     rows() {
       return filteredSorted(this.store);
-    },
-    modalModes() {
-      return getAvailableModes(this.viewer);
     },
     gridStyle() {
       const requested = Math.max(1, this.viewer.columns || 1);
@@ -112,17 +106,22 @@ export default {
       resetFilters(this.store);
     },
     show(row, mode, index = null) {
-      const fallbackMode = this.viewer.presentationMode || "test";
+      const fallbackMode = this.viewer.viewerMode || "test";
       const normalizedMode = mode === "compare" ? fallbackMode : (mode || fallbackMode);
-      setPresentationMode(this.viewer, normalizedMode);
       openViewer(this.viewer, row, normalizedMode, index);
       ensureModal(this.viewer, "vrtModal").show();
     },
-    slotImage(_slot) {
-      return getModeSrc(this.viewer, this.viewer.presentationMode) || this.viewer.modalImgSrc;
+    slotImage(slot) {
+      return getModeSrc(this.viewer, slot?.mode) || "";
     },
-    handlePresentation(evt) {
-      setPresentationMode(this.viewer, evt.target.value);
+    setSlotMode(slotId, mode) {
+      const slot = this.viewer.slots.find((item) => item.id === slotId);
+      if (!slot) return;
+      slot.mode = mode;
+      if (!this.viewer.slotModes) {
+        this.viewer.slotModes = {};
+      }
+      this.viewer.slotModes[slotId] = mode;
     },
     setColumns(value) {
       this.viewer.columns = value;
@@ -203,7 +202,7 @@ export default {
     navigate(offset) {
       const next = navigateRow(this.viewer, this.rows, offset);
       if (next) {
-        this.show(next.row, this.viewer.presentationMode, next.index);
+        this.show(next.row, this.viewer.viewerMode, next.index);
       }
     },
     isTagLocked(type) {
@@ -277,8 +276,8 @@ export default {
     display: flex;
     flex-direction: column;
   }
-  .toolbar .form-select {
-    min-width: 160px;
+  .slot-mode-select {
+    min-width: 110px;
   }
   .slot-grid {
     display: grid;
