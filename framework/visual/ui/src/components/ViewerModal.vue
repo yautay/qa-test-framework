@@ -36,33 +36,6 @@
               <button type="button" class="btn" :class="keyHeld.d ? 'btn-primary' : 'btn-outline-secondary'" @mousedown="keyHeld.d=true" @mouseup="keyHeld.d=false" @click="$emit('navigate', 1)">K-D →</button>
             </div>
 
-            <div class="btn-group btn-group-sm" role="group">
-              <button type="button"
-                      class="btn"
-                      :class="zoomClass(30,'q')"
-                      @pointerdown.prevent="$emit('zoom-press', 30,'q')"
-                      @pointerup.prevent="$emit('zoom-release','q')"
-                      @pointerleave.prevent="$emit('zoom-release','q')">
-                > K-Q
-              </button>
-              <button type="button" class="btn" :class="middleZoomClass()" @click="$emit('reset-delta')">O</button>
-              <button type="button"
-                      class="btn"
-                      :class="zoomClass(90,'e')"
-                      @pointerdown.prevent="$emit('zoom-press', 90,'e')"
-                      @pointerup.prevent="$emit('zoom-release','e')"
-                      @pointerleave.prevent="$emit('zoom-release','e')">
-                < K-E
-              </button>
-            </div>
-            <div class="btn-group btn-group-sm fit-group" role="group">
-              <button v-for="fit in fitModes" :key="fit.key" type="button"
-                      class="btn"
-                      :class="presentationFit===fit.key ? 'btn-primary' : 'btn-outline-secondary'"
-                      @click="$emit('set-fit', fit.key)">
-                {{ fit.label }}
-              </button>
-            </div>
             <button type="button" :class="superZoomActive ? 'btn btn-primary ms-1' : 'btn btn-outline-secondary ms-1'"
                     @pointerdown.prevent="$emit('super-zoom-down')"
                     @pointerup.prevent="$emit('super-zoom-up')"
@@ -78,7 +51,7 @@
             <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" @click="$emit('close-modal')">Exit (K-LSHIFT)</button>
           </div>
 
-          <div class="text-muted small mb-2">Keys: 1‑4 layout, A/D navigate, hold Q/E zoom, hold W super zoom, S/C tags prompt, Shift = exit</div>
+          <div class="text-muted small mb-2">Keys: 1‑4 layout, A/D navigate, hold W super zoom, S/C tags prompt, Shift = exit</div>
 
           <div class="flex-grow-1 overflow-auto pb-2 position-relative">
             <div class="slot-grid" :style="gridStyle">
@@ -93,7 +66,6 @@
                 <div class="slot-divider"></div>
                 <div class="slot-media">
                   <img v-if="slotImage(slot)" :src="slotImage(slot)"
-                       class="w-100 h-100"
                        :style="[presentationStyle, imageStyle]" />
                   <div v-else class="text-muted small text-center position-absolute top-50 start-50 translate-middle">
                     Brak obrazu dla {{ viewer.presentationMode }}
@@ -128,21 +100,13 @@ export default {
     imageStyle: { type: Object, default: () => ({}) },
     prompt: { type: Object, default: () => ({ active: false, type: null }) },
     keyHeld: { type: Object, default: () => ({}) },
-    fitModes: { type: Array, default: () => [] },
-    presentationFit: { type: String, default: "FIT" },
     superZoomActive: { type: Boolean, default: false },
-    zoomClass: { type: Function, required: true },
-    middleZoomClass: { type: Function, required: true },
     slotImage: { type: Function, required: true },
   },
   emits: [
     "set-columns",
     "presentation-change",
     "navigate",
-    "zoom-press",
-    "zoom-release",
-    "reset-delta",
-    "set-fit",
     "super-zoom-down",
     "super-zoom-up",
     "prompt-tag",

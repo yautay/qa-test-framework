@@ -18,19 +18,11 @@
       :image-style="imageStyle"
       :prompt="prompt"
       :key-held="keyHeld"
-      :fit-modes="fitModes"
-      :presentation-fit="presentationFit"
       :super-zoom-active="superZoomActive"
-      :zoom-class="zoomClass"
-      :middle-zoom-class="middleZoomClass"
       :slot-image="slotImage"
       @set-columns="setColumns"
       @presentation-change="handlePresentation"
       @navigate="navigate"
-      @zoom-press="handleZoomPress"
-      @zoom-release="releaseZoom"
-      @reset-delta="resetDelta"
-      @set-fit="setPresentationFit"
       @super-zoom-down="handleSuperZoomPointerDown"
       @super-zoom-up="handleSuperZoomPointerUp"
       @prompt-tag="promptTag"
@@ -72,13 +64,10 @@ export default {
     return {
       store: createStore(),
       viewer: createViewerState(),
-      baseZoom: 160,
-      zoomDelta: 0,
-      storedDelta: 0,
+      baseZoom: 100,
       superZoomActive: false,
-      keyHeld: { a: false, d: false, q: false, e: false, w: false, s: false, c: false },
+      keyHeld: { a: false, d: false, w: false, s: false, c: false },
       prompt: { active: false, type: null },
-      presentationFit: "FIT",
     };
   },
   computed: {
@@ -98,33 +87,16 @@ export default {
       };
     },
     zoomScale() {
-      const level = this.superZoomActive ? this.baseZoom + 200 : this.baseZoom + this.zoomDelta;
+      const level = this.superZoomActive ? this.baseZoom + 200 : this.baseZoom;
       return level / 100;
     },
-    fitModes() {
-      return [
-        { key: "FIT", label: "FIT" },
-        { key: "VERT", label: "VERT" },
-        { key: "HORIZ", label: "HORIZ" },
-        { key: "CENTER", label: "CENTER" },
-      ];
-    },
     presentationStyle() {
-      const mode = this.presentationFit;
-      const style = {
+      return {
         width: "100%",
         height: "100%",
         objectFit: "contain",
         objectPosition: "center",
       };
-      if (mode === "VERT") {
-        style.width = "auto";
-        style.height = "100%";
-      } else if (mode === "HORIZ") {
-        style.width = "100%";
-        style.height = "auto";
-      }
-      return style;
     },
     imageStyle() {
       const scale = this.zoomScale;
@@ -182,12 +154,6 @@ export default {
         evt.preventDefault();
         this.keyHeld.d = true;
         this.navigate(1);
-      } else if (k.toUpperCase() === "Q") {
-        this.keyHeld.q = true;
-        this.startDelta(30);
-      } else if (k.toUpperCase() === "E") {
-        this.keyHeld.e = true;
-        this.startDelta(90);
       } else if (k.toUpperCase() === "W") {
         if (!this.superZoomActive) {
           this.keyHeld.w = true;
@@ -211,49 +177,10 @@ export default {
       const k = evt.key;
       if (k.toUpperCase() === "A") this.keyHeld.a = false;
       if (k.toUpperCase() === "D") this.keyHeld.d = false;
-      if (k.toUpperCase() === "Q") {
-        this.keyHeld.q = false;
-        this.resetDelta();
-      }
-      if (k.toUpperCase() === "E") {
-        this.keyHeld.e = false;
-        this.resetDelta();
-      }
       if (k.toUpperCase() === "W") {
         this.keyHeld.w = false;
         this.deactivateSuperZoom();
       }
-    },
-    setZoomDelta(value) {
-      this.zoomDelta = value;
-    },
-    startDelta(value) {
-      this.storedDelta = this.zoomDelta;
-      this.setZoomDelta(value);
-    },
-    resetDelta() {
-      this.setZoomDelta(this.storedDelta);
-      this.storedDelta = 0;
-    },
-    zoomClass(value, key) {
-      const keyActive = key ? this.keyHeld[key] : false;
-      const presetActive = this.zoomDelta === value && !this.superZoomActive;
-      return keyActive || presetActive ? "btn-primary" : "btn-outline-secondary";
-    },
-    middleZoomClass() {
-      return this.zoomDelta === 0 && !this.superZoomActive ? "btn-primary" : "btn-outline-secondary";
-    },
-    handleZoomPress(value, key) {
-      if (key) {
-        this.keyHeld[key] = true;
-      }
-      this.startDelta(value);
-    },
-    releaseZoom(key) {
-      if (key) {
-        this.keyHeld[key] = false;
-      }
-      this.resetDelta();
     },
     handleSuperZoomPointerDown() {
       if (!this.superZoomActive) {
@@ -269,13 +196,9 @@ export default {
     },
     activateSuperZoom() {
       this.superZoomActive = true;
-      this.storedDelta = this.zoomDelta;
-      this.zoomDelta = 200;
     },
     deactivateSuperZoom() {
       this.superZoomActive = false;
-      this.zoomDelta = this.storedDelta;
-      this.storedDelta = 0;
     },
     navigate(offset) {
       const next = navigateRow(this.viewer, this.rows, offset);
@@ -293,26 +216,6 @@ export default {
       if (this.prompt.active) return;
       if (this.isTagLocked(type)) return;
       this.prompt = { active: true, type };
-    },
-    setPresentationFit(mode) {
-      this.presentationFit = mode;
-      const base = this.computeBaseZoom();
-      this.baseZoom = base;
-      if (!this.superZoomActive) {
-        this.zoomDelta = 0;
-      }
-    },
-    computeBaseZoom() {
-      switch (this.presentationFit) {
-        case "VERT":
-          return 170;
-        case "HORIZ":
-          return 170;
-        case "CENTER":
-          return 192;
-        default:
-          return 160;
-      }
     },
     confirmPrompt() {
       if (!this.prompt.active) return;
@@ -355,9 +258,9 @@ export default {
   .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
   .small-col { white-space: nowrap; }
   .modal-full {
-    max-width: 95vw;
-    width: 95vw;
-    height: 95vh;
+    max-width: calc(100vw - 24px);
+    width: calc(100vw - 24px);
+    height: calc(100vh - 24px);
     margin: 0 auto;
   }
   .modal-full .modal-dialog {
@@ -369,7 +272,7 @@ export default {
     overflow: hidden;
   }
   .modal-full .modal-body {
-    height: calc(95vh - 72px);
+    height: calc(100vh - 24px - 72px);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -405,10 +308,7 @@ export default {
     min-height: 210px;
   }
   .slot-media img {
-    transition: transform 0.15s ease;
-  }
-  .fit-group .btn {
-    min-width: 64px;
+    transition: transform-origin var(--zoom-origin-ease-ms, 80ms) ease;
   }
   .prompt-overlay {
     position: absolute;
