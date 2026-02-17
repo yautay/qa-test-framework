@@ -529,9 +529,9 @@ export default {
   .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
   .small-col { white-space: nowrap; }
   .modal-full {
-    max-width: 98vw;
-    width: 98vw;
-    height: 98vh;
+    max-width: 95vw;
+    width: 95vw;
+    height: 95vh;
     margin: 0 auto;
   }
   .modal-full .modal-dialog {
@@ -543,7 +543,7 @@ export default {
     overflow: hidden;
   }
   .modal-full .modal-body {
-    height: calc(98vh - 72px);
+    height: calc(95vh - 72px);
     overflow: hidden;
     display: flex;
     flex-direction: column;
