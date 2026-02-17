@@ -18,3 +18,4 @@ logs/*
 /tools/InsertsGenerator/komercja/nexterio/data/provision*
 /tools/InsertsGenerator/komputronik/data/
 /.venv/
+/framework/visual/ui/node_modules/
