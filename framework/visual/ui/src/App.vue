@@ -126,6 +126,13 @@ export default {
       }
       return style;
     },
+    imageStyle() {
+      const scale = this.zoomScale;
+      return {
+        transform: `scale(${scale})`,
+        transformOrigin: `${this.viewer.cursorX}% ${this.viewer.cursorY}%`,
+      };
+    },
   },
   methods: {
     fmt,
@@ -141,13 +148,6 @@ export default {
     },
     slotImage(_slot) {
       return getModeSrc(this.viewer, this.viewer.presentationMode) || this.viewer.modalImgSrc;
-    },
-    imageStyle() {
-      const scale = this.zoomScale;
-      return {
-        transform: `scale(${scale})`,
-        transformOrigin: `${this.viewer.cursorX}% ${this.viewer.cursorY}%`,
-      };
     },
     handlePresentation(evt) {
       setPresentationMode(this.viewer, evt.target.value);
