@@ -1,6 +1,6 @@
 <template>
   <div class="modal fade" id="vrtModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-full">
+    <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
       <div class="modal-content">
         <div class="modal-header justify-content-between align-items-start">
           <div>
@@ -81,7 +81,7 @@
               <div class="prompt-card">
                 <div class="prompt-title">Potwierdzenie</div>
                 <div class="prompt-text">Czy na pewno oznaczyć to jako {{ prompt.type === 'bug' ? 'BUG' : 'ASO' }}?</div>
-                <div class="prompt-hints">Space = TAK &nbsp;•&nbsp; Shift = NIE</div>
+                <div class="prompt-hints">Shift = NIE &nbsp;•&nbsp; Space = TAK</div>
               </div>
             </div>
           </div>

@@ -6,7 +6,7 @@ const MODE_META = {
   diff: { label: "PIXEL_DIFF", srcKey: "modalDiffSrc" },
   lpips: { label: "LPIPS", srcKey: "modalLpipsSrc" },
 };
-const DEFAULT_SLOT_COUNT = 3;
+const DEFAULT_SLOT_COUNT = 2;
 const DEFAULT_ZOOM = 160;
 const SLOT_MODE_DEFAULTS = {
   1: "ref",
