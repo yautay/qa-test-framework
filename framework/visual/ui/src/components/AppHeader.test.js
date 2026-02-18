@@ -13,11 +13,14 @@ vi.mock("../lib/themes", () => ({
   currentTheme: ref("bootstrap"),
   setTheme: vi.fn(),
   presets: {
-    bootstrap: { name: "Bootstrap (Default)" },
-    dark: { name: "Dark" },
-    dracula: { name: "Dracula" },
-    gruvbox: { name: "Gruvbox" },
-    atom: { name: "Atom (One Dark)" },
+    bootstrap: { name: "Bootstrap (Default)", dropdownGradient: "linear-gradient(135deg, #e8f4fd 0%, #f5f5f5 100%)" },
+    dark: { name: "Dark", dropdownGradient: "linear-gradient(135deg, #3a3f47 0%, #2d3238 100%)" },
+    dracula: { name: "Dracula", dropdownGradient: "linear-gradient(135deg, #44475a 0%, #383a4e 100%)" },
+    gruvbox: { name: "Gruvbox", dropdownGradient: "linear-gradient(135deg, #45403b 0%, #3c3836 100%)" },
+    atom: { name: "Atom (One Dark)", dropdownGradient: "linear-gradient(135deg, #2c313a 0%, #21252b 100%)" },
+    nord: { name: "Nord", dropdownGradient: "linear-gradient(135deg, #d8dee9 0%, #e5e9f0 100%)" },
+    solarized: { name: "Solarized Light", dropdownGradient: "linear-gradient(135deg, #eee8d5 0%, #f5efdc 100%)" },
+    github: { name: "GitHub Light", dropdownGradient: "linear-gradient(135deg, #f6f8fa 0%, #ffffff 100%)" },
   },
 }));
 
@@ -32,13 +35,13 @@ describe("AppHeader", () => {
     const wrapper = mount(AppHeader);
     await flushPromises();
     
-    const select = wrapper.find("select.theme-select");
-    expect(select.exists()).toBe(true);
+    const dropdown = wrapper.find(".theme-dropdown");
+    expect(dropdown.exists()).toBe(true);
     
-    const options = wrapper.findAll("select.theme-select option");
-    expect(options).toHaveLength(5);
-    expect(options[0].text()).toBe("Bootstrap (Default)");
-    expect(options[1].text()).toBe("Dark");
+    const items = wrapper.findAll(".theme-dropdown .dropdown-item");
+    expect(items).toHaveLength(8);
+    expect(items[0].text()).toContain("Bootstrap (Default)");
+    expect(items[1].text()).toContain("Dark");
   });
 
   it("renders language selector with flag buttons", async () => {
