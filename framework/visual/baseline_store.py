@@ -171,6 +171,21 @@ class BaselineStore:
             raise ValueError(f"Unsafe object key outside cache dir: {object_key!r}")
         return candidate
 
+    def local_provider_path(self, object_key: str) -> Path:
+        """Map an object key to repo local-baseline path safely.
+
+        Local provider baselines live under `qa/visual/baselines` in repo root.
+        The same path traversal protection as cache mapping is applied.
+        """
+
+        provider_root = (self._repo_root / "qa" / "visual" / "baselines").resolve()
+        candidate = (provider_root / object_key).resolve()
+        try:
+            candidate.relative_to(provider_root)
+        except ValueError:
+            raise ValueError(f"Unsafe object key outside local provider dir: {object_key!r}")
+        return candidate
+
     def resolve_baseline(self, suite_id: str, scenario_id: str, viewport: str, browser: str) -> Path | None:
         """
         Resolve an existing baseline image for a given scenario.
@@ -251,6 +266,23 @@ class BaselineStore:
             self._upload_minio_object(object_key, target)
 
         return target
+
+    def store_local_baseline(self, suite_id: str, scenario_id: str, viewport: str, browser: str, source: Path) -> Path:
+        """Store baseline in repo local provider and cache.
+
+        This method is intended for explicit baseline approval flows where the
+        selected TEST image should become a new local REF candidate.
+        """
+
+        object_key = self.baseline_key(suite_id, scenario_id, viewport, browser)
+        local_target = self.local_provider_path(object_key)
+        cache_target = self.local_cache_path(object_key)
+
+        local_target.parent.mkdir(parents=True, exist_ok=True)
+        cache_target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(str(source), str(local_target))
+        shutil.copyfile(str(source), str(cache_target))
+        return local_target
 
     def _get_minio_client(self):
         """

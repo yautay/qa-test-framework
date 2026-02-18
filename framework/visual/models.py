@@ -14,7 +14,7 @@ from typing import Any, Literal
 
 CaptureType = Literal["page", "viewport", "element"]
 CompareMode = Literal["pixel", "perceptual", "hybrid"]
-ResultStatus = Literal["passed", "failed", "skipped", "error"]
+ResultStatus = Literal["passed", "failed", "skipped", "error", "new", "warn", "approved"]
 
 
 def _require_str(d: dict[str, Any], key: str) -> str:
@@ -380,7 +380,7 @@ class VisualScenario:
             target_url=_require_str(d, "target_url"),
             suite_id=_require_str(d, "suite_id"),
             compare_mode=compare_mode,  # type: ignore[assignment]
-            viewport=_as_tuple_str(d, "viewport"),
+            viewport=_as_tuple_str(d.get("viewport")),
             capture=VisualCapture.from_dict(d.get("capture")),
             thresholds=VisualThresholds.from_dict(d.get("thresholds")),
             mask=VisualMask.from_dict(d.get("mask")),
@@ -398,10 +398,14 @@ class VisualResult:
     message: str
     compare_mode: CompareMode
 
-    baseline_path: Path
-    actual_path: Path
-    diff_path: Path | None = None
-    heatmap_path: Path | None = None
+    baseline_path: str
+    actual_path: str
+    diff_path: str = ""
+    heatmap_path: str = ""
+
+    suite_id: str = ""
+    viewport: str = ""
+    browser: str = ""
 
     pixel_changed_ratio: float | None = None
     lpips: float | None = None
@@ -415,10 +419,13 @@ class VisualResult:
             "status": self.status,
             "message": self.message,
             "compare_mode": self.compare_mode,
-            "baseline_path": str(self.baseline_path),
-            "actual_path": str(self.actual_path),
-            "diff_path": str(self.diff_path) if self.diff_path else "",
-            "heatmap_path": str(self.heatmap_path) if self.heatmap_path else "",
+            "suite_id": self.suite_id,
+            "viewport": self.viewport,
+            "browser": self.browser,
+            "baseline_path": self.baseline_path,
+            "actual_path": self.actual_path,
+            "diff_path": self.diff_path,
+            "heatmap_path": self.heatmap_path,
             "pixel_changed_ratio": self.pixel_changed_ratio,
             "lpips": self.lpips,
             "dists": self.dists,

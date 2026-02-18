@@ -84,9 +84,19 @@ Commands:
 make test-visual
 make visual-approve
 make visual-sync
+make visual-report-serve
 make minio-up
 make minio-down
 ```
+
+Baseline approval from report UI:
+
+- start report server (`make visual-report-serve`),
+- tag rows with `BASELINE`,
+- click `SEND BASELINE` and rewrite challenge phrase,
+- selected `TEST` images are copied to local baseline (`qa/visual/baselines`).
+
+Details: `docs/VISUAL_BASELINE_APPROVAL_FLOW.md`
 
 ## Artifacts and troubleshooting
 

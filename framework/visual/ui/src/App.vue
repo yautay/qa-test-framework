@@ -10,6 +10,9 @@
           <button type="button" class="btn btn-outline-secondary" @click="triggerTagImport">Import tags</button>
           <button type="button" class="btn btn-outline-secondary" @click="exportTags">Export tags</button>
           <button type="button" class="btn btn-outline-secondary" @click="syncTagsToFile">Sync tags</button>
+          <button type="button" class="btn btn-success" @click="sendBaseline" :disabled="baselineCandidates.length === 0">
+            SEND BASELINE ({{ baselineCandidates.length }})
+          </button>
         </div>
         <input
           ref="tagFileInput"
@@ -19,6 +22,7 @@
           @change="onTagFileSelected"
         />
         <div v-if="tagSyncMessage" class="text-muted small">{{ tagSyncMessage }}</div>
+        <div v-if="baselineMessage" class="text-muted small">{{ baselineMessage }}</div>
         <div class="text-muted small mono">{{ store.summary }}</div>
       </div>
     </div>
@@ -60,6 +64,7 @@ import {
   parseTagFile,
   saveTagSnapshotToFile,
 } from "./lib/tagPersistence";
+import { requestBaselineChallenge, sendBaselineSelection } from "./lib/baselineApi";
 import {
   createViewerState,
   ensureModal,
@@ -89,6 +94,7 @@ export default {
       prompt: { active: false, type: null },
       tagSyncTimer: null,
       tagSyncMessage: "",
+      baselineMessage: "",
     };
   },
   computed: {
@@ -122,6 +128,13 @@ export default {
         transform: `scale(${scale})`,
         transformOrigin: `${this.viewer.cursorX}% ${this.viewer.cursorY}%`,
       };
+    },
+    baselineCandidates() {
+      return this.store.rows.filter((row) => {
+        const key = this.getRowTagKey(row);
+        const tags = this.viewer.tagLog?.[key];
+        return !!(tags?.baseline && row?.actual_path);
+      });
     },
   },
   methods: {
@@ -180,6 +193,55 @@ export default {
       const synced = await saveTagSnapshotToFile(this.viewer.tagLog);
       this.tagSyncMessage = synced ? "tags synced to file" : "file sync unavailable; local only";
       persistTagSnapshot(this.viewer.tagLog);
+    },
+    async sendBaseline() {
+      const candidates = this.baselineCandidates;
+      if (!candidates.length) {
+        this.baselineMessage = "No BASELINE-tagged TEST artifacts selected";
+        return;
+      }
+
+      let challenge;
+      try {
+        challenge = await requestBaselineChallenge();
+      } catch (_error) {
+        this.baselineMessage = "SEND BASELINE requires report server (run make visual-report-serve)";
+        return;
+      }
+
+      const phrase = String(challenge?.phrase || "").trim();
+      const challengeId = String(challenge?.challenge_id || "").trim();
+      if (!phrase || !challengeId) {
+        this.baselineMessage = "Unable to start baseline confirmation challenge";
+        return;
+      }
+
+      const typed = window.prompt(`Type this phrase to confirm baseline write:\n\n${phrase}`);
+      if (typed === null) {
+        this.baselineMessage = "SEND BASELINE cancelled";
+        return;
+      }
+
+      const items = candidates.map((row) => ({
+        scenario_id: row.scenario_id || "",
+        suite_id: row.suite_id || "",
+        viewport: row.viewport || "",
+        browser: row.browser || "",
+        actual_path: row.actual_path || "",
+      }));
+
+      try {
+        const response = await sendBaselineSelection({
+          challenge_id: challengeId,
+          phrase: String(typed).trim(),
+          items,
+        });
+        const saved = Number(response?.saved_count || 0);
+        const failed = Number(response?.failed_count || 0);
+        this.baselineMessage = `Baseline sync done: saved=${saved}, failed=${failed}`;
+      } catch (error) {
+        this.baselineMessage = `SEND BASELINE failed: ${error?.message || "unknown error"}`;
+      }
     },
     reset() {
       resetFilters(this.store);

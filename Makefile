@@ -8,7 +8,7 @@ PYTEST ?= $(PYTHON) -m pytest
 
 .DEFAULT_GOAL := help
 
-.PHONY: help test test-aso test-functional test-visual validate-config visual-validate visual-sync visual-approve clean-artifacts clean-artifacts-older collect lint format format-check typecheck security verify-discovery verify-scenarios scenario-report test-api remote-up remote-down remote-smoke minio-up minio-down check
+.PHONY: help test test-aso test-functional test-visual validate-config visual-validate visual-sync visual-approve visual-report-serve clean-artifacts clean-artifacts-older collect lint format format-check typecheck security verify-discovery verify-scenarios scenario-report test-api remote-up remote-down remote-smoke minio-up minio-down check
 
 help: ## Show this help
 	$(PYTHON) tools/make/make_help.py
@@ -82,6 +82,9 @@ visual-sync: ## Synchronizacja visual baseline
 visual-approve: ## Akceptacja zmian visual
 	REPORTING_ENABLED=0 VISUAL_ENABLED=1 $(PYTEST) -m visual -q --visual-approve
 
+visual-report-serve: ## Uruchom lokalny serwer raportu visual
+	$(PYTHON) tools/visual/report_server.py $(if $(RUN_ID),--run-id $(RUN_ID),) $(if $(REPORT_DIR),--report-dir $(REPORT_DIR),) $(if $(PORT),--port $(PORT),)
+
 ##@ Helpers
 
 clean-artifacts: ## Usuń wszystkie artefakty
@@ -109,4 +112,3 @@ debug-minio-up: ## Start MinIO
 
 debug-minio-down: ## Stop MinIO
 	docker compose -f tools/minio/docker-compose.yml down
-

@@ -68,7 +68,18 @@ make visual-validate
 make test-visual
 make visual-approve
 make visual-sync
+make visual-report-serve
 ```
+
+Report-driven local baseline approval:
+
+- run `make visual-report-serve` (optionally `RUN_ID=...`),
+- open report URL,
+- mark rows with `BASELINE`,
+- use `SEND BASELINE` + challenge phrase confirmation,
+- only `TEST` screenshots are stored as local baselines.
+
+Reference: `docs/VISUAL_BASELINE_APPROVAL_FLOW.md`
 
 Artifact cleanup commands:
 
