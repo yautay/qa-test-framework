@@ -9,8 +9,8 @@ grid_connect_timeout_ms = 30000
 
 # Visual regression defaults.
 visual_enabled = True
-visual_compare_mode = "hybrid"  # pixel|perceptual|hybrid
-visual_baseline_provider = "minio"  # minio|local
+visual_compare_mode = "pixel"  # pixel|perceptual|hybrid
+visual_baseline_provider = "local"  # minio|local
 visual_baseline_profile = "test-ref"
 visual_baseline_version = "latest"
 visual_cache_dir = ".visual_cache"
@@ -49,7 +49,7 @@ visual_perceptual_alpha = 0.45
 visual_perceptual_lpips_net = "alex"  # vgg|alex|squeeze
 
 # Reporting API (optional)
-reporting_enabled = True
+reporting_enabled = False
 reporting_schema_version = "2.0"
 reporting_source_project = "netQArner"
 reporting_source_origin = ""
