@@ -10,7 +10,7 @@ import pytest
 import settings_cli
 from loguru import logger
 
-from framework.artifacts import RunArtifacts, build_run_artifacts
+from framework.artifacts import RunArtifacts, build_run_artifacts, resolve_artifacts_base_dir
 from framework.env import RuntimeEnv, load_env
 from framework.git_info import get_git_metadata
 from framework.logger import configure_logging
@@ -88,6 +88,7 @@ def _derive_test_status(item: pytest.Item) -> str:
         return "xpassed" if wasxfail else "passed"
     return "error"
 
+
 def _base_url_resolver(config: pytest.Config):
     env: RuntimeEnv | None = getattr(config, "_runtime_env", None)
     if env is None:
@@ -113,9 +114,11 @@ def _base_url_resolver(config: pytest.Config):
     if env.base_url:
         config._runtime_env = replace(env, base_url=env.base_url)
 
+
 def pytest_configure(config: pytest.Config) -> None:
     env = load_env()
-    artifacts = build_run_artifacts(env.artifacts_dir)
+    artifacts_base_dir = resolve_artifacts_base_dir(env.artifacts_dir, config.rootpath)
+    artifacts = build_run_artifacts(str(artifacts_base_dir))
     worker_id = os.getenv("PYTEST_XDIST_WORKER", "master")
     git_metadata = get_git_metadata()
     configure_logging(
@@ -165,6 +168,7 @@ def pytest_configure(config: pytest.Config) -> None:
             "collectonly",
         )
     )
+
 
 def pytest_sessionstart(session: pytest.Session) -> None:
     if getattr(session.config, "_reporting_suspended", False):

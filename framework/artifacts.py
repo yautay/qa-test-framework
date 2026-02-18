@@ -19,6 +19,20 @@ class RunArtifacts:
     logs: Path
 
 
+def resolve_artifacts_base_dir(base_dir: str, repo_root: Path) -> Path:
+    """Resolve artifact base directory against repository root.
+
+    Relative paths are anchored to repo_root to keep output stable even when
+    pytest is started from a nested working directory.
+    """
+
+    token = (base_dir or "").strip() or "artifacts"
+    candidate = Path(token)
+    if candidate.is_absolute():
+        return candidate.resolve()
+    return (repo_root / candidate).resolve()
+
+
 def build_run_artifacts(base_dir: str) -> RunArtifacts:
     """Ensure artifact directories exist and return their paths.
 
