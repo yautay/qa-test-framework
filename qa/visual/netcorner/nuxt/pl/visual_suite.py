@@ -39,7 +39,7 @@ def apply_parametrization(metafunc: pytest.Metafunc, scenarios_dir: Path) -> Non
     for scenario in scenarios:
         if scenario.viewport:
             for viewport in scenario.viewport:
-                params.append((scenario, scenario.viewport))
+                params.append((scenario, viewport))
                 ids.append(f"{scenario.scenario_id}__{viewport}")
         else:
             for viewport in viewports:

@@ -1,21 +1,13 @@
 from __future__ import annotations
-
 from pathlib import Path
-
 import pytest
+import settings
 from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_playwright
-
 from framework.artifacts import RunArtifacts
 from framework.env import RuntimeEnv
 from framework.visual.report_builder import write_visual_report
 
-VIEWPORT_PRESETS: dict[str, tuple[int, int]] = {
-    "mobile": (390, 844),
-    "tablet": (1024, 1366),
-    "fhd": (1920, 1080),
-    "2k": (2560, 1440),
-    "4k": (3840, 2160),
-}
+VIEWPORT_PRESETS: dict[str, tuple[int, int]] = settings.visual_viewport_presets
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
@@ -89,8 +81,8 @@ def context(
 ) -> BrowserContext:
     """Function-scoped browser context with selected visual viewport preset."""
     viewport_preset = str(pytestconfig.getoption("viewport") or "fhd")
-    if "visual_viewport" in request.fixturenames:
-        viewport_value = request.getfixturevalue("visual_viewport")
+    if "viewport" in request.fixturenames:
+        viewport_value = request.getfixturevalue("viewport")
         viewport_preset = str(viewport_value or viewport_preset)
     viewport_width, viewport_height = VIEWPORT_PRESETS.get(viewport_preset, VIEWPORT_PRESETS["fhd"])
     context = browser.new_context(

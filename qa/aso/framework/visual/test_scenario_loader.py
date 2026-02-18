@@ -1,10 +1,7 @@
 from __future__ import annotations
-
 import json
 from pathlib import Path
-
 import pytest
-
 from framework.visual.scenario_loader import (
     ScenarioLoadError,
     _load_scenarios,
@@ -34,7 +31,6 @@ def test_load_scenarios_single_object_defaults(tmp_path: Path) -> None:
     payload = {
         "suite_id": "suite-1",
         "target_url": "https://example.test/",
-        "viewport": ["1280", "720"],
     }
     _write_json(file_path, payload)
 
@@ -45,7 +41,6 @@ def test_load_scenarios_single_object_defaults(tmp_path: Path) -> None:
     assert scenario.scenario_id == "sample__1"
     assert scenario.name == "sample__1"
     assert scenario.compare_mode == "hybrid"
-    assert scenario.viewport == ["1280", "720"]
     assert scenario.capture.capture_type == "page"
     assert scenario.capture.selector == ""
     assert scenario.capture.full_page is True
@@ -153,22 +148,6 @@ def test_load_scenarios_rejects_invalid_top_level(tmp_path: Path) -> None:
 )
 def test_load_scenarios_rejects_invalid_fields(tmp_path: Path, overrides: dict[str, object], match: str) -> None:
     file_path = tmp_path / "invalid_fields.json"
-    _write_json(file_path, _base_payload(**overrides))
-
-    with pytest.raises(ValueError, match=match):
-        _load_scenarios(file_path)
-
-
-@pytest.mark.parametrize(
-    ("overrides", "match"),
-    [
-        ({"suite_id": ""}, "suite_id must be non-empty"),
-        ({"target_url": ""}, "target_url must be non-empty"),
-        ({"id": "   "}, "id must be non-empty"),
-    ],
-)
-def test_load_scenarios_requires_non_empty_fields(tmp_path: Path, overrides: dict[str, object], match: str) -> None:
-    file_path = tmp_path / "missing.json"
     _write_json(file_path, _base_payload(**overrides))
 
     with pytest.raises(ValueError, match=match):

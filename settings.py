@@ -17,6 +17,15 @@ visual_cache_dir = ".visual_cache"
 visual_fail_on_missing_baseline = False
 visual_warn_as_fail = False
 
+# Visual viewport presets (name -> (width, height))
+visual_viewport_presets = {
+    "mobile": (390, 844),
+    "tablet": (1024, 1366),
+    "fhd": (1920, 1080),
+    "2k": (2560, 1440),
+    "4k": (3840, 2160),
+}
+
 # MinIO baseline storage.
 visual_minio_endpoint = ""
 visual_minio_access_key = ""
@@ -52,4 +61,3 @@ reporting_api_test_result_endpoint = "/test-run/test-result"
 reporting_api_run_finish_endpoint = "/test-run/finish"
 reporting_api_timeout_seconds = 5
 reporting_api_retries = 2
-

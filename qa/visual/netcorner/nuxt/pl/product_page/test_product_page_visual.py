@@ -1,9 +1,6 @@
 from __future__ import annotations
-
 from pathlib import Path
-
 import pytest
-
 from framework.env import RuntimeEnv
 from framework.visual.models import VisualScenario
 from qa.visual.netcorner.nuxt.pl.visual_suite import apply_parametrization, execute_visual_scenario
@@ -21,7 +18,7 @@ def test_product_page_visual(
     request: pytest.FixtureRequest,
     page,
     scenario: VisualScenario,
-    visual_viewport: str,
+    viewport: str,
     runtime_env: RuntimeEnv,
     visual_output_dir: Path,
     visual_results: list,
@@ -31,7 +28,7 @@ def test_product_page_visual(
         request=request,
         page=page,
         scenario=scenario,
-        visual_viewport=visual_viewport,
+        viewport=viewport,
         runtime_env=runtime_env,
         visual_output_dir=visual_output_dir,
         visual_results=visual_results,

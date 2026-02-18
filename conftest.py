@@ -1,6 +1,6 @@
 from __future__ import annotations
-
 import pytest
+import settings
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -91,7 +91,7 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         "--viewport",
         action="store",
         default="fhd",
-        choices=("mobile", "tablet", "fhd", "2k", "4k"),
+        choices=tuple(settings.visual_viewport_presets.keys()),
         help="Viewport preset for browser context",
     )
     parser.addoption(

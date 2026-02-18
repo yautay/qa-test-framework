@@ -59,7 +59,8 @@ class VisualRunner:
 
         self._navigate(page, scenario)
 
-        file_stem = _safe_filename(scenario.scenario_id)
+        viewport_token = (viewport or "").strip() or "default"
+        file_stem = _safe_filename(f"{scenario.scenario_id}__{viewport_token}")
         actual_path = self._actual_dir / f"{file_stem}.png"
         self._capture(page, scenario, actual_path)
 
@@ -75,7 +76,7 @@ class VisualRunner:
         baseline_path = self._store.resolve_baseline(
             scenario.suite_id,
             scenario.scenario_id,
-            scenario.viewport,
+            viewport_token,
             browser_family,
         )
         if baseline_path is None:
