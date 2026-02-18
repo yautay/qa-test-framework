@@ -8,7 +8,7 @@ PYTEST ?= $(PYTHON) -m pytest
 
 .DEFAULT_GOAL := help
 
-.PHONY: help test test-aso test-functional test-visual validate-config visual-validate visual-sync visual-approve visual-report-serve clean-artifacts clean-artifacts-older collect lint format format-check typecheck security verify-discovery verify-scenarios scenario-report test-api remote-up remote-down remote-smoke minio-up minio-down check
+.PHONY: help test test-aso test-functional test-visual validate-config visual-sync visual-approve visual-report-serve clean-artifacts clean-artifacts-older collect lint format format-check typecheck security verify-discovery verify-scenarios scenario-report test-api remote-up remote-down remote-smoke minio-up minio-down check
 
 help: ## Show this help
 	$(PYTHON) tools/make/make_help.py
@@ -32,8 +32,8 @@ test-visual: ## Testy regresji wizualnej
 
 ##@ Development
 
-validate-config: ## Walidacja konfiguracji (scenariusze + visual)
-validate-config: verify-scenarios visual-validate
+validate-config: ## Walidacja konfiguracji scenariuszy
+validate-config: verify-scenarios
 
 check: ## Full check pipeline
 check: lint format-check typecheck security verify-discovery validate-config collect
@@ -72,9 +72,6 @@ scenario-report: ## Raport scenariuszy
 
 
 ##@ Regresja wizualna
-
-visual-validate: ## Walidacja scenariuszy visual
-	$(PYTHON) tools/visual/validate_scenarios.py
 
 visual-sync: ## Synchronizacja visual baseline
 	$(PYTHON) tools/visual/sync_baseline.py

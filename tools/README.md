@@ -30,7 +30,6 @@ This directory contains helper scripts used by local developers, testers, and CI
 ```bash
 make verify-scenarios
 make scenario-report
-make visual-validate
 make visual-report-serve
 make clean-artifacts
 make clean-artifacts-older DAYS=14

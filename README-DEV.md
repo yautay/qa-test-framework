@@ -47,7 +47,6 @@ make check
 
 - `make validate-config` runs:
   - `python tools/scenarios/verify_scenarios.py`
-  - `python tools/visual/validate_scenarios.py`
 - `make test-aso` runs `validate-config` first, then `pytest -m aso -q`.
 
 ## Visual regression development
@@ -57,14 +56,9 @@ Visual suites:
 - `qa/visual/netcorner/nuxt/pl/layers/`
 - `qa/visual/netcorner/nuxt/pl/product_page/`
 
-Naming and validation rules:
-- `qa/visual/validation_rules.json`
-- `tools/visual/validate_scenarios.py`
-
 Helpful commands:
 
 ```bash
-make visual-validate
 make test-visual
 make visual-approve
 make visual-sync
