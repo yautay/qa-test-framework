@@ -38,7 +38,7 @@ export function createViewerState() {
     zoomPreset: DEFAULT_ZOOM,
     cursorX: 50,
     cursorY: 50,
-    tags: { bug: false, aso: false },
+    tags: { bug: false, aso: false, baseline: false },
     tagLog: {},
     tagLocked: {},
     currentIndex: null,
@@ -98,14 +98,15 @@ export function openViewer(viewer, row, mode, index = null) {
 
   refreshSlots(viewer);
   viewer.currentIndex = index;
-  if (row) {
-    const key = getRowTagKey(row);
-    viewer.tags = viewer.tagLog[key] ? { ...viewer.tagLog[key] } : { bug: false, aso: false };
+    if (row) {
+      const key = getRowTagKey(row);
+      viewer.tags = viewer.tagLog[key] ? { ...viewer.tagLog[key] } : { bug: false, aso: false, baseline: false };
     viewer.tagLocked = viewer.tagLocked || {};
-    const existingLock = viewer.tagLocked[key] || { bug: false, aso: false };
+    const existingLock = viewer.tagLocked[key] || { bug: false, aso: false, baseline: false };
     viewer.tagLocked[key] = {
       bug: existingLock.bug || !!viewer.tags.bug,
       aso: existingLock.aso || !!viewer.tags.aso,
+      baseline: existingLock.baseline || !!viewer.tags.baseline,
     };
   }
 }
@@ -218,6 +219,6 @@ export function toggleTag(viewer, row, tagKey) {
   viewer.tags[tagKey] = true;
   const key = getRowTagKey(row);
   viewer.tagLog[key] = { ...viewer.tags };
-  viewer.tagLocked[key] = viewer.tagLocked[key] || { bug: false, aso: false };
+  viewer.tagLocked[key] = viewer.tagLocked[key] || { bug: false, aso: false, baseline: false };
   viewer.tagLocked[key][tagKey] = true;
 }

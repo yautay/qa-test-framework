@@ -27,7 +27,14 @@
             <td class="small-col mono">{{ fmt(r.pixel_changed_ratio) }}</td>
             <td class="small-col mono">{{ fmt(r.lpips) }}</td>
             <td class="small-col mono">{{ fmt(r.dists) }}</td>
-            <td style="max-width: 420px;">{{ r.message || '' }}</td>
+            <td style="max-width: 420px;">
+              <div class="d-flex flex-wrap gap-1 mb-1">
+                <span v-if="rowHasTag(r, 'bug')" class="badge bg-danger">BUG</span>
+                <span v-if="rowHasTag(r, 'aso')" class="badge bg-warning text-dark">ASO</span>
+                <span v-if="rowHasTag(r, 'baseline')" class="badge bg-success">BASELINE</span>
+              </div>
+              <div>{{ r.message || '' }}</div>
+            </td>
 
             <td style="min-width: 430px;">
               <div class="d-flex flex-wrap gap-2">
@@ -61,6 +68,14 @@ export default {
       type: Function,
       required: true,
     },
+    tagLog: {
+      type: Object,
+      default: () => ({}),
+    },
+    tagKeyForRow: {
+      type: Function,
+      default: () => () => "",
+    },
   },
   methods: {
     statusClass(status) {
@@ -69,6 +84,11 @@ export default {
       if (status === 'skipped' || status === 'new') return 'text-bg-warning';
       if (status === 'error') return 'text-bg-dark';
       return '';
+    },
+    rowHasTag(row, tag) {
+      const key = this.tagKeyForRow(row);
+      const tags = this.tagLog?.[key];
+      return !!(tags && tags[tag]);
     },
   },
 };

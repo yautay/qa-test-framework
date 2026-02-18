@@ -40,12 +40,13 @@
             <div class="btn-group btn-group-sm" role="group">
               <button v-if="!viewer.tags.bug" type="button" class="btn btn-outline-danger" @click="$emit('prompt-tag','bug')">BUG! (K-S)</button>
               <button v-if="!viewer.tags.aso" type="button" class="btn btn-outline-warning text-dark" @click="$emit('prompt-tag','aso')">ASO (K-C)</button>
+              <button v-if="!viewer.tags.baseline" type="button" class="btn btn-outline-success text-success" @click="$emit('prompt-tag','baseline')">BASELINE (K-\)</button>
             </div>
 
             <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" @click="$emit('close-modal')">Exit (K-LSHIFT)</button>
           </div>
 
-          <div class="text-muted small mb-2">Keys: 1‑4 layout, A/D navigate, hold W super zoom, S/C tags prompt, Shift = exit</div>
+          <div class="text-muted small mb-2">Keys: 1‑4 layout, A/D navigate, hold W super zoom, S/C/\ tags prompt, Shift = exit</div>
 
           <div class="flex-grow-1 overflow-auto pb-2 position-relative">
             <div class="slot-grid" :style="gridStyle">
@@ -63,6 +64,7 @@
                     <div class="d-flex gap-1">
                       <span v-if="viewer.tags.bug" class="badge bg-danger">BUG</span>
                       <span v-if="viewer.tags.aso" class="badge bg-warning text-dark">ASO</span>
+                      <span v-if="viewer.tags.baseline" class="badge bg-success">BASELINE</span>
                     </div>
                   </div>
                 </div>
@@ -80,7 +82,7 @@
             <div v-if="prompt.active" class="prompt-overlay">
               <div class="prompt-card">
                 <div class="prompt-title">Potwierdzenie</div>
-                <div class="prompt-text">Czy na pewno oznaczyć to jako {{ prompt.type === 'bug' ? 'BUG' : 'ASO' }}?</div>
+                <div class="prompt-text">Czy na pewno oznaczyć to jako {{ promptTypeLabel(prompt.type) }}?</div>
                 <div class="prompt-hints">Shift = NIE &nbsp;•&nbsp; Space = TAK</div>
               </div>
             </div>
@@ -134,6 +136,12 @@ export default {
     slotModeLabel(mode) {
       const match = this.modeOptions.find((item) => item.value === mode);
       return match ? match.label : "";
+    },
+    promptTypeLabel(type) {
+      if (type === "bug") return "BUG";
+      if (type === "aso") return "ASO";
+      if (type === "baseline") return "BASELINE";
+      return "";
     },
   },
 };

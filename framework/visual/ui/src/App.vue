@@ -9,7 +9,7 @@
     </div>
 
     <FiltersPanel :store="store" @reset="reset" />
-    <ResultsTable :rows="rows" :fmt="fmt" @show="show" />
+    <ResultsTable :rows="rows" :fmt="fmt" :tag-log="viewer.tagLog" :tag-key-for-row="getRowTagKey" @show="show" />
     <ViewerModal
       :viewer="viewer"
       :grid-style="gridStyle"
@@ -165,6 +165,10 @@ export default {
       } else if (k.toUpperCase() === "C") {
         if (!this.isTagLocked("aso")) {
           this.promptTag("aso");
+        }
+      } else if (k === "\\") {
+        if (!this.isTagLocked("baseline")) {
+          this.promptTag("baseline");
         }
       } else if (evt.code === "ShiftLeft") {
         this.closeModal();
