@@ -75,8 +75,12 @@ def compare_images(
     red[:] = (0, 0, 255)
 
     sel = mask > 0
-    # alpha blend only where changed
-    overlay[sel] = cv2.addWeighted(actual[sel], 0.35, red[sel], 0.65, 0)
+    if np.any(sel):
+        a = actual[sel].astype(np.float32)
+        r = red[sel].astype(np.float32)
+        out = a * 0.35 + r * 0.65
+        overlay[sel] = np.clip(out, 0, 255).astype(np.uint8)
+
 
     for (x, y, w, h) in kept_boxes:
         cv2.rectangle(overlay, (x, y), (x + w, y + h), (0, 0, 255), 2)
