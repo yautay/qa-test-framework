@@ -18,5 +18,78 @@
     "new": "new",
     "tests": "tests",
     "openReport": "Open report"
+  },
+  "listing": {
+    "scenario": "Scenario",
+    "status": "Status",
+    "mode": "Mode",
+    "pixel": "Pixel",
+    "lpips": "LPIPS",
+    "dists": "DISTS",
+    "message": "Message",
+    "artifacts": "Artifacts",
+    "noResults": "No results for current filters."
+  },
+  "filtersPanel": {
+    "search": "Search (scenario/message)",
+    "status": "Status",
+    "mode": "Mode",
+    "sort": "Sort",
+    "reset": "Reset",
+    "all": "All"
+  },
+  "status": {
+    "passed": "passed",
+    "failed": "failed",
+    "skipped": "skipped",
+    "error": "error",
+    "new": "new"
+  },
+  "modes": {
+    "pixel": "pixel",
+    "perceptual": "perceptual",
+    "hybrid": "hybrid"
+  },
+  "sort": {
+    "scenario_id": "scenario_id",
+    "status": "status",
+    "pixel": "pixel",
+    "lpips": "lpips",
+    "dists": "dists"
+  },
+  "report": {
+    "title": "Visual Regression Report",
+    "run": "Run",
+    "importTags": "Import tags",
+    "exportTags": "Export tags",
+    "syncTags": "Sync tags",
+    "sendBaseline": "SEND BASELINE"
+  },
+  "modal": {
+    "exit": "Exit (K-LSHIFT)",
+    "keys": "Keys: 1-4 layout, A/D navigate, hold W super zoom, S/C/\\ tags prompt, Shift = exit",
+    "slot": "Slot",
+    "noImage": "No image for"
+  },
+  "prompt": {
+    "confirm": "Confirmation",
+    "areYouSure": "Are you sure you want to tag this as",
+    "shiftNo": "Shift = NO",
+    "spaceYes": "Space = YES"
+  },
+  "tags": {
+    "bug": "BUG",
+    "aso": "ASO",
+    "baseline": "BASELINE"
+  },
+  "artifacts": {
+    "ref": "ref",
+    "test": "test",
+    "diff": "diff",
+    "lpips": "perc",
+    "compare": "compare"
+  },
+  "navigate": {
+    "backToHero": "Press Shift to return to dashboard"
   }
 }

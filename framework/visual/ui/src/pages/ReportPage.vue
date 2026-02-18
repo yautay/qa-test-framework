@@ -2,16 +2,16 @@
   <div>
     <div class="d-flex align-items-center justify-content-between mb-3">
       <div>
-        <h3 class="mb-0">Visual Regression Report</h3>
-        <div class="text-muted small">Run: <span class="mono">{{ runId || "unknown" }}</span></div>
+        <h3 class="mb-0">{{ t('report.title') }}</h3>
+        <div class="text-muted small">{{ t('report.run') }}: <span class="mono">{{ runId || "unknown" }}</span></div>
       </div>
       <div class="d-flex align-items-center gap-2">
         <div class="btn-group btn-group-sm" role="group" aria-label="tag persistence">
-          <button type="button" class="btn btn-outline-secondary" @click="triggerTagImport">Import tags</button>
-          <button type="button" class="btn btn-outline-secondary" @click="exportTags">Export tags</button>
-          <button type="button" class="btn btn-outline-secondary" @click="syncTagsToFile">Sync tags</button>
+          <button type="button" class="btn btn-outline-secondary" @click="triggerTagImport">{{ t('report.importTags') }}</button>
+          <button type="button" class="btn btn-outline-secondary" @click="exportTags">{{ t('report.exportTags') }}</button>
+          <button type="button" class="btn btn-outline-secondary" @click="syncTagsToFile">{{ t('report.syncTags') }}</button>
           <button type="button" class="btn btn-success" @click="sendBaseline" :disabled="baselineCandidates.length === 0">
-            SEND BASELINE ({{ baselineCandidates.length }})
+            {{ t('report.sendBaseline') }} ({{ baselineCandidates.length }})
           </button>
         </div>
         <input
@@ -30,7 +30,18 @@
     <div v-if="loadError" class="alert alert-danger py-2">{{ loadError }}</div>
 
     <FiltersPanel :store="store" @reset="reset" />
-    <ResultsTable :rows="rows" :fmt="fmt" :tag-log="viewer.tagLog" :tag-key-for-row="getRowTagKey" @show="show" />
+    <ResultsTable 
+      :rows="rows" 
+      :fmt="fmt" 
+      :tag-log="viewer.tagLog" 
+      :tag-key-for-row="getRowTagKey"
+      :selected-index="selectedIndex"
+      @show="show"
+      @select="selectRow"
+    />
+    <div v-if="selectedIndex >= 0" class="keyboard-hint text-muted small mb-2">
+      {{ t('navigate.backToHero') }}
+    </div>
     <ViewerModal
       :viewer="viewer"
       :grid-style="gridStyle"
@@ -58,6 +69,7 @@ import FiltersPanel from "../components/FiltersPanel.vue";
 import ResultsTable from "../components/ResultsTable.vue";
 import ViewerModal from "../components/ViewerModal.vue";
 import { fmt } from "../lib/format";
+import { t } from "../lib/i18n";
 import { createStore, filteredSorted, resetFilters, setRows } from "../lib/store";
 import {
   loadTagSnapshot,
@@ -105,6 +117,7 @@ export default {
       tagSyncMessage: "",
       baselineMessage: "",
       loadError: "",
+      selectedIndex: -1,
     };
   },
   computed: {
@@ -148,6 +161,9 @@ export default {
     },
   },
   methods: {
+    t(key) {
+      return t(key);
+    },
     fmt,
     async loadResults() {
       this.loadError = "";
@@ -293,15 +309,42 @@ export default {
       this.viewer.columns = value;
       refreshSlots(this.viewer, value);
     },
+    selectRow(index) {
+      this.selectedIndex = index;
+    },
+    navigateSelection(delta) {
+      const newIndex = this.selectedIndex + delta;
+      if (newIndex >= 0 && newIndex < this.rows.length) {
+        this.selectedIndex = newIndex;
+      } else if (newIndex < 0 && this.rows.length > 0) {
+        this.selectedIndex = 0;
+      } else if (newIndex >= this.rows.length && this.rows.length > 0) {
+        this.selectedIndex = this.rows.length - 1;
+      }
+    },
+    openSelectedRow() {
+      if (this.selectedIndex >= 0 && this.selectedIndex < this.rows.length) {
+        const row = this.rows[this.selectedIndex];
+        this.show(row, "test", this.selectedIndex);
+      }
+    },
+    goToHero() {
+      window.history.pushState({}, "", "/");
+      window.dispatchEvent(new PopStateEvent("popstate"));
+    },
     handleKeydown(evt) {
       const modalEl = document.getElementById("vrtModal");
       const isOpen = modalEl && modalEl.classList.contains("show");
-      if (!isOpen) return;
+
+      if (!isOpen) {
+        this.handleKeydownNonModal(evt);
+        return;
+      }
 
       if (this.prompt.active) {
         if (evt.code === "Space") {
           this.confirmPrompt();
-        } else if (evt.code === "ShiftLeft") {
+        } else if (evt.code === "ShiftLeft" || evt.code === "ShiftRight") {
           this.cancelPrompt();
         }
         return;
@@ -336,10 +379,37 @@ export default {
         if (!this.isTagLocked("baseline")) {
           this.promptTag("baseline");
         }
-      } else if (evt.code === "ShiftLeft") {
+      } else if (evt.code === "ShiftLeft" || evt.code === "ShiftRight") {
         this.closeModal();
       } else if (k === "Escape") {
         this.viewer.modal?.hide();
+      }
+    },
+    handleKeydownNonModal(evt) {
+      if (this.prompt.active) {
+        if (evt.code === "Space") {
+          this.confirmPrompt();
+        } else if (evt.code === "ShiftLeft" || evt.code === "ShiftRight") {
+          this.cancelPrompt();
+        }
+        return;
+      }
+
+      const k = evt.key;
+
+      if (evt.code === "ArrowUp") {
+        evt.preventDefault();
+        this.navigateSelection(-1);
+      } else if (evt.code === "ArrowDown") {
+        evt.preventDefault();
+        this.navigateSelection(1);
+      } else if (evt.code === "Space") {
+        evt.preventDefault();
+        this.openSelectedRow();
+      } else if (evt.code === "ShiftLeft" || evt.code === "ShiftRight") {
+        this.goToHero();
+      } else if (k === "Escape") {
+        this.selectedIndex = -1;
       }
     },
     handleKeyup(evt) {
@@ -514,5 +584,10 @@ export default {
 .prompt-hints {
   color: var(--text-muted);
   font-size: 0.85rem;
+}
+.keyboard-hint {
+  padding: 0.5rem;
+  background: var(--card-bg);
+  border-radius: 0.25rem;
 }
 </style>

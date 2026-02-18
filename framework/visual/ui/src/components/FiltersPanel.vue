@@ -3,46 +3,46 @@
     <div class="card-body">
       <div class="row g-2 align-items-end">
         <div class="col-12 col-md-4">
-          <label class="form-label">Szukaj (scenario/message)</label>
-          <input class="form-control" v-model="store.q" placeholder="np. hero, header..." />
+          <label class="form-label">{{ t('filtersPanel.search') }}</label>
+          <input class="form-control" v-model="store.q" :placeholder="t('listing.searchPlaceholder')" />
         </div>
 
         <div class="col-6 col-md-2">
-          <label class="form-label">Status</label>
+          <label class="form-label">{{ t('filtersPanel.status') }}</label>
           <select class="form-select" v-model="store.status">
-            <option value="">All</option>
-            <option value="passed">passed</option>
-            <option value="failed">failed</option>
-            <option value="skipped">skipped</option>
-            <option value="error">error</option>
-            <option value="new">new</option>
+            <option value="">{{ t('filtersPanel.all') }}</option>
+            <option value="passed">{{ t('status.passed') }}</option>
+            <option value="failed">{{ t('status.failed') }}</option>
+            <option value="skipped">{{ t('status.skipped') }}</option>
+            <option value="error">{{ t('status.error') }}</option>
+            <option value="new">{{ t('status.new') }}</option>
           </select>
         </div>
 
         <div class="col-6 col-md-2">
-          <label class="form-label">Mode</label>
+          <label class="form-label">{{ t('filtersPanel.mode') }}</label>
           <select class="form-select" v-model="store.mode">
-            <option value="">All</option>
-            <option value="pixel">pixel</option>
-            <option value="perceptual">perceptual</option>
-            <option value="hybrid">hybrid</option>
+            <option value="">{{ t('filtersPanel.all') }}</option>
+            <option value="pixel">{{ t('modes.pixel') }}</option>
+            <option value="perceptual">{{ t('modes.perceptual') }}</option>
+            <option value="hybrid">{{ t('modes.hybrid') }}</option>
           </select>
         </div>
 
         <div class="col-6 col-md-2">
-          <label class="form-label">Sort</label>
+          <label class="form-label">{{ t('filtersPanel.sort') }}</label>
           <select class="form-select" v-model="store.sortKey">
-            <option value="scenario_id">scenario_id</option>
-            <option value="status">status</option>
-            <option value="pixel_changed_ratio">pixel</option>
-            <option value="lpips">lpips</option>
-            <option value="dists">dists</option>
+            <option value="scenario_id">{{ t('sort.scenario_id') }}</option>
+            <option value="status">{{ t('sort.status') }}</option>
+            <option value="pixel_changed_ratio">{{ t('sort.pixel') }}</option>
+            <option value="lpips">{{ t('sort.lpips') }}</option>
+            <option value="dists">{{ t('sort.dists') }}</option>
           </select>
         </div>
 
         <div class="col-6 col-md-2">
           <label class="form-label">&nbsp;</label>
-          <button class="btn btn-outline-secondary w-100" @click="$emit('reset')">Reset</button>
+          <button class="btn btn-outline-secondary w-100" @click="$emit('reset')">{{ t('filtersPanel.reset') }}</button>
         </div>
       </div>
     </div>
@@ -50,12 +50,20 @@
 </template>
 
 <script>
+import { t } from "../lib/i18n";
+
 export default {
   name: "FiltersPanel",
   props: {
     store: {
       type: Object,
       required: true,
+    },
+  },
+  emits: ["reset"],
+  methods: {
+    t(key) {
+      return t(key);
     },
   },
 };

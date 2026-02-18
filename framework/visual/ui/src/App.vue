@@ -164,4 +164,51 @@ body {
 .badge {
   color: var(--body-color);
 }
+
+.modal-content {
+  background-color: var(--card-bg);
+  color: var(--body-color);
+  border-color: var(--border);
+}
+
+.modal-header {
+  background-color: var(--card-bg);
+  border-color: var(--border);
+}
+
+.modal-body {
+  background-color: var(--card-bg);
+  color: var(--body-color);
+}
+
+.modal-footer {
+  background-color: var(--card-bg);
+  border-color: var(--border);
+}
+
+.table {
+  --bs-table-bg: var(--card-bg);
+  color: var(--body-color);
+}
+
+.table-light {
+  --bs-table-bg: var(--body-bg);
+  color: var(--body-color);
+}
+
+.table-hover tbody tr:hover {
+  --bs-table-hover-bg: var(--body-bg);
+}
+
+.table-active {
+  background-color: var(--body-bg) !important;
+}
+
+.btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+[data-theme="bootstrap"] .btn-close {
+  filter: none;
+}
 </style>

@@ -18,5 +18,78 @@
     "new": "nowy",
     "tests": "testów",
     "openReport": "Otwórz raport"
+  },
+  "listing": {
+    "scenario": "Scenariusz",
+    "status": "Status",
+    "mode": "Tryb",
+    "pixel": "Pixel",
+    "lpips": "LPIPS",
+    "dists": "DISTS",
+    "message": "Wiadomość",
+    "artifacts": "Artefakty",
+    "noResults": "Brak wyników dla filtrów."
+  },
+  "filtersPanel": {
+    "search": "Szukaj (scenariusz/wiadomość)",
+    "status": "Status",
+    "mode": "Tryb",
+    "sort": "Sortuj",
+    "reset": "Resetuj",
+    "all": "Wszystkie"
+  },
+  "status": {
+    "passed": "zaliczony",
+    "failed": "niepowodzenie",
+    "skipped": "pominięty",
+    "error": "błąd",
+    "new": "nowy"
+  },
+  "modes": {
+    "pixel": "pixel",
+    "perceptual": "perceptual",
+    "hybrid": "hybrid"
+  },
+  "sort": {
+    "scenario_id": "scenario_id",
+    "status": "status",
+    "pixel": "pixel",
+    "lpips": "lpips",
+    "dists": "dists"
+  },
+  "report": {
+    "title": "Raport Visual Regression",
+    "run": "Uruchomienie",
+    "importTags": "Import tagów",
+    "exportTags": "Export tagów",
+    "syncTags": "Sync tagów",
+    "sendBaseline": "WYŚLIJ BASELINE"
+  },
+  "modal": {
+    "exit": "Wyjście (K-LSHIFT)",
+    "keys": "Klawisze: 1-4 układ, A/D nawigacja, W trzymaj super zoom, S/C/\\ tagi prompt, Shift = wyjście",
+    "slot": "Slot",
+    "noImage": "Brak obrazu dla"
+  },
+  "prompt": {
+    "confirm": "Potwierdzenie",
+    "areYouSure": "Czy na pewno oznaczyć to jako",
+    "shiftNo": "Shift = NIE",
+    "spaceYes": "Space = TAK"
+  },
+  "tags": {
+    "bug": "BUG",
+    "aso": "ASO",
+    "baseline": "BASELINE"
+  },
+  "artifacts": {
+    "ref": "ref",
+    "test": "test",
+    "diff": "diff",
+    "lpips": "perc",
+    "compare": "porównaj"
+  },
+  "navigate": {
+    "backToHero": "Naciśnij Shift aby wrócić do dashboardu"
   }
 }

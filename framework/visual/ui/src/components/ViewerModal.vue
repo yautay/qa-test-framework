@@ -38,21 +38,21 @@
             </button>
 
             <div class="btn-group btn-group-sm" role="group">
-              <button v-if="!viewer.tags.bug" type="button" class="btn btn-outline-danger" @click="$emit('prompt-tag','bug')">BUG! (K-S)</button>
-              <button v-if="!viewer.tags.aso" type="button" class="btn btn-outline-warning text-dark" @click="$emit('prompt-tag','aso')">ASO (K-C)</button>
-              <button v-if="!viewer.tags.baseline" type="button" class="btn btn-outline-success text-success" @click="$emit('prompt-tag','baseline')">BASELINE (K-\)</button>
+              <button v-if="!viewer.tags.bug" type="button" class="btn btn-outline-danger" @click="$emit('prompt-tag','bug')">{{ t('tags.bug') }}! (K-S)</button>
+              <button v-if="!viewer.tags.aso" type="button" class="btn btn-outline-warning text-dark" @click="$emit('prompt-tag','aso')">{{ t('tags.aso') }} (K-C)</button>
+              <button v-if="!viewer.tags.baseline" type="button" class="btn btn-outline-success text-success" @click="$emit('prompt-tag','baseline')">{{ t('tags.baseline') }} (K-\)</button>
             </div>
 
-            <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" @click="$emit('close-modal')">Exit (K-LSHIFT)</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" @click="$emit('close-modal')">{{ t('modal.exit') }}</button>
           </div>
 
-          <div class="text-muted small mb-2">Keys: 1‑4 layout, A/D navigate, hold W super zoom, S/C/\ tags prompt, Shift = exit</div>
+          <div class="text-muted small mb-2">{{ t('modal.keys') }}</div>
 
           <div class="flex-grow-1 overflow-auto pb-2 position-relative">
             <div class="slot-grid" :style="gridStyle">
               <div v-for="slot in viewer.slots" :key="slot.id" class="slot-card">
                 <div class="slot-header d-flex justify-content-between align-items-center">
-                  <div class="mono small">Slot {{ slot.id }}</div>
+                  <div class="mono small">{{ t('modal.slot') }} {{ slot.id }}</div>
                   <div class="d-flex align-items-center gap-2">
                     <select class="form-select form-select-sm slot-mode-select"
                             :value="slot.mode"
@@ -62,9 +62,9 @@
                       </option>
                     </select>
                     <div class="d-flex gap-1">
-                      <span v-if="viewer.tags.bug" class="badge bg-danger">BUG</span>
-                      <span v-if="viewer.tags.aso" class="badge bg-warning text-dark">ASO</span>
-                      <span v-if="viewer.tags.baseline" class="badge bg-success">BASELINE</span>
+                      <span v-if="viewer.tags.bug" class="badge bg-danger">{{ t('tags.bug') }}</span>
+                      <span v-if="viewer.tags.aso" class="badge bg-warning text-dark">{{ t('tags.aso') }}</span>
+                      <span v-if="viewer.tags.baseline" class="badge bg-success">{{ t('tags.baseline') }}</span>
                     </div>
                   </div>
                 </div>
@@ -73,7 +73,7 @@
                   <img v-if="slotImage(slot)" :src="slotImage(slot)"
                        :style="[presentationStyle, imageStyle]" />
                   <div v-else class="text-muted small text-center position-absolute top-50 start-50 translate-middle">
-                    Brak obrazu dla {{ slotModeLabel(slot.mode) }}
+                    {{ t('modal.noImage') }} {{ slotModeLabel(slot.mode) }}
                   </div>
                 </div>
               </div>
@@ -81,9 +81,9 @@
 
             <div v-if="prompt.active" class="prompt-overlay">
               <div class="prompt-card">
-                <div class="prompt-title">Potwierdzenie</div>
-                <div class="prompt-text">Czy na pewno oznaczyć to jako {{ promptTypeLabel(prompt.type) }}?</div>
-                <div class="prompt-hints">Shift = NIE &nbsp;•&nbsp; Space = TAK</div>
+                <div class="prompt-title">{{ t('prompt.confirm') }}</div>
+                <div class="prompt-text">{{ t('prompt.areYouSure') }} {{ promptTypeLabel(prompt.type) }}?</div>
+                <div class="prompt-hints">{{ t('prompt.shiftNo') }} &nbsp;•&nbsp; {{ t('prompt.spaceYes') }}</div>
               </div>
             </div>
           </div>
@@ -95,6 +95,8 @@
 </template>
 
 <script>
+import { t } from "../lib/i18n";
+
 export default {
   name: "ViewerModal",
   props: {
@@ -129,6 +131,9 @@ export default {
     },
   },
   methods: {
+    t(key) {
+      return t(key);
+    },
     onMouseMove(evt) {
       const bounds = evt.currentTarget?.getBoundingClientRect();
       this.$emit('mouse-move', { bounds, evt });
@@ -138,9 +143,9 @@ export default {
       return match ? match.label : "";
     },
     promptTypeLabel(type) {
-      if (type === "bug") return "BUG";
-      if (type === "aso") return "ASO";
-      if (type === "baseline") return "BASELINE";
+      if (type === "bug") return t('tags.bug');
+      if (type === "aso") return t('tags.aso');
+      if (type === "baseline") return t('tags.baseline');
       return "";
     },
   },
