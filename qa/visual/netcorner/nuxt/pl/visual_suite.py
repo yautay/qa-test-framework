@@ -9,8 +9,6 @@ from framework.visual.models import VisualScenario
 from framework.visual.runner import VisualRunner
 from framework.visual.scenario_loader import load_scenarios_with_errors, format_load_errors
 
-ALLOWED_VIEWPORTS = {"mobile", "tablet", "fhd", "2k", "4k"}
-
 
 def _repo_root_from(test_file: Path) -> Path:
     resolved = test_file.resolve()
@@ -21,25 +19,14 @@ def _repo_root_from(test_file: Path) -> Path:
 
 
 def scenario_params(pytestconfig: pytest.Config, scenarios_dir: Path) -> list[VisualScenario]:
-    scenario_filter = str(pytestconfig.getoption("visual_scenario") or "")
-    scenarios, errors = load_scenarios_with_errors(
-        scenarios_dir,
-        scenario_filter=scenario_filter
-    )
-
+    scenarios, errors = load_scenarios_with_errors(scenarios_dir)
     if errors:
         raise pytest.UsageError(format_load_errors(errors))
-
     return scenarios
 
 
 def viewport_params(pytestconfig: pytest.Config) -> list[str]:
-    raw = str(pytestconfig.getoption("visual_viewports") or "").strip()
-    if not raw:
-        return [str(pytestconfig.getoption("viewport") or "fhd")]
-    values = [part.strip().lower() for part in raw.split(",") if part.strip()]
-    valid = [value for value in values if value in ALLOWED_VIEWPORTS]
-    return valid or [str(pytestconfig.getoption("viewport") or "fhd")]
+    return [str(pytestconfig.getoption("viewport"))]
 
 
 def apply_parametrization(metafunc: pytest.Metafunc, scenarios_dir: Path) -> None:
@@ -50,10 +37,15 @@ def apply_parametrization(metafunc: pytest.Metafunc, scenarios_dir: Path) -> Non
     params: list[tuple[VisualScenario, str]] = []
     ids: list[str] = []
     for scenario in scenarios:
-        for viewport in viewports:
-            params.append((scenario, viewport))
-            ids.append(f"{scenario.scenario_id}__{viewport}")
-    metafunc.parametrize("scenario,visual_viewport", params, ids=ids)
+        if scenario.viewport:
+            for viewport in scenario.viewport:
+                params.append((scenario, scenario.viewport))
+                ids.append(f"{scenario.scenario_id}__{viewport}")
+        else:
+            for viewport in viewports:
+                params.append((scenario, viewport))
+                ids.append(f"{scenario.scenario_id}__{viewport}")
+    metafunc.parametrize("scenario,viewport", params, ids=ids)
 
 
 def execute_visual_scenario(
@@ -61,7 +53,7 @@ def execute_visual_scenario(
         request: pytest.FixtureRequest,
         page,
         scenario: VisualScenario,
-        visual_viewport: str,
+        viewport: str,
         runtime_env: RuntimeEnv,
         visual_output_dir: Path,
         visual_results: list,
@@ -71,12 +63,7 @@ def execute_visual_scenario(
         pytest.skip("BASE_URL is not configured for relative visual target_url")
 
     runner = VisualRunner(runtime_env, _repo_root_from(Path(__file__)), visual_output_dir)
-    result = runner.run(
-        page,
-        scenario,
-        viewport=visual_viewport,
-        approve=bool(pytestconfig.getoption("visual_approve")),
-    )
+    result = runner.run(page, scenario, viewport=viewport)
 
     visual_results.append(result)
     request.node._artifacts_payload = {

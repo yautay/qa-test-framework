@@ -5,6 +5,7 @@
     "suite_id": "netcorner/nuxt/pl/hero_page",
     "target_url": "/",
     "compare_mode": "hybrid",
+    "viewport": ["fhd", "2k"],
     "capture": {
       "type": "page",
       "full_page": true

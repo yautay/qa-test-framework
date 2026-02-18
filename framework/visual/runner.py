@@ -54,7 +54,7 @@ class VisualRunner:
         """Expose the latent perceptual client for custom checks or tests."""
         return self._perceptual
 
-    def run(self, page: Page, scenario: VisualScenario, viewport: str, approve: bool) -> VisualResult:
+    def run(self, page: Page, scenario: VisualScenario, viewport: str) -> VisualResult:
         """Execute the scenario, compare captures, and either approve or evaluate."""
 
         self._navigate(page, scenario)
@@ -75,33 +75,9 @@ class VisualRunner:
         baseline_path = self._store.resolve_baseline(
             scenario.suite_id,
             scenario.scenario_id,
-            viewport,
+            scenario.viewport,
             browser_family,
         )
-
-        if approve:
-            saved = self._store.store_baseline(
-                scenario.suite_id,
-                scenario.scenario_id,
-                viewport,
-                browser_family,
-                actual_path,
-            )
-            return VisualResult(
-                scenario_id=scenario.scenario_id,
-                status="approved",
-                message="Baseline approved",
-                compare_mode=scenario.compare_mode,
-                baseline_path=str(saved),
-                actual_path=str(actual_path),
-                diff_path="",
-                heatmap_path="",
-                pixel_changed_ratio=0.0,
-                lpips=None,
-                dists=None,
-                thresholds=scenario.thresholds,
-            )
-
         if baseline_path is None:
             status = "failed" if self._env.visual_fail_on_missing_baseline else "new"
             return VisualResult(

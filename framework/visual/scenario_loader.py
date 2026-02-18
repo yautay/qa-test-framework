@@ -122,6 +122,8 @@ def _scenario_from_payload(payload: dict[str, Any], file_path: Path, idx: int) -
     if capture_type not in {"page", "viewport", "element"}:
         raise _err(file_path, f"{pfx}capture.type must be page|viewport|element (got {capture_type!r})")
 
+    viewport = (payload.get("viewport"))
+
     mask_raw = payload.get("mask") or {}
     if not isinstance(mask_raw, dict):
         raise _err(file_path, f"{pfx}mask must be an object")
@@ -141,6 +143,7 @@ def _scenario_from_payload(payload: dict[str, Any], file_path: Path, idx: int) -
             selector=_as_str(capture_raw.get("selector", "")).strip(),
             full_page=_as_bool(capture_raw.get("full_page", True), True, file_path, f"{pfx}capture.full_page"),
         ),
+        viewport=viewport,
         thresholds=VisualThresholds(
             pixel_max=_as_float(thresholds_raw.get("pixel_max", 0.005), 0.005, file_path, f"{pfx}thresholds.pixel_max"),
             lpips_max=_as_float(thresholds_raw.get("lpips_max", 0.08), 0.08, file_path, f"{pfx}thresholds.lpips_max"),
@@ -182,21 +185,15 @@ def _load_scenarios(file_path: Path) -> list[VisualScenario]:
     return [_scenario_from_payload(item, file_path, idx) for idx, item in enumerate(raw_list)]
 
 
-def load_scenarios_with_errors(
-        scenarios_dir: Path,
-        scenario_filter: str = "",
-) -> tuple[list[VisualScenario], list[ScenarioLoadError]]:
+def load_scenarios_with_errors(scenarios_dir: Path) -> tuple[list[VisualScenario], list[ScenarioLoadError]]:
     """Load scenarios and collect errors instead of raising immediately."""
     scenarios: list[VisualScenario] = []
     errors: list[ScenarioLoadError] = []
-    filter_value = scenario_filter.strip().lower()
 
     for file_path in sorted(scenarios_dir.glob("*.json")):
         try:
             loaded = _load_scenarios(file_path)
             for scenario in loaded:
-                if filter_value and filter_value not in scenario.scenario_id.lower():
-                    continue
                 scenarios.append(scenario)
         except Exception as exc:
             errors.append(ScenarioLoadError(file=file_path, message=str(exc)))
