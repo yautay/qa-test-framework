@@ -6,6 +6,8 @@ Screenshots
 artifacts/
 !tools/artifacts/
 !tools/artifacts/*.py
+!qa/aso/framework/artifacts/
+!qa/aso/framework/artifacts/*.py
 venv
 
 #ignore dla build_window
