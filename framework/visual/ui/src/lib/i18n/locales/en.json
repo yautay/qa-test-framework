@@ -1,0 +1,22 @@
+{
+  "hero": {
+    "title": "Artifacts Dashboard",
+    "subtitle": "Select a visual report to view test results.",
+    "availableRuns": "Available runs"
+  },
+  "filters": {
+    "searchLabel": "Search run id or summary",
+    "searchPlaceholder": "e.g. 20260218"
+  },
+  "empty": {
+    "noReports": "No visual reports found.",
+    "runCommand": "Run `make test-visual` and refresh."
+  },
+  "card": {
+    "passed": "passed",
+    "failed": "failed",
+    "new": "new",
+    "tests": "tests",
+    "openReport": "Open report"
+  }
+}

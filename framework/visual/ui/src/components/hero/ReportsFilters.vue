@@ -1,12 +1,12 @@
 <template>
   <div class="card shadow-sm mb-3">
     <div class="card-body py-3">
-      <label class="form-label mb-1 small text-muted">Search run id or summary</label>
+      <label class="form-label mb-1 small text-muted">{{ t('filters.searchLabel') }}</label>
       <input
         :value="modelValue"
         class="form-control"
         type="text"
-        placeholder="e.g. 20260218"
+        :placeholder="t('filters.searchPlaceholder')"
         @input="$emit('update:modelValue', $event.target.value)"
       />
     </div>
@@ -14,6 +14,8 @@
 </template>
 
 <script>
+import { t } from "../../lib/i18n";
+
 export default {
   name: "ReportsFilters",
   props: {
@@ -23,5 +25,8 @@ export default {
     },
   },
   emits: ["update:modelValue"],
+  setup() {
+    return { t };
+  },
 };
 </script>

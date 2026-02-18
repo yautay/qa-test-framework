@@ -1,0 +1,22 @@
+{
+  "hero": {
+    "title": "Dashboard Raportów",
+    "subtitle": "Wybierz raport visual i przejdź do listy testów.",
+    "availableRuns": "Dostępne uruchomienia"
+  },
+  "filters": {
+    "searchLabel": "Szukaj po ID lub podsumowaniu",
+    "searchPlaceholder": "np. 20260218"
+  },
+  "empty": {
+    "noReports": "Nie znaleziono raportów visual.",
+    "runCommand": "Uruchom `make test-visual` i odśwież."
+  },
+  "card": {
+    "passed": "zaliczony",
+    "failed": "niepowodzenie",
+    "new": "nowy",
+    "tests": "testów",
+    "openReport": "Otwórz raport"
+  }
+}

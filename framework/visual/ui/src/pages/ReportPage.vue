@@ -462,9 +462,9 @@ export default {
   height: 100%;
 }
 .slot-card {
-  border: 1px solid rgba(0,0,0,0.08);
+  border: 1px solid var(--border);
   border-radius: 0.75rem;
-  background: #fff;
+  background: var(--card-bg);
   padding: 0.5rem 0.75rem 0.25rem;
   display: flex;
   flex-direction: column;
@@ -474,7 +474,7 @@ export default {
 }
 .slot-divider {
   height: 1px;
-  background: rgba(0,0,0,0.08);
+  background: var(--border);
   margin: 0.25rem 0;
 }
 .slot-media {
@@ -496,7 +496,7 @@ export default {
   z-index: 10;
 }
 .prompt-card {
-  background: #fff;
+  background: var(--card-bg);
   padding: 1.25rem 1.5rem;
   border-radius: 0.75rem;
   box-shadow: 0 20px 45px rgba(0,0,0,0.2);
@@ -512,7 +512,7 @@ export default {
   margin-bottom: 0.5rem;
 }
 .prompt-hints {
-  color: #6c757d;
+  color: var(--text-muted);
   font-size: 0.85rem;
 }
 </style>
