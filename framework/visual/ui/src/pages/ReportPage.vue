@@ -175,6 +175,9 @@ export default {
       try {
         const rows = await fetchReportResults(this.runId);
         setRows(this.store, rows);
+        if (this.rows.length > 0) {
+          this.selectedIndex = 0;
+        }
       } catch (error) {
         setRows(this.store, []);
         this.loadError = `Unable to load results: ${error?.message || "unknown error"}`;

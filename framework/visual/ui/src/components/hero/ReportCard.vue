@@ -53,6 +53,7 @@ export default {
 
 <style scoped>
 .report-card {
+  background-color: var(--card-bg);
   border: 1px solid var(--border);
 }
 
