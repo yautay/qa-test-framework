@@ -1,8 +1,7 @@
 import { summaryFor } from "./format";
 
 export function createStore() {
-  const data = (window.__VRT_RESULTS__ || {});
-  const rows = (data.results || []);
+  const rows = [];
   return {
     rows,
     q: "",
@@ -11,6 +10,12 @@ export function createStore() {
     sortKey: "scenario_id",
     summary: summaryFor(rows),
   };
+}
+
+export function setRows(store, rows) {
+  const normalized = Array.isArray(rows) ? rows : [];
+  store.rows = normalized;
+  store.summary = summaryFor(normalized);
 }
 
 export function filteredSorted(store) {

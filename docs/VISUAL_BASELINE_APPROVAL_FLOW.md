@@ -47,18 +47,21 @@ make visual-report-serve RUN_ID=20260218_120000_000001
 make visual-report-serve REPORT_DIR=artifacts/20260218_120000_000001/visual PORT=4180
 ```
 
-3. Open printed URL (default: `http://127.0.0.1:4173/index.html`).
+3. Open hero page (default: `http://127.0.0.1:4173/`) and select report run.
 4. Tag rows with `BASELINE` in viewer.
 5. Click `SEND BASELINE`, rewrite shown phrase, confirm.
 6. Verify files in `qa/visual/baselines/`.
 
 ## API endpoints exposed by report server
 
-- `PUT /vrt-tags.json` - persists tag snapshot for report session.
-- `POST /api/baseline/challenge` - returns one-time phrase + TTL.
-- `POST /api/baseline/send` - validates phrase and stores selected local baselines.
+- `GET /api/reports` - list visual report runs detected under `artifacts/*/visual`.
+- `GET /api/reports/<run_id>/results` - returns report rows.
+- `GET /api/reports/<run_id>/image/ref?...` - serves REF image from baseline storage.
+- `PUT /reports/<run_id>/vrt-tags.json` - persists tag snapshot for selected run.
+- `POST /api/reports/<run_id>/baseline/challenge` - returns one-time phrase + TTL.
+- `POST /api/reports/<run_id>/baseline/send` - validates phrase and stores selected local baselines.
 
-`/api/baseline/send` accepts items with:
+`/api/reports/<run_id>/baseline/send` accepts items with:
 
 - `scenario_id`
 - `suite_id`

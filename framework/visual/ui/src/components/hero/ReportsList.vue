@@ -1,0 +1,29 @@
+<template>
+  <div>
+    <ReportsEmptyState v-if="reports.length === 0" />
+    <div v-else class="row g-3">
+      <div v-for="report in reports" :key="report.run_id" class="col-12 col-md-6 col-xl-4">
+        <ReportCard :report="report" />
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import ReportCard from "./ReportCard.vue";
+import ReportsEmptyState from "./ReportsEmptyState.vue";
+
+export default {
+  name: "ReportsList",
+  components: {
+    ReportCard,
+    ReportsEmptyState,
+  },
+  props: {
+    reports: {
+      type: Array,
+      default: () => [],
+    },
+  },
+};
+</script>

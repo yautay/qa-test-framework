@@ -68,10 +68,24 @@ make visual-report-serve
 Report-driven local baseline approval:
 
 - run `make visual-report-serve` (optionally `RUN_ID=...`),
-- open report URL,
+- open hero page (`http://127.0.0.1:4173/`) and select run,
 - mark rows with `BASELINE`,
 - use `SEND BASELINE` + challenge phrase confirmation,
 - only `TEST` screenshots are stored as local baselines.
+
+UI unit tests for visual report app (`framework/visual/ui`):
+
+- `npm run test:unit` - run Vitest suite,
+- `npm run build` - build bundle and automatically run UI tests after build.
+
+Backend unit tests for report server (kept under `qa/aso/framework/visual/`):
+
+```bash
+pytest qa/aso/framework/visual/test_report_server_units.py -q
+pytest qa/aso/framework/visual/test_report_server_http_endpoints.py -q
+```
+
+Note: these backend tests require Python 3.11+ (project `qa/conftest.py` imports `datetime.UTC`).
 
 Reference: `docs/VISUAL_BASELINE_APPROVAL_FLOW.md`
 

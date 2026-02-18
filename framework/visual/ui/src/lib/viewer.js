@@ -17,6 +17,7 @@ const SLOT_MODE_DEFAULTS = {
 
 export function createViewerState() {
   return {
+    runId: "",
     modal: null,
     fitMode: true,
     viewerMode: "test",
@@ -52,6 +53,38 @@ export function createViewerState() {
     panStartY: 0,
   };
 }
+
+function isAbsoluteUrl(value) {
+  const v = String(value || "").trim().toLowerCase();
+  return v.startsWith("http://") || v.startsWith("https://") || v.startsWith("data:") || v.startsWith("blob:");
+}
+
+function buildReportAssetSrc(runId, rawPath) {
+  const src = String(rawPath || "").trim();
+  if (!src) return "";
+  if (isAbsoluteUrl(src) || src.startsWith("/")) return src;
+  const id = encodeURIComponent(String(runId || "").trim());
+  if (!id) return src;
+  const trimmed = src.replace(/^\/+/, "");
+  return `/reports/${id}/${trimmed}`;
+}
+
+function buildRefApiSrc(runId, row) {
+  const id = encodeURIComponent(String(runId || "").trim());
+  if (!id || !row) return "";
+  const suite = String(row.suite_id || "").trim();
+  const scenario = String(row.scenario_id || "").trim();
+  const viewport = String(row.viewport || "").trim();
+  const browser = String(row.browser || "").trim();
+  if (!suite || !scenario || !viewport || !browser) return "";
+  const query = new URLSearchParams({
+    suite_id: suite,
+    scenario_id: scenario,
+    viewport,
+    browser,
+  });
+  return `/api/reports/${id}/image/ref?${query.toString()}`;
+}
 export function toggleFit(viewer) {
   viewer.fitMode = !viewer.fitMode;
   viewer.zoom = 1.0;
@@ -66,7 +99,9 @@ export function ensureModal(viewer, modalElementId = "vrtModal") {
   return viewer.modal;
 }
 
-export function openViewer(viewer, row, mode, index = null) {
+export function openViewer(viewer, row, mode, index = null, options = {}) {
+  const runId = String(options.runId || viewer.runId || "").trim();
+  viewer.runId = runId;
   viewer.modalRow = row;
 
   viewer.slider = 50;
@@ -78,10 +113,10 @@ export function openViewer(viewer, row, mode, index = null) {
   viewer.modalTitle = row.scenario_id || "";
   viewer.modalSubtitle = `status=${row.status || ""} mode=${row.compare_mode || ""}`;
 
-  viewer.modalRefSrc = row.baseline_path || "";
-  viewer.modalTestSrc = row.actual_path || "";
-  viewer.modalDiffSrc = row.diff_path || "";
-  viewer.modalLpipsSrc = row.heatmap_path || "";
+  viewer.modalRefSrc = buildRefApiSrc(runId, row);
+  viewer.modalTestSrc = buildReportAssetSrc(runId, row.actual_path || "");
+  viewer.modalDiffSrc = buildReportAssetSrc(runId, row.diff_path || "");
+  viewer.modalLpipsSrc = buildReportAssetSrc(runId, row.heatmap_path || "");
 
   if (mode === "ref" && !viewer.modalRefSrc) mode = "test";
   if (mode === "diff" && !viewer.modalDiffSrc) mode = "test";
@@ -113,7 +148,7 @@ export function openViewer(viewer, row, mode, index = null) {
 
 export function setMode(viewer, mode) {
   if (!viewer.modalRow) return;
-  openViewer(viewer, viewer.modalRow, mode);
+  openViewer(viewer, viewer.modalRow, mode, viewer.currentIndex, { runId: viewer.runId });
 }
 
 export function zoomIn(viewer) {
