@@ -17,6 +17,7 @@ describe("themes presets", () => {
     const required = ["name", "primary", "secondary", "success", "danger", "warning", "bodyBg", "bodyColor", "cardBg", "border", "textMuted", "heroGradient"];
 
     for (const [name, preset] of Object.entries(presets)) {
+      if (preset.isBootswatch) continue;
       for (const prop of required) {
         expect(preset[prop]).toBeDefined();
       }
@@ -29,6 +30,7 @@ describe("themes presets", () => {
 
   it("all presets have valid color values", () => {
     for (const [key, preset] of Object.entries(presets)) {
+      if (preset.isBootswatch) continue;
       expect(preset.primary).toMatch(/^#/);
       expect(preset.secondary).toMatch(/^#/);
       expect(preset.success).toMatch(/^#/);

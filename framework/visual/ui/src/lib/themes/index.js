@@ -10,6 +10,22 @@ const savedTheme =
 
 const currentTheme = ref(savedTheme || "bootstrap");
 
+let currentCssLink = null;
+
+async function loadBootswatchCss(cssFile) {
+  if (typeof document === "undefined") return;
+
+  if (currentCssLink) {
+    currentCssLink.remove();
+  }
+
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = `https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/${cssFile}`;
+  document.head.appendChild(link);
+  currentCssLink = link;
+}
+
 function applyTheme(name) {
   if (typeof document === "undefined") return;
 
@@ -18,6 +34,12 @@ function applyTheme(name) {
 
   const root = document.documentElement;
   root.setAttribute("data-theme", name);
+
+  if (preset.isBootswatch && preset.cssFile) {
+    loadBootswatchCss(preset.cssFile);
+    root.style.display = "contents";
+    return;
+  }
 
   root.style.setProperty("--primary", preset.primary);
   root.style.setProperty("--secondary", preset.secondary);
