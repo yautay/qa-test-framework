@@ -74,7 +74,7 @@ export default {
     },
     tagKeyForRow: {
       type: Function,
-      default: () => () => "",
+      default: () => "",
     },
   },
   methods: {

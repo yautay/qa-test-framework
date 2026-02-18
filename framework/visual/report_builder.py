@@ -103,9 +103,17 @@ def _write_offline_index_html(report_dir: Path, rows: list[dict[str, Any]]) -> N
     (report_dir / "index.html").write_text(html, encoding="utf-8")
 
 
+def _ensure_tag_snapshot_file(report_dir: Path) -> None:
+    tag_file = report_dir / "vrt-tags.json"
+    if tag_file.exists():
+        return
+    tag_file.write_text("{}\n", encoding="utf-8")
+
+
 def write_visual_report(report_dir: Path, results: list[VisualResult]) -> None:
     """Persist JSON + offline HTML report artifacts."""
     report_dir.mkdir(parents=True, exist_ok=True)
+    _ensure_tag_snapshot_file(report_dir)
 
     # 1) Copy assets for offline usage
     _copy_report_assets(report_dir)

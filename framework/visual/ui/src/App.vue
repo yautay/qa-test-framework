@@ -5,7 +5,22 @@
         <h3 class="mb-0">Visual Regression Report</h3>
         <div class="text-muted small">Modal + zoom + slider (REF↔TEST)</div>
       </div>
-      <div class="text-muted small mono">{{ store.summary }}</div>
+      <div class="d-flex align-items-center gap-2">
+        <div class="btn-group btn-group-sm" role="group" aria-label="tag persistence">
+          <button type="button" class="btn btn-outline-secondary" @click="triggerTagImport">Import tags</button>
+          <button type="button" class="btn btn-outline-secondary" @click="exportTags">Export tags</button>
+          <button type="button" class="btn btn-outline-secondary" @click="syncTagsToFile">Sync tags</button>
+        </div>
+        <input
+          ref="tagFileInput"
+          type="file"
+          accept="application/json"
+          class="d-none"
+          @change="onTagFileSelected"
+        />
+        <div v-if="tagSyncMessage" class="text-muted small">{{ tagSyncMessage }}</div>
+        <div class="text-muted small mono">{{ store.summary }}</div>
+      </div>
     </div>
 
     <FiltersPanel :store="store" @reset="reset" />
@@ -39,6 +54,13 @@ import ViewerModal from "./components/ViewerModal.vue";
 import { fmt } from "./lib/format";
 import { createStore, filteredSorted, resetFilters } from "./lib/store";
 import {
+  loadTagSnapshot,
+  persistTagSnapshot,
+  downloadTagSnapshot,
+  parseTagFile,
+  saveTagSnapshotToFile,
+} from "./lib/tagPersistence";
+import {
   createViewerState,
   ensureModal,
   openViewer,
@@ -47,7 +69,7 @@ import {
   navigateRow,
   setCursorPosition,
   toggleTag,
-  getRowTagKey,
+  getRowTagKey as buildRowTagKey,
 } from "./lib/viewer";
 
 export default {
@@ -65,6 +87,8 @@ export default {
       superZoomActive: false,
       keyHeld: { a: false, d: false, w: false, s: false, c: false },
       prompt: { active: false, type: null },
+      tagSyncTimer: null,
+      tagSyncMessage: "",
     };
   },
   computed: {
@@ -102,6 +126,61 @@ export default {
   },
   methods: {
     fmt,
+    getRowTagKey(row) {
+      return buildRowTagKey(row);
+    },
+    normalizeTagLog(snapshot) {
+      if (!snapshot || typeof snapshot !== "object") return {};
+      const normalized = {};
+      for (const [key, tags] of Object.entries(snapshot)) {
+        if (!tags || typeof tags !== "object") continue;
+        normalized[key] = {
+          bug: !!tags.bug,
+          aso: !!tags.aso,
+          baseline: !!tags.baseline,
+        };
+      }
+      return normalized;
+    },
+    async loadTags() {
+      const snapshot = await loadTagSnapshot();
+      if (!snapshot || typeof snapshot !== "object") return;
+      this.viewer.tagLog = this.normalizeTagLog(snapshot);
+      persistTagSnapshot(this.viewer.tagLog);
+    },
+    persistTags() {
+      persistTagSnapshot(this.viewer.tagLog);
+      this.scheduleTagFileSync();
+    },
+    scheduleTagFileSync() {
+      if (this.tagSyncTimer) {
+        window.clearTimeout(this.tagSyncTimer);
+      }
+      this.tagSyncTimer = window.setTimeout(async () => {
+        const synced = await saveTagSnapshotToFile(this.viewer.tagLog);
+        this.tagSyncMessage = synced ? "tags synced to file" : "tags saved locally";
+      }, 250);
+    },
+    triggerTagImport() {
+      this.$refs.tagFileInput?.click();
+    },
+    async onTagFileSelected(evt) {
+      const input = evt?.target;
+      const file = input?.files?.[0];
+      const parsed = await parseTagFile(file);
+      input.value = "";
+      if (!parsed || typeof parsed !== "object") return;
+      this.viewer.tagLog = this.normalizeTagLog({ ...this.viewer.tagLog, ...parsed });
+      this.persistTags();
+    },
+    exportTags() {
+      downloadTagSnapshot(this.viewer.tagLog);
+    },
+    async syncTagsToFile() {
+      const synced = await saveTagSnapshotToFile(this.viewer.tagLog);
+      this.tagSyncMessage = synced ? "tags synced to file" : "file sync unavailable; local only";
+      persistTagSnapshot(this.viewer.tagLog);
+    },
     reset() {
       resetFilters(this.store);
     },
@@ -212,7 +291,7 @@ export default {
     isTagLocked(type) {
       const row = this.viewer.modalRow;
       if (!row) return false;
-      const key = getRowTagKey(row);
+      const key = this.getRowTagKey(row);
       return !!this.viewer.tagLocked?.[key]?.[type];
     },
     promptTag(type) {
@@ -223,6 +302,7 @@ export default {
     confirmPrompt() {
       if (!this.prompt.active) return;
       toggleTag(this.viewer, this.viewer.modalRow, this.prompt.type);
+      this.persistTags();
       this.prompt = { active: false, type: null };
     },
     cancelPrompt() {
@@ -248,10 +328,15 @@ export default {
   mounted() {
     window.addEventListener("keydown", this.handleKeydown);
     window.addEventListener("keyup", this.handleKeyup);
+    this.loadTags();
   },
   beforeUnmount() {
     window.removeEventListener("keydown", this.handleKeydown);
     window.removeEventListener("keyup", this.handleKeyup);
+    if (this.tagSyncTimer) {
+      window.clearTimeout(this.tagSyncTimer);
+      this.tagSyncTimer = null;
+    }
   },
 };
 </script>
