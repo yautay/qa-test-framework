@@ -30,3 +30,10 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.card {
+  background-color: var(--card-bg);
+  border-color: var(--border);
+}
+</style>

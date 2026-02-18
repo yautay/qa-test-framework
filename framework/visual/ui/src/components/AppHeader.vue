@@ -97,10 +97,37 @@ export default {
 .theme-select {
   width: auto;
   min-width: 140px;
+  background-color: var(--card-bg);
+  border-color: var(--border);
+  color: var(--body-color);
+}
+
+.theme-select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 0.1rem rgba(13, 110, 253, 0.25);
 }
 
 .datetime {
   min-width: 140px;
   text-align: right;
+}
+
+.language-selector .btn {
+  background-color: var(--card-bg);
+  border-color: var(--border);
+  color: var(--body-color);
+}
+
+.language-selector .btn:hover {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.language-selector .btn.btn-primary,
+.language-selector .btn.active {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
 }
 </style>

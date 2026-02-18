@@ -55,7 +55,6 @@ export async function saveTagSnapshotToFile(tagLog) {
     });
     return response.ok;
   } catch (error) {
-    console.debug("unable to persist tag snapshot to file", error);
     return false;
   }
 }
@@ -85,7 +84,7 @@ export async function parseTagFile(file) {
     const parsed = JSON.parse(text);
     if (parsed && typeof parsed === "object") return parsed;
   } catch (error) {
-    console.debug("unable to parse imported tag file", error);
+    return null;
   }
   return null;
 }
