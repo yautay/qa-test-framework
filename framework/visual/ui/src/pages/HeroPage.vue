@@ -1,5 +1,6 @@
 <template>
   <section class="hero-wrap">
+    <AppHeader />
     <HeroHeader :total="filteredReports.length" />
     <ReportsFilters v-model="query" />
     <ReportsList :reports="filteredReports" />
@@ -7,6 +8,7 @@
 </template>
 
 <script>
+import AppHeader from "../components/AppHeader.vue";
 import HeroHeader from "../components/hero/HeroHeader.vue";
 import ReportsFilters from "../components/hero/ReportsFilters.vue";
 import ReportsList from "../components/hero/ReportsList.vue";
@@ -15,6 +17,7 @@ import { fetchReportsList } from "../lib/api/reportsApi";
 export default {
   name: "HeroPage",
   components: {
+    AppHeader,
     HeroHeader,
     ReportsFilters,
     ReportsList,

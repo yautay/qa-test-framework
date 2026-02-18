@@ -1,31 +1,34 @@
 <template>
-  <div>
-    <div class="d-flex align-items-center justify-content-between mb-3">
-      <div>
-        <h3 class="mb-0">{{ t('report.title') }}</h3>
-        <div class="text-muted small">{{ t('report.run') }}: <span class="mono">{{ runId || "unknown" }}</span></div>
-      </div>
-      <div class="d-flex align-items-center gap-2">
-        <div class="btn-group btn-group-sm" role="group" aria-label="tag persistence">
-          <button type="button" class="btn btn-outline-secondary" @click="triggerTagImport">{{ t('report.importTags') }}</button>
-          <button type="button" class="btn btn-outline-secondary" @click="exportTags">{{ t('report.exportTags') }}</button>
-          <button type="button" class="btn btn-outline-secondary" @click="syncTagsToFile">{{ t('report.syncTags') }}</button>
-          <button type="button" class="btn btn-success" @click="sendBaseline" :disabled="baselineCandidates.length === 0">
-            {{ t('report.sendBaseline') }} ({{ baselineCandidates.length }})
-          </button>
+  <div class="report-wrap">
+    <AppHeader />
+    <section class="report-header mb-3 p-4 rounded-4">
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <h3 class="mb-0">{{ t('report.title') }}</h3>
+          <div class="text-muted small">{{ t('report.run') }}: <span class="mono">{{ runId || "unknown" }}</span></div>
         </div>
-        <input
-          ref="tagFileInput"
-          type="file"
-          accept="application/json"
-          class="d-none"
-          @change="onTagFileSelected"
-        />
-        <div v-if="tagSyncMessage" class="text-muted small">{{ tagSyncMessage }}</div>
-        <div v-if="baselineMessage" class="text-muted small">{{ baselineMessage }}</div>
-        <div class="text-muted small mono">{{ store.summary }}</div>
+        <div class="d-flex align-items-center gap-2">
+          <div class="btn-group btn-group-sm" role="group" aria-label="tag persistence">
+            <button type="button" class="btn btn-outline-secondary" @click="triggerTagImport">{{ t('report.importTags') }}</button>
+            <button type="button" class="btn btn-outline-secondary" @click="exportTags">{{ t('report.exportTags') }}</button>
+            <button type="button" class="btn btn-outline-secondary" @click="syncTagsToFile">{{ t('report.syncTags') }}</button>
+            <button type="button" class="btn btn-success" @click="sendBaseline" :disabled="baselineCandidates.length === 0">
+              {{ t('report.sendBaseline') }} ({{ baselineCandidates.length }})
+            </button>
+          </div>
+          <input
+            ref="tagFileInput"
+            type="file"
+            accept="application/json"
+            class="d-none"
+            @change="onTagFileSelected"
+          />
+          <div v-if="tagSyncMessage" class="text-muted small">{{ tagSyncMessage }}</div>
+          <div v-if="baselineMessage" class="text-muted small">{{ baselineMessage }}</div>
+          <div class="text-muted small mono">{{ store.summary }}</div>
+        </div>
       </div>
-    </div>
+    </section>
 
     <div v-if="loadError" class="alert alert-danger py-2">{{ loadError }}</div>
 
@@ -65,6 +68,7 @@
 </template>
 
 <script>
+import AppHeader from "../components/AppHeader.vue";
 import FiltersPanel from "../components/FiltersPanel.vue";
 import ResultsTable from "../components/ResultsTable.vue";
 import ViewerModal from "../components/ViewerModal.vue";
@@ -95,6 +99,7 @@ import {
 export default {
   name: "ReportPage",
   components: {
+    AppHeader,
     FiltersPanel,
     ResultsTable,
     ViewerModal,
@@ -503,6 +508,14 @@ export default {
 </script>
 
 <style>
+.report-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.report-header {
+  background: var(--hero-gradient);
+  border: 1px solid var(--border);
+}
 .thumb { max-width: 220px; max-height: 120px; object-fit: contain; cursor: zoom-in; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
 .small-col { white-space: nowrap; }

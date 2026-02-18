@@ -1,7 +1,9 @@
 <template>
-  <div class="container-fluid p-3">
-    <HeroPage v-if="route.page === 'hero'" />
-    <ReportPage v-else :run-id="route.runId" />
+  <div class="app-wrapper">
+    <div class="container-fluid p-3">
+      <HeroPage v-if="route.page === 'hero'" />
+      <ReportPage v-else :run-id="route.runId" />
+    </div>
   </div>
 </template>
 
@@ -109,11 +111,18 @@ export default {
 body {
   background-color: var(--body-bg);
   color: var(--body-color);
+  min-height: 100vh;
+}
+
+.app-wrapper {
+  min-height: 100vh;
+  background-color: var(--body-bg);
 }
 
 .container-fluid {
   background-color: var(--body-bg);
   color: var(--body-color);
+  min-height: 100vh;
 }
 
 .card {
