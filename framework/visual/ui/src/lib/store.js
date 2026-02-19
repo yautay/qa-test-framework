@@ -32,7 +32,7 @@ export function setRows(store, rows) {
   const normalized = Array.isArray(rows)
     ? rows.map((row) => {
       if (!row || typeof row !== "object") return row;
-      const status = row.status === "error" || row.status === "new" ? "failed" : row.status;
+      const status = row.status === "new" ? "failed" : row.status;
       return { ...row, status };
     })
     : [];

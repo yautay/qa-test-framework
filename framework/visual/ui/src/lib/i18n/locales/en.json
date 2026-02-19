@@ -59,7 +59,6 @@
     "failed": "failed",
     "uncertain": "uncertain",
     "skipped": "skipped",
-    "error": "error",
     "new": "new"
   },
   "sort": {

@@ -8,7 +8,7 @@ export function fmt(v, digits = 6) {
 export function summaryFor(rows) {
   const total = rows.length;
   const normalizeStatus = (status) => {
-    if (status === "error" || status === "new") return "failed";
+    if (status === "new") return "failed";
     return status;
   };
   const by = (s) => rows.filter(r => normalizeStatus(r.status) === s).length;

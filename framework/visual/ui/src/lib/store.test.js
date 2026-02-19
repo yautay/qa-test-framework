@@ -33,18 +33,16 @@ describe("store", () => {
       expect(store.summary).toContain("failed=1");
     });
 
-    it("normalizes error and new statuses to failed", () => {
+    it("normalizes new status to failed", () => {
       const store = createStore();
       const rows = [
-        { scenario_id: "s1", status: "error" },
-        { scenario_id: "s2", status: "new" },
+        { scenario_id: "s1", status: "new" },
       ];
 
       setRows(store, rows);
 
       expect(store.rows[0].status).toBe("failed");
-      expect(store.rows[1].status).toBe("failed");
-      expect(store.summary).toContain("failed=2");
+      expect(store.summary).toContain("failed=1");
     });
 
     it("handles non-array input", () => {

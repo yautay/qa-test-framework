@@ -50,21 +50,20 @@ describe("format", () => {
   });
 
   describe("summaryFor", () => {
-    it("counts statuses with error/new mapped to failed", () => {
+    it("counts statuses with new mapped to failed", () => {
       const rows = [
         { status: "passed" },
         { status: "passed" },
         { status: "failed" },
         { status: "skipped" },
-        { status: "error" },
         { status: "new" },
       ];
 
       const result = summaryFor(rows);
 
-      expect(result.total).toBe(6);
+      expect(result.total).toBe(5);
       expect(result.passed).toBe(2);
-      expect(result.failed).toBe(3);
+      expect(result.failed).toBe(2);
       expect(result.skipped).toBe(1);
     });
 

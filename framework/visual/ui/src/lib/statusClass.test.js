@@ -23,10 +23,6 @@ describe("statusBadgeClass", () => {
     expect(statusBadgeClass("new")).toBe("text-bg-warning");
   });
 
-  it("returns dark class for error status", () => {
-    expect(statusBadgeClass("error")).toBe("text-bg-dark");
-  });
-
   it("returns empty string for unknown status", () => {
     expect(statusBadgeClass("unknown")).toBe("");
   });
