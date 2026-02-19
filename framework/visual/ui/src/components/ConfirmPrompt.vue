@@ -4,6 +4,10 @@
       <div class="global-prompt-title">{{ t('prompt.confirm') }}</div>
       <div class="global-prompt-text">{{ t('report.confirmSend') }}</div>
       <div class="global-prompt-hints">{{ t('prompt.shiftNo') }} &nbsp;•&nbsp; {{ t('prompt.spaceYes') }}</div>
+      <div class="global-prompt-actions">
+        <button type="button" class="btn btn-sm btn-primary" @click="$emit('confirm')">{{ t('prompt.yes') }}</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" @click="$emit('cancel')">{{ t('prompt.no') }}</button>
+      </div>
     </div>
   </div>
 </template>
@@ -21,6 +25,8 @@ defineProps({
     default: null,
   },
 });
+
+defineEmits(["confirm", "cancel"]);
 </script>
 
 <style scoped>
@@ -56,5 +62,12 @@ defineProps({
 .global-prompt-hints {
   color: var(--text-muted);
   font-size: 0.85rem;
+}
+
+.global-prompt-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-top: 0.75rem;
 }
 </style>

@@ -91,6 +91,8 @@
     "confirm": "Potwierdzenie",
     "areYouSure": "Czy na pewno oznaczyć to jako",
     "removeTag": "Czy na pewno usunąć",
+    "yes": "Tak",
+    "no": "Nie",
     "shiftNo": "Shift = NIE",
     "spaceYes": "Space = TAK"
   },

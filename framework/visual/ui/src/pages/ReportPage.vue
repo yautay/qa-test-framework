@@ -57,6 +57,8 @@
     <ConfirmPrompt
       :active="prompt.active"
       :type="prompt.type"
+      @confirm="confirmPrompt"
+      @cancel="cancelPrompt"
     />
     <TestMetadataPanel
       :active="metadataPanel.active"
@@ -265,10 +267,6 @@ function promptSendReport() {
     console.info("Missing run id, unable to send report");
     return;
   }
-  if (store.reportCandidatesCount === 0 && !pdfGenerated.value) {
-    console.info("No new BUG/ASO/NOTE tags to send and no PDF generated");
-    return;
-  }
   prompt.value = { active: true, type: "send-report" };
 }
 
@@ -332,7 +330,7 @@ function show(row, mode, index = null) {
   store.openViewer(row, normalizedMode, index);
   const modalEl = document.getElementById("vrtModal");
   if (modalEl) {
-    const modal = new Modal(modalEl);
+    const modal = Modal.getOrCreateInstance(modalEl);
     modal.show();
   }
 }
@@ -502,7 +500,11 @@ function handleKeydown(evt) {
   } else if (k.toUpperCase() === "N") {
     openNoteEditor();
   } else if (evt.code === "ShiftLeft" || evt.code === "ShiftRight") {
-    closeModal();
+    const modalEl = document.getElementById("vrtModal");
+    if (modalEl) {
+      const modal = Modal.getOrCreateInstance(modalEl);
+      modal.hide();
+    }
   } else if (k === "Escape") {
     const modalEl = document.getElementById("vrtModal");
     if (modalEl) {
@@ -639,11 +641,20 @@ onMounted(async () => {
   await loadTags();
   window.addEventListener("keydown", handleKeydown);
   window.addEventListener("keyup", handleKeyup);
+  const modalEl = document.getElementById("vrtModal");
+  if (modalEl) {
+    Modal.getOrCreateInstance(modalEl);
+    modalEl.addEventListener("hidden.bs.modal", closeModal);
+  }
 });
 
 onBeforeUnmount(() => {
   window.removeEventListener("keydown", handleKeydown);
   window.removeEventListener("keyup", handleKeyup);
+  const modalEl = document.getElementById("vrtModal");
+  if (modalEl) {
+    modalEl.removeEventListener("hidden.bs.modal", closeModal);
+  }
   if (tagSyncTimer.value) {
     window.clearTimeout(tagSyncTimer.value);
     tagSyncTimer.value = null;
