@@ -1,4 +1,19 @@
 import { summaryFor } from "./format";
+import { getRowTagKey } from "./viewer";
+
+const NUMERIC_SORT_KEYS = ["pixel_changed_ratio", "lpips", "dists"];
+
+const STATUS_PRIORITY = {
+  failed: 0,
+  skipped: 1,
+  passed: 2,
+};
+
+const TAG_PRIORITY = {
+  bug: 0,
+  aso: 1,
+  baseline: 2,
+};
 
 export function createStore() {
   const rows = [];
@@ -6,24 +21,56 @@ export function createStore() {
     rows,
     q: "",
     status: "",
-    mode: "",
     sortKey: "scenario_id",
     summary: summaryFor(rows),
   };
 }
 
 export function setRows(store, rows) {
-  const normalized = Array.isArray(rows) ? rows : [];
+  const normalized = Array.isArray(rows)
+    ? rows.map((row) => {
+      if (!row || typeof row !== "object") return row;
+      const status = row.status === "error" || row.status === "new" ? "failed" : row.status;
+      return { ...row, status };
+    })
+    : [];
   store.rows = normalized;
   store.summary = summaryFor(normalized);
 }
 
-export function filteredSorted(store) {
+function compareValues(av, bv, key) {
+  if (av == null && bv == null) return 0;
+  if (av == null) return 1;
+  if (bv == null) return -1;
+
+  if (key === "status") {
+    const aPriority = STATUS_PRIORITY[av] ?? 99;
+    const bPriority = STATUS_PRIORITY[bv] ?? 99;
+    return aPriority - bPriority;
+  }
+
+  if (NUMERIC_SORT_KEYS.includes(key)) {
+    return Number(bv) - Number(av);
+  }
+
+  return String(av).localeCompare(String(bv));
+}
+
+function getTagPriority(row, tagLog) {
+  const key = getRowTagKey(row);
+  const tags = tagLog?.[key];
+  if (!tags) return 3;
+  if (tags.bug) return TAG_PRIORITY.bug;
+  if (tags.aso) return TAG_PRIORITY.aso;
+  if (tags.baseline) return TAG_PRIORITY.baseline;
+  return 3;
+}
+
+export function filteredSorted(store, tagLog = {}) {
   const q = store.q.trim().toLowerCase();
   let out = store.rows;
 
   if (store.status) out = out.filter(r => r.status === store.status);
-  if (store.mode) out = out.filter(r => r.compare_mode === store.mode);
 
   if (q) {
     out = out.filter(r =>
@@ -33,14 +80,18 @@ export function filteredSorted(store) {
   }
 
   const key = store.sortKey;
-  out = [...out].sort((a,b) => {
-    const av = a[key]; const bv = b[key];
-    if (av == null && bv == null) return 0;
-    if (av == null) return 1;
-    if (bv == null) return -1;
-    if (typeof av === "number" && typeof bv === "number") return bv - av;
-    return String(av).localeCompare(String(bv));
-  });
+
+  if (key === "tags") {
+    out = [...out].sort((a, b) => {
+      const aPriority = getTagPriority(a, tagLog);
+      const bPriority = getTagPriority(b, tagLog);
+      if (aPriority !== bPriority) return aPriority - bPriority;
+      return String(a.scenario_id || "").localeCompare(String(b.scenario_id || ""));
+    });
+    return out;
+  }
+
+  out = [...out].sort((a, b) => compareValues(a[key], b[key], key));
 
   return out;
 }
@@ -48,6 +99,5 @@ export function filteredSorted(store) {
 export function resetFilters(store) {
   store.q = "";
   store.status = "";
-  store.mode = "";
   store.sortKey = "scenario_id";
 }

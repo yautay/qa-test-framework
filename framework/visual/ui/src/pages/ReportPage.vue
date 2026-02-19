@@ -9,20 +9,10 @@
         </div>
         <div class="d-flex align-items-center gap-2">
           <div class="btn-group btn-group-sm" role="group" aria-label="tag persistence">
-            <button type="button" class="btn btn-outline-secondary" @click="triggerTagImport">{{ t('report.importTags') }}</button>
-            <button type="button" class="btn btn-outline-secondary" @click="exportTags">{{ t('report.exportTags') }}</button>
-            <button type="button" class="btn btn-outline-secondary" @click="syncTagsToFile">{{ t('report.syncTags') }}</button>
             <button type="button" class="btn btn-success" @click="sendBaseline" :disabled="baselineCandidates.length === 0">
               {{ t('report.sendBaseline') }} ({{ baselineCandidates.length }})
             </button>
           </div>
-          <input
-            ref="tagFileInput"
-            type="file"
-            accept="application/json"
-            class="d-none"
-            @change="onTagFileSelected"
-          />
           <div v-if="tagSyncMessage" class="text-muted small">{{ tagSyncMessage }}</div>
           <div v-if="baselineMessage" class="text-muted small">{{ baselineMessage }}</div>
           <div class="text-muted small mono">{{ store.summary }}</div>
@@ -78,9 +68,6 @@ import { t } from "../lib/i18n";
 import { createStore, filteredSorted, resetFilters, setRows } from "../lib/store";
 import {
   loadTagSnapshot,
-  persistTagSnapshot,
-  downloadTagSnapshot,
-  parseTagFile,
   saveTagSnapshotToFile,
 } from "../lib/tagPersistence";
 import { requestBaselineChallengeForRun, sendBaselineSelectionForRun } from "../lib/baselineApi";
@@ -209,10 +196,8 @@ export default {
       const snapshot = await loadTagSnapshot();
       if (!snapshot || typeof snapshot !== "object") return;
       this.viewer.tagLog = this.normalizeTagLog(snapshot);
-      persistTagSnapshot(this.viewer.tagLog);
     },
     persistTags() {
-      persistTagSnapshot(this.viewer.tagLog);
       this.scheduleTagFileSync();
     },
     scheduleTagFileSync() {
@@ -221,28 +206,8 @@ export default {
       }
       this.tagSyncTimer = window.setTimeout(async () => {
         const synced = await saveTagSnapshotToFile(this.viewer.tagLog);
-        this.tagSyncMessage = synced ? "tags synced to file" : "tags saved locally";
+        this.tagSyncMessage = synced ? "tags saved on server" : "unable to save tags on server";
       }, 250);
-    },
-    triggerTagImport() {
-      this.$refs.tagFileInput?.click();
-    },
-    async onTagFileSelected(evt) {
-      const input = evt?.target;
-      const file = input?.files?.[0];
-      const parsed = await parseTagFile(file);
-      input.value = "";
-      if (!parsed || typeof parsed !== "object") return;
-      this.viewer.tagLog = this.normalizeTagLog({ ...this.viewer.tagLog, ...parsed });
-      this.persistTags();
-    },
-    exportTags() {
-      downloadTagSnapshot(this.viewer.tagLog);
-    },
-    async syncTagsToFile() {
-      const synced = await saveTagSnapshotToFile(this.viewer.tagLog);
-      this.tagSyncMessage = synced ? "tags synced to file" : "file sync unavailable; local only";
-      persistTagSnapshot(this.viewer.tagLog);
     },
     async sendBaseline() {
       const candidates = this.baselineCandidates;

@@ -11,7 +11,6 @@
       <div class="d-flex flex-wrap gap-2 small">
         <span class="badge bg-success-subtle text-success-emphasis">{{ t('card.passed') }} {{ report.passed || 0 }}</span>
         <span class="badge bg-danger-subtle text-danger-emphasis">{{ t('card.failed') }} {{ report.failed || 0 }}</span>
-        <span class="badge bg-warning-subtle text-warning-emphasis">{{ t('card.new') }} {{ report.new || 0 }}</span>
       </div>
 
       <div class="text-muted small flex-grow-1">{{ report.summary || "No summary available" }}</div>

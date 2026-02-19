@@ -50,7 +50,7 @@ describe("format", () => {
   });
 
   describe("summaryFor", () => {
-    it("counts all status types", () => {
+    it("counts statuses with error/new mapped to failed", () => {
       const rows = [
         { status: "passed" },
         { status: "passed" },
@@ -64,16 +64,14 @@ describe("format", () => {
 
       expect(result).toContain("total=6");
       expect(result).toContain("passed=2");
-      expect(result).toContain("failed=1");
+      expect(result).toContain("failed=3");
       expect(result).toContain("skipped=1");
-      expect(result).toContain("error=1");
-      expect(result).toContain("new=1");
     });
 
     it("handles empty array", () => {
       const result = summaryFor([]);
 
-      expect(result).toBe("total=0 passed=0 failed=0 skipped=0 error=0 new=0");
+      expect(result).toBe("total=0 passed=0 failed=0 skipped=0");
     });
 
     it("handles rows without status", () => {

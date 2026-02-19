@@ -4,7 +4,7 @@
       <div class="row g-2 align-items-end">
         <div class="col-12 col-md-4">
           <label class="form-label">{{ t('filtersPanel.search') }}</label>
-          <input class="form-control" v-model="store.q" :placeholder="t('listing.searchPlaceholder')" />
+          <input class="form-control" v-model="store.q" :placeholder="t('filtersPanel.searchPlaceholder')" />
         </div>
 
         <div class="col-6 col-md-2">
@@ -14,18 +14,6 @@
             <option value="passed">{{ t('status.passed') }}</option>
             <option value="failed">{{ t('status.failed') }}</option>
             <option value="skipped">{{ t('status.skipped') }}</option>
-            <option value="error">{{ t('status.error') }}</option>
-            <option value="new">{{ t('status.new') }}</option>
-          </select>
-        </div>
-
-        <div class="col-6 col-md-2">
-          <label class="form-label">{{ t('filtersPanel.mode') }}</label>
-          <select class="form-select" v-model="store.mode">
-            <option value="">{{ t('filtersPanel.all') }}</option>
-            <option value="pixel">{{ t('modes.pixel') }}</option>
-            <option value="perceptual">{{ t('modes.perceptual') }}</option>
-            <option value="hybrid">{{ t('modes.hybrid') }}</option>
           </select>
         </div>
 
@@ -37,6 +25,7 @@
             <option value="pixel_changed_ratio">{{ t('sort.pixel') }}</option>
             <option value="lpips">{{ t('sort.lpips') }}</option>
             <option value="dists">{{ t('sort.dists') }}</option>
+            <option value="tags">{{ t('sort.tags') }}</option>
           </select>
         </div>
 
@@ -68,3 +57,38 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.card {
+  background-color: var(--card-bg);
+  border-color: var(--border);
+}
+
+.form-control {
+  background-color: var(--card-bg);
+  color: var(--body-color);
+  border-color: var(--border);
+}
+
+.form-control::placeholder {
+  color: var(--text-muted);
+}
+
+.form-control:focus {
+  background-color: var(--card-bg);
+  color: var(--body-color);
+  border-color: var(--primary);
+}
+
+.form-select {
+  background-color: var(--card-bg);
+  color: var(--body-color);
+  border-color: var(--border);
+}
+
+.form-select:focus {
+  background-color: var(--card-bg);
+  color: var(--body-color);
+  border-color: var(--primary);
+}
+</style>
