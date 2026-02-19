@@ -70,6 +70,10 @@ def execute_visual_scenario(
     if isinstance(run_metadata, dict):
         tester = str(run_metadata.get("tester", "") or "")
         run_note = str(run_metadata.get("run_note", "") or "")
+    raw_definition = getattr(scenario, "raw_definition", {})
+    if not isinstance(raw_definition, dict):
+        raw_definition = {}
+    source_file = str(getattr(scenario, "source_file", "") or "")
     result.tester = tester
     result.run_note = run_note
     thresholds = result.thresholds
@@ -80,10 +84,25 @@ def execute_visual_scenario(
         },
         "scenario": {
             "id": scenario.scenario_id,
+            "name": scenario.name,
             "suite_id": scenario.suite_id,
+            "target_url": scenario.target_url,
             "compare_mode": scenario.compare_mode,
             "viewport": viewport,
             "browser": result.browser,
+            "capture": {
+                "type": scenario.capture.capture_type,
+                "selector": scenario.capture.selector,
+                "full_page": scenario.capture.full_page,
+            },
+            "mask": {
+                "selectors": list(scenario.mask.selectors),
+                "color": scenario.mask.color,
+            },
+            "json_source": {
+                "file": source_file,
+                "definition": raw_definition,
+            },
         },
         "scores": {
             "pixel_changed_ratio": result.pixel_changed_ratio,

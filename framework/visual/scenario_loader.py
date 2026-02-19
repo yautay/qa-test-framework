@@ -1,5 +1,6 @@
 from __future__ import annotations
 import json
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -173,7 +174,10 @@ def _scenario_from_payload(payload: dict[str, Any], file_path: Path, idx: int) -
         ),
         steps=_as_steps(payload.get("steps", []), file_path, pfx),
         perceptual_required=_as_bool(
-            payload.get("perceptual_required", False), False, file_path, f"{pfx}perceptual_required"),
+            payload.get("perceptual_required", False), False, file_path, f"{pfx}perceptual_required"
+        ),
+        raw_definition=deepcopy(payload),
+        source_file=str(file_path),
     )
 
 

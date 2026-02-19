@@ -8,6 +8,7 @@ Includes helpers to load VisualScenario definitions from JSON using the schema:
 """
 
 import json
+from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
@@ -350,6 +351,8 @@ class VisualScenario:
     mask: VisualMask = field(default_factory=VisualMask)
     steps: tuple[VisualStep, ...] = ()
     perceptual_required: bool = False
+    raw_definition: dict[str, Any] = field(default_factory=dict)
+    source_file: str = ""
 
     def __post_init__(self) -> None:
         if not self.scenario_id.strip():
@@ -386,6 +389,7 @@ class VisualScenario:
             mask=VisualMask.from_dict(d.get("mask")),
             steps=steps,
             perceptual_required=_opt_bool(d, "perceptual_required", False),
+            raw_definition=deepcopy(d),
         )
 
 

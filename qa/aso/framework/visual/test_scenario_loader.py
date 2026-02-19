@@ -51,6 +51,8 @@ def test_load_scenarios_single_object_defaults(tmp_path: Path) -> None:
     assert scenario.mask.color == "#00FF00"
     assert scenario.steps == ()
     assert scenario.perceptual_required is False
+    assert scenario.raw_definition == payload
+    assert scenario.source_file == str(file_path)
 
 
 def test_load_scenarios_supports_list_and_container(tmp_path: Path) -> None:
@@ -120,6 +122,8 @@ def test_load_scenarios_parses_steps_and_thresholds(tmp_path: Path) -> None:
     assert scenario.steps[0].timeout_ms == 1500
     assert scenario.steps[0].url == "https://example.test/step"
     assert scenario.perceptual_required is True
+    assert scenario.raw_definition["capture"]["selector"] == "#hero"
+    assert scenario.source_file == str(file_path)
 
 
 def test_load_scenarios_rejects_invalid_top_level(tmp_path: Path) -> None:
