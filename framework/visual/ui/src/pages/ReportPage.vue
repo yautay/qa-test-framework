@@ -99,9 +99,12 @@ import {
   toggleTag,
   getRowTagKey as buildRowTagKey,
 } from "../lib/viewer";
-
-const NOTE_MAX_LENGTH = 2000;
-const NOTE_CONTROL_CHAR_REGEX = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
+import {
+  NOTE_MAX_LENGTH,
+  normalizeNoteDraft as normalizeNoteDraftValue,
+  normalizeTagLogSnapshot,
+  sanitizeNoteText as sanitizeNoteTextValue,
+} from "../lib/notes";
 
 export default {
   name: "ReportPage",
@@ -193,6 +196,7 @@ export default {
       this.loadError = "";
       if (!this.runId) {
         setRows(this.store, []);
+        this.selectedIndex = -1;
         this.loadError = "Missing run id in URL";
         return;
       }
@@ -201,9 +205,12 @@ export default {
         setRows(this.store, rows);
         if (this.rows.length > 0) {
           this.selectedIndex = 0;
+        } else {
+          this.selectedIndex = -1;
         }
       } catch (error) {
         setRows(this.store, []);
+        this.selectedIndex = -1;
         this.loadError = `Unable to load results: ${error?.message || "unknown error"}`;
       }
     },
@@ -211,52 +218,17 @@ export default {
       return buildRowTagKey(row);
     },
     normalizeTagLog(snapshot) {
-      if (!snapshot || typeof snapshot !== "object") return {};
-      const normalized = {};
-      for (const [key, tags] of Object.entries(snapshot)) {
-        if (!tags || typeof tags !== "object") continue;
-        const note = this.normalizeNote(tags.note);
-        normalized[key] = {
-          bug: !!tags.bug,
-          aso: !!tags.aso,
-          baseline: !!tags.baseline,
-          note,
-        };
-      }
-      return normalized;
-    },
-    normalizeNote(note) {
-      if (!note || typeof note !== "object") return null;
-      const text = this.sanitizeNoteText(note.text);
-      if (!text) return null;
-      const updatedAt = typeof note.updatedAt === "string" ? note.updatedAt : "";
-      return {
-        text,
-        updatedAt,
-      };
+      return normalizeTagLogSnapshot(snapshot);
     },
     sanitizeNoteText(raw) {
-      if (typeof raw !== "string") return "";
-      return raw
-        .replace(/\r\n?/g, "\n")
-        .replace(NOTE_CONTROL_CHAR_REGEX, "")
-        .trim()
-        .slice(0, NOTE_MAX_LENGTH);
+      return sanitizeNoteTextValue(raw);
     },
     normalizeNoteDraft(raw) {
-      if (typeof raw !== "string") return "";
-      return raw
-        .replace(/\r\n?/g, "\n")
-        .replace(NOTE_CONTROL_CHAR_REGEX, "")
-        .slice(0, NOTE_MAX_LENGTH);
+      return normalizeNoteDraftValue(raw);
     },
     noteForRow(row) {
       const key = this.getRowTagKey(row);
       return this.viewer.tagLog?.[key]?.note || null;
-    },
-    rowHasNote(row) {
-      const note = this.noteForRow(row);
-      return !!(note && typeof note.text === "string" && note.text.trim());
     },
     ensureTagEntry(row) {
       const key = this.getRowTagKey(row);
@@ -707,99 +679,7 @@ export default {
   background: var(--hero-gradient);
   border: 1px solid var(--border);
 }
-.thumb { max-width: 220px; max-height: 120px; object-fit: contain; cursor: zoom-in; }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
-.small-col { white-space: nowrap; }
-.modal-full {
-  max-width: calc(100vw - 24px);
-  width: calc(100vw - 24px);
-  height: calc(100vh - 24px);
-  margin: 0 auto;
-}
-.modal-full .modal-dialog {
-  height: 100%;
-}
-.modal-full .modal-content {
-  height: 100%;
-  border-radius: 1rem;
-  overflow: hidden;
-}
-.modal-full .modal-body {
-  height: calc(100vh - 24px - 72px);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-.slot-mode-select {
-  min-width: 110px;
-  background-color: var(--card-bg);
-  color: var(--body-color);
-  border-color: var(--border);
-}
-.slot-mode-select:focus {
-  background-color: var(--card-bg);
-  color: var(--body-color);
-  border-color: var(--primary);
-}
-.slot-grid {
-  display: grid;
-  gap: 1rem;
-  height: 100%;
-}
-.slot-card {
-  border: 1px solid var(--border);
-  border-radius: 0.75rem;
-  background: var(--card-bg);
-  padding: 0.5rem 0.75rem 0.25rem;
-  display: flex;
-  flex-direction: column;
-  min-height: 220px;
-  position: relative;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-}
-.slot-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 0.25rem 0;
-}
-.slot-media {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-  min-height: 210px;
-}
-.slot-media img {
-  transition: transform-origin var(--zoom-origin-ease-ms, 80ms) ease;
-}
-.prompt-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-}
-.prompt-card {
-  background: var(--card-bg);
-  padding: 1.25rem 1.5rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 20px 45px rgba(0,0,0,0.2);
-  text-align: center;
-  max-width: 360px;
-  width: 100%;
-}
-.prompt-title {
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-}
-.prompt-text {
-  margin-bottom: 0.5rem;
-}
-.prompt-hints {
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
 .keyboard-hint {
   padding: 0.5rem;
   background: var(--card-bg);

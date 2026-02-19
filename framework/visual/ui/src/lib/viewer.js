@@ -1,13 +1,12 @@
 import Modal from "bootstrap/js/dist/modal";
 
 const MODE_META = {
-  ref: { label: "REF", srcKey: "modalRefSrc" },
-  test: { label: "TEST", srcKey: "modalTestSrc" },
-  diff: { label: "PIXEL_DIFF", srcKey: "modalDiffSrc" },
-  lpips: { label: "LPIPS", srcKey: "modalLpipsSrc" },
+  ref: { srcKey: "modalRefSrc" },
+  test: { srcKey: "modalTestSrc" },
+  diff: { srcKey: "modalDiffSrc" },
+  lpips: { srcKey: "modalLpipsSrc" },
 };
 const DEFAULT_SLOT_COUNT = 2;
-const DEFAULT_ZOOM = 160;
 const SLOT_MODE_DEFAULTS = {
   1: "ref",
   2: "test",
@@ -19,12 +18,8 @@ export function createViewerState() {
   return {
     runId: "",
     modal: null,
-    fitMode: true,
     viewerMode: "test",
     modalRow: null,
-
-    slider: 50,
-    zoom: 1.0,
 
     modalTitle: "",
     modalSubtitle: "",
@@ -36,7 +31,6 @@ export function createViewerState() {
     modalLpipsSrc: "",
 
     columns: DEFAULT_SLOT_COUNT,
-    zoomPreset: DEFAULT_ZOOM,
     cursorX: 50,
     cursorY: 50,
     tags: { bug: false, aso: false, baseline: false, note: null },
@@ -45,12 +39,6 @@ export function createViewerState() {
     currentIndex: null,
     slots: [],
     slotModes: { 1: "ref", 2: "test", 3: "diff", 4: "lpips" },
-
-    panX: 0,
-    panY: 0,
-    isPanning: false,
-    panStartX: 0,
-    panStartY: 0,
   };
 }
 
@@ -85,13 +73,6 @@ function buildRefApiSrc(runId, row) {
   });
   return `/api/reports/${id}/image/ref?${query.toString()}`;
 }
-export function toggleFit(viewer) {
-  viewer.fitMode = !viewer.fitMode;
-  viewer.zoom = 1.0;
-  viewer.panX = 0;
-  viewer.panY = 0;
-}
-
 export function ensureModal(viewer, modalElementId = "vrtModal") {
   if (!viewer.modal) {
     viewer.modal = new Modal(document.getElementById(modalElementId));
@@ -103,12 +84,6 @@ export function openViewer(viewer, row, mode, index = null, options = {}) {
   const runId = String(options.runId || viewer.runId || "").trim();
   viewer.runId = runId;
   viewer.modalRow = row;
-
-  viewer.slider = 50;
-  viewer.zoom = 1.0;
-  viewer.panX = 0;
-  viewer.panY = 0;
-  viewer.isPanning = false;
 
   viewer.modalTitle = row.scenario_id || "";
   viewer.modalSubtitle = `status=${row.status || ""} mode=${row.compare_mode || ""}`;
@@ -133,11 +108,11 @@ export function openViewer(viewer, row, mode, index = null, options = {}) {
 
   refreshSlots(viewer);
   viewer.currentIndex = index;
-    if (row) {
-      const key = getRowTagKey(row);
-      viewer.tags = viewer.tagLog[key]
-        ? { ...viewer.tagLog[key] }
-        : { bug: false, aso: false, baseline: false, note: null };
+  if (row) {
+    const key = getRowTagKey(row);
+    viewer.tags = viewer.tagLog[key]
+      ? { ...viewer.tagLog[key] }
+      : { bug: false, aso: false, baseline: false, note: null };
     viewer.tagLocked = viewer.tagLocked || {};
     const existingLock = viewer.tagLocked[key] || { bug: false, aso: false, baseline: false };
     viewer.tagLocked[key] = {
@@ -146,61 +121,6 @@ export function openViewer(viewer, row, mode, index = null, options = {}) {
       baseline: existingLock.baseline || !!viewer.tags.baseline,
     };
   }
-}
-
-export function setMode(viewer, mode) {
-  if (!viewer.modalRow) return;
-  openViewer(viewer, viewer.modalRow, mode, viewer.currentIndex, { runId: viewer.runId });
-}
-
-export function zoomIn(viewer) {
-  viewer.zoom = Math.min(6, +(viewer.zoom + 0.25).toFixed(2));
-}
-export function zoomOut(viewer) {
-  viewer.zoom = Math.max(0.25, +(viewer.zoom - 0.25).toFixed(2));
-}
-export function resetZoom(viewer) {
-  viewer.zoom = 1.0;
-  viewer.panX = 0;
-  viewer.panY = 0;
-}
-
-export function onWheelZoom(viewer, evt) {
-  if (!evt.ctrlKey) return;
-  evt.preventDefault();
-
-  const delta = evt.deltaY;
-  const direction = delta > 0 ? -1 : 1;
-  const factor = direction > 0 ? 1.1 : 0.9;
-
-  const oldZoom = viewer.zoom;
-  const newZoom = Math.min(6, Math.max(0.25, +(oldZoom * factor).toFixed(3)));
-  if (newZoom === oldZoom) return;
-
-  const rect = evt.currentTarget.getBoundingClientRect();
-  const cx = evt.clientX - rect.left;
-  const cy = evt.clientY - rect.top;
-
-  viewer.panX = (viewer.panX - cx) * (newZoom / oldZoom) + cx;
-  viewer.panY = (viewer.panY - cy) * (newZoom / oldZoom) + cy;
-
-  viewer.zoom = newZoom;
-}
-
-export function panStart(viewer, evt) {
-  if (evt.button !== 0) return;
-  evt.preventDefault();
-  viewer.isPanning = true;
-  viewer.panStartX = evt.clientX - viewer.panX;
-  viewer.panStartY = evt.clientY - viewer.panY;
-}
-export function panMove(viewer, evt) {
-  if (!viewer.isPanning) return;
-  viewer.panX = evt.clientX - viewer.panStartX;
-  viewer.panY = evt.clientY - viewer.panStartY;
-}
-export function panEnd(viewer) {
-  viewer.isPanning = false;
 }
 
 export function getModeSrc(viewer, mode) {

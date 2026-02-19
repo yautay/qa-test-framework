@@ -17,7 +17,6 @@
   "card": {
     "passed": "passed",
     "failed": "failed",
-    "new": "new",
     "tests": "tests",
     "openReport": "Open report",
     "tester": "Tester",
@@ -26,7 +25,6 @@
   "listing": {
     "scenario": "Scenario",
     "status": "Status",
-    "mode": "Mode",
     "pixel": "Pixel",
     "lpips": "LPIPS",
     "dists": "DISTS",
@@ -48,7 +46,6 @@
     "searchPlaceholder": "e.g. 20260218",
     "status": "Status",
     "statusWithNote": "with note",
-    "mode": "Mode",
     "viewport": "Viewport",
     "browser": "Browser",
     "sort": "Sort",
@@ -62,11 +59,6 @@
     "error": "error",
     "new": "new"
   },
-  "modes": {
-    "pixel": "pixel",
-    "perceptual": "perceptual",
-    "hybrid": "hybrid"
-  },
   "sort": {
     "scenario_id": "scenario_id",
     "status": "status",
@@ -79,9 +71,6 @@
   "report": {
     "title": "Visual Regression Report",
     "run": "Run",
-    "importTags": "Import tags",
-    "exportTags": "Export tags",
-    "syncTags": "Sync tags",
     "sendBaseline": "SEND BASELINE"
   },
   "modal": {
@@ -97,6 +86,7 @@
   "prompt": {
     "confirm": "Confirmation",
     "areYouSure": "Are you sure you want to tag this as",
+    "removeTag": "Are you sure you want to remove",
     "shiftNo": "Shift = NO",
     "spaceYes": "Space = YES"
   },
@@ -119,8 +109,7 @@
     "ref": "ref",
     "test": "test",
     "diff": "diff",
-    "lpips": "perc",
-    "compare": "compare"
+    "lpips": "perc"
   },
   "navigate": {
     "backToHero": "Press Shift to return to dashboard"

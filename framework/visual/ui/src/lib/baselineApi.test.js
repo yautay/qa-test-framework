@@ -9,6 +9,13 @@ function response(body, ok = true) {
   };
 }
 
+function responseText(text, ok = true) {
+  return {
+    ok,
+    text: async () => text,
+  };
+}
+
 describe("baselineApi run scoped", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -39,5 +46,17 @@ describe("baselineApi run scoped", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+  });
+
+  it("throws fallback error when challenge response is invalid json", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => responseText("not-json", false)));
+
+    await expect(requestBaselineChallengeForRun("run-1")).rejects.toThrow("challenge request failed");
+  });
+
+  it("throws fallback error when baseline send response is invalid json", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => responseText("not-json", false)));
+
+    await expect(sendBaselineSelectionForRun("run-2", { items: [] })).rejects.toThrow("baseline send failed");
   });
 });

@@ -17,7 +17,6 @@
   "card": {
     "passed": "пройдено",
     "failed": "помилка",
-    "new": "новий",
     "tests": "тестів",
     "openReport": "Відкрити звіт",
     "tester": "Тестер",
@@ -26,7 +25,6 @@
   "listing": {
     "scenario": "Сценарій",
     "status": "Статус",
-    "mode": "Режим",
     "pixel": "Pixel",
     "lpips": "LPIPS",
     "dists": "DISTS",
@@ -48,7 +46,6 @@
     "searchPlaceholder": "наприклад, 20260218",
     "status": "Статус",
     "statusWithNote": "з приміткою",
-    "mode": "Режим",
     "viewport": "Viewport",
     "browser": "Браузер",
     "sort": "Сортування",
@@ -62,11 +59,6 @@
     "error": "помилка",
     "new": "новий"
   },
-  "modes": {
-    "pixel": "pixel",
-    "perceptual": "perceptual",
-    "hybrid": "hybrid"
-  },
   "sort": {
     "scenario_id": "scenario_id",
     "status": "status",
@@ -79,9 +71,6 @@
   "report": {
     "title": "Звіт Visual Regression",
     "run": "Запуск",
-    "importTags": "Імпорт тегів",
-    "exportTags": "Експорт тегів",
-    "syncTags": "Синхронізація тегів",
     "sendBaseline": "НАДІСЛАТИ BASELINE"
   },
   "modal": {
@@ -97,6 +86,7 @@
   "prompt": {
     "confirm": "Підтвердження",
     "areYouSure": "Ви впевнені, що хочете позначити це як",
+    "removeTag": "Ви впевнені, що хочете видалити",
     "shiftNo": "Shift = НІ",
     "spaceYes": "Space = ТАК"
   },
@@ -119,8 +109,7 @@
     "ref": "ref",
     "test": "test",
     "diff": "diff",
-    "lpips": "perc",
-    "compare": "порівняти"
+    "lpips": "perc"
   },
   "navigate": {
     "backToHero": "Натисніть Shift, щоб повернутися до панелі"

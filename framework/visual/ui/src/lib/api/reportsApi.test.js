@@ -10,6 +10,14 @@ function response(body, ok = true, status = 200) {
   };
 }
 
+function responseText(text, ok = true, status = 200) {
+  return {
+    ok,
+    status,
+    text: async () => text,
+  };
+}
+
 describe("reportsApi", () => {
   afterEach(() => {
     vi.restoreAllMocks();
@@ -30,6 +38,20 @@ describe("reportsApi", () => {
     await expect(fetchReportsList()).rejects.toThrow("boom");
   });
 
+  it("returns empty list for invalid reports payload", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => responseText("not-json", true, 200)));
+
+    const reports = await fetchReportsList();
+
+    expect(reports).toEqual([]);
+  });
+
+  it("uses fallback message when reports list error payload is invalid", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => responseText("not-json", false, 500)));
+
+    await expect(fetchReportsList()).rejects.toThrow("unable to fetch reports");
+  });
+
   it("fetches report results for encoded run id", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => response({ results: [{ scenario_id: "s-1" }] })));
 
@@ -43,5 +65,13 @@ describe("reportsApi", () => {
     vi.stubGlobal("fetch", vi.fn(async () => response({ error: "missing" }, false, 404)));
 
     await expect(fetchReportResults("run-404")).rejects.toThrow("missing");
+  });
+
+  it("returns empty results for invalid payload", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => responseText("not-json", true, 200)));
+
+    const results = await fetchReportResults("run-1");
+
+    expect(results).toEqual([]);
   });
 });

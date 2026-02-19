@@ -2,7 +2,7 @@
   <div class="app-wrapper">
     <div class="container-fluid p-3">
       <HeroPage v-if="route.page === 'hero'" />
-      <ReportPage v-else :run-id="route.runId" />
+      <ReportPage v-else :run-id="route.runId" :key="route.runId" />
     </div>
   </div>
 </template>
@@ -346,11 +346,10 @@ body {
   background-color: var(--body-bg) !important;
 }
 
-.btn-close {
+[data-theme="dark"] .btn-close,
+[data-theme="dracula"] .btn-close,
+[data-theme="gruvbox"] .btn-close,
+[data-theme="atom"] .btn-close {
   filter: invert(1) grayscale(100%) brightness(200%);
-}
-
-[data-theme="bootstrap"] .btn-close {
-  filter: none;
 }
 </style>

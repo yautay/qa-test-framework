@@ -95,6 +95,7 @@
 <script>
 import { t } from "../lib/i18n";
 import { badgeStyle as computeBadgeStyle } from "../lib/badgeStyle";
+import { statusBadgeClass } from "../lib/statusClass";
 
 export default {
   name: "ResultsTable",
@@ -126,11 +127,7 @@ export default {
       return t(key);
     },
     statusClass(status) {
-      if (status === 'passed') return 'text-bg-success';
-      if (status === 'failed') return 'text-bg-danger';
-      if (status === 'skipped' || status === 'new') return 'text-bg-warning';
-      if (status === 'error') return 'text-bg-dark';
-      return '';
+      return statusBadgeClass(status);
     },
     rowHasTag(row, tag) {
       const key = this.tagKeyForRow(row);
@@ -185,6 +182,10 @@ export default {
 .table-light {
   --bs-table-bg: var(--body-bg);
   color: var(--body-color);
+}
+
+.small-col {
+  white-space: nowrap;
 }
 
 .artifact-badge {

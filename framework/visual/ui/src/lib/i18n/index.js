@@ -1,4 +1,4 @@
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import en from "./locales/en.json";
 import pl from "./locales/pl.json";
 import uk from "./locales/uk.json";
@@ -12,7 +12,7 @@ const savedLocale =
     ? window.localStorage.getItem(STORAGE_KEY)
     : null;
 
-const locale = ref(savedLocale || "en");
+const locale = ref(messages[savedLocale] ? savedLocale : "en");
 
 export function setLocale(lang) {
   if (messages[lang]) {

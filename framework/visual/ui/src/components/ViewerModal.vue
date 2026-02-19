@@ -133,6 +133,7 @@
 import { fmt } from "../lib/format";
 import { badgeStyle } from "../lib/badgeStyle";
 import { t } from "../lib/i18n";
+import { statusBadgeClass } from "../lib/statusClass";
 
 export default {
   name: "ViewerModal",
@@ -247,11 +248,7 @@ export default {
       return match ? match.label : "";
     },
     statusClass(status) {
-      if (status === 'passed') return 'text-bg-success';
-      if (status === 'failed') return 'text-bg-danger';
-      if (status === 'skipped' || status === 'new') return 'text-bg-warning';
-      if (status === 'error') return 'text-bg-dark';
-      return '';
+      return statusBadgeClass(status);
     },
     statusLabel(status) {
       if (!status) return '';
@@ -312,6 +309,75 @@ export default {
   font-size: 0.85rem;
   color: var(--text-muted);
   letter-spacing: 0.02em;
+}
+
+.slot-grid {
+  display: grid;
+  gap: 1rem;
+  height: 100%;
+}
+
+.slot-card {
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--card-bg);
+  padding: 0.5rem 0.75rem 0.25rem;
+  display: flex;
+  flex-direction: column;
+  min-height: 220px;
+  position: relative;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.slot-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0.25rem 0;
+}
+
+.slot-media {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-height: 210px;
+}
+
+.slot-media img {
+  transition: transform-origin var(--zoom-origin-ease-ms, 80ms) ease;
+}
+
+.prompt-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.prompt-card {
+  background: var(--card-bg);
+  padding: 1.25rem 1.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  max-width: 360px;
+  width: 100%;
+}
+
+.prompt-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.prompt-text {
+  margin-bottom: 0.5rem;
+}
+
+.prompt-hints {
+  color: var(--text-muted);
+  font-size: 0.85rem;
 }
 
 .slot-mode-select {

@@ -1,12 +1,4 @@
-async function parseJsonResponse(response) {
-  const text = await response.text();
-  if (!text) return {};
-  try {
-    return JSON.parse(text);
-  } catch (_error) {
-    return {};
-  }
-}
+import { parseJsonResponse } from "./parseJsonResponse";
 
 export async function fetchReportsList() {
   const response = await fetch("/api/reports", { cache: "no-store" });

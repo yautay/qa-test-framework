@@ -1,6 +1,12 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("../lib/api/reportsApi", () => ({
+  fetchReportResults: vi.fn(),
+}));
 
 import ReportPage from "./ReportPage.vue";
+import { fetchReportResults } from "../lib/api/reportsApi";
+import { createStore, filteredSorted } from "../lib/store";
 
 function buildContext(overrides = {}) {
   const key = "scenario-1::actual.png::baseline.png::diff.png";
@@ -45,6 +51,10 @@ function buildContext(overrides = {}) {
 }
 
 describe("ReportPage tag removal", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("allows opening remove prompt even for locked tag", () => {
     const ctx = buildContext({
       isTagLocked: vi.fn(() => true),
@@ -143,5 +153,51 @@ describe("ReportPage metadata panel", () => {
     expect(ctx.metadataPanel.active).toBe(true);
     expect(ctx.metadataPanel.payload.run.run_id).toBe("run-1");
     expect(ctx.metadataPanel.payload.run.tester).toBe("jan.k");
+  });
+});
+
+describe("ReportPage loadResults", () => {
+  it("clears selected index when fetched rows are empty", async () => {
+    fetchReportResults.mockResolvedValueOnce([]);
+
+    const ctx = {
+      runId: "run-1",
+      loadError: "",
+      selectedIndex: 3,
+      store: createStore(),
+      viewer: { tagLog: {} },
+    };
+    Object.defineProperty(ctx, "rows", {
+      get() {
+        return filteredSorted(this.store, this.viewer.tagLog);
+      },
+    });
+
+    await ReportPage.methods.loadResults.call(ctx);
+
+    expect(ctx.selectedIndex).toBe(-1);
+    expect(ctx.loadError).toBe("");
+  });
+
+  it("clears selected index on fetch error", async () => {
+    fetchReportResults.mockRejectedValueOnce(new Error("boom"));
+
+    const ctx = {
+      runId: "run-1",
+      loadError: "",
+      selectedIndex: 2,
+      store: createStore(),
+      viewer: { tagLog: {} },
+    };
+    Object.defineProperty(ctx, "rows", {
+      get() {
+        return filteredSorted(this.store, this.viewer.tagLog);
+      },
+    });
+
+    await ReportPage.methods.loadResults.call(ctx);
+
+    expect(ctx.selectedIndex).toBe(-1);
+    expect(ctx.loadError).toContain("Unable to load results: boom");
   });
 });
