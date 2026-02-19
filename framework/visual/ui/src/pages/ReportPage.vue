@@ -288,7 +288,7 @@ async function executeSendReport() {
       }
     }
     const bug = response?.bug || {};
-    constaso = response?.aso || {};
+    const aso = response?.aso || {};
     const note = response?.note || {};
     const pdf = response?.pdf || {};
     const pdfInfo = Number(pdf.pages || 0) > 0 ? `, pdf_pages=${Number(pdf.pages || 0)}` : "";

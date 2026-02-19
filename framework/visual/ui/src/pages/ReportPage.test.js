@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { nextTick } from "vue";
 import { mount } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
@@ -34,6 +35,8 @@ vi.mock("bootstrap", () => ({
 import ReportPage from "./ReportPage.vue";
 import { fetchReportResults, sendRunReport } from "../lib/api/reportsApi";
 import { loadTagSnapshot, saveTagSnapshotToFile } from "../lib/tagPersistence";
+import { useResultsStore } from "../stores/resultsStore";
+import { getRowTagKey } from "../lib/viewer";
 
 describe("ReportPage", () => {
   let pinia;
@@ -385,6 +388,144 @@ describe("ReportPage", () => {
     }
 
     wrapper.unmount();
+  });
+
+  it("downloads pdf when report response includes pages", async () => {
+    const anchor = {
+      href: "",
+      download: "",
+      rel: "",
+      click: vi.fn(),
+      remove: vi.fn(),
+    };
+    const originalCreateElement = document.createElement.bind(document);
+    const createSpy = vi.spyOn(document, "createElement").mockImplementation((tag) => {
+      if (tag === "a") return anchor;
+      return originalCreateElement(tag);
+    });
+    const appendSpy = vi.spyOn(document.body, "appendChild").mockImplementation((node) => node);
+
+    sendRunReport.mockResolvedValueOnce({
+      bug: {},
+      aso: {},
+      note: {},
+      pdf: { pages: 2 },
+    });
+
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const store = useResultsStore();
+    const firstRow = store.rows[0];
+    const key = getRowTagKey(firstRow);
+    store.updateTagLog({
+      [key]: {
+        bug: true,
+        aso: false,
+        baseline: false,
+        note: null,
+        bug_reported: false,
+        aso_reported: false,
+        note_reported: false,
+        bug_reported_at: "",
+        aso_reported_at: "",
+        note_reported_at: "",
+        note_reported_hash: "",
+      },
+    });
+    await nextTick();
+
+    const reportBtn = wrapper.find(".report-header button.btn-primary");
+    expect(reportBtn.exists()).toBe(true);
+    expect(reportBtn.element.disabled).toBe(false);
+    reportBtn.trigger("click");
+    await nextTick();
+
+    const promptOverlay = wrapper.find(".global-prompt-overlay");
+    expect(promptOverlay.exists()).toBe(true);
+    const confirmBtn = promptOverlay.find("button.btn-primary");
+    expect(confirmBtn.exists()).toBe(true);
+    confirmBtn.trigger("click");
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(sendRunReport).toHaveBeenCalled();
+    expect(anchor.click).toHaveBeenCalled();
+    expect(anchor.download).toBe("run-1.pdf");
+    expect(anchor.href).toContain("/reports/run-1/run-1.pdf");
+
+    wrapper.unmount();
+    createSpy.mockRestore();
+    appendSpy.mockRestore();
+  });
+
+  it("does not download pdf when report response has no pages", async () => {
+    const anchor = {
+      href: "",
+      download: "",
+      rel: "",
+      click: vi.fn(),
+      remove: vi.fn(),
+    };
+    const originalCreateElement = document.createElement.bind(document);
+    const createSpy = vi.spyOn(document, "createElement").mockImplementation((tag) => {
+      if (tag === "a") return anchor;
+      return originalCreateElement(tag);
+    });
+
+    sendRunReport.mockResolvedValueOnce({
+      bug: {},
+      aso: {},
+      note: {},
+      pdf: { pages: 0 },
+    });
+
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const store = useResultsStore();
+    const firstRow = store.rows[0];
+    const key = getRowTagKey(firstRow);
+    store.updateTagLog({
+      [key]: {
+        bug: true,
+        aso: false,
+        baseline: false,
+        note: null,
+        bug_reported: false,
+        aso_reported: false,
+        note_reported: false,
+        bug_reported_at: "",
+        aso_reported_at: "",
+        note_reported_at: "",
+        note_reported_hash: "",
+      },
+    });
+    await nextTick();
+
+    const reportBtn = wrapper.find(".report-header button.btn-primary");
+    reportBtn.trigger("click");
+    await nextTick();
+
+    const promptOverlay = wrapper.find(".global-prompt-overlay");
+    const confirmBtn = promptOverlay.find("button.btn-primary");
+    confirmBtn.trigger("click");
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(sendRunReport).toHaveBeenCalled();
+    expect(anchor.click).not.toHaveBeenCalled();
+
+    wrapper.unmount();
+    createSpy.mockRestore();
   });
 
   it("displays send report prompt when active", async () => {
