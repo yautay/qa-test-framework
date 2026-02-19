@@ -27,3 +27,6 @@ async def catch_all(request: Request, path: str):
         print("Payload: brak")
 
     return JSONResponse(content={"status": "ok"}, status_code=200)
+
+
+#  uvicorn main:app --host 0.0.0.0 --port 3001
