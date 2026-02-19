@@ -100,7 +100,8 @@
     "baseline": "BASELINE",
     "note": "ПРИМІТКА",
     "bugSent": "BUG НАДІСЛАНО",
-    "asoSent": "ASO НАДІСЛАНО"
+    "asoSent": "ASO НАДІСЛАНО",
+    "noteSent": "ПРИМІТКУ НАДІСЛАНО"
   },
   "note": {
     "button": "Примітка",

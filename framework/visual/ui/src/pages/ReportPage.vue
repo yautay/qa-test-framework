@@ -570,6 +570,9 @@ export default {
       if (!this.noteEditor.active || !this.viewer.modalRow) return;
       const { entry } = this.ensureTagEntry(this.viewer.modalRow);
       entry.note = null;
+      entry.note_reported_at = "";
+      entry.note_reported_hash = "";
+      entry.note_reported = false;
       this.viewer.tags = { ...this.viewer.tags, note: null };
       this.persistTags();
       this.cancelNoteEditor();
@@ -765,6 +768,9 @@ export default {
     promptTag(type) {
       if (this.prompt.active) return;
       if (this.noteEditor.active) return;
+      if (type === "bug" || type === "aso") {
+        if (this.isTagReported(type)) return;
+      }
       if (this.isTagLocked(type)) return;
       this.prompt = { active: true, type };
     },

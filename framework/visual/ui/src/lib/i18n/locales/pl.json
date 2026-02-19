@@ -100,7 +100,8 @@
     "baseline": "BASELINE",
     "note": "NOTATKA",
     "bugSent": "BUG WYSŁANY",
-    "asoSent": "ASO WYSŁANE"
+    "asoSent": "ASO WYSŁANE",
+    "noteSent": "NOTATKA WYSŁANA"
   },
   "note": {
     "button": "Notatka",

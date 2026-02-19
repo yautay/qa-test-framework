@@ -40,8 +40,11 @@ export function createViewerState() {
       note: null,
       bug_reported: false,
       aso_reported: false,
+      note_reported: false,
       bug_reported_at: "",
       aso_reported_at: "",
+      note_reported_at: "",
+      note_reported_hash: "",
     },
     tagLog: {},
     tagLocked: {},
@@ -121,16 +124,19 @@ export function openViewer(viewer, row, mode, index = null, options = {}) {
     const key = getRowTagKey(row);
     viewer.tags = viewer.tagLog[key]
       ? { ...viewer.tagLog[key] }
-      : {
-          bug: false,
-          aso: false,
-          baseline: false,
-          note: null,
-          bug_reported: false,
-          aso_reported: false,
-          bug_reported_at: "",
-          aso_reported_at: "",
-        };
+        : {
+            bug: false,
+            aso: false,
+            baseline: false,
+            note: null,
+            bug_reported: false,
+            aso_reported: false,
+            note_reported: false,
+            bug_reported_at: "",
+            aso_reported_at: "",
+            note_reported_at: "",
+            note_reported_hash: "",
+          };
     viewer.tagLocked = viewer.tagLocked || {};
     const existingLock = viewer.tagLocked[key] || { bug: false, aso: false, baseline: false };
     viewer.tagLocked[key] = {
@@ -198,7 +204,8 @@ export function toggleTag(viewer, row, tagKey) {
   if (!row) return;
   viewer.tags[tagKey] = true;
   const key = getRowTagKey(row);
-  viewer.tagLog[key] = { ...viewer.tags };
+  const existing = viewer.tagLog[key] || {};
+  viewer.tagLog[key] = { ...existing, ...viewer.tags };
   viewer.tagLocked[key] = viewer.tagLocked[key] || { bug: false, aso: false, baseline: false };
   viewer.tagLocked[key][tagKey] = true;
 }

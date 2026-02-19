@@ -100,7 +100,8 @@
     "baseline": "BASELINE",
     "note": "NOTE",
     "bugSent": "BUG SENT",
-    "asoSent": "ASO SENT"
+    "asoSent": "ASO SENT",
+    "noteSent": "NOTE SENT"
   },
   "note": {
     "button": "Note",

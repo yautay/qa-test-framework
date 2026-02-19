@@ -49,9 +49,9 @@
 
             <div class="btn-group btn-group-sm" role="group">
               <button v-if="!viewer.tags.bug" type="button" class="btn btn-outline-danger" :disabled="viewer.tags.bug_reported" @click="$emit('prompt-tag','bug')">{{ t('tags.bug') }}! (K-S)</button>
-              <button v-if="viewer.tags.bug" type="button" class="btn btn-danger btn-sm" :disabled="viewer.tags.bug_reported" @click="$emit('prompt-remove-tag','bug')">{{ t('tags.bug') }} ✕</button>
+              <button v-if="viewer.tags.bug && !viewer.tags.bug_reported" type="button" class="btn btn-danger btn-sm" @click="$emit('prompt-remove-tag','bug')">{{ t('tags.bug') }} ✕</button>
               <button v-if="!viewer.tags.aso" type="button" class="btn btn-outline-warning text-dark" :disabled="viewer.tags.aso_reported" @click="$emit('prompt-tag','aso')">{{ t('tags.aso') }} (K-C)</button>
-              <button v-if="viewer.tags.aso" type="button" class="btn btn-warning btn-sm text-dark" :disabled="viewer.tags.aso_reported" @click="$emit('prompt-remove-tag','aso')">{{ t('tags.aso') }} ✕</button>
+              <button v-if="viewer.tags.aso && !viewer.tags.aso_reported" type="button" class="btn btn-warning btn-sm text-dark" @click="$emit('prompt-remove-tag','aso')">{{ t('tags.aso') }} ✕</button>
               <button v-if="!viewer.tags.baseline" type="button" class="btn btn-outline-success text-success" @click="$emit('prompt-tag','baseline')">{{ t('tags.baseline') }} (K-\)</button>
               <button v-if="viewer.tags.baseline" type="button" class="btn btn-success btn-sm" @click="$emit('prompt-remove-tag','baseline')">{{ t('tags.baseline') }} ✕</button>
             </div>
@@ -210,6 +210,27 @@ export default {
         { key: "baseline", label: this.t("tags.baseline"), class: "bg-success" },
       ];
       const tagBadges = mapping.filter((badge) => tags[badge.key]);
+      if (tags.bug_reported) {
+        tagBadges.push({
+          key: "bug_sent",
+          label: this.t("tags.bugSent"),
+          class: "bg-secondary",
+        });
+      }
+      if (tags.aso_reported) {
+        tagBadges.push({
+          key: "aso_sent",
+          label: this.t("tags.asoSent"),
+          class: "bg-secondary",
+        });
+      }
+      if (tags.note_reported) {
+        tagBadges.push({
+          key: "note_sent",
+          label: this.t("tags.noteSent"),
+          class: "bg-secondary",
+        });
+      }
       const noteText = tags?.note?.text;
       if (typeof noteText === "string" && noteText.trim()) {
         tagBadges.push({
