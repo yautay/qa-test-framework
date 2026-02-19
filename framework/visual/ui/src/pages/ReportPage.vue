@@ -78,6 +78,7 @@ import ConfirmPrompt from "../components/ConfirmPrompt.vue";
 import { fmt } from "../lib/format";
 import { t } from "../lib/i18n";
 import { useResultsStore } from "../stores/resultsStore";
+import { Modal } from "bootstrap";
 import { getRowTagKey } from "../lib/viewer";
 import { loadTagSnapshot, saveTagSnapshotToFile } from "../lib/tagPersistence";
 import { requestBaselineChallengeForRun, sendBaselineSelectionForRun } from "../lib/baselineApi";
@@ -331,10 +332,8 @@ function show(row, mode, index = null) {
   store.openViewer(row, normalizedMode, index);
   const modalEl = document.getElementById("vrtModal");
   if (modalEl) {
-    import("bootstrap").then(({ default: Modal }) => {
-      const modal = new Modal(modalEl);
-      modal.show();
-    });
+    const modal = new Modal(modalEl);
+    modal.show();
   }
 }
 
@@ -507,10 +506,8 @@ function handleKeydown(evt) {
   } else if (k === "Escape") {
     const modalEl = document.getElementById("vrtModal");
     if (modalEl) {
-      import("bootstrap").then(({ default: Modal }) => {
-        const modal = Modal.getInstance(modalEl);
-        modal?.hide();
-      });
+      const modal = Modal.getInstance(modalEl);
+      modal?.hide();
     }
   }
 }

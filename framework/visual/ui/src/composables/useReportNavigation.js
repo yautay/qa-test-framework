@@ -1,4 +1,5 @@
 import { ref } from "vue";
+import { Modal } from "bootstrap";
 
 export function useReportNavigation(store, keyHeld, superZoomActive, noteEditorActive) {
   const baseZoom = ref(100);
@@ -61,10 +62,8 @@ export function useReportNavigation(store, keyHeld, superZoomActive, noteEditorA
     } else if (k === "Escape") {
       const modalEl = document.getElementById("vrtModal");
       if (modalEl) {
-        import("bootstrap").then(({ default: Modal }) => {
-          const modal = Modal.getInstance(modalEl);
-          modal?.hide();
-        });
+        const modal = Modal.getInstance(modalEl);
+        modal?.hide();
       }
     }
   }

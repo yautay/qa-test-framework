@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">15.38% </span>
+                <span class="strong">15.47% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>52/338</span>
+                <span class='fraction'>52/336</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">17.77% </span>
+                <span class="strong">18.6% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>8/45</span>
+                <span class='fraction'>8/43</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">15.35% </span>
+                <span class="strong">15.46% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>47/306</span>
+                <span class='fraction'>47/304</span>
             </div>
         
             
@@ -727,11 +727,9 @@
 <a name='L662'></a><a href='#L662'>662</a>
 <a name='L663'></a><a href='#L663'>663</a>
 <a name='L664'></a><a href='#L664'>664</a>
-<a name='L665'></a><a href='#L665'>665</a>
-<a name='L666'></a><a href='#L666'>666</a>
-<a name='L667'></a><a href='#L667'>667</a>
-<a name='L668'></a><a href='#L668'>668</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L665'></a><a href='#L665'>665</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">124x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1065,8 +1063,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1241,8 +1237,6 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -1477,6 +1471,7 @@ import ConfirmPrompt from "../components/ConfirmPrompt.vue";
 import { fmt } from "../lib/format";
 import { t } from "../lib/i18n";
 import { useResultsStore } from "../stores/resultsStore";
+import { Modal } from "bootstrap";
 import { getRowTagKey } from "../lib/viewer";
 import { loadTagSnapshot, saveTagSnapshotToFile } from "../lib/tagPersistence";
 import { requestBaselineChallengeForRun, sendBaselineSelectionForRun } from "../lib/baselineApi";
@@ -1730,10 +1725,8 @@ function <span class="fstat-no" title="function not covered" >show(</span>row, m
 <span class="cstat-no" title="statement not covered" >  store.openViewer(row, normalizedMode, index);</span>
   const modalEl = <span class="cstat-no" title="statement not covered" >document.getElementById("vrtModal");</span>
 <span class="cstat-no" title="statement not covered" >  if (modalEl) {</span>
-<span class="cstat-no" title="statement not covered" >    import("bootstrap").then(<span class="fstat-no" title="function not covered" >({</span> default: Modal }) =&gt; {</span>
-      const modal = <span class="cstat-no" title="statement not covered" >new Modal(modalEl);</span>
-<span class="cstat-no" title="statement not covered" >      modal.show();</span>
-    });
+    const modal = <span class="cstat-no" title="statement not covered" >new Modal(modalEl);</span>
+<span class="cstat-no" title="statement not covered" >    modal.show();</span>
   }
 }
 &nbsp;
@@ -1906,10 +1899,8 @@ function <span class="fstat-no" title="function not covered" >handleKeydown(</sp
   } else <span class="cstat-no" title="statement not covered" >if (k === "Escape") {</span>
     const modalEl = <span class="cstat-no" title="statement not covered" >document.getElementById("vrtModal");</span>
 <span class="cstat-no" title="statement not covered" >    if (modalEl) {</span>
-<span class="cstat-no" title="statement not covered" >      import("bootstrap").then(<span class="fstat-no" title="function not covered" >({</span> default: Modal }) =&gt; {</span>
-        const modal = <span class="cstat-no" title="statement not covered" >Modal.getInstance(modalEl);</span>
-<span class="cstat-no" title="statement not covered" >        modal?.hide();</span>
-      });
+      const modal = <span class="cstat-no" title="statement not covered" >Modal.getInstance(modalEl);</span>
+<span class="cstat-no" title="statement not covered" >      modal?.hide();</span>
     }
   }
 }
@@ -2071,7 +2062,7 @@ onBeforeUnmount(() =&gt; {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-02-19T21:20:21.866Z
+                at 2026-02-19T21:29:54.587Z
             </div>
         <script src="../prettify.js"></script>
         <script>
