@@ -15,7 +15,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="(r, index) in rows" :key="r.scenario_id" 
+          <tr v-for="(r, index) in rows" :key="rowKey(r, index)" 
               :class="{ 'table-active': index === selectedIndex }"
               @click="$emit('select', index)"
               @dblclick="$emit('show', r, 'test', index)">
@@ -102,11 +102,48 @@ export default {
       const tags = this.tagLog?.[key];
       return !!(tags && tags[tag]);
     },
+    rowKey(row, index) {
+      const key = this.tagKeyForRow(row);
+      if (key) return key;
+      return `${row?.scenario_id || "row"}::${index}`;
+    },
   },
 };
 </script>
 
 <style scoped>
+.card {
+  background-color: var(--card-bg);
+  border-color: var(--border);
+}
+
+.table {
+  --bs-table-bg: var(--card-bg);
+  color: var(--body-color);
+  border-color: var(--border);
+}
+
+.table thead th {
+  background-color: var(--body-bg);
+  color: var(--body-color);
+  border-color: var(--border);
+}
+
+.table tbody td {
+  background-color: var(--card-bg);
+  color: var(--body-color);
+  border-color: var(--border);
+}
+
+.table tbody tr:hover td {
+  background-color: var(--body-bg);
+}
+
+.table-light {
+  --bs-table-bg: var(--body-bg);
+  color: var(--body-color);
+}
+
 .artifact-badge {
   display: inline-block;
   padding: 0.25rem 0.5rem;

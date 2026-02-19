@@ -60,6 +60,7 @@
       @super-zoom-down="handleSuperZoomPointerDown"
       @super-zoom-up="handleSuperZoomPointerUp"
       @prompt-tag="promptTag"
+      @prompt-remove-tag="promptRemoveTag"
       @close-modal="closeModal"
       @reset-cursor="resetCursor"
       @mouse-move="handleMouseMove"
@@ -127,7 +128,7 @@ export default {
   },
   computed: {
     rows() {
-      return filteredSorted(this.store);
+      return filteredSorted(this.store, this.viewer.tagLog);
     },
     gridStyle() {
       const requested = Math.max(1, this.viewer.columns || 1);
@@ -464,11 +465,35 @@ export default {
       if (this.isTagLocked(type)) return;
       this.prompt = { active: true, type };
     },
+    promptRemoveTag(type) {
+      if (this.prompt.active) return;
+      this.prompt = { active: true, type: `remove-${type}` };
+    },
     confirmPrompt() {
       if (!this.prompt.active) return;
-      toggleTag(this.viewer, this.viewer.modalRow, this.prompt.type);
-      this.persistTags();
+      const type = this.prompt.type?.replace("remove-", "");
+      if (this.prompt.type.startsWith("remove-")) {
+        this.removeTag(type);
+      } else {
+        toggleTag(this.viewer, this.viewer.modalRow, type);
+        this.persistTags();
+      }
       this.prompt = { active: false, type: null };
+    },
+    removeTag(type) {
+      const row = this.viewer.modalRow;
+      if (!row) return;
+      const key = this.getRowTagKey(row);
+      if (this.viewer.tagLog[key]) {
+        this.viewer.tagLog[key][type] = false;
+      }
+      if (this.viewer.tags) {
+        this.viewer.tags[type] = false;
+      }
+      this.viewer.tagLocked = this.viewer.tagLocked || {};
+      this.viewer.tagLocked[key] = this.viewer.tagLocked[key] || { bug: false, aso: false, baseline: false };
+      this.viewer.tagLocked[key][type] = false;
+      this.persistTags();
     },
     cancelPrompt() {
       if (!this.prompt.active) return;
@@ -541,6 +566,14 @@ export default {
 }
 .slot-mode-select {
   min-width: 110px;
+  background-color: var(--card-bg);
+  color: var(--body-color);
+  border-color: var(--border);
+}
+.slot-mode-select:focus {
+  background-color: var(--card-bg);
+  color: var(--body-color);
+  border-color: var(--primary);
 }
 .slot-grid {
   display: grid;
