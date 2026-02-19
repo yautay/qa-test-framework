@@ -337,15 +337,73 @@ def _build_handler(context: ReportServerContext):
 
             return False
 
-    def do_GET(self) -> None:
-        parsed = urlparse(self.path)
-        path = parsed.path
-        query = parse_qs(parsed.query)
+        def do_GET(self) -> None:
+            parsed = urlparse(self.path)
+            path = parsed.path
+            query = parse_qs(parsed.query)
 
-        m_tag = re.match(r"^/reports/([^/]+)/vrt-tags\.json$", path)
-        if m_tag:
+            m_tag = re.match(r"^/reports/([^/]+)/vrt-tags\.json$", path)
+            if m_tag:
+                try:
+                    run_id = _safe_run_id_or_error(m_tag.group(1))
+                except ValueError as exc:
+                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                    return
+                run_dir = context.resolve_run_dir(run_id)
+                if run_dir is None:
+                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
+                    return
+                tag_file = run_dir / "vrt-tags.json"
+                if not tag_file.is_file():
+                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "tag file not found", "run_id": run_id})
+                    return
+                _serve_file(self, tag_file)
+                return
+
+            if path == "/health":
+                self._send_json(HTTPStatus.OK, {"status": "ok"})
+                return
+
+            if path.startswith("/api/"):
+                handled = self._handle_api_get(path, query)
+                if handled:
+                    return
+                self._send_json(HTTPStatus.NOT_FOUND, {"error": "unknown endpoint", "path": path})
+                return
+
+            if path == "/" or path == "/index.html":
+                self._serve_ui_index()
+                return
+
+            if path.startswith("/assets/"):
+                self._serve_ui_asset(path)
+                return
+
+            m_report = re.match(r"^/reports/([^/]+)(?:/(.*))?$", path)
+            if m_report:
+                try:
+                    run_id = _safe_run_id_or_error(m_report.group(1))
+                except ValueError as exc:
+                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                    return
+                rel_path = (m_report.group(2) or "").strip()
+                if rel_path in {"", "index.html"}:
+                    self._serve_ui_index()
+                    return
+                self._serve_report_file(run_id, rel_path)
+                return
+
+            self.send_error(HTTPStatus.NOT_FOUND, "not found")
+
+        def do_PUT(self) -> None:
+            path = urlparse(self.path).path
+            m = re.match(r"^/reports/([^/]+)/vrt-tags\.json$", path)
+            if not m:
+                self._send_json(HTTPStatus.NOT_FOUND, {"error": "unknown endpoint", "path": path})
+                return
+
             try:
-                run_id = _safe_run_id_or_error(m_tag.group(1))
+                run_id = _safe_run_id_or_error(m.group(1))
             except ValueError as exc:
                 self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
                 return
@@ -353,194 +411,136 @@ def _build_handler(context: ReportServerContext):
             if run_dir is None:
                 self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
                 return
-            tag_file = run_dir / "vrt-tags.json"
-            if not tag_file.is_file():
-                self._send_json(HTTPStatus.NOT_FOUND, {"error": "tag file not found", "run_id": run_id})
-                return
-            _serve_file(self, tag_file)
-            return
 
-        if path == "/health":
-            self._send_json(HTTPStatus.OK, {"status": "ok"})
-            return
-
-        if path.startswith("/api/"):
-            handled = self._handle_api_get(path, query)
-            if handled:
-                return
-            self._send_json(HTTPStatus.NOT_FOUND, {"error": "unknown endpoint", "path": path})
-            return
-
-        if path == "/" or path == "/index.html":
-            self._serve_ui_index()
-            return
-
-        if path.startswith("/assets/"):
-            self._serve_ui_asset(path)
-            return
-
-        m_report = re.match(r"^/reports/([^/]+)(?:/(.*))?$", path)
-        if m_report:
             try:
-                run_id = _safe_run_id_or_error(m_report.group(1))
+                payload = self._read_json_body()
+            except Exception as exc:
+                self._send_json(HTTPStatus.BAD_REQUEST, {"error": f"invalid request body: {exc}"})
+                return
+
+            target = run_dir / "vrt-tags.json"
+            target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            self._send_json(HTTPStatus.OK, {"saved": True, "path": str(target)})
+
+        def do_POST(self) -> None:
+            path = urlparse(self.path).path
+
+            m_challenge = re.match(r"^/api/reports/([^/]+)/baseline/challenge$", path)
+            if m_challenge:
+                try:
+                    run_id = _safe_run_id_or_error(m_challenge.group(1))
+                except ValueError as exc:
+                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                    return
+                if context.resolve_run_dir(run_id) is None:
+                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
+                    return
+
+                _cleanup_expired_challenges(context)
+                challenge_id = token_urlsafe(12)
+                phrase = _generate_phrase()
+                expires_at = time.time() + CHALLENGE_TTL_SECONDS
+                context.challenges[challenge_id] = ChallengeEntry(run_id=run_id, phrase=phrase, expires_at=expires_at)
+                self._send_json(
+                    HTTPStatus.OK,
+                    {
+                        "challenge_id": challenge_id,
+                        "phrase": phrase,
+                        "expires_at": int(expires_at),
+                    },
+                )
+                return
+
+            m_send = re.match(r"^/api/reports/([^/]+)/baseline/send$", path)
+            if not m_send:
+                self._send_json(HTTPStatus.NOT_FOUND, {"error": "unknown endpoint", "path": path})
+                return
+
+            try:
+                run_id = _safe_run_id_or_error(m_send.group(1))
             except ValueError as exc:
                 self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
                 return
-            rel_path = (m_report.group(2) or "").strip()
-            if rel_path in {"", "index.html"}:
-                self._serve_ui_index()
-                return
-            self._serve_report_file(run_id, rel_path)
-            return
-
-        self.send_error(HTTPStatus.NOT_FOUND, "not found")
-
-    def do_PUT(self) -> None:
-        path = urlparse(self.path).path
-        m = re.match(r"^/reports/([^/]+)/vrt-tags\.json$", path)
-        if not m:
-            self._send_json(HTTPStatus.NOT_FOUND, {"error": "unknown endpoint", "path": path})
-            return
-
-        try:
-            run_id = _safe_run_id_or_error(m.group(1))
-        except ValueError as exc:
-            self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
-            return
-        run_dir = context.resolve_run_dir(run_id)
-        if run_dir is None:
-            self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
-            return
-
-        try:
-            payload = self._read_json_body()
-        except Exception as exc:
-            self._send_json(HTTPStatus.BAD_REQUEST, {"error": f"invalid request body: {exc}"})
-            return
-
-        target = run_dir / "vrt-tags.json"
-        target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        self._send_json(HTTPStatus.OK, {"saved": True, "path": str(target)})
-
-    def do_POST(self) -> None:
-        path = urlparse(self.path).path
-
-        m_challenge = re.match(r"^/api/reports/([^/]+)/baseline/challenge$", path)
-        if m_challenge:
-            try:
-                run_id = _safe_run_id_or_error(m_challenge.group(1))
-            except ValueError as exc:
-                self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
-                return
-            if context.resolve_run_dir(run_id) is None:
+            report_dir = context.resolve_run_dir(run_id)
+            if report_dir is None:
                 self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
                 return
 
+            try:
+                payload = self._read_json_body()
+                challenge_id = _as_non_empty_text(payload, "challenge_id")
+                phrase = _as_non_empty_text(payload, "phrase")
+                items = payload.get("items")
+                if not isinstance(items, list):
+                    raise ValueError("missing or invalid field: items")
+            except Exception as exc:
+                self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                return
+
             _cleanup_expired_challenges(context)
-            challenge_id = token_urlsafe(12)
-            phrase = _generate_phrase()
-            expires_at = time.time() + CHALLENGE_TTL_SECONDS
-            context.challenges[challenge_id] = ChallengeEntry(run_id=run_id, phrase=phrase, expires_at=expires_at)
+            challenge = context.challenges.get(challenge_id)
+            if challenge is None:
+                self._send_json(HTTPStatus.FORBIDDEN, {"error": "challenge is missing or expired"})
+                return
+            if challenge.phrase != phrase:
+                self._send_json(HTTPStatus.FORBIDDEN, {"error": "challenge phrase mismatch"})
+                return
+            if challenge.run_id != run_id:
+                self._send_json(HTTPStatus.FORBIDDEN, {"error": "challenge run mismatch"})
+                return
+
+            context.challenges.pop(challenge_id, None)
+
+            results: list[dict[str, Any]] = []
+            saved_count = 0
+            failed_count = 0
+            for raw_item in items:
+                if not isinstance(raw_item, dict):
+                    failed_count += 1
+                    results.append({"status": "failed", "message": "item must be an object"})
+                    continue
+                try:
+                    scenario_id = _as_non_empty_text(raw_item, "scenario_id")
+                    suite_id = _as_non_empty_text(raw_item, "suite_id")
+                    viewport = _as_non_empty_text(raw_item, "viewport")
+                    browser = _as_non_empty_text(raw_item, "browser")
+                    actual_path = _as_non_empty_text(raw_item, "actual_path")
+                    source = _resolve_actual_png(report_dir, actual_path)
+                    target = context.baseline_store.store_local_baseline(
+                        suite_id,
+                        scenario_id,
+                        viewport,
+                        browser,
+                        source,
+                    )
+                    results.append(
+                        {
+                            "status": "saved",
+                            "scenario_id": scenario_id,
+                            "source_path": str(source),
+                            "target_path": str(target),
+                        }
+                    )
+                    saved_count += 1
+                except Exception as exc:
+                    failed_count += 1
+                    results.append(
+                        {
+                            "status": "failed",
+                            "scenario_id": str(raw_item.get("scenario_id", "")),
+                            "message": str(exc),
+                        }
+                    )
+
             self._send_json(
                 HTTPStatus.OK,
                 {
-                    "challenge_id": challenge_id,
-                    "phrase": phrase,
-                    "expires_at": int(expires_at),
+                    "accepted": failed_count == 0,
+                    "saved_count": saved_count,
+                    "failed_count": failed_count,
+                    "results": results,
                 },
             )
-            return
-
-        m_send = re.match(r"^/api/reports/([^/]+)/baseline/send$", path)
-        if not m_send:
-            self._send_json(HTTPStatus.NOT_FOUND, {"error": "unknown endpoint", "path": path})
-            return
-
-        try:
-            run_id = _safe_run_id_or_error(m_send.group(1))
-        except ValueError as exc:
-            self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
-            return
-        report_dir = context.resolve_run_dir(run_id)
-        if report_dir is None:
-            self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
-            return
-
-        try:
-            payload = self._read_json_body()
-            challenge_id = _as_non_empty_text(payload, "challenge_id")
-            phrase = _as_non_empty_text(payload, "phrase")
-            items = payload.get("items")
-            if not isinstance(items, list):
-                raise ValueError("missing or invalid field: items")
-        except Exception as exc:
-            self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
-            return
-
-        _cleanup_expired_challenges(context)
-        challenge = context.challenges.get(challenge_id)
-        if challenge is None:
-            self._send_json(HTTPStatus.FORBIDDEN, {"error": "challenge is missing or expired"})
-            return
-        if challenge.phrase != phrase:
-            self._send_json(HTTPStatus.FORBIDDEN, {"error": "challenge phrase mismatch"})
-            return
-        if challenge.run_id != run_id:
-            self._send_json(HTTPStatus.FORBIDDEN, {"error": "challenge run mismatch"})
-            return
-
-        context.challenges.pop(challenge_id, None)
-
-        results: list[dict[str, Any]] = []
-        saved_count = 0
-        failed_count = 0
-        for raw_item in items:
-            if not isinstance(raw_item, dict):
-                failed_count += 1
-                results.append({"status": "failed", "message": "item must be an object"})
-                continue
-            try:
-                scenario_id = _as_non_empty_text(raw_item, "scenario_id")
-                suite_id = _as_non_empty_text(raw_item, "suite_id")
-                viewport = _as_non_empty_text(raw_item, "viewport")
-                browser = _as_non_empty_text(raw_item, "browser")
-                actual_path = _as_non_empty_text(raw_item, "actual_path")
-                source = _resolve_actual_png(report_dir, actual_path)
-                target = context.baseline_store.store_local_baseline(
-                    suite_id,
-                    scenario_id,
-                    viewport,
-                    browser,
-                    source,
-                )
-                results.append(
-                    {
-                        "status": "saved",
-                        "scenario_id": scenario_id,
-                        "source_path": str(source),
-                        "target_path": str(target),
-                    }
-                )
-                saved_count += 1
-            except Exception as exc:
-                failed_count += 1
-                results.append(
-                    {
-                        "status": "failed",
-                        "scenario_id": str(raw_item.get("scenario_id", "")),
-                        "message": str(exc),
-                    }
-                )
-
-        self._send_json(
-            HTTPStatus.OK,
-            {
-                "accepted": failed_count == 0,
-                "saved_count": saved_count,
-                "failed_count": failed_count,
-                "results": results,
-            },
-        )
 
     return Handler
 
