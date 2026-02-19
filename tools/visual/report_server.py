@@ -472,6 +472,14 @@ def _note_hash(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
+def _hash_snapshot(snapshot: dict[str, Any]) -> str:
+    try:
+        encoded = json.dumps(snapshot, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    except TypeError:
+        encoded = json.dumps(snapshot, sort_keys=True, default=str, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
 def _build_reporting_payload(
     run_id: str,
     tag: str,
@@ -971,6 +979,17 @@ def _build_handler(context: ReportServerContext):
                     aso_sendable=len(aso_sendable),
                     note_sendable=len(note_sendable),
                 )
+                logger.debug(
+                    "report_send_debug",
+                    run_id=run_id,
+                    rows_count=len(rows),
+                    tag_snapshot_count=len(tag_snapshot),
+                    tag_snapshot_hash=_hash_snapshot(tag_snapshot),
+                    has_client=context.reporting_client is not None,
+                    bug_endpoint=str(context.reporting_bug_endpoint or "").strip(),
+                    aso_endpoint=str(context.reporting_aso_endpoint or "").strip(),
+                    note_endpoint=str(context.reporting_note_endpoint or "").strip(),
+                )
 
                 bug_ok = 0
                 bug_failed = 0
@@ -989,6 +1008,14 @@ def _build_handler(context: ReportServerContext):
                         logger.warning("report_send_note_missing_endpoint", run_id=run_id)
                         note_failed += 1
                         continue
+                    logger.debug(
+                        "report_send_note_attempt",
+                        run_id=run_id,
+                        scenario_id=str(row.get("scenario_id", "") or ""),
+                        endpoint=context.reporting_note_endpoint,
+                        note_hash=note_hash,
+                        note_reported=bool(tag_entry.get("note_reported", False)),
+                    )
                     req = _build_reporting_payload(
                         run_id,
                         "NOTE",
@@ -999,6 +1026,13 @@ def _build_handler(context: ReportServerContext):
                     accepted = bool(
                         context.reporting_client
                         and context.reporting_client.send_payload(context.reporting_note_endpoint, req)
+                    )
+                    logger.debug(
+                        "report_send_note_result",
+                        run_id=run_id,
+                        scenario_id=str(row.get("scenario_id", "") or ""),
+                        endpoint=context.reporting_note_endpoint,
+                        accepted=accepted,
                     )
                     if accepted:
                         tag_entry["note_reported"] = True
@@ -1023,10 +1057,24 @@ def _build_handler(context: ReportServerContext):
                         logger.warning("report_send_aso_missing_endpoint", run_id=run_id)
                         aso_failed += 1
                         continue
+                    logger.debug(
+                        "report_send_aso_attempt",
+                        run_id=run_id,
+                        scenario_id=str(row.get("scenario_id", "") or ""),
+                        endpoint=context.reporting_aso_endpoint,
+                        aso_reported=bool(tag_entry.get("aso_reported", False)),
+                    )
                     req = _build_reporting_payload(run_id, "ASO", row, tag_entry)
                     accepted = bool(
                         context.reporting_client
                         and context.reporting_client.send_payload(context.reporting_aso_endpoint, req)
+                    )
+                    logger.debug(
+                        "report_send_aso_result",
+                        run_id=run_id,
+                        scenario_id=str(row.get("scenario_id", "") or ""),
+                        endpoint=context.reporting_aso_endpoint,
+                        accepted=accepted,
                     )
                     if accepted:
                         tag_entry["aso_reported"] = True
@@ -1050,10 +1098,24 @@ def _build_handler(context: ReportServerContext):
                         logger.warning("report_send_bug_missing_endpoint", run_id=run_id)
                         bug_failed += 1
                         continue
+                    logger.debug(
+                        "report_send_bug_attempt",
+                        run_id=run_id,
+                        scenario_id=str(row.get("scenario_id", "") or ""),
+                        endpoint=context.reporting_bug_endpoint,
+                        bug_reported=bool(tag_entry.get("bug_reported", False)),
+                    )
                     req = _build_reporting_payload(run_id, "BUG", row, tag_entry)
                     accepted = bool(
                         context.reporting_client
                         and context.reporting_client.send_payload(context.reporting_bug_endpoint, req)
+                    )
+                    logger.debug(
+                        "report_send_bug_result",
+                        run_id=run_id,
+                        scenario_id=str(row.get("scenario_id", "") or ""),
+                        endpoint=context.reporting_bug_endpoint,
+                        accepted=accepted,
                     )
                     if accepted:
                         tag_entry["bug_reported"] = True

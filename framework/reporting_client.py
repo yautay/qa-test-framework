@@ -3,6 +3,7 @@ from __future__ import annotations
 """Client that delivers test-run metadata and screenshots to the reporting API."""
 
 import json
+import hashlib
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -58,6 +59,14 @@ class ReportingClient:
         # Simple linear backoff: 0.5s, 1.0s, 1.5s ...
         time.sleep(0.5 * (attempt + 1))
 
+    @staticmethod
+    def _payload_hash(payload: dict) -> str:
+        try:
+            raw = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+        except TypeError:
+            raw = json.dumps(payload, sort_keys=True, default=str, separators=(",", ":")).encode("utf-8")
+        return hashlib.sha256(raw).hexdigest()
+
     def _post(self, path: str, payload: dict) -> bool:
         if not self.enabled or not self.base_url:
             return False
@@ -65,12 +74,27 @@ class ReportingClient:
         url = f"{self.base_url.rstrip('/')}{path}"
         headers = self._build_headers(payload, json_content_type=True)
         context = self._log_context_from_payload(payload)
+        payload_hash = self._payload_hash(payload)
 
         for attempt in range(self.retries + 1):
             try:
+                logger.debug(
+                    "reporting_api_post_attempt",
+                    url=url,
+                    attempt=attempt,
+                    timeout_seconds=self.timeout_seconds,
+                    payload_hash=payload_hash,
+                    **context,
+                )
                 response = self.session.post(url, json=payload, headers=headers, timeout=self.timeout_seconds)
             except requests.RequestException:
-                logger.opt(exception=True).warning("reporting api call failed", url=url, **context)
+                logger.opt(exception=True).warning(
+                    "reporting api call failed",
+                    url=url,
+                    attempt=attempt,
+                    payload_hash=payload_hash,
+                    **context,
+                )
                 if attempt < self.retries:
                     self._sleep_backoff(attempt)
                 continue
@@ -78,7 +102,18 @@ class ReportingClient:
             if response.ok:
                 return True
 
-            logger.warning("reporting api non-2xx", status=response.status_code, url=url, **context)
+            try:
+                preview = response.text[:200]
+            except Exception:
+                preview = ""
+            logger.warning(
+                "reporting api non-2xx",
+                status=response.status_code,
+                url=url,
+                payload_hash=payload_hash,
+                response_preview=preview,
+                **context,
+            )
 
             if attempt < self.retries and self._should_retry_status(response.status_code):
                 self._sleep_backoff(attempt)
@@ -107,10 +142,19 @@ class ReportingClient:
 
         headers = self._build_headers(payload, json_content_type=False)
         context = self._log_context_from_payload(payload)
+        payload_hash = self._payload_hash(payload)
 
         for attempt in range(self.retries + 1):
             opened_handles: list[BinaryIO] = []
             try:
+                logger.debug(
+                    "reporting_api_post_files_attempt",
+                    url=url,
+                    attempt=attempt,
+                    timeout_seconds=self.timeout_seconds,
+                    payload_hash=payload_hash,
+                    **context,
+                )
                 files = []
                 for file_path in existing_paths:
                     handle = file_path.open("rb")
@@ -130,7 +174,18 @@ class ReportingClient:
                 if response.ok:
                     return True
 
-                logger.warning("reporting api non-2xx", status=response.status_code, url=url, **context)
+                try:
+                    preview = response.text[:200]
+                except Exception:
+                    preview = ""
+                logger.warning(
+                    "reporting api non-2xx",
+                    status=response.status_code,
+                    url=url,
+                    payload_hash=payload_hash,
+                    response_preview=preview,
+                    **context,
+                )
 
                 if attempt < self.retries and self._should_retry_status(response.status_code):
                     self._sleep_backoff(attempt)
@@ -139,7 +194,13 @@ class ReportingClient:
                 return False  # do not retry non-retriable status codes
 
             except requests.RequestException:
-                logger.opt(exception=True).warning("reporting screenshot upload failed", url=url, **context)
+                logger.opt(exception=True).warning(
+                    "reporting screenshot upload failed",
+                    url=url,
+                    attempt=attempt,
+                    payload_hash=payload_hash,
+                    **context,
+                )
                 if attempt < self.retries:
                     self._sleep_backoff(attempt)
                 continue
