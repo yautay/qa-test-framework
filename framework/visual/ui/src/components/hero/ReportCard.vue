@@ -17,11 +17,12 @@
       </div>
 
       <div class="d-flex flex-wrap gap-2 small">
-        <span class="badge bg-success-subtle text-success-emphasis">{{ t('card.passed') }} {{ report.passed || 0 }}</span>
-        <span class="badge bg-danger-subtle text-danger-emphasis">{{ t('card.failed') }} {{ report.failed || 0 }}</span>
+        <span class="badge text-bg-secondary">{{ report.total || 0 }}</span>
+        <span class="badge text-bg-success">{{ report.passed || 0 }}</span>
+        <span class="badge text-bg-danger">{{ report.failed || 0 }}</span>
+        <span v-if="report.uncertain" class="badge text-bg-warning">{{ report.uncertain }}</span>
+        <span v-if="report.skipped" class="badge text-bg-secondary">{{ report.skipped }}</span>
       </div>
-
-      <div class="text-muted small flex-grow-1">{{ report.summary || "No summary available" }}</div>
 
       <a :href="reportUrl" class="btn btn-primary btn-sm mt-2" @click="navigateToReport">{{ t('card.openReport') }}</a>
     </div>

@@ -167,6 +167,9 @@ def _scenario_from_payload(payload: dict[str, Any], file_path: Path, idx: int) -
             pixel_max=_as_float(thresholds_raw.get("pixel_max", 0.005), 0.005, file_path, f"{pfx}thresholds.pixel_max"),
             lpips_max=_as_float(thresholds_raw.get("lpips_max", 0.08), 0.08, file_path, f"{pfx}thresholds.lpips_max"),
             dists_max=_as_float(thresholds_raw.get("dists_max", 0.08), 0.08, file_path, f"{pfx}thresholds.dists_max"),
+            pixel_uncertain_delta=thresholds_raw.get("pixel_uncertain_delta"),
+            lpips_uncertain_delta=thresholds_raw.get("lpips_uncertain_delta"),
+            dists_uncertain_delta=thresholds_raw.get("dists_uncertain_delta"),
         ),
         mask=VisualMask(
             selectors=tuple(_as_str_list(mask_raw.get("selectors"), file_path, f"{pfx}mask.selectors")),

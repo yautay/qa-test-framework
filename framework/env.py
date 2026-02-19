@@ -34,11 +34,7 @@ def _as_bool(value: str | None, default: bool) -> bool:
 
 def _load_dotenv_file(env_file: str = ".env") -> dict[str, str]:
     """Parse a dotenv-style file into a string dictionary, ignoring comments."""
-    return {
-        k: v
-        for k, v in dotenv_values(env_file).items()
-        if v is not None
-    }
+    return {k: v for k, v in dotenv_values(env_file).items() if v is not None}
 
 
 @dataclass(frozen=True)
@@ -97,6 +93,10 @@ class RuntimeEnv:
     visual_perceptual_overlay_on: str
     visual_perceptual_alpha: float
     visual_perceptual_lpips_net: str
+    visual_uncertain_enabled: bool
+    visual_uncertain_pixel_delta: float
+    visual_uncertain_lpips_delta: float
+    visual_uncertain_dists_delta: float
 
 
 def load_env() -> RuntimeEnv:
@@ -132,12 +132,8 @@ def load_env() -> RuntimeEnv:
 
     settings_headless = bool(getattr(settings, "is_session_headless", True))
     settings_grid_available = bool(getattr(settings, "is_grid_available", False))
-    settings_grid_ws_endpoint = str(
-        getattr(settings, "grid_ws_endpoint", "ws://127.0.0.1:9323/")
-    )
-    settings_grid_connect_timeout_ms = int(
-        getattr(settings, "grid_connect_timeout_ms", 30000)
-    )
+    settings_grid_ws_endpoint = str(getattr(settings, "grid_ws_endpoint", "ws://127.0.0.1:9323/"))
+    settings_grid_connect_timeout_ms = int(getattr(settings, "grid_connect_timeout_ms", 30000))
 
     configured_browser = env_str(
         "BROWSER",
@@ -156,12 +152,7 @@ def load_env() -> RuntimeEnv:
     server_type = settings_cli.server_type
     server_name = settings_cli.server_name
 
-    base_url = (
-            env_value("BASE_URL")
-            or env_value("BASE_URL_OVERRIDE")
-            or settings_cli.base_url_override
-            or ""
-    )
+    base_url = env_value("BASE_URL") or env_value("BASE_URL_OVERRIDE") or settings_cli.base_url_override or ""
 
     return RuntimeEnv(
         browser=browser,
@@ -227,11 +218,15 @@ def load_env() -> RuntimeEnv:
         visual_compare_mode=env_str(
             "VISUAL_COMPARE_MODE",
             str(getattr(settings, "visual_compare_mode", "hybrid")),
-        ).strip().lower(),
+        )
+        .strip()
+        .lower(),
         visual_baseline_provider=env_str(
             "VISUAL_BASELINE_PROVIDER",
             str(getattr(settings, "visual_baseline_provider", "minio")),
-        ).strip().lower(),
+        )
+        .strip()
+        .lower(),
         visual_baseline_profile=env_str(
             "VISUAL_BASELINE_PROFILE",
             str(getattr(settings, "visual_baseline_profile", "test-ref")),
@@ -303,11 +298,15 @@ def load_env() -> RuntimeEnv:
         visual_perceptual_fallback_mode=env_str(
             "VISUAL_PERCEPTUAL_FALLBACK_MODE",
             str(getattr(settings, "visual_perceptual_fallback_mode", "pixel")),
-        ).strip().lower(),
+        )
+        .strip()
+        .lower(),
         visual_perceptual_force_device=env_str(
             "VISUAL_PERCEPTUAL_FORCE_DEVICE",
             str(getattr(settings, "visual_perceptual_force_device", "")),
-        ).strip().lower(),
+        )
+        .strip()
+        .lower(),
         visual_perceptual_max_side=env_int(
             "VISUAL_PERCEPTUAL_MAX_SIDE",
             int(getattr(settings, "visual_perceptual_max_side", 1024)),
@@ -315,7 +314,9 @@ def load_env() -> RuntimeEnv:
         visual_perceptual_overlay_on=env_str(
             "VISUAL_PERCEPTUAL_OVERLAY_ON",
             str(getattr(settings, "visual_perceptual_overlay_on", "test")),
-        ).strip().lower(),
+        )
+        .strip()
+        .lower(),
         visual_perceptual_alpha=env_float(
             "VISUAL_PERCEPTUAL_ALPHA",
             float(getattr(settings, "visual_perceptual_alpha", 0.45)),
@@ -323,5 +324,23 @@ def load_env() -> RuntimeEnv:
         visual_perceptual_lpips_net=env_str(
             "VISUAL_PERCEPTUAL_LPIPS_NET",
             str(getattr(settings, "visual_perceptual_lpips_net", "vgg")),
-        ).strip().lower(),
+        )
+        .strip()
+        .lower(),
+        visual_uncertain_enabled=env_bool(
+            "VISUAL_UNCERTAIN_ENABLED",
+            bool(getattr(settings, "visual_uncertain_enabled", True)),
+        ),
+        visual_uncertain_pixel_delta=env_float(
+            "VISUAL_UNCERTAIN_PIXEL_DELTA",
+            float(getattr(settings, "visual_uncertain_pixel_delta", 0.001)),
+        ),
+        visual_uncertain_lpips_delta=env_float(
+            "VISUAL_UNCERTAIN_LPIPS_DELTA",
+            float(getattr(settings, "visual_uncertain_lpips_delta", 0.01)),
+        ),
+        visual_uncertain_dists_delta=env_float(
+            "VISUAL_UNCERTAIN_DISTS_DELTA",
+            float(getattr(settings, "visual_uncertain_dists_delta", 0.01)),
+        ),
     )

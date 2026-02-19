@@ -17,6 +17,8 @@
   "card": {
     "passed": "zaliczony",
     "failed": "niepowodzenie",
+    "uncertain": "niepewny",
+    "skipped": "pominięty",
     "tests": "testów",
     "openReport": "Otwórz raport",
     "tester": "Tester",
@@ -55,6 +57,7 @@
   "status": {
     "passed": "zaliczony",
     "failed": "niepowodzenie",
+    "uncertain": "niepewny",
     "skipped": "pominięty",
     "error": "błąd",
     "new": "nowy"

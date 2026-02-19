@@ -166,6 +166,10 @@ class VisualRunner:
             scenario.thresholds.pixel_max,
             scenario.thresholds.lpips_max,
             scenario.thresholds.dists_max,
+            self._env.visual_uncertain_enabled,
+            scenario.thresholds.pixel_uncertain_delta or self._env.visual_uncertain_pixel_delta,
+            scenario.thresholds.lpips_uncertain_delta or self._env.visual_uncertain_lpips_delta,
+            scenario.thresholds.dists_uncertain_delta or self._env.visual_uncertain_dists_delta,
         )
 
         return VisualResult(
@@ -327,13 +331,25 @@ def _evaluate(
     pixel_max: float,
     lpips_max: float,
     dists_max: float,
+    uncertain_enabled: bool,
+    pixel_uncertain_delta: float,
+    lpips_uncertain_delta: float,
+    dists_uncertain_delta: float,
 ) -> tuple[str, str]:
     """Assess thresholds and return the status/message tuple."""
     mode = (mode or "").strip().lower()
 
+    def _in_uncertain_zone(value: float | None, threshold: float, delta: float) -> bool:
+        """Check if value is in the uncertainty zone (threshold < value <= threshold + delta)."""
+        if value is None or delta <= 0:
+            return False
+        return threshold < value <= threshold + delta
+
     if mode == "pixel":
         if pixel_changed_ratio <= pixel_max:
             return "passed", "Pixel threshold passed"
+        if uncertain_enabled and _in_uncertain_zone(pixel_changed_ratio, pixel_max, pixel_uncertain_delta):
+            return "uncertain", "Pixel within uncertainty zone"
         return "failed", "Pixel threshold exceeded"
 
     lpips_ok = lpips is not None and lpips <= lpips_max
@@ -343,6 +359,12 @@ def _evaluate(
     if mode == "perceptual":
         if perceptual_ok:
             return "passed", "Perceptual thresholds passed"
+        if uncertain_enabled:
+            in_uncertain = _in_uncertain_zone(lpips, lpips_max, lpips_uncertain_delta) or _in_uncertain_zone(
+                dists, dists_max, dists_uncertain_delta
+            )
+            if in_uncertain:
+                return "uncertain", "Perceptual within uncertainty zone"
         return "failed", "Perceptual thresholds exceeded"
 
     # hybrid
@@ -350,5 +372,7 @@ def _evaluate(
     if perceptual_ok and pixel_ok:
         return "passed", "Pixel and perceptual thresholds passed"
     if perceptual_ok and not pixel_ok:
-        return "warn", "Pixel exceeded, perceptual passed"
+        if uncertain_enabled and _in_uncertain_zone(pixel_changed_ratio, pixel_max, pixel_uncertain_delta):
+            return "uncertain", "Pixel within uncertainty zone"
+        return "uncertain", "Pixel exceeded, perceptual passed"
     return "failed", "Perceptual thresholds exceeded"

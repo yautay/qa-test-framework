@@ -17,6 +17,12 @@ visual_cache_dir = ".visual_cache"
 visual_fail_on_missing_baseline = False
 visual_warn_as_fail = False
 
+# Uncertain zone - strefa niepewności (score blisko progu)
+visual_uncertain_enabled = True
+visual_uncertain_pixel_delta = 0.001  # absolutna wartość dodana do progu
+visual_uncertain_lpips_delta = 0.01
+visual_uncertain_dists_delta = 0.01
+
 # Visual viewport presets (name -> (width, height))
 visual_viewport_presets = {
     "mobile": (390, 844),

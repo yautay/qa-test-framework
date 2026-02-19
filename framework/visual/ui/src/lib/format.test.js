@@ -62,16 +62,32 @@ describe("format", () => {
 
       const result = summaryFor(rows);
 
-      expect(result).toContain("total=6");
-      expect(result).toContain("passed=2");
-      expect(result).toContain("failed=3");
-      expect(result).toContain("skipped=1");
+      expect(result.total).toBe(6);
+      expect(result.passed).toBe(2);
+      expect(result.failed).toBe(3);
+      expect(result.skipped).toBe(1);
+    });
+
+    it("counts uncertain status", () => {
+      const rows = [
+        { status: "passed" },
+        { status: "uncertain" },
+        { status: "uncertain" },
+        { status: "failed" },
+      ];
+
+      const result = summaryFor(rows);
+
+      expect(result.uncertain).toBe(2);
+      expect(result.total).toBe(4);
     });
 
     it("handles empty array", () => {
       const result = summaryFor([]);
 
-      expect(result).toBe("total=0 passed=0 failed=0 skipped=0");
+      expect(result.total).toBe(0);
+      expect(result.passed).toBe(0);
+      expect(result.failed).toBe(0);
     });
 
     it("handles rows without status", () => {
@@ -83,9 +99,7 @@ describe("format", () => {
 
       const result = summaryFor(rows);
 
-      expect(result).toContain("total=3");
-      expect(result).toContain("passed=0");
-      expect(result).toContain("failed=0");
+      expect(result.total).toBe(3);
     });
   });
 });

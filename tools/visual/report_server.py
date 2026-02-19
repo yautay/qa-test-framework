@@ -168,6 +168,8 @@ def _read_run_metadata(report_dir: Path) -> dict[str, str]:
 def _report_summary(rows: list[dict[str, Any]]) -> dict[str, int]:
     failed = 0
     passed = 0
+    uncertain = 0
+    skipped = 0
     new_count = 0
     for row in rows:
         status = str(row.get("status", "")).strip().lower()
@@ -175,12 +177,18 @@ def _report_summary(rows: list[dict[str, Any]]) -> dict[str, int]:
             failed += 1
         elif status == "passed":
             passed += 1
+        elif status == "uncertain":
+            uncertain += 1
+        elif status == "skipped":
+            skipped += 1
         elif status == "new":
             new_count += 1
     return {
         "total": len(rows),
         "failed": failed,
         "passed": passed,
+        "uncertain": uncertain,
+        "skipped": skipped,
         "new": new_count,
     }
 
@@ -205,8 +213,9 @@ def _list_reports_payload(context: ReportServerContext) -> list[dict[str, Any]]:
                 "total": stats["total"],
                 "failed": stats["failed"],
                 "passed": stats["passed"],
+                "uncertain": stats["uncertain"],
+                "skipped": stats["skipped"],
                 "new": stats["new"],
-                "summary": f"failed={stats['failed']} passed={stats['passed']} new={stats['new']}",
                 "tester": run_metadata.get("tester", ""),
                 "run_note": run_metadata.get("run_note", ""),
             }

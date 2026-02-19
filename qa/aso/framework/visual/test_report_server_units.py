@@ -28,12 +28,20 @@ def test_report_summary_counts_supported_statuses() -> None:
         {"status": "failed"},
         {"status": "passed"},
         {"status": "new"},
-        {"status": "warn"},
+        {"status": "uncertain"},
+        {"status": "skipped"},
     ]
 
     summary = _report_summary(rows)
 
-    assert summary == {"total": 4, "failed": 1, "passed": 1, "new": 1}
+    assert summary == {
+        "total": 5,
+        "failed": 1,
+        "passed": 1,
+        "new": 1,
+        "uncertain": 1,
+        "skipped": 1,
+    }
 
 
 def test_read_results_rows_returns_only_dict_rows(tmp_path: Path) -> None:
@@ -92,7 +100,16 @@ def test_list_reports_payload_includes_stats_and_sorted_desc(tmp_path: Path) -> 
 
     (run_a / "results.json").write_text(json.dumps({"results": [{"status": "failed"}]}), encoding="utf-8")
     (run_b / "results.json").write_text(
-        json.dumps({"results": [{"status": "passed"}, {"status": "new"}]}),
+        json.dumps(
+            {
+                "results": [
+                    {"status": "passed"},
+                    {"status": "new"},
+                    {"status": "uncertain"},
+                    {"status": "skipped"},
+                ]
+            }
+        ),
         encoding="utf-8",
     )
 
@@ -106,9 +123,11 @@ def test_list_reports_payload_includes_stats_and_sorted_desc(tmp_path: Path) -> 
     payload = _list_reports_payload(context)
 
     assert [item["run_id"] for item in payload] == ["20260218", "20260217"]
-    assert payload[0]["total"] == 2
+    assert payload[0]["total"] == 4
     assert payload[0]["passed"] == 1
     assert payload[0]["new"] == 1
+    assert payload[0]["uncertain"] == 1
+    assert payload[0]["skipped"] == 1
     assert payload[0]["tester"] == ""
     assert payload[0]["run_note"] == ""
     assert payload[1]["failed"] == 1

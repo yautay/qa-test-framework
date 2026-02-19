@@ -15,7 +15,7 @@ from typing import Any, Literal
 
 CaptureType = Literal["page", "viewport", "element"]
 CompareMode = Literal["pixel", "perceptual", "hybrid"]
-ResultStatus = Literal["passed", "failed", "skipped", "error", "new", "warn", "approved"]
+ResultStatus = Literal["passed", "failed", "skipped", "error", "new", "uncertain", "approved"]
 
 
 def _require_str(d: dict[str, Any], key: str) -> str:
@@ -230,6 +230,10 @@ class VisualThresholds:
     lpips_max: float
     dists_max: float
 
+    pixel_uncertain_delta: float | None = None
+    lpips_uncertain_delta: float | None = None
+    dists_uncertain_delta: float | None = None
+
     def __post_init__(self) -> None:
         if self.pixel_max < 0 or self.lpips_max < 0 or self.dists_max < 0:
             raise ValueError("Thresholds must be >= 0")
@@ -244,6 +248,9 @@ class VisualThresholds:
             pixel_max=_opt_float(d, "pixel_max", 0.0),
             lpips_max=_opt_float(d, "lpips_max", 0.0),
             dists_max=_opt_float(d, "dists_max", 0.0),
+            pixel_uncertain_delta=d.get("pixel_uncertain_delta") if "pixel_uncertain_delta" in d else None,
+            lpips_uncertain_delta=d.get("lpips_uncertain_delta") if "lpips_uncertain_delta" in d else None,
+            dists_uncertain_delta=d.get("dists_uncertain_delta") if "dists_uncertain_delta" in d else None,
         )
 
 
@@ -440,6 +447,9 @@ class VisualResult:
                 "pixel_max": self.thresholds.pixel_max,
                 "lpips_max": self.thresholds.lpips_max,
                 "dists_max": self.thresholds.dists_max,
+                "pixel_uncertain_delta": self.thresholds.pixel_uncertain_delta,
+                "lpips_uncertain_delta": self.thresholds.lpips_uncertain_delta,
+                "dists_uncertain_delta": self.thresholds.dists_uncertain_delta,
             }
             if self.thresholds
             else None,
