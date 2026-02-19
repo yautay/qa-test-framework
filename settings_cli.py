@@ -23,5 +23,5 @@ phone_for_production_tests = "123123123"
 base_url_override = ""
 
 # Optional run metadata defaults (CLI has priority).
-tester = ""
-run_note = ""
+tester = "Michał"
+run_note = "NN-126533 - retesty"

@@ -1,6 +1,6 @@
 # Console log level for Loguru output in new framework.
 # Allowed values: TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL
-console_log_level = "WARNING"
+console_log_level = "INFO"
 ignore_https_errors = True
 
 # General runtime defaults (CI pipelines may override via env)
@@ -26,9 +26,9 @@ visual_warn_as_fail = False
 
 # Uncertain zone - strefa niepewności (score blisko progu)
 visual_uncertain_enabled = True
-visual_uncertain_pixel_delta = 0.001  # absolutna wartość dodana do progu
-visual_uncertain_lpips_delta = 0.01
-visual_uncertain_dists_delta = 0.01
+visual_uncertain_pixel_delta = 0.05  # absolutna wartość dodana do progu
+visual_uncertain_lpips_delta = 0.05
+visual_uncertain_dists_delta = 0.05
 
 # Visual viewport presets (name -> (width, height))
 visual_viewport_presets = {
@@ -62,7 +62,7 @@ visual_perceptual_alpha = 0.45
 visual_perceptual_lpips_net = "alex"  # vgg|alex|squeeze
 
 # Reporting API (optional)
-reporting_enabled = False
+reporting_enabled = True
 reporting_schema_version = "2.0"
 reporting_source_project = "netQArner"
 reporting_source_origin = ""
