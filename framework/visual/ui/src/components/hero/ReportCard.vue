@@ -8,6 +8,14 @@
 
       <div class="text-muted small">{{ report.updated_at || "unknown" }}</div>
 
+      <div v-if="report.tester" class="text-muted small">
+        <span class="meta-label">{{ t('card.tester') }}:</span> {{ report.tester }}
+      </div>
+
+      <div v-if="report.run_note" class="text-muted small run-note">
+        <span class="meta-label">{{ t('card.runNote') }}:</span> {{ report.run_note }}
+      </div>
+
       <div class="d-flex flex-wrap gap-2 small">
         <span class="badge bg-success-subtle text-success-emphasis">{{ t('card.passed') }} {{ report.passed || 0 }}</span>
         <span class="badge bg-danger-subtle text-danger-emphasis">{{ t('card.failed') }} {{ report.failed || 0 }}</span>
@@ -58,5 +66,16 @@ export default {
 
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.meta-label {
+  font-weight: 600;
+}
+
+.run-note {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>

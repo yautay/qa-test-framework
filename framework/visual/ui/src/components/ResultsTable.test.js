@@ -81,4 +81,24 @@ describe("ResultsTable", () => {
     expect(emitted[0][0]).toEqual(row);
     expect(emitted[0][1]).toBe(0);
   });
+
+  it("emits open-metadata when metadata icon is clicked", async () => {
+    const row = makeRow({ actual_path: "actual-meta.png" });
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [row],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {},
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    await wrapper.get(".metadata-icon").trigger("click");
+
+    const emitted = wrapper.emitted("open-metadata");
+    expect(emitted).toBeTruthy();
+    expect(emitted[0][0]).toEqual(row);
+    expect(emitted[0][1]).toBe(0);
+  });
 });

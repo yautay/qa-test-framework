@@ -49,21 +49,55 @@ def apply_parametrization(metafunc: pytest.Metafunc, scenarios_dir: Path) -> Non
 
 
 def execute_visual_scenario(
-        *,
-        request: pytest.FixtureRequest,
-        page,
-        scenario: VisualScenario,
-        viewport: str,
-        runtime_env: RuntimeEnv,
-        visual_output_dir: Path,
-        visual_results: list,
-        pytestconfig: pytest.Config,
+    *,
+    request: pytest.FixtureRequest,
+    page,
+    scenario: VisualScenario,
+    viewport: str,
+    runtime_env: RuntimeEnv,
+    visual_output_dir: Path,
+    visual_results: list,
+    pytestconfig: pytest.Config,
 ) -> None:
     if not runtime_env.base_url and not scenario.target_url.startswith(("http://", "https://")):
         pytest.skip("BASE_URL is not configured for relative visual target_url")
 
     runner = VisualRunner(runtime_env, _repo_root_from(Path(__file__)), visual_output_dir)
     result = runner.run(page, scenario, viewport=viewport)
+    run_metadata = getattr(pytestconfig, "_run_metadata", {})
+    tester = ""
+    run_note = ""
+    if isinstance(run_metadata, dict):
+        tester = str(run_metadata.get("tester", "") or "")
+        run_note = str(run_metadata.get("run_note", "") or "")
+    result.tester = tester
+    result.run_note = run_note
+    thresholds = result.thresholds
+    result.test_metadata = {
+        "run": {
+            "tester": tester,
+            "run_note": run_note,
+        },
+        "scenario": {
+            "id": scenario.scenario_id,
+            "suite_id": scenario.suite_id,
+            "compare_mode": scenario.compare_mode,
+            "viewport": viewport,
+            "browser": result.browser,
+        },
+        "scores": {
+            "pixel_changed_ratio": result.pixel_changed_ratio,
+            "lpips": result.lpips,
+            "dists": result.dists,
+        },
+        "thresholds": {
+            "pixel_max": thresholds.pixel_max if thresholds else None,
+            "lpips_max": thresholds.lpips_max if thresholds else None,
+            "dists_max": thresholds.dists_max if thresholds else None,
+        },
+        "verdict": result.status,
+        "message": result.message,
+    }
 
     visual_results.append(result)
     request.node._artifacts_payload = {
@@ -75,9 +109,9 @@ def execute_visual_scenario(
     request.node._visual_payload = {
         "threshold_scope": "scenario+viewport+browser",
         "thresholds_used": {
-            "pixel_max": result.thresholds.pixel_max,
-            "lpips_max": result.thresholds.lpips_max,
-            "dists_max": result.thresholds.dists_max,
+            "pixel_max": thresholds.pixel_max if thresholds else None,
+            "lpips_max": thresholds.lpips_max if thresholds else None,
+            "dists_max": thresholds.dists_max if thresholds else None,
         },
         "scores": {
             "pixel_changed_ratio": result.pixel_changed_ratio,

@@ -7,6 +7,7 @@ function buildContext(overrides = {}) {
   return {
     prompt: { active: false, type: null },
     noteEditor: { active: false, rowKey: "", text: "", hasExisting: false },
+    metadataPanel: { active: false, payload: {} },
     viewer: {
       modalRow: {
         scenario_id: "scenario-1",
@@ -34,6 +35,8 @@ function buildContext(overrides = {}) {
     sanitizeNoteText: ReportPage.methods.sanitizeNoteText,
     normalizeNoteDraft: ReportPage.methods.normalizeNoteDraft,
     persistTags: vi.fn(),
+    buildMetadataPayload: ReportPage.methods.buildMetadataPayload,
+    closeMetadataPanel: ReportPage.methods.closeMetadataPanel,
     cancelNoteEditor: ReportPage.methods.cancelNoteEditor,
     deactivateSuperZoom: vi.fn(),
     cancelPrompt: vi.fn(),
@@ -119,5 +122,26 @@ describe("ReportPage note editor", () => {
 
     expect(ctx.navigate).not.toHaveBeenCalled();
     expect(ctx.openNoteEditor).not.toHaveBeenCalled();
+  });
+});
+
+describe("ReportPage metadata panel", () => {
+  it("opens metadata panel from table row", () => {
+    const ctx = buildContext({ runId: "run-1" });
+    const row = {
+      scenario_id: "scenario-1",
+      status: "failed",
+      message: "boom",
+      tester: "jan.k",
+      run_note: "manual",
+      test_metadata: { extra: { flag: true } },
+    };
+
+    ReportPage.methods.openMetadataFromTable.call(ctx, row, 2);
+
+    expect(ctx.selectedIndex).toBe(2);
+    expect(ctx.metadataPanel.active).toBe(true);
+    expect(ctx.metadataPanel.payload.run.run_id).toBe("run-1");
+    expect(ctx.metadataPanel.payload.run.tester).toBe("jan.k");
   });
 });

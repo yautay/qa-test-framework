@@ -21,3 +21,7 @@ phone_for_production_tests = "123123123"
 
 # Optional direct URL override; if set, this wins over generated values.
 base_url_override = ""
+
+# Optional run metadata defaults (CLI has priority).
+tester = ""
+run_note = ""

@@ -11,6 +11,7 @@
             <th class="small-col">{{ t('listing.dists') }}</th>
             <th>{{ t('listing.message') }}</th>
             <th>{{ t('listing.artifacts') }}</th>
+            <th class="small-col text-end">{{ t('listing.metadata') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -69,10 +70,21 @@
                 <span v-if="r.heatmap_path" class="artifact-badge artifact-perc">{{ t('artifacts.lpips') }}</span>
               </div>
             </td>
+
+            <td class="small-col text-end">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-secondary metadata-icon"
+                :title="t('metadata.open')"
+                @click.stop="$emit('open-metadata', r, index)"
+              >
+                i
+              </button>
+            </td>
           </tr>
 
           <tr v-if="rows.length===0">
-            <td colspan="8" class="text-center text-muted py-4">{{ t('listing.noResults') }}</td>
+            <td colspan="9" class="text-center text-muted py-4">{{ t('listing.noResults') }}</td>
           </tr>
         </tbody>
       </table>
@@ -108,7 +120,7 @@ export default {
       default: -1,
     },
   },
-  emits: ["show", "select", "open-note"],
+  emits: ["show", "select", "open-note", "open-metadata"],
   methods: {
     t(key) {
       return t(key);
@@ -229,5 +241,14 @@ export default {
 
 .note-badge:hover {
   border-color: var(--filter-highlight-border, var(--primary));
+}
+
+.metadata-icon {
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 999px;
+  padding: 0;
+  font-weight: 700;
+  line-height: 1;
 }
 </style>

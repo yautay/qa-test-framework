@@ -36,12 +36,14 @@ def _sanitize_worker_id(worker_id: str) -> str:
 
 
 def configure_logging(
-        run_log_dir: Path,
-        run_id: str,
-        browser: str,
-        worker_id: str,
-        git_user_name: str | None,
-        git_user_email: str | None,
+    run_log_dir: Path,
+    run_id: str,
+    browser: str,
+    worker_id: str,
+    git_user_name: str | None,
+    git_user_email: str | None,
+    tester: str = "",
+    run_note: str = "",
 ) -> Path:
     """Prepare console + file sinks and attach tracer metadata for Loguru.
 
@@ -61,6 +63,8 @@ def configure_logging(
         "worker_id": worker_id,
         "git_user_name": git_user_name,
         "git_user_email": git_user_email,
+        "tester": str(tester or ""),
+        "run_note": str(run_note or ""),
         "nodeid": "(session)",  # safe default until bind_test_context() is used
     }
     logger.configure(extra=base_extra)
@@ -78,6 +82,8 @@ def configure_logging(
             "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
             "<level>{level: <8}</level> | "
             "{extra[run_id]} | {extra[worker_id]} | {extra[browser]} | "
+            "tester={extra[tester]} | "
+            "note={extra[run_note]} | "
             "{extra[hostname]} | "
             "{extra[nodeid]} | "
             "{message}"

@@ -32,6 +32,7 @@
       @show="show"
       @select="selectRow"
       @open-note="openNoteFromTable"
+      @open-metadata="openMetadataFromTable"
     />
     <div v-if="selectedIndex >= 0" class="keyboard-hint text-muted small mb-2">
       {{ t('navigate.backToHero') }}
@@ -55,6 +56,7 @@
       @prompt-tag="promptTag"
       @prompt-remove-tag="promptRemoveTag"
       @open-note="openNoteEditor"
+      @open-metadata="openMetadataFromModal"
       @note-input="updateNoteDraft"
       @save-note="saveNoteFromEditor"
       @cancel-note="cancelNoteEditor"
@@ -63,6 +65,11 @@
       @reset-cursor="resetCursor"
       @mouse-move="handleMouseMove"
     />
+    <TestMetadataPanel
+      :active="metadataPanel.active"
+      :metadata="metadataPanel.payload"
+      @close="closeMetadataPanel"
+    />
   </div>
 </template>
 
@@ -70,6 +77,7 @@
 import AppHeader from "../components/AppHeader.vue";
 import FiltersPanel from "../components/FiltersPanel.vue";
 import ResultsTable from "../components/ResultsTable.vue";
+import TestMetadataPanel from "../components/TestMetadataPanel.vue";
 import ViewerModal from "../components/ViewerModal.vue";
 import { fmt } from "../lib/format";
 import { t } from "../lib/i18n";
@@ -101,6 +109,7 @@ export default {
     AppHeader,
     FiltersPanel,
     ResultsTable,
+    TestMetadataPanel,
     ViewerModal,
   },
   props: {
@@ -127,6 +136,10 @@ export default {
         rowKey: "",
         text: "",
         hasExisting: false,
+      },
+      metadataPanel: {
+        active: false,
+        payload: {},
       },
       noteMaxLength: NOTE_MAX_LENGTH,
     };
@@ -361,6 +374,46 @@ export default {
       }
       this.show(row, "test", index);
       this.openNoteEditor(row);
+    },
+    buildMetadataPayload(row) {
+      const source = row && typeof row === "object" ? row : {};
+      const candidate = source.test_metadata;
+      const metadata = candidate && typeof candidate === "object" ? { ...candidate } : {};
+      const runSection = metadata.run && typeof metadata.run === "object" ? { ...metadata.run } : {};
+      runSection.run_id = runSection.run_id || this.runId || "";
+      runSection.tester = runSection.tester || source.tester || "";
+      runSection.run_note = runSection.run_note || source.run_note || "";
+      metadata.run = runSection;
+
+      const resultSection = metadata.result && typeof metadata.result === "object" ? { ...metadata.result } : {};
+      resultSection.scenario_id = resultSection.scenario_id || source.scenario_id || "";
+      resultSection.status = resultSection.status || source.status || "";
+      resultSection.message = resultSection.message || source.message || "";
+      resultSection.viewport = resultSection.viewport || source.viewport || "";
+      resultSection.browser = resultSection.browser || source.browser || "";
+      metadata.result = resultSection;
+      return metadata;
+    },
+    openMetadataFromTable(row, index) {
+      if (typeof index === "number") {
+        this.selectedIndex = index;
+      }
+      this.metadataPanel = {
+        active: true,
+        payload: this.buildMetadataPayload(row),
+      };
+    },
+    openMetadataFromModal() {
+      this.metadataPanel = {
+        active: true,
+        payload: this.buildMetadataPayload(this.viewer.modalRow || {}),
+      };
+    },
+    closeMetadataPanel() {
+      this.metadataPanel = {
+        active: false,
+        payload: {},
+      };
     },
     updateNoteDraft(value) {
       if (!this.noteEditor.active) return;
@@ -615,6 +668,7 @@ export default {
       this.deactivateSuperZoom();
       this.cancelPrompt();
       this.cancelNoteEditor();
+      this.closeMetadataPanel();
     },
     handleMouseMove(payload) {
       const bounds = payload?.bounds;

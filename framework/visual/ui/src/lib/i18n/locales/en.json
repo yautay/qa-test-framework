@@ -6,7 +6,9 @@
   },
   "filters": {
     "searchLabel": "Search run id or summary",
-    "searchPlaceholder": "e.g. 20260218"
+    "searchPlaceholder": "e.g. 20260218",
+    "testerLabel": "Tester",
+    "allTesters": "All"
   },
   "empty": {
     "noReports": "No visual reports found.",
@@ -17,7 +19,9 @@
     "failed": "failed",
     "new": "new",
     "tests": "tests",
-    "openReport": "Open report"
+    "openReport": "Open report",
+    "tester": "Tester",
+    "runNote": "Run note"
   },
   "listing": {
     "scenario": "Scenario",
@@ -28,7 +32,16 @@
     "dists": "DISTS",
     "message": "Message",
     "artifacts": "Artifacts",
+    "metadata": "Meta",
     "noResults": "No results for current filters."
+  },
+  "metadata": {
+    "open": "Meta",
+    "title": "Test metadata",
+    "key": "Field",
+    "value": "Value",
+    "empty": "No metadata available for this test.",
+    "close": "Close"
   },
   "filtersPanel": {
     "search": "Search (scenario/message)",

@@ -63,12 +63,13 @@ class ReportingClient:
 
         url = f"{self.base_url.rstrip('/')}{path}"
         headers = self._build_headers(payload, json_content_type=True)
+        context = self._log_context_from_payload(payload)
 
         for attempt in range(self.retries + 1):
             try:
                 response = self.session.post(url, json=payload, headers=headers, timeout=self.timeout_seconds)
             except requests.RequestException:
-                logger.opt(exception=True).warning("reporting api call failed", url=url)
+                logger.opt(exception=True).warning("reporting api call failed", url=url, **context)
                 if attempt < self.retries:
                     self._sleep_backoff(attempt)
                 continue
@@ -76,7 +77,7 @@ class ReportingClient:
             if response.ok:
                 return
 
-            logger.warning("reporting api non-2xx", status=response.status_code, url=url)
+            logger.warning("reporting api non-2xx", status=response.status_code, url=url, **context)
 
             if attempt < self.retries and self._should_retry_status(response.status_code):
                 self._sleep_backoff(attempt)
@@ -104,6 +105,7 @@ class ReportingClient:
             return
 
         headers = self._build_headers(payload, json_content_type=False)
+        context = self._log_context_from_payload(payload)
 
         for attempt in range(self.retries + 1):
             opened_handles: list[object] = []
@@ -127,7 +129,7 @@ class ReportingClient:
                 if response.ok:
                     return
 
-                logger.warning("reporting api non-2xx", status=response.status_code, url=url)
+                logger.warning("reporting api non-2xx", status=response.status_code, url=url, **context)
 
                 if attempt < self.retries and self._should_retry_status(response.status_code):
                     self._sleep_backoff(attempt)
@@ -136,7 +138,7 @@ class ReportingClient:
                 return  # do not retry non-retriable status codes
 
             except requests.RequestException:
-                logger.opt(exception=True).warning("reporting screenshot upload failed", url=url)
+                logger.opt(exception=True).warning("reporting screenshot upload failed", url=url, **context)
                 if attempt < self.retries:
                     self._sleep_backoff(attempt)
                 continue
@@ -161,3 +163,34 @@ class ReportingClient:
 
     def run_finish(self, payload: dict) -> None:
         self._post(self.run_finish_endpoint, payload)
+
+    @staticmethod
+    def _log_context_from_payload(payload: dict) -> dict[str, str]:
+        run_id = str(payload.get("run_id", "") or "")
+        test_id = str(payload.get("test_id", "") or "")
+        event_type = str(payload.get("event_type", "") or "")
+
+        metadata = payload.get("metadata")
+        if not isinstance(metadata, dict):
+            metadata = {}
+
+        tester = str(metadata.get("tester", "") or "")
+        run_note = str(metadata.get("run_note", "") or "")
+
+        if not tester or not run_note:
+            run_context = payload.get("run_context")
+            if isinstance(run_context, dict):
+                run_start = run_context.get("run_start")
+                if isinstance(run_start, dict):
+                    run_meta = run_start.get("metadata")
+                    if isinstance(run_meta, dict):
+                        tester = tester or str(run_meta.get("tester", "") or "")
+                        run_note = run_note or str(run_meta.get("run_note", "") or "")
+
+        return {
+            "run_id": run_id,
+            "test_id": test_id,
+            "event_type": event_type,
+            "tester": tester,
+            "run_note": run_note,
+        }

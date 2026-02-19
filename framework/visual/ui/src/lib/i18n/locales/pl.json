@@ -6,7 +6,9 @@
   },
   "filters": {
     "searchLabel": "Szukaj po ID lub podsumowaniu",
-    "searchPlaceholder": "np. 20260218"
+    "searchPlaceholder": "np. 20260218",
+    "testerLabel": "Tester",
+    "allTesters": "Wszyscy"
   },
   "empty": {
     "noReports": "Nie znaleziono raportów visual.",
@@ -17,7 +19,9 @@
     "failed": "niepowodzenie",
     "new": "nowy",
     "tests": "testów",
-    "openReport": "Otwórz raport"
+    "openReport": "Otwórz raport",
+    "tester": "Tester",
+    "runNote": "Notatka runa"
   },
   "listing": {
     "scenario": "Scenariusz",
@@ -28,7 +32,16 @@
     "dists": "DISTS",
     "message": "Wiadomość",
     "artifacts": "Artefakty",
+    "metadata": "Meta",
     "noResults": "Brak wyników dla filtrów."
+  },
+  "metadata": {
+    "open": "Meta",
+    "title": "Metadane testu",
+    "key": "Pole",
+    "value": "Wartość",
+    "empty": "Brak metadanych dla tego testu.",
+    "close": "Zamknij"
   },
   "filtersPanel": {
     "search": "Szukaj (scenariusz/wiadomość)",

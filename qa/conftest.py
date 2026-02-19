@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import replace
 import getpass
+import json
 import os
 import socket
 import time
@@ -35,6 +36,38 @@ def _get_scenario_description(item: pytest.Item) -> str | None:
 
 def _utc_now() -> str:
     return datetime.now(UTC).isoformat()
+
+
+def _normalize_run_note(raw: object, source: str) -> str:
+    text = str(raw or "").strip()
+    if len(text) > 50:
+        raise pytest.UsageError(f"{source} accepts at most 50 characters")
+    return text
+
+
+def _resolve_run_metadata(config: pytest.Config) -> dict[str, str]:
+    cli_tester = str(config.getoption("--tester") or "").strip()
+    cli_run_note_raw = config.getoption("--run_note")
+    cli_run_note = _normalize_run_note(cli_run_note_raw, "--run_note")
+
+    settings_tester = str(getattr(settings_cli, "tester", "") or "").strip()
+    settings_run_note = _normalize_run_note(getattr(settings_cli, "run_note", ""), "settings_cli.run_note")
+
+    tester = cli_tester if cli_tester else settings_tester
+    run_note = cli_run_note if cli_run_note else settings_run_note
+    return {
+        "tester": tester,
+        "run_note": run_note,
+    }
+
+
+def _write_run_metadata_file(artifacts: RunArtifacts, metadata: dict[str, str]) -> None:
+    payload = {
+        "tester": str(metadata.get("tester", "") or ""),
+        "run_note": str(metadata.get("run_note", "") or ""),
+    }
+    target = artifacts.root / "run-metadata.json"
+    target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def _resolve_run_profile(config: pytest.Config) -> str:
@@ -121,6 +154,7 @@ def pytest_configure(config: pytest.Config) -> None:
     artifacts = build_run_artifacts(str(artifacts_base_dir))
     worker_id = os.getenv("PYTEST_XDIST_WORKER", "master")
     git_metadata = get_git_metadata()
+    run_metadata = _resolve_run_metadata(config)
     configure_logging(
         artifacts.logs / "test_run.log",
         artifacts.run_id,
@@ -128,9 +162,12 @@ def pytest_configure(config: pytest.Config) -> None:
         worker_id,
         git_metadata.user,
         git_metadata.email,
+        run_metadata.get("tester", ""),
+        run_metadata.get("run_note", ""),
     )
 
     config._runtime_env = env
+    config._run_metadata = run_metadata
     config._run_artifacts = artifacts
     config._git_metadata = git_metadata
     config._reporting_client = ReportingClient(
@@ -168,6 +205,7 @@ def pytest_configure(config: pytest.Config) -> None:
             "collectonly",
         )
     )
+    _write_run_metadata_file(artifacts, run_metadata)
 
 
 def pytest_sessionstart(session: pytest.Session) -> None:
@@ -206,8 +244,10 @@ def pytest_sessionstart(session: pytest.Session) -> None:
             "author_name": metadata.user,
             "author_email": metadata.email,
         },
+        "metadata": session.config._run_metadata,
     }
     session.config._run_start_payload = run_start_payload
+    logger.info("reporting_run_start", run_id=artifacts.run_id, **session.config._run_metadata)
     session.config._reporting_client.run_start(run_start_payload)
 
 
@@ -243,9 +283,11 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
             "flaky_count": 0,
             "slow_regression_count": 0,
         },
+        "metadata": session.config._run_metadata,
     }
     session.config._run_finish_payload = run_finish_payload
     if not getattr(session.config, "_reporting_suspended", False):
+        logger.info("reporting_run_finish", run_id=artifacts.run_id, **session.config._run_metadata)
         session.config._reporting_client.run_finish(run_finish_payload)
 
 
@@ -339,6 +381,7 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
             "run_start": item.config._run_start_payload,
             "run_finish": item.config._run_finish_payload,
         },
+        "metadata": item.config._run_metadata,
     }
 
     visual_payload = getattr(item, "_visual_payload", None)
@@ -346,6 +389,13 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
         payload["visual"] = visual_payload
 
     if not getattr(item.config, "_reporting_suspended", False):
+        logger.info(
+            "reporting_test_result",
+            run_id=run_artifacts.run_id,
+            nodeid=item.nodeid,
+            status=status,
+            **item.config._run_metadata,
+        )
         item.config._reporting_client.test_result(payload)
     item.config._test_case_emitted.add(item.nodeid)
     counters = item.config._result_counters

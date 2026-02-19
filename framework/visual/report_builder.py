@@ -78,6 +78,9 @@ def _build_rows(report_dir: Path, results: list[VisualResult]) -> list[dict[str,
                     "lpips_max": getattr(thresholds, "lpips_max", None),
                     "dists_max": getattr(thresholds, "dists_max", None),
                 },
+                "tester": str(getattr(result, "tester", "") or ""),
+                "run_note": str(getattr(result, "run_note", "") or ""),
+                "test_metadata": getattr(result, "test_metadata", None),
             }
         )
     return rows

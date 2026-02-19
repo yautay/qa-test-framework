@@ -107,4 +107,6 @@ def test_list_reports_payload_includes_stats_and_sorted_desc(tmp_path: Path) -> 
     assert payload[0]["total"] == 2
     assert payload[0]["passed"] == 1
     assert payload[0]["new"] == 1
+    assert payload[0]["tester"] == ""
+    assert payload[0]["run_note"] == ""
     assert payload[1]["failed"] == 1

@@ -74,6 +74,10 @@ def test_report_server_endpoints_handle_listing_results_ref_tags_and_baseline_fl
     run_id = "20260218_120000_000001"
     report_dir = repo_root / "artifacts" / run_id / "visual"
     report_dir.mkdir(parents=True)
+    (report_dir.parent / "run-metadata.json").write_text(
+        json.dumps({"tester": "jan.k", "run_note": "manual smoke"}),
+        encoding="utf-8",
+    )
     (report_dir / "results.json").write_text(
         json.dumps(
             {
@@ -119,10 +123,15 @@ def test_report_server_endpoints_handle_listing_results_ref_tags_and_baseline_fl
         assert status == 200
         assert payload["reports"][0]["run_id"] == run_id
         assert payload["reports"][0]["failed"] == 1
+        assert payload["reports"][0]["tester"] == "jan.k"
+        assert payload["reports"][0]["run_note"] == "manual smoke"
 
         status, payload = _http_json(base_url, f"/api/reports/{run_id}/results")
         assert status == 200
         assert payload["results"][0]["scenario_id"] == "scenario-1"
+        assert payload["results"][0]["tester"] == "jan.k"
+        assert payload["results"][0]["run_note"] == "manual smoke"
+        assert payload["results"][0]["test_metadata"]["run"]["run_id"] == run_id
 
         query = urlencode(
             {

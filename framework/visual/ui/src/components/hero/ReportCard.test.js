@@ -15,6 +15,8 @@ describe("ReportCard", () => {
           new: 1,
           updated_at: "2026-02-18 12:00:00",
           summary: "failed=4 passed=7 new=1",
+          tester: "jan.k",
+          run_note: "manual smoke",
         },
       },
     });
@@ -23,6 +25,8 @@ describe("ReportCard", () => {
     expect(wrapper.text()).toContain("12 tests");
     expect(wrapper.text()).toContain("passed 7");
     expect(wrapper.text()).toContain("failed 4");
+    expect(wrapper.text()).toContain("Tester: jan.k");
+    expect(wrapper.text()).toContain("Run note: manual smoke");
     expect(wrapper.find("a.btn").attributes("href")).toBe("/reports/20260218_120000_000001");
   });
 });

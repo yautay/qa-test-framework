@@ -3,6 +3,13 @@ import pytest
 import settings
 
 
+def _validate_run_note(value: str) -> str:
+    text = str(value or "").strip()
+    if len(text) > 50:
+        raise pytest.UsageError("--run_note accepts at most 50 characters")
+    return text
+
+
 def pytest_addoption(parser: pytest.Parser) -> None:
     """
     Register custom command-line options for pytest.
@@ -112,4 +119,17 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         action="store",
         default=None,
         help="Override resolved base url",
+    )
+    parser.addoption(
+        "--tester",
+        action="store",
+        default=None,
+        help="Tester name attached to run/test metadata",
+    )
+    parser.addoption(
+        "--run_note",
+        action="store",
+        default=None,
+        type=_validate_run_note,
+        help="Optional run note (max 50 chars) attached to run/test metadata",
     )

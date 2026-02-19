@@ -60,6 +60,10 @@
               {{ t('note.button') }} (K-N)
             </button>
 
+            <button type="button" class="btn btn-outline-secondary btn-sm" @click="$emit('open-metadata')">
+              {{ t('metadata.open') }}
+            </button>
+
             <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" @click="$emit('close-modal')">{{ t('modal.exit') }}</button>
           </div>
 
@@ -153,6 +157,7 @@ export default {
     "prompt-tag",
     "prompt-remove-tag",
     "open-note",
+    "open-metadata",
     "save-note",
     "cancel-note",
     "delete-note",

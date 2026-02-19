@@ -120,6 +120,22 @@ def _read_results_rows(report_dir: Path) -> list[dict[str, Any]]:
     return [x for x in rows if isinstance(x, dict)]
 
 
+def _read_run_metadata(report_dir: Path) -> dict[str, str]:
+    candidate = report_dir.parent / "run-metadata.json"
+    if not candidate.is_file():
+        return {"tester": "", "run_note": ""}
+    try:
+        data = json.loads(candidate.read_text(encoding="utf-8"))
+    except Exception:
+        return {"tester": "", "run_note": ""}
+    if not isinstance(data, dict):
+        return {"tester": "", "run_note": ""}
+    return {
+        "tester": str(data.get("tester", "") or "").strip(),
+        "run_note": str(data.get("run_note", "") or "").strip(),
+    }
+
+
 def _report_summary(rows: list[dict[str, Any]]) -> dict[str, int]:
     failed = 0
     passed = 0
@@ -144,6 +160,7 @@ def _list_reports_payload(context: ReportServerContext) -> list[dict[str, Any]]:
     reports: list[dict[str, Any]] = []
     for run_id, report_dir in sorted(context.run_dirs.items(), key=lambda item: item[0], reverse=True):
         rows = _read_results_rows(report_dir)
+        run_metadata = _read_run_metadata(report_dir)
         stats = _report_summary(rows)
         try:
             updated_at = int(report_dir.stat().st_mtime)
@@ -160,6 +177,8 @@ def _list_reports_payload(context: ReportServerContext) -> list[dict[str, Any]]:
                 "passed": stats["passed"],
                 "new": stats["new"],
                 "summary": f"failed={stats['failed']} passed={stats['passed']} new={stats['new']}",
+                "tester": run_metadata.get("tester", ""),
+                "run_note": run_metadata.get("run_note", ""),
             }
         )
     return reports
@@ -303,7 +322,28 @@ def _build_handler(context: ReportServerContext):
                 if run_dir is None:
                     self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
                     return True
-                self._send_json(HTTPStatus.OK, {"run_id": run_id, "results": _read_results_rows(run_dir)})
+                rows = _read_results_rows(run_dir)
+                run_metadata = _read_run_metadata(run_dir)
+                tester = run_metadata.get("tester", "")
+                run_note = run_metadata.get("run_note", "")
+                enriched_rows: list[dict[str, Any]] = []
+                for row in rows:
+                    enriched = dict(row)
+                    enriched.setdefault("tester", tester)
+                    enriched.setdefault("run_note", run_note)
+                    row_meta = enriched.get("test_metadata")
+                    if not isinstance(row_meta, dict):
+                        row_meta = {}
+                    run_meta = row_meta.get("run")
+                    if not isinstance(run_meta, dict):
+                        run_meta = {}
+                    run_meta.setdefault("run_id", run_id)
+                    run_meta.setdefault("tester", tester)
+                    run_meta.setdefault("run_note", run_note)
+                    row_meta["run"] = run_meta
+                    enriched["test_metadata"] = row_meta
+                    enriched_rows.append(enriched)
+                self._send_json(HTTPStatus.OK, {"run_id": run_id, "results": enriched_rows})
                 return True
 
             m_ref = re.match(r"^/api/reports/([^/]+)/image/ref$", path)

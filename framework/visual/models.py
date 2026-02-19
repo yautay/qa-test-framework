@@ -412,6 +412,9 @@ class VisualResult:
     dists: float | None = None
 
     thresholds: VisualThresholds | None = None
+    tester: str = ""
+    run_note: str = ""
+    test_metadata: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -436,6 +439,9 @@ class VisualResult:
             }
             if self.thresholds
             else None,
+            "tester": self.tester,
+            "run_note": self.run_note,
+            "test_metadata": self.test_metadata,
         }
 
 

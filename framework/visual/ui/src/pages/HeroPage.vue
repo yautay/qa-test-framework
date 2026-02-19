@@ -2,7 +2,13 @@
   <section class="hero-wrap">
     <AppHeader />
     <HeroHeader :total="filteredReports.length" />
-    <ReportsFilters v-model="query" />
+    <ReportsFilters
+      :query-value="query"
+      :tester-value="selectedTester"
+      :testers="testerOptions"
+      @update:query-value="query = $event"
+      @update:tester-value="selectedTester = $event"
+    />
     <ReportsList :reports="filteredReports" />
   </section>
 </template>
@@ -25,17 +31,35 @@ export default {
   data() {
     return {
       query: "",
+      selectedTester: "",
       reports: [],
     };
   },
   computed: {
+    testerOptions() {
+      const unique = new Set();
+      for (const item of this.reports) {
+        const tester = String(item?.tester || "").trim();
+        if (tester) unique.add(tester);
+      }
+      return Array.from(unique).sort((a, b) => a.localeCompare(b));
+    },
     filteredReports() {
       const q = String(this.query || "").trim().toLowerCase();
-      if (!q) return this.reports;
+      const testerFilter = String(this.selectedTester || "").trim();
+      if (!q && !testerFilter) return this.reports;
       return this.reports.filter((item) => {
+        const tester = String(item?.tester || "").trim();
+        if (testerFilter && tester !== testerFilter) {
+          return false;
+        }
+        if (!q) {
+          return true;
+        }
         const id = String(item?.run_id || "").toLowerCase();
         const summary = String(item?.summary || "").toLowerCase();
-        return id.includes(q) || summary.includes(q);
+        const note = String(item?.run_note || "").toLowerCase();
+        return id.includes(q) || summary.includes(q) || note.includes(q);
       });
     },
   },
