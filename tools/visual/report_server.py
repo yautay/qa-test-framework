@@ -10,6 +10,7 @@ from threading import Lock
 from typing import Any
 from urllib.parse import parse_qs, unquote, urlparse
 import json
+import hashlib
 import mimetypes
 import re
 import sys
@@ -62,6 +63,7 @@ class ReportServerContext:
     reporting_client: ReportingClient | None = None
     reporting_bug_endpoint: str = ""
     reporting_aso_endpoint: str = ""
+    reporting_note_endpoint: str = ""
     bug_pdf_config_path: Path | None = None
     _lock: Any = field(default_factory=Lock)
 
@@ -376,8 +378,11 @@ def _normalize_single_tag_entry(raw: Any) -> dict[str, Any]:
         "note": normalized_note,
         "bug_reported": bool(base.get("bug_reported", False)),
         "aso_reported": bool(base.get("aso_reported", False)),
+        "note_reported": bool(base.get("note_reported", False)),
         "bug_reported_at": str(base.get("bug_reported_at", "") or ""),
         "aso_reported_at": str(base.get("aso_reported_at", "") or ""),
+        "note_reported_at": str(base.get("note_reported_at", "") or ""),
+        "note_reported_hash": str(base.get("note_reported_hash", "") or ""),
     }
 
 
@@ -463,18 +468,23 @@ def _resolve_baseline_image(context: ReportServerContext, report_dir: Path, row:
     return candidate
 
 
+def _note_hash(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
 def _build_reporting_payload(
     run_id: str,
     tag: str,
     row: dict[str, Any],
     tag_entry: dict[str, Any],
+    event_type: str = "visual_report",
 ) -> dict[str, Any]:
     metadata = _as_dict(row.get("test_metadata"))
     run_meta = _as_dict(metadata.get("run"))
     scenario_meta = _as_dict(metadata.get("scenario"))
     note_text = str(_as_dict(tag_entry.get("note")).get("text", "") or "").strip()
     return {
-        "event_type": "visual_report",
+        "event_type": event_type,
         "run_id": run_id,
         "tag": tag,
         "scenario_id": str(row.get("scenario_id", "") or ""),
@@ -920,8 +930,11 @@ def _build_handler(context: ReportServerContext):
                 bug_rows: list[tuple[dict[str, Any], dict[str, Any]]] = []
                 bug_sendable: list[tuple[dict[str, Any], dict[str, Any]]] = []
                 aso_sendable: list[tuple[dict[str, Any], dict[str, Any]]] = []
+                note_rows: list[tuple[dict[str, Any], dict[str, Any]]] = []
+                note_sendable: list[tuple[dict[str, Any], dict[str, Any], str]] = []
                 skipped_bug_locked = 0
                 skipped_aso_locked = 0
+                skipped_note_locked = 0
 
                 for row in rows:
                     key = _row_tag_key(row)
@@ -940,6 +953,15 @@ def _build_handler(context: ReportServerContext):
                             aso_sendable.append((row, tag_entry))
                         else:
                             skipped_aso_locked += 1
+                    note_text = str(_as_dict(tag_entry.get("note")).get("text", "") or "").strip()
+                    if note_text:
+                        note_rows.append((row, tag_entry))
+                        current_hash = _note_hash(note_text)
+                        previous_hash = str(tag_entry.get("note_reported_hash", "") or "").strip()
+                        if not previous_hash or previous_hash != current_hash:
+                            note_sendable.append((row, tag_entry, current_hash))
+                        else:
+                            skipped_note_locked += 1
 
                 logger.info(
                     "report_send_start",
@@ -947,17 +969,54 @@ def _build_handler(context: ReportServerContext):
                     bug_total=len(bug_rows),
                     bug_sendable=len(bug_sendable),
                     aso_sendable=len(aso_sendable),
+                    note_sendable=len(note_sendable),
                 )
 
                 bug_ok = 0
                 bug_failed = 0
                 aso_ok = 0
                 aso_failed = 0
+                note_ok = 0
+                note_failed = 0
                 sent_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
                 has_client = context.reporting_client is not None
                 if not has_client:
                     logger.warning("reporting client unavailable", run_id=run_id)
+
+                for row, tag_entry, note_hash in note_sendable:
+                    if not context.reporting_note_endpoint:
+                        logger.warning("report_send_note_missing_endpoint", run_id=run_id)
+                        note_failed += 1
+                        continue
+                    req = _build_reporting_payload(
+                        run_id,
+                        "NOTE",
+                        row,
+                        tag_entry,
+                        event_type="visual_report_note",
+                    )
+                    accepted = bool(
+                        context.reporting_client
+                        and context.reporting_client.send_payload(context.reporting_note_endpoint, req)
+                    )
+                    if accepted:
+                        tag_entry["note_reported"] = True
+                        tag_entry["note_reported_at"] = sent_at
+                        tag_entry["note_reported_hash"] = note_hash
+                        logger.info(
+                            "report_send_note_success",
+                            run_id=run_id,
+                            scenario_id=str(row.get("scenario_id", "") or ""),
+                        )
+                        note_ok += 1
+                    else:
+                        logger.warning(
+                            "report_send_note_failed",
+                            run_id=run_id,
+                            scenario_id=str(row.get("scenario_id", "") or ""),
+                        )
+                        note_failed += 1
 
                 for row, tag_entry in aso_sendable:
                     if not context.reporting_aso_endpoint:
@@ -1035,6 +1094,12 @@ def _build_handler(context: ReportServerContext):
                         "failed": aso_failed,
                         "skipped_locked": skipped_aso_locked,
                     },
+                    "note": {
+                        "total": len(note_rows),
+                        "sent": note_ok,
+                        "failed": note_failed,
+                        "skipped_locked": skipped_note_locked,
+                    },
                     "pdf": {
                         "path": pdf_path,
                         "pages": pdf_pages,
@@ -1048,6 +1113,8 @@ def _build_handler(context: ReportServerContext):
                     bug_failed=bug_failed,
                     aso_sent=aso_ok,
                     aso_failed=aso_failed,
+                    note_sent=note_ok,
+                    note_failed=note_failed,
                     pdf_pages=pdf_pages,
                 )
                 self._send_json(
@@ -1065,6 +1132,12 @@ def _build_handler(context: ReportServerContext):
                             "sent": aso_ok,
                             "failed": aso_failed,
                             "skipped_locked": skipped_aso_locked,
+                        },
+                        "note": {
+                            "total": len(note_rows),
+                            "sent": note_ok,
+                            "failed": note_failed,
+                            "skipped_locked": skipped_note_locked,
                         },
                         "pdf": {
                             "path": pdf_path,
@@ -1211,6 +1284,7 @@ def main() -> int:
         reporting_client=reporting_client,
         reporting_bug_endpoint=str(env.reporting_api_bug_endpoint or "").strip(),
         reporting_aso_endpoint=str(env.reporting_api_aso_endpoint or "").strip(),
+        reporting_note_endpoint=str(env.reporting_api_note_endpoint or "").strip(),
         bug_pdf_config_path=(
             REPO_ROOT / "framework" / "visual" / "ui" / "src" / "config" / "bug_report_pdf_config.json"
         ),

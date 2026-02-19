@@ -349,6 +349,7 @@ def test_report_send_endpoint_locks_per_test_per_tag_and_skips_resend(tmp_path: 
         reporting_client=cast(Any, fake_client),
         reporting_bug_endpoint="/bug",
         reporting_aso_endpoint="/aso",
+        reporting_note_endpoint="/note",
     )
     server, base_url, thread = _start_server(context)
     try:
@@ -356,7 +357,8 @@ def test_report_send_endpoint_locks_per_test_per_tag_and_skips_resend(tmp_path: 
         assert status == 200
         assert payload["bug"]["sent"] == 2
         assert payload["aso"]["sent"] == 1
-        assert len(fake_client.calls) == 3
+        assert payload["note"]["sent"] == 1
+        assert len(fake_client.calls) == 4
 
         status, payload = _http_json(base_url, f"/api/reports/{run_id}/report/send", method="POST", body={})
         assert status == 200
@@ -364,7 +366,18 @@ def test_report_send_endpoint_locks_per_test_per_tag_and_skips_resend(tmp_path: 
         assert payload["bug"]["skipped_locked"] == 2
         assert payload["aso"]["sent"] == 0
         assert payload["aso"]["skipped_locked"] == 1
-        assert len(fake_client.calls) == 3
+        assert payload["note"]["sent"] == 0
+        assert payload["note"]["skipped_locked"] == 1
+        assert len(fake_client.calls) == 4
+
+        tag_snapshot = json.loads((report_dir / "vrt-tags.json").read_text(encoding="utf-8"))
+        tag_snapshot[key_1]["note"]["text"] = "n1 updated"
+        (report_dir / "vrt-tags.json").write_text(json.dumps(tag_snapshot), encoding="utf-8")
+
+        status, payload = _http_json(base_url, f"/api/reports/{run_id}/report/send", method="POST", body={})
+        assert status == 200
+        assert payload["note"]["sent"] == 1
+        assert len(fake_client.calls) == 5
     finally:
         server.shutdown()
         server.server_close()

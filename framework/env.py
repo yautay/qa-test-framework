@@ -64,6 +64,7 @@ class RuntimeEnv:
     reporting_api_run_finish_endpoint: str
     reporting_api_bug_endpoint: str
     reporting_api_aso_endpoint: str
+    reporting_api_note_endpoint: str
     reporting_api_timeout_seconds: int
     reporting_api_retries: int
     artifacts_dir: str
@@ -209,6 +210,10 @@ def load_env() -> RuntimeEnv:
         reporting_api_aso_endpoint=env_str(
             "REPORTING_API_ASO_ENDPOINT",
             settings.reporting_api_aso_endpoint,
+        ),
+        reporting_api_note_endpoint=env_str(
+            "REPORTING_API_NOTE_ENDPOINT",
+            settings.reporting_api_note_endpoint,
         ),
         reporting_api_timeout_seconds=env_int(
             "REPORTING_API_TIMEOUT_SECONDS",

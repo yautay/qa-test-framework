@@ -144,6 +144,7 @@ export default {
       tagSyncMessage: "",
       baselineMessage: "",
       reportMessage: "",
+      reportSendInFlight: false,
       loadError: "",
       selectedIndex: -1,
       noteEditor: {
@@ -214,7 +215,29 @@ export default {
         const tags = this.viewer.tagLog?.[key] || {};
         const canSendBug = !!tags.bug && !tags.bug_reported;
         const canSendAso = !!tags.aso && !tags.aso_reported;
-        return count + (canSendBug || canSendAso ? 1 : 0);
+        const noteText = tags.note?.text || "";
+        const noteUpdated = tags.note?.updatedAt || "";
+        const noteReportedAt = tags.note_reported_at || "";
+        const noteHasText = typeof noteText === "string" && noteText.trim() !== "";
+        let canSendNote = false;
+        if (noteHasText) {
+          if (!tags.note_reported) {
+            canSendNote = true;
+          } else if (!noteReportedAt) {
+            canSendNote = true;
+          } else if (!noteUpdated) {
+            canSendNote = true;
+          } else {
+            const updatedMs = Date.parse(noteUpdated);
+            const reportedMs = Date.parse(noteReportedAt);
+            if (!Number.isNaN(updatedMs) && !Number.isNaN(reportedMs)) {
+              canSendNote = updatedMs > reportedMs;
+            } else {
+              canSendNote = true;
+            }
+          }
+        }
+        return count + (canSendBug || canSendAso || canSendNote ? 1 : 0);
       }, 0);
     },
   },
@@ -274,11 +297,20 @@ export default {
         if (!Object.prototype.hasOwnProperty.call(existing, "aso_reported")) {
           existing.aso_reported = false;
         }
+        if (!Object.prototype.hasOwnProperty.call(existing, "note_reported")) {
+          existing.note_reported = false;
+        }
         if (!Object.prototype.hasOwnProperty.call(existing, "bug_reported_at")) {
           existing.bug_reported_at = "";
         }
         if (!Object.prototype.hasOwnProperty.call(existing, "aso_reported_at")) {
           existing.aso_reported_at = "";
+        }
+        if (!Object.prototype.hasOwnProperty.call(existing, "note_reported_at")) {
+          existing.note_reported_at = "";
+        }
+        if (!Object.prototype.hasOwnProperty.call(existing, "note_reported_hash")) {
+          existing.note_reported_hash = "";
         }
         return { key, entry: existing };
       }
@@ -289,8 +321,11 @@ export default {
         note: null,
         bug_reported: false,
         aso_reported: false,
+        note_reported: false,
         bug_reported_at: "",
         aso_reported_at: "",
+        note_reported_at: "",
+        note_reported_hash: "",
       };
       return { key, entry: this.viewer.tagLog[key] };
     },
@@ -371,14 +406,19 @@ export default {
         this.reportMessage = "Missing run id, unable to send report";
         return;
       }
+      if (this.reportSendInFlight) {
+        return;
+      }
       if (this.reportCandidatesCount === 0) {
-        this.reportMessage = "No new BUG/ASO tags to send";
+        this.reportMessage = "No new BUG/ASO/NOTE tags to send";
         return;
       }
       this.prompt = { active: true, type: "send-report" };
     },
     async executeSendReport() {
       if (!this.runId) return;
+      if (this.reportSendInFlight) return;
+      this.reportSendInFlight = true;
       this.reportMessage = "Sending report...";
       const payload = {
         tag_snapshot: this.viewer.tagLog,
@@ -404,15 +444,26 @@ export default {
         }
         const bug = response?.bug || {};
         const aso = response?.aso || {};
+        const note = response?.note || {};
         const pdf = response?.pdf || {};
         const pdfInfo = Number(pdf.pages || 0) > 0 ? `, pdf_pages=${Number(pdf.pages || 0)}` : "";
-        this.reportMessage = `Report sent: bug sent=${Number(bug.sent || 0)} failed=${Number(bug.failed || 0)} skipped=${Number(bug.skipped_locked || 0)}, aso sent=${Number(aso.sent || 0)} failed=${Number(aso.failed || 0)} skipped=${Number(aso.skipped_locked || 0)}${pdfInfo}`;
+        const hasNote = typeof note === "object" && note !== null && Object.keys(note).length > 0;
+        const noteInfo = hasNote
+          ? `, note sent=${Number(note.sent || 0)} failed=${Number(note.failed || 0)} skipped=${Number(note.skipped_locked || 0)}`
+          : "";
+        this.reportMessage = `Report sent: bug sent=${Number(bug.sent || 0)} failed=${Number(bug.failed || 0)} skipped=${Number(bug.skipped_locked || 0)}, aso sent=${Number(aso.sent || 0)} failed=${Number(aso.failed || 0)} skipped=${Number(aso.skipped_locked || 0)}${noteInfo}${pdfInfo}`;
         if (Number(pdf.pages || 0) > 0) {
           this.downloadBugPdf();
         }
         this.persistTags();
       } catch (error) {
+        if (error?.isNoResponse || error?.code === "NO_RESPONSE" || error?.name === "AbortError") {
+          this.reportMessage = "";
+          return;
+        }
         this.reportMessage = `RAPORT failed: ${error?.message || "unknown error"}`;
+      } finally {
+        this.reportSendInFlight = false;
       }
     },
     downloadBugPdf() {

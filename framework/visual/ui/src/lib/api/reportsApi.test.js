@@ -79,12 +79,14 @@ describe("reportsApi", () => {
     vi.stubGlobal("fetch", vi.fn(async () => response({ accepted: true, bug: { sent: 1 } })));
 
     const payload = await sendRunReport("run 1", { tag_snapshot: { a: { bug: true } } });
+    const SignalCtor = globalThis.AbortSignal || Object;
 
     expect(payload.accepted).toBe(true);
     expect(fetch).toHaveBeenCalledWith("/api/reports/run%201/report/send", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ tag_snapshot: { a: { bug: true } } }),
+      signal: expect.any(SignalCtor),
     });
   });
 });

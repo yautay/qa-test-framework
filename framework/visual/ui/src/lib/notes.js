@@ -42,8 +42,11 @@ export function normalizeTagLogSnapshot(snapshot) {
       note: normalizeNote(tags.note),
       bug_reported: !!tags.bug_reported,
       aso_reported: !!tags.aso_reported,
+      note_reported: !!tags.note_reported,
       bug_reported_at: typeof tags.bug_reported_at === "string" ? tags.bug_reported_at : "",
       aso_reported_at: typeof tags.aso_reported_at === "string" ? tags.aso_reported_at : "",
+      note_reported_at: typeof tags.note_reported_at === "string" ? tags.note_reported_at : "",
+      note_reported_hash: typeof tags.note_reported_hash === "string" ? tags.note_reported_hash : "",
     };
   }
   return normalized;

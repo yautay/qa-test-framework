@@ -74,5 +74,6 @@ reporting_api_test_result_endpoint = "/test-run/test-result"
 reporting_api_run_finish_endpoint = "/test-run/finish"
 reporting_api_bug_endpoint = "/test-run/bug-report"
 reporting_api_aso_endpoint = "/test-run/aso-report"
+reporting_api_note_endpoint = "/test-run/note"
 reporting_api_timeout_seconds = 5
 reporting_api_retries = 2
