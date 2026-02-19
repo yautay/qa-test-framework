@@ -54,4 +54,31 @@ describe("ResultsTable", () => {
     expect(rows[0].text()).toContain("failed");
     expect(rows[0].text()).not.toContain("passed");
   });
+
+  it("emits open-note when note badge is clicked", async () => {
+    const row = makeRow({ actual_path: "actual-note.png" });
+    const key = rowKey(row);
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [row],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {
+          [key]: {
+            note: {
+              text: "Keep this result",
+            },
+          },
+        },
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    await wrapper.get(".note-badge").trigger("click");
+
+    const emitted = wrapper.emitted("open-note");
+    expect(emitted).toBeTruthy();
+    expect(emitted[0][0]).toEqual(row);
+    expect(emitted[0][1]).toBe(0);
+  });
 });

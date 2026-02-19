@@ -34,7 +34,10 @@
     "search": "Szukaj (scenariusz/wiadomość)",
     "searchPlaceholder": "np. 20260218",
     "status": "Status",
+    "statusWithNote": "z notatką",
     "mode": "Tryb",
+    "viewport": "Viewport",
+    "browser": "Przeglądarka",
     "sort": "Sortuj",
     "reset": "Resetuj",
     "all": "Wszystkie"
@@ -56,7 +59,9 @@
     "status": "status",
     "pixel": "pixel",
     "lpips": "lpips",
-    "dists": "dists"
+    "dists": "dists",
+    "tags": "tagi",
+    "note": "notatka"
   },
   "report": {
     "title": "Raport Visual Regression",
@@ -68,7 +73,7 @@
   },
   "modal": {
     "exit": "Wyjście (K-LSHIFT)",
-    "keys": "Klawisze: 1-4 układ, A/D nawigacja, W trzymaj super zoom, S/C/\\ tagi prompt, Shift = wyjście",
+    "keys": "Klawisze: 1-4 układ, A/D nawigacja, W trzymaj super zoom, S/C/\\ tagi prompt, N notatka, Shift = wyjście",
     "slot": "Slot",
     "noImage": "Brak obrazu dla",
     "scoringLabel": "Ocena",
@@ -85,7 +90,17 @@
   "tags": {
     "bug": "BUG",
     "aso": "ASO",
-    "baseline": "BASELINE"
+    "baseline": "BASELINE",
+    "note": "NOTATKA"
+  },
+  "note": {
+    "button": "Notatka",
+    "title": "Notatka do testu",
+    "placeholder": "Opisz kontekst tego przypadku testowego...",
+    "save": "Zapisz",
+    "cancel": "Odrzuć",
+    "delete": "Usuń",
+    "mouseOnly": "Tylko mysz: zapis/odrzucenie/usunięcie działa wyłącznie po kliknięciu."
   },
   "artifacts": {
     "ref": "ref",

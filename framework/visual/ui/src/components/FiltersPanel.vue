@@ -19,6 +19,7 @@
             <option value="passed">{{ t('status.passed') }}</option>
             <option value="failed">{{ t('status.failed') }}</option>
             <option value="skipped">{{ t('status.skipped') }}</option>
+            <option value="with_note">{{ t('filtersPanel.statusWithNote') }}</option>
           </select>
         </div>
 
@@ -47,6 +48,7 @@
             <option value="lpips">{{ t('sort.lpips') }}</option>
             <option value="dists">{{ t('sort.dists') }}</option>
             <option value="tags">{{ t('sort.tags') }}</option>
+            <option value="note">{{ t('sort.note') }}</option>
           </select>
         </div>
 

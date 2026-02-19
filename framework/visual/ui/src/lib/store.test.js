@@ -284,6 +284,42 @@ describe("store", () => {
       expect(result).toHaveLength(1);
       expect(result[0].scenario_id).toBe("s2");
     });
+
+    it("filters by rows with note", () => {
+      const store = buildStore([
+        { scenario_id: "s1", status: "failed", actual_path: "a.png" },
+        { scenario_id: "s2", status: "failed", actual_path: "b.png" },
+      ]);
+      store.status = "with_note";
+
+      const tagLog = {
+        "s2::b.png::::": { note: { text: "Needs review" } },
+      };
+
+      const result = filteredSorted(store, tagLog);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].scenario_id).toBe("s2");
+    });
+
+    it("sorts by note presence first", () => {
+      const store = buildStore([
+        { scenario_id: "s3", status: "failed", actual_path: "c.png" },
+        { scenario_id: "s1", status: "failed", actual_path: "a.png" },
+        { scenario_id: "s2", status: "failed", actual_path: "b.png" },
+      ]);
+      store.sortKey = "note";
+
+      const tagLog = {
+        "s2::b.png::::": { note: { text: "Documented" } },
+      };
+
+      const result = filteredSorted(store, tagLog);
+
+      expect(result[0].scenario_id).toBe("s2");
+      expect(result[1].scenario_id).toBe("s1");
+      expect(result[2].scenario_id).toBe("s3");
+    });
   });
 
   describe("resetFilters", () => {

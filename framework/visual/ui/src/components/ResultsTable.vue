@@ -49,6 +49,14 @@
                 <span v-if="rowHasTag(r, 'bug')" class="badge bg-danger">{{ t('tags.bug') }}</span>
                 <span v-if="rowHasTag(r, 'aso')" class="badge bg-warning text-dark">{{ t('tags.aso') }}</span>
                 <span v-if="rowHasTag(r, 'baseline')" class="badge bg-success">{{ t('tags.baseline') }}</span>
+                <button
+                  v-if="rowHasNote(r)"
+                  type="button"
+                  class="badge note-badge"
+                  @click.stop="$emit('open-note', r, index)"
+                >
+                  {{ t('tags.note') }}
+                </button>
               </div>
               <div>{{ r.message || '' }}</div>
             </td>
@@ -100,7 +108,7 @@ export default {
       default: -1,
     },
   },
-  emits: ["show", "select"],
+  emits: ["show", "select", "open-note"],
   methods: {
     t(key) {
       return t(key);
@@ -116,6 +124,11 @@ export default {
       const key = this.tagKeyForRow(row);
       const tags = this.tagLog?.[key];
       return !!(tags && tags[tag]);
+    },
+    rowHasNote(row) {
+      const key = this.tagKeyForRow(row);
+      const noteText = this.tagLog?.[key]?.note?.text;
+      return typeof noteText === "string" && !!noteText.trim();
     },
     rowKey(row, index) {
       const key = this.tagKeyForRow(row);
@@ -205,5 +218,16 @@ export default {
 
 .table-active {
   background-color: var(--body-bg) !important;
+}
+
+.note-badge {
+  border: 1px solid var(--primary);
+  background: var(--filter-highlight-bg, rgba(13, 110, 253, 0.12));
+  color: var(--body-color);
+  cursor: pointer;
+}
+
+.note-badge:hover {
+  border-color: var(--filter-highlight-border, var(--primary));
 }
 </style>

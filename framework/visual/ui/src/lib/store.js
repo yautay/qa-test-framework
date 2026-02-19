@@ -68,11 +68,21 @@ function getTagPriority(row, tagLog) {
   return 3;
 }
 
+function hasRowNote(row, tagLog) {
+  const key = getRowTagKey(row);
+  const text = tagLog?.[key]?.note?.text;
+  return typeof text === "string" && !!text.trim();
+}
+
 export function filteredSorted(store, tagLog = {}) {
   const q = store.q.trim().toLowerCase();
   let out = store.rows;
 
-  if (store.status) out = out.filter(r => r.status === store.status);
+  if (store.status === "with_note") {
+    out = out.filter(r => hasRowNote(r, tagLog));
+  } else if (store.status) {
+    out = out.filter(r => r.status === store.status);
+  }
   if (store.viewport) out = out.filter(r => r.viewport === store.viewport);
   if (store.browser) out = out.filter(r => r.browser === store.browser);
 
@@ -90,6 +100,18 @@ export function filteredSorted(store, tagLog = {}) {
       const aPriority = getTagPriority(a, tagLog);
       const bPriority = getTagPriority(b, tagLog);
       if (aPriority !== bPriority) return aPriority - bPriority;
+      return String(a.scenario_id || "").localeCompare(String(b.scenario_id || ""));
+    });
+    return out;
+  }
+
+  if (key === "note") {
+    out = [...out].sort((a, b) => {
+      const aHasNote = hasRowNote(a, tagLog);
+      const bHasNote = hasRowNote(b, tagLog);
+      if (aHasNote !== bHasNote) {
+        return aHasNote ? -1 : 1;
+      }
       return String(a.scenario_id || "").localeCompare(String(b.scenario_id || ""));
     });
     return out;

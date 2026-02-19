@@ -31,6 +31,7 @@
       :selected-index="selectedIndex"
       @show="show"
       @select="selectRow"
+      @open-note="openNoteFromTable"
     />
     <div v-if="selectedIndex >= 0" class="keyboard-hint text-muted small mb-2">
       {{ t('navigate.backToHero') }}
@@ -41,6 +42,8 @@
       :presentation-style="presentationStyle"
       :image-style="imageStyle"
       :prompt="prompt"
+      :note-editor="noteEditor"
+      :note-max-length="noteMaxLength"
       :key-held="keyHeld"
       :super-zoom-active="superZoomActive"
       :slot-image="slotImage"
@@ -51,6 +54,11 @@
       @super-zoom-up="handleSuperZoomPointerUp"
       @prompt-tag="promptTag"
       @prompt-remove-tag="promptRemoveTag"
+      @open-note="openNoteEditor"
+      @note-input="updateNoteDraft"
+      @save-note="saveNoteFromEditor"
+      @cancel-note="cancelNoteEditor"
+      @delete-note="deleteNoteFromEditor"
       @close-modal="closeModal"
       @reset-cursor="resetCursor"
       @mouse-move="handleMouseMove"
@@ -84,6 +92,9 @@ import {
   getRowTagKey as buildRowTagKey,
 } from "../lib/viewer";
 
+const NOTE_MAX_LENGTH = 2000;
+const NOTE_CONTROL_CHAR_REGEX = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
+
 export default {
   name: "ReportPage",
   components: {
@@ -111,6 +122,13 @@ export default {
       baselineMessage: "",
       loadError: "",
       selectedIndex: -1,
+      noteEditor: {
+        active: false,
+        rowKey: "",
+        text: "",
+        hasExisting: false,
+      },
+      noteMaxLength: NOTE_MAX_LENGTH,
     };
   },
   computed: {
@@ -184,16 +202,69 @@ export default {
       const normalized = {};
       for (const [key, tags] of Object.entries(snapshot)) {
         if (!tags || typeof tags !== "object") continue;
+        const note = this.normalizeNote(tags.note);
         normalized[key] = {
           bug: !!tags.bug,
           aso: !!tags.aso,
           baseline: !!tags.baseline,
+          note,
         };
       }
       return normalized;
     },
+    normalizeNote(note) {
+      if (!note || typeof note !== "object") return null;
+      const text = this.sanitizeNoteText(note.text);
+      if (!text) return null;
+      const updatedAt = typeof note.updatedAt === "string" ? note.updatedAt : "";
+      return {
+        text,
+        updatedAt,
+      };
+    },
+    sanitizeNoteText(raw) {
+      if (typeof raw !== "string") return "";
+      return raw
+        .replace(/\r\n?/g, "\n")
+        .replace(NOTE_CONTROL_CHAR_REGEX, "")
+        .trim()
+        .slice(0, NOTE_MAX_LENGTH);
+    },
+    normalizeNoteDraft(raw) {
+      if (typeof raw !== "string") return "";
+      return raw
+        .replace(/\r\n?/g, "\n")
+        .replace(NOTE_CONTROL_CHAR_REGEX, "")
+        .slice(0, NOTE_MAX_LENGTH);
+    },
+    noteForRow(row) {
+      const key = this.getRowTagKey(row);
+      return this.viewer.tagLog?.[key]?.note || null;
+    },
+    rowHasNote(row) {
+      const note = this.noteForRow(row);
+      return !!(note && typeof note.text === "string" && note.text.trim());
+    },
+    ensureTagEntry(row) {
+      const key = this.getRowTagKey(row);
+      const existing = this.viewer.tagLog?.[key];
+      if (existing) {
+        if (!Object.prototype.hasOwnProperty.call(existing, "note")) {
+          existing.note = null;
+        }
+        return { key, entry: existing };
+      }
+      this.viewer.tagLog[key] = {
+        bug: false,
+        aso: false,
+        baseline: false,
+        note: null,
+      };
+      return { key, entry: this.viewer.tagLog[key] };
+    },
     async loadTags() {
-      const snapshot = await loadTagSnapshot();
+      if (!this.runId) return;
+      const snapshot = await loadTagSnapshot(this.runId);
       if (!snapshot || typeof snapshot !== "object") return;
       this.viewer.tagLog = this.normalizeTagLog(snapshot);
     },
@@ -201,11 +272,16 @@ export default {
       this.scheduleTagFileSync();
     },
     scheduleTagFileSync() {
+      if (!this.runId) {
+        this.tagSyncMessage = "missing run id, unable to save tags";
+        return;
+      }
       if (this.tagSyncTimer) {
         window.clearTimeout(this.tagSyncTimer);
       }
+      const runId = this.runId;
       this.tagSyncTimer = window.setTimeout(async () => {
-        const synced = await saveTagSnapshotToFile(this.viewer.tagLog);
+        const synced = await saveTagSnapshotToFile(this.viewer.tagLog, runId);
         this.tagSyncMessage = synced ? "tags saved on server" : "unable to save tags on server";
       }, 250);
     },
@@ -267,6 +343,61 @@ export default {
       openViewer(this.viewer, row, normalizedMode, index, { runId: this.runId });
       ensureModal(this.viewer, "vrtModal").show();
     },
+    openNoteEditor(row = this.viewer.modalRow) {
+      if (!row) return;
+      if (this.prompt.active) return;
+      const key = this.getRowTagKey(row);
+      const note = this.noteForRow(row);
+      this.noteEditor = {
+        active: true,
+        rowKey: key,
+        text: note?.text || "",
+        hasExisting: !!(note && note.text),
+      };
+    },
+    openNoteFromTable(row, index) {
+      if (typeof index === "number") {
+        this.selectedIndex = index;
+      }
+      this.show(row, "test", index);
+      this.openNoteEditor(row);
+    },
+    updateNoteDraft(value) {
+      if (!this.noteEditor.active) return;
+      const safeText = this.normalizeNoteDraft(value);
+      this.noteEditor = {
+        ...this.noteEditor,
+        text: safeText,
+      };
+    },
+    saveNoteFromEditor() {
+      if (!this.noteEditor.active || !this.viewer.modalRow) return;
+      const safeText = this.sanitizeNoteText(this.noteEditor.text);
+      const { entry } = this.ensureTagEntry(this.viewer.modalRow);
+      entry.note = safeText
+        ? { text: safeText, updatedAt: new Date().toISOString() }
+        : null;
+      this.viewer.tags = { ...this.viewer.tags, note: entry.note };
+      this.persistTags();
+      this.cancelNoteEditor();
+    },
+    deleteNoteFromEditor() {
+      if (!this.noteEditor.active || !this.viewer.modalRow) return;
+      const { entry } = this.ensureTagEntry(this.viewer.modalRow);
+      entry.note = null;
+      this.viewer.tags = { ...this.viewer.tags, note: null };
+      this.persistTags();
+      this.cancelNoteEditor();
+    },
+    cancelNoteEditor() {
+      if (!this.noteEditor.active) return;
+      this.noteEditor = {
+        active: false,
+        rowKey: "",
+        text: "",
+        hasExisting: false,
+      };
+    },
     slotImage(slot) {
       return getModeSrc(this.viewer, slot?.mode) || "";
     },
@@ -309,6 +440,10 @@ export default {
     handleKeydown(evt) {
       const modalEl = document.getElementById("vrtModal");
       const isOpen = modalEl && modalEl.classList.contains("show");
+
+      if (this.noteEditor.active) {
+        return;
+      }
 
       if (!isOpen) {
         this.handleKeydownNonModal(evt);
@@ -353,6 +488,8 @@ export default {
         if (!this.isTagLocked("baseline")) {
           this.promptTag("baseline");
         }
+      } else if (k.toUpperCase() === "N") {
+        this.openNoteEditor();
       } else if (evt.code === "ShiftLeft" || evt.code === "ShiftRight") {
         this.closeModal();
       } else if (k === "Escape") {
@@ -360,6 +497,10 @@ export default {
       }
     },
     handleKeydownNonModal(evt) {
+      if (this.noteEditor.active) {
+        return;
+      }
+
       if (this.prompt.active) {
         if (evt.code === "Space") {
           this.confirmPrompt();
@@ -387,6 +528,9 @@ export default {
       }
     },
     handleKeyup(evt) {
+      if (this.noteEditor.active) {
+        return;
+      }
       const k = evt.key;
       if (k.toUpperCase() === "A") this.keyHeld.a = false;
       if (k.toUpperCase() === "D") this.keyHeld.d = false;
@@ -427,11 +571,13 @@ export default {
     },
     promptTag(type) {
       if (this.prompt.active) return;
+      if (this.noteEditor.active) return;
       if (this.isTagLocked(type)) return;
       this.prompt = { active: true, type };
     },
     promptRemoveTag(type) {
       if (this.prompt.active) return;
+      if (this.noteEditor.active) return;
       this.prompt = { active: true, type: `remove-${type}` };
     },
     confirmPrompt() {
@@ -468,6 +614,7 @@ export default {
       this.viewer.modal?.hide();
       this.deactivateSuperZoom();
       this.cancelPrompt();
+      this.cancelNoteEditor();
     },
     handleMouseMove(payload) {
       const bounds = payload?.bounds;

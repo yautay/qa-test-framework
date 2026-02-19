@@ -39,7 +39,7 @@ export function createViewerState() {
     zoomPreset: DEFAULT_ZOOM,
     cursorX: 50,
     cursorY: 50,
-    tags: { bug: false, aso: false, baseline: false },
+    tags: { bug: false, aso: false, baseline: false, note: null },
     tagLog: {},
     tagLocked: {},
     currentIndex: null,
@@ -135,7 +135,9 @@ export function openViewer(viewer, row, mode, index = null, options = {}) {
   viewer.currentIndex = index;
     if (row) {
       const key = getRowTagKey(row);
-      viewer.tags = viewer.tagLog[key] ? { ...viewer.tagLog[key] } : { bug: false, aso: false, baseline: false };
+      viewer.tags = viewer.tagLog[key]
+        ? { ...viewer.tagLog[key] }
+        : { bug: false, aso: false, baseline: false, note: null };
     viewer.tagLocked = viewer.tagLocked || {};
     const existingLock = viewer.tagLocked[key] || { bug: false, aso: false, baseline: false };
     viewer.tagLocked[key] = {

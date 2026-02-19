@@ -34,7 +34,10 @@
     "search": "Search (scenario/message)",
     "searchPlaceholder": "e.g. 20260218",
     "status": "Status",
+    "statusWithNote": "with note",
     "mode": "Mode",
+    "viewport": "Viewport",
+    "browser": "Browser",
     "sort": "Sort",
     "reset": "Reset",
     "all": "All"
@@ -56,7 +59,9 @@
     "status": "status",
     "pixel": "pixel",
     "lpips": "lpips",
-    "dists": "dists"
+    "dists": "dists",
+    "tags": "tags",
+    "note": "note"
   },
   "report": {
     "title": "Visual Regression Report",
@@ -68,7 +73,7 @@
   },
   "modal": {
     "exit": "Exit (K-LSHIFT)",
-    "keys": "Keys: 1-4 layout, A/D navigate, hold W super zoom, S/C/\\ tags prompt, Shift = exit",
+    "keys": "Keys: 1-4 layout, A/D navigate, hold W super zoom, S/C/\\ tags prompt, N note, Shift = exit",
     "slot": "Slot",
     "noImage": "No image for",
     "scoringLabel": "Scoring",
@@ -85,7 +90,17 @@
   "tags": {
     "bug": "BUG",
     "aso": "ASO",
-    "baseline": "BASELINE"
+    "baseline": "BASELINE",
+    "note": "NOTE"
+  },
+  "note": {
+    "button": "Note",
+    "title": "Test note",
+    "placeholder": "Describe the context of this test case...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "mouseOnly": "Mouse only: save/cancel/delete are available only by clicking."
   },
   "artifacts": {
     "ref": "ref",
