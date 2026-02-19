@@ -1,0 +1,128 @@
+{
+  "hero": {
+    "title": "Панель артефактів",
+    "subtitle": "Виберіть візуальний звіт, щоб переглянути результати тестів.",
+    "availableRuns": "Доступні запуски"
+  },
+  "filters": {
+    "searchLabel": "Пошук за ID запуску або підсумком",
+    "searchPlaceholder": "наприклад, 20260218",
+    "testerLabel": "Тестер",
+    "allTesters": "Усі"
+  },
+  "empty": {
+    "noReports": "Візуальних звітів не знайдено.",
+    "runCommand": "Запустіть `make test-visual` і оновіть сторінку."
+  },
+  "card": {
+    "passed": "пройдено",
+    "failed": "помилка",
+    "new": "новий",
+    "tests": "тестів",
+    "openReport": "Відкрити звіт",
+    "tester": "Тестер",
+    "runNote": "Примітка запуску"
+  },
+  "listing": {
+    "scenario": "Сценарій",
+    "status": "Статус",
+    "mode": "Режим",
+    "pixel": "Pixel",
+    "lpips": "LPIPS",
+    "dists": "DISTS",
+    "message": "Повідомлення",
+    "artifacts": "Артефакти",
+    "metadata": "Мета",
+    "noResults": "Немає результатів для поточних фільтрів."
+  },
+  "metadata": {
+    "open": "Мета",
+    "title": "Метадані тесту",
+    "key": "Поле",
+    "value": "Значення",
+    "empty": "Для цього тесту метадані відсутні.",
+    "close": "Закрити"
+  },
+  "filtersPanel": {
+    "search": "Пошук (сценарій/повідомлення)",
+    "searchPlaceholder": "наприклад, 20260218",
+    "status": "Статус",
+    "statusWithNote": "з приміткою",
+    "mode": "Режим",
+    "viewport": "Viewport",
+    "browser": "Браузер",
+    "sort": "Сортування",
+    "reset": "Скинути",
+    "all": "Усі"
+  },
+  "status": {
+    "passed": "пройдено",
+    "failed": "помилка",
+    "skipped": "пропущено",
+    "error": "помилка",
+    "new": "новий"
+  },
+  "modes": {
+    "pixel": "pixel",
+    "perceptual": "perceptual",
+    "hybrid": "hybrid"
+  },
+  "sort": {
+    "scenario_id": "scenario_id",
+    "status": "status",
+    "pixel": "pixel",
+    "lpips": "lpips",
+    "dists": "dists",
+    "tags": "теги",
+    "note": "примітка"
+  },
+  "report": {
+    "title": "Звіт Visual Regression",
+    "run": "Запуск",
+    "importTags": "Імпорт тегів",
+    "exportTags": "Експорт тегів",
+    "syncTags": "Синхронізація тегів",
+    "sendBaseline": "НАДІСЛАТИ BASELINE"
+  },
+  "modal": {
+    "exit": "Вихід (K-LSHIFT)",
+    "keys": "Клавіші: 1-4 макет, A/D навігація, утримуйте W для super zoom, S/C/\\ теги prompt, N примітка, Shift = вихід",
+    "slot": "Слот",
+    "noImage": "Немає зображення для",
+    "scoringLabel": "Оцінка",
+    "scoringPixel": "pixel diff",
+    "scoringLpips": "lpips",
+    "scoringDists": "dists"
+  },
+  "prompt": {
+    "confirm": "Підтвердження",
+    "areYouSure": "Ви впевнені, що хочете позначити це як",
+    "shiftNo": "Shift = НІ",
+    "spaceYes": "Space = ТАК"
+  },
+  "tags": {
+    "bug": "BUG",
+    "aso": "ASO",
+    "baseline": "BASELINE",
+    "note": "ПРИМІТКА"
+  },
+  "note": {
+    "button": "Примітка",
+    "title": "Примітка до тесту",
+    "placeholder": "Опишіть контекст цього тестового випадку...",
+    "save": "Зберегти",
+    "cancel": "Скасувати",
+    "delete": "Видалити",
+    "mouseOnly": "Лише миша: зберегти/скасувати/видалити доступно тільки кліком."
+  },
+  "artifacts": {
+    "ref": "ref",
+    "test": "test",
+    "diff": "diff",
+    "lpips": "perc",
+    "compare": "порівняти"
+  },
+  "navigate": {
+    "backToHero": "Натисніть Shift, щоб повернутися до панелі"
+  }
+}

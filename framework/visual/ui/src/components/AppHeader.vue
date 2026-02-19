@@ -51,6 +51,15 @@
           >
             🇵🇱
           </button>
+          <button
+            type="button"
+            class="btn"
+            :class="locale === 'uk' ? 'btn-primary' : 'btn-outline-primary'"
+            @click="setLocale('uk')"
+            title="Українська"
+          >
+            🇺🇦
+          </button>
         </div>
       </div>
       <div class="datetime text-muted small mono">

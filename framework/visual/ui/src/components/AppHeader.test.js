@@ -49,9 +49,10 @@ describe("AppHeader", () => {
     await flushPromises();
     
     const buttons = wrapper.findAll(".language-selector button");
-    expect(buttons).toHaveLength(2);
+    expect(buttons).toHaveLength(3);
     expect(buttons[0].text()).toBe("🇬🇧");
     expect(buttons[1].text()).toBe("🇵🇱");
+    expect(buttons[2].text()).toBe("🇺🇦");
   });
 
   it("displays datetime", async () => {

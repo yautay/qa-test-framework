@@ -1,10 +1,11 @@
 import { ref, computed } from "vue";
 import en from "./locales/en.json";
 import pl from "./locales/pl.json";
+import uk from "./locales/uk.json";
 
 const STORAGE_KEY = "visual-report-locale";
 
-const messages = { en, pl };
+const messages = { en, pl, uk };
 
 const savedLocale =
   typeof window !== "undefined"
