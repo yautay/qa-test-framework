@@ -36,4 +36,20 @@ export default {
   background-color: var(--card-bg);
   border-color: var(--border);
 }
+
+.form-control {
+  background-color: var(--card-bg);
+  color: var(--body-color);
+  border-color: var(--border);
+}
+
+.form-control::placeholder {
+  color: var(--text-muted);
+}
+
+.form-control:focus {
+  background-color: var(--card-bg);
+  color: var(--body-color);
+  border-color: var(--primary);
+}
 </style>

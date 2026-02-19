@@ -1,4 +1,4 @@
-import { Modal } from "bootstrap";
+import Modal from "bootstrap/js/dist/modal";
 
 const MODE_META = {
   ref: { label: "REF", srcKey: "modalRefSrc" },

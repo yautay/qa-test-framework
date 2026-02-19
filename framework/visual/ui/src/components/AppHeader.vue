@@ -61,7 +61,7 @@
 </template>
 
 <script>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import { locale, setLocale } from "../lib/i18n";
 import { currentTheme, setTheme, presets } from "../lib/themes";
 
@@ -101,7 +101,7 @@ export default {
       locale,
       setLocale,
       currentTheme,
-      currentPreset: presets[currentTheme],
+      currentPreset: computed(() => presets[currentTheme.value]),
       setTheme,
       presets,
       formattedDateTime,

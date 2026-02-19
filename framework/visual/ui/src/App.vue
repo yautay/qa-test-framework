@@ -50,6 +50,7 @@ export default {
   --border: rgba(0, 0, 0, 0.08);
   --text-muted: #6c757d;
   --hero-gradient: linear-gradient(135deg, #f3f9ff 0%, #e8f5e9 100%);
+  --dropdown-gradient: linear-gradient(135deg, #e8f4fd 0%, #f5f5f5 100%);
   --success-subtle: #d1e7dd;
   --danger-subtle: #f8d7da;
   --warning-subtle: #fff3cd;
@@ -70,6 +71,7 @@ export default {
   --border: rgba(255, 255, 255, 0.08);
   --text-muted: #adb5bd;
   --hero-gradient: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+  --dropdown-gradient: linear-gradient(135deg, #3a3f47 0%, #2d3238 100%);
   --success-subtle: #1f3a2e;
   --danger-subtle: #3d1f20;
   --warning-subtle: #3d3300;
@@ -90,6 +92,7 @@ export default {
   --border: rgba(255, 255, 255, 0.1);
   --text-muted: #6272a4;
   --hero-gradient: linear-gradient(135deg, #44475a 0%, #282a36 100%);
+  --dropdown-gradient: linear-gradient(135deg, #44475a 0%, #383a4e 100%);
   --success-subtle: #1a3b26;
   --danger-subtle: #3b1f20;
   --warning-subtle: #3b3616;
@@ -110,6 +113,7 @@ export default {
   --border: rgba(255, 255, 255, 0.1);
   --text-muted: #a89984;
   --hero-gradient: linear-gradient(135deg, #3c3836 0%, #282828 100%);
+  --dropdown-gradient: linear-gradient(135deg, #45403b 0%, #3c3836 100%);
   --success-subtle: #2d3612;
   --danger-subtle: #3b1210;
   --warning-subtle: #3b3610;
@@ -130,6 +134,7 @@ export default {
   --border: rgba(255, 255, 255, 0.1);
   --text-muted: #5c6370;
   --hero-gradient: linear-gradient(135deg, #21252b 0%, #282c34 100%);
+  --dropdown-gradient: linear-gradient(135deg, #2c313a 0%, #21252b 100%);
   --success-subtle: #243324;
   --danger-subtle: #3b2429;
   --warning-subtle: #3b3624;

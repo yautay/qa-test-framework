@@ -10,6 +10,7 @@ describe("store", () => {
       expect(store.rows).toEqual([]);
       expect(store.q).toBe("");
       expect(store.status).toBe("");
+      expect(store.viewport).toBe("");
       expect(store.sortKey).toBe("scenario_id");
       expect(store.summary).toBe("total=0 passed=0 failed=0 skipped=0");
     });
@@ -119,6 +120,34 @@ describe("store", () => {
       expect(result.every(r => r.status === "failed")).toBe(true);
     });
 
+    it("filters by viewport", () => {
+      const store = buildStore([
+        { scenario_id: "s1", viewport: "fhd" },
+        { scenario_id: "s2", viewport: "2k" },
+        { scenario_id: "s3", viewport: "fhd" },
+      ]);
+      store.viewport = "fhd";
+
+      const result = filteredSorted(store);
+
+      expect(result).toHaveLength(2);
+      expect(result.every(r => r.viewport === "fhd")).toBe(true);
+    });
+
+    it("filters by browser", () => {
+      const store = buildStore([
+        { scenario_id: "s1", browser: "chromium" },
+        { scenario_id: "s2", browser: "firefox" },
+        { scenario_id: "s3", browser: "chromium" },
+      ]);
+      store.browser = "chromium";
+
+      const result = filteredSorted(store);
+
+      expect(result).toHaveLength(2);
+      expect(result.every(r => r.browser === "chromium")).toBe(true);
+    });
+
     it("combines multiple filters", () => {
       const store = buildStore([
         { scenario_id: "s1", status: "passed" },
@@ -127,6 +156,8 @@ describe("store", () => {
       ]);
       store.status = "failed";
       store.q = "s3";
+
+      store.browser = "";
 
       const result = filteredSorted(store);
 
@@ -238,6 +269,21 @@ describe("store", () => {
       expect(result[1].scenario_id).toBe("s3");
       expect(result[2].scenario_id).toBe("s1");
     });
+
+    it("filters by status and browser together", () => {
+      const store = buildStore([
+        { scenario_id: "s1", status: "failed", browser: "firefox" },
+        { scenario_id: "s2", status: "failed", browser: "chromium" },
+        { scenario_id: "s3", status: "passed", browser: "chromium" },
+      ]);
+      store.status = "failed";
+      store.browser = "chromium";
+
+      const result = filteredSorted(store);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].scenario_id).toBe("s2");
+    });
   });
 
   describe("resetFilters", () => {
@@ -245,12 +291,16 @@ describe("store", () => {
       const store = createStore();
       store.q = "search";
       store.status = "failed";
+      store.viewport = "fhd";
+      store.browser = "chromium";
       store.sortKey = "lpips";
 
       resetFilters(store);
 
       expect(store.q).toBe("");
       expect(store.status).toBe("");
+      expect(store.viewport).toBe("");
+      expect(store.browser).toBe("");
       expect(store.sortKey).toBe("scenario_id");
     });
   });

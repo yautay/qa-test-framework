@@ -21,6 +21,8 @@ export function createStore() {
     rows,
     q: "",
     status: "",
+    viewport: "",
+    browser: "",
     sortKey: "scenario_id",
     summary: summaryFor(rows),
   };
@@ -71,6 +73,8 @@ export function filteredSorted(store, tagLog = {}) {
   let out = store.rows;
 
   if (store.status) out = out.filter(r => r.status === store.status);
+  if (store.viewport) out = out.filter(r => r.viewport === store.viewport);
+  if (store.browser) out = out.filter(r => r.browser === store.browser);
 
   if (q) {
     out = out.filter(r =>
@@ -99,5 +103,7 @@ export function filteredSorted(store, tagLog = {}) {
 export function resetFilters(store) {
   store.q = "";
   store.status = "";
+  store.viewport = "";
+  store.browser = "";
   store.sortKey = "scenario_id";
 }

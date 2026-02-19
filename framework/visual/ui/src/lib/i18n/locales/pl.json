@@ -32,6 +32,7 @@
   },
   "filtersPanel": {
     "search": "Szukaj (scenariusz/wiadomość)",
+    "searchPlaceholder": "np. 20260218",
     "status": "Status",
     "mode": "Tryb",
     "sort": "Sortuj",
@@ -69,7 +70,11 @@
     "exit": "Wyjście (K-LSHIFT)",
     "keys": "Klawisze: 1-4 układ, A/D nawigacja, W trzymaj super zoom, S/C/\\ tagi prompt, Shift = wyjście",
     "slot": "Slot",
-    "noImage": "Brak obrazu dla"
+    "noImage": "Brak obrazu dla",
+    "scoringLabel": "Ocena",
+    "scoringPixel": "pixel diff",
+    "scoringLpips": "lpips",
+    "scoringDists": "dists"
   },
   "prompt": {
     "confirm": "Potwierdzenie",

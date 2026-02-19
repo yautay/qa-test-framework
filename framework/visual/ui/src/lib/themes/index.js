@@ -1,30 +1,14 @@
-import { ref, watch } from "vue";
+import { ref } from "vue";
 import { presets } from "./presets";
 
 const STORAGE_KEY = "visual-report-theme";
 
 const savedTheme =
   typeof window !== "undefined"
-    ? window.localStorage.getItem(STORAGE_KEY)
+    ? window.localStorage.getItem(STORAGE_KEY) || null
     : null;
 
-const currentTheme = ref(savedTheme || "bootstrap");
-
-let currentCssLink = null;
-
-async function loadBootswatchCss(cssFile) {
-  if (typeof document === "undefined") return;
-
-  if (currentCssLink) {
-    currentCssLink.remove();
-  }
-
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = `https://cdn.jsdelivr.net/npm/bootswatch@5.3.8/dist/${cssFile}`;
-  document.head.appendChild(link);
-  currentCssLink = link;
-}
+const currentTheme = ref(presets[savedTheme] ? savedTheme : "bootstrap");
 
 function applyTheme(name) {
   if (typeof document === "undefined") return;
@@ -34,12 +18,6 @@ function applyTheme(name) {
 
   const root = document.documentElement;
   root.setAttribute("data-theme", name);
-
-  if (preset.isBootswatch && preset.cssFile) {
-    loadBootswatchCss(preset.cssFile);
-    root.style.display = "contents";
-    return;
-  }
 
   root.style.setProperty("--primary", preset.primary);
   root.style.setProperty("--secondary", preset.secondary);
@@ -52,6 +30,49 @@ function applyTheme(name) {
   root.style.setProperty("--border", preset.border);
   root.style.setProperty("--text-muted", preset.textMuted);
   root.style.setProperty("--hero-gradient", preset.heroGradient);
+  root.style.setProperty(
+    "--dropdown-gradient",
+    preset.dropdownGradient || preset.heroGradient || "transparent"
+  );
+  root.style.setProperty("--success-subtle", preset.successSubtle);
+  root.style.setProperty("--danger-subtle", preset.dangerSubtle);
+  root.style.setProperty("--warning-subtle", preset.warningSubtle);
+  root.style.setProperty("--success-emphasis", preset.successEmphasis);
+  root.style.setProperty("--danger-emphasis", preset.dangerEmphasis);
+  root.style.setProperty("--warning-emphasis", preset.warningEmphasis);
+
+  const viewportPalette = preset.badgeViewport || {};
+  const browserPalette = preset.badgeBrowser || {};
+  const filterHighlight = preset.filterHighlight || {};
+
+  root.style.setProperty(
+    "--badge-viewport-bg",
+    viewportPalette.default?.bg || preset.secondary
+  );
+  root.style.setProperty(
+    "--badge-viewport-color",
+    viewportPalette.default?.color || preset.bodyColor
+  );
+  root.style.setProperty(
+    "--badge-browser-bg",
+    browserPalette.default?.bg || preset.secondary
+  );
+  root.style.setProperty(
+    "--badge-browser-color",
+    browserPalette.default?.color || preset.bodyColor
+  );
+  root.style.setProperty(
+    "--filter-highlight-bg",
+    filterHighlight.bg || "rgba(13, 110, 253, 0.12)"
+  );
+  root.style.setProperty(
+    "--filter-highlight-border",
+    filterHighlight.border || preset.primary
+  );
+  root.style.setProperty(
+    "--filter-highlight-color",
+    filterHighlight.color || preset.bodyColor
+  );
 }
 
 export function initTheme() {

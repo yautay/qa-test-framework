@@ -6,7 +6,6 @@
           <tr>
             <th>{{ t('listing.scenario') }}</th>
             <th class="small-col">{{ t('listing.status') }}</th>
-            <th class="small-col">{{ t('listing.mode') }}</th>
             <th class="small-col">{{ t('listing.pixel') }}</th>
             <th class="small-col">{{ t('listing.lpips') }}</th>
             <th class="small-col">{{ t('listing.dists') }}</th>
@@ -19,14 +18,29 @@
               :class="{ 'table-active': index === selectedIndex }"
               @click="$emit('select', index)"
               @dblclick="$emit('show', r, 'test', index)">
-            <td class="mono">{{ r.scenario_id }}</td>
+            <td class="mono">
+              <div class="d-flex align-items-center gap-2">
+                <span>{{ r.scenario_id }}</span>
+                <span v-if="r.viewport"
+                  class="badge badge-viewport"
+                  :style="badgeStyle('viewport', r.viewport)"
+                >
+                  {{ r.viewport }}
+                </span>
+                <span v-if="r.browser"
+                  class="badge badge-browser"
+                  :style="badgeStyle('browser', r.browser)"
+                >
+                  {{ r.browser }}
+                </span>
+              </div>
+            </td>
 
             <td class="small-col">
               <span class="badge"
                 :class="statusClass(r.status)">{{ r.status }}</span>
             </td>
 
-            <td class="small-col"><span class="badge text-bg-secondary">{{ r.compare_mode }}</span></td>
             <td class="small-col mono">{{ fmt(r.pixel_changed_ratio) }}</td>
             <td class="small-col mono">{{ fmt(r.lpips) }}</td>
             <td class="small-col mono">{{ fmt(r.dists) }}</td>
@@ -60,6 +74,7 @@
 
 <script>
 import { t } from "../lib/i18n";
+import { badgeStyle as computeBadgeStyle } from "../lib/badgeStyle";
 
 export default {
   name: "ResultsTable",
@@ -105,7 +120,10 @@ export default {
     rowKey(row, index) {
       const key = this.tagKeyForRow(row);
       if (key) return key;
-      return `${row?.scenario_id || "row"}::${index}`;
+      return `${row?.scenario_id || "row"}::${row?.viewport || ""}::${row?.browser || ""}::${index}`;
+    },
+    badgeStyle(type, value) {
+      return computeBadgeStyle(type, value);
     },
   },
 };
@@ -151,6 +169,14 @@ export default {
   font-weight: 500;
   border-radius: 0.25rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.badge-viewport,
+.badge-browser {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .artifact-ref {

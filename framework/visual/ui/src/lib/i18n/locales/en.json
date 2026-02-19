@@ -32,6 +32,7 @@
   },
   "filtersPanel": {
     "search": "Search (scenario/message)",
+    "searchPlaceholder": "e.g. 20260218",
     "status": "Status",
     "mode": "Mode",
     "sort": "Sort",
@@ -69,7 +70,11 @@
     "exit": "Exit (K-LSHIFT)",
     "keys": "Keys: 1-4 layout, A/D navigate, hold W super zoom, S/C/\\ tags prompt, Shift = exit",
     "slot": "Slot",
-    "noImage": "No image for"
+    "noImage": "No image for",
+    "scoringLabel": "Scoring",
+    "scoringPixel": "pixel diff",
+    "scoringLpips": "lpips",
+    "scoringDists": "dists"
   },
   "prompt": {
     "confirm": "Confirmation",
