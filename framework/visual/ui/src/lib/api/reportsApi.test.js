@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { fetchReportResults, fetchReportsList } from "./reportsApi";
+import { fetchReportResults, fetchReportsList, sendRunReport } from "./reportsApi";
 
 function response(body, ok = true, status = 200) {
   return {
@@ -73,5 +73,18 @@ describe("reportsApi", () => {
     const results = await fetchReportResults("run-1");
 
     expect(results).toEqual([]);
+  });
+
+  it("sends run report payload", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => response({ accepted: true, bug: { sent: 1 } })));
+
+    const payload = await sendRunReport("run 1", { tag_snapshot: { a: { bug: true } } });
+
+    expect(payload.accepted).toBe(true);
+    expect(fetch).toHaveBeenCalledWith("/api/reports/run%201/report/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tag_snapshot: { a: { bug: true } } }),
+    });
   });
 });

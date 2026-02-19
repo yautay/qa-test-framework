@@ -15,11 +15,26 @@ import re
 import sys
 import time
 
+from loguru import logger
+
+try:
+    import reportlab.lib.pagesizes as _r_pagesizes
+    from reportlab.lib.utils import ImageReader
+    from reportlab.pdfgen import canvas
+
+    _REPORTLAB_AVAILABLE = True
+except Exception:  # pragma: no cover - optional dependency
+    _r_pagesizes = None
+    ImageReader = None  # type: ignore[assignment]
+    canvas = None  # type: ignore[assignment]
+    _REPORTLAB_AVAILABLE = False
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from framework.env import load_env
+from framework.reporting_client import ReportingClient
 from framework.visual.baseline_store import BaselineStore
 
 
@@ -44,6 +59,10 @@ class ReportServerContext:
     run_dirs: dict[str, Path]
     pinned_run_dirs: dict[str, Path] = field(default_factory=dict)
     challenges: dict[str, ChallengeEntry] = field(default_factory=dict)
+    reporting_client: ReportingClient | None = None
+    reporting_bug_endpoint: str = ""
+    reporting_aso_endpoint: str = ""
+    bug_pdf_config_path: Path | None = None
     _lock: Any = field(default_factory=Lock)
 
     def resolve_run_dir(self, run_id: str) -> Path | None:
@@ -293,6 +312,347 @@ def _safe_run_id_or_error(raw_run_id: str) -> str:
     return run_id
 
 
+def _tag_file_path(report_dir: Path) -> Path:
+    return report_dir / "vrt-tags.json"
+
+
+def _default_pdf_config() -> dict[str, Any]:
+    return {
+        "fields": [
+            {"label": "run.tester", "path": "run.tester", "required": True},
+            {"label": "run.run_note", "path": "run.run_note", "required": True},
+            {"label": "scenario.name", "path": "scenario.name", "required": True},
+            {"label": "scenario.suite_id", "path": "scenario.suite_id", "required": True},
+            {"label": "scenario.target_url", "path": "scenario.target_url", "required": True},
+            {"label": "scenario.viewport", "path": "scenario.viewport", "required": True},
+            {"label": "scenario.browser", "path": "scenario.browser", "required": True},
+            {"label": "scenario.capture.selector", "path": "scenario.capture.selector", "required": False},
+            {"label": "NOTATKA", "path": "note.text", "required": False},
+        ],
+        "images": [
+            {"label": "baseline", "path": "image.baseline"},
+            {"label": "actual", "path": "image.actual"},
+            {"label": "diff", "path": "image.diff"},
+            {"label": "heatmap", "path": "image.heatmap"},
+        ],
+    }
+
+
+def _load_bug_pdf_config(config_path: Path | None) -> dict[str, Any]:
+    cfg = _default_pdf_config()
+    if config_path is None or not config_path.is_file():
+        return cfg
+    try:
+        data = json.loads(config_path.read_text(encoding="utf-8"))
+    except Exception:
+        logger.warning("bug pdf config invalid json", path=str(config_path))
+        return cfg
+    if not isinstance(data, dict):
+        return cfg
+    merged = dict(cfg)
+    if isinstance(data.get("fields"), list):
+        merged["fields"] = data["fields"]
+    if isinstance(data.get("images"), list):
+        merged["images"] = data["images"]
+    return merged
+
+
+def _normalize_single_tag_entry(raw: Any) -> dict[str, Any]:
+    base = raw if isinstance(raw, dict) else {}
+    note = base.get("note") if isinstance(base.get("note"), dict) else None
+    note_text = ""
+    if isinstance(note, dict):
+        note_text = str(note.get("text", "") or "").strip()
+    normalized_note = None
+    if note_text:
+        normalized_note = {
+            "text": note_text,
+            "updatedAt": str(note.get("updatedAt", "") or "") if isinstance(note, dict) else "",
+        }
+    return {
+        "bug": bool(base.get("bug", False)),
+        "aso": bool(base.get("aso", False)),
+        "baseline": bool(base.get("baseline", False)),
+        "note": normalized_note,
+        "bug_reported": bool(base.get("bug_reported", False)),
+        "aso_reported": bool(base.get("aso_reported", False)),
+        "bug_reported_at": str(base.get("bug_reported_at", "") or ""),
+        "aso_reported_at": str(base.get("aso_reported_at", "") or ""),
+    }
+
+
+def _normalize_tag_snapshot(raw: Any) -> dict[str, dict[str, Any]]:
+    if not isinstance(raw, dict):
+        return {}
+    out: dict[str, dict[str, Any]] = {}
+    for key, value in raw.items():
+        if not isinstance(key, str):
+            continue
+        out[key] = _normalize_single_tag_entry(value)
+    return out
+
+
+def _read_tag_snapshot(report_dir: Path) -> dict[str, dict[str, Any]]:
+    tag_file = _tag_file_path(report_dir)
+    if not tag_file.is_file():
+        return {}
+    try:
+        data = json.loads(tag_file.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    return _normalize_tag_snapshot(data)
+
+
+def _save_tag_snapshot(report_dir: Path, snapshot: dict[str, dict[str, Any]]) -> None:
+    _tag_file_path(report_dir).write_text(json.dumps(snapshot, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _row_tag_key(row: dict[str, Any]) -> str:
+    return "::".join(
+        [
+            str(row.get("scenario_id", "") or ""),
+            str(row.get("actual_path", "") or ""),
+            str(row.get("baseline_path", "") or ""),
+            str(row.get("diff_path", "") or ""),
+        ]
+    )
+
+
+def _as_dict(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def _value_by_path(root: dict[str, Any], dotted_path: str) -> Any:
+    current: Any = root
+    for token in dotted_path.split("."):
+        if not isinstance(current, dict):
+            return None
+        current = current.get(token)
+    return current
+
+
+def _resolve_report_image(report_dir: Path, raw_path: str) -> Path | None:
+    src = str(raw_path or "").strip()
+    if not src:
+        return None
+    candidate = Path(src)
+    if not candidate.is_absolute():
+        candidate = (report_dir / candidate).resolve()
+    else:
+        candidate = candidate.resolve()
+    try:
+        candidate.relative_to(report_dir)
+    except ValueError:
+        return None
+    return candidate if candidate.is_file() else None
+
+
+def _resolve_baseline_image(context: ReportServerContext, report_dir: Path, row: dict[str, Any]) -> Path | None:
+    direct = _resolve_report_image(report_dir, str(row.get("baseline_path", "")))
+    if direct is not None:
+        return direct
+    suite_id = str(row.get("suite_id", "") or "").strip()
+    scenario_id = str(row.get("scenario_id", "") or "").strip()
+    viewport = str(row.get("viewport", "") or "").strip()
+    browser = str(row.get("browser", "") or "").strip()
+    if not (suite_id and scenario_id and viewport and browser):
+        return None
+    candidate = context.baseline_store.resolve_baseline(suite_id, scenario_id, viewport, browser)
+    if candidate is None or not candidate.is_file():
+        return None
+    return candidate
+
+
+def _build_reporting_payload(
+    run_id: str,
+    tag: str,
+    row: dict[str, Any],
+    tag_entry: dict[str, Any],
+) -> dict[str, Any]:
+    metadata = _as_dict(row.get("test_metadata"))
+    run_meta = _as_dict(metadata.get("run"))
+    scenario_meta = _as_dict(metadata.get("scenario"))
+    note_text = str(_as_dict(tag_entry.get("note")).get("text", "") or "").strip()
+    return {
+        "event_type": "visual_report",
+        "run_id": run_id,
+        "tag": tag,
+        "scenario_id": str(row.get("scenario_id", "") or ""),
+        "suite_id": str(row.get("suite_id", "") or scenario_meta.get("suite_id", "")),
+        "viewport": str(row.get("viewport", "") or scenario_meta.get("viewport", "")),
+        "browser": str(row.get("browser", "") or scenario_meta.get("browser", "")),
+        "status": str(row.get("status", "") or ""),
+        "message": str(row.get("message", "") or ""),
+        "note": note_text,
+        "metadata": metadata,
+        "artifacts": {
+            "baseline_path": str(row.get("baseline_path", "") or ""),
+            "actual_path": str(row.get("actual_path", "") or ""),
+            "diff_path": str(row.get("diff_path", "") or ""),
+            "heatmap_path": str(row.get("heatmap_path", "") or ""),
+        },
+        "run": {
+            "tester": str(run_meta.get("tester", row.get("tester", "")) or ""),
+            "run_note": str(run_meta.get("run_note", row.get("run_note", "")) or ""),
+        },
+    }
+
+
+def _append_audit_entry(report_dir: Path, payload: dict[str, Any]) -> None:
+    audit_path = report_dir / "reporting-audit.json"
+    current: list[dict[str, Any]] = []
+    if audit_path.is_file():
+        try:
+            loaded = json.loads(audit_path.read_text(encoding="utf-8"))
+            if isinstance(loaded, list):
+                current = [item for item in loaded if isinstance(item, dict)]
+        except Exception:
+            current = []
+    current.append(payload)
+    audit_path.write_text(json.dumps(current, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _draw_image_on_page(pdf: Any, image_path: Path, x: float, y: float, w: float, h: float) -> bool:
+    if not _REPORTLAB_AVAILABLE or ImageReader is None:
+        return False
+    try:
+        reader = ImageReader(str(image_path))
+        img_w, img_h = reader.getSize()
+        if img_w <= 0 or img_h <= 0:
+            return False
+        scale = min(w / float(img_w), h / float(img_h))
+        draw_w = float(img_w) * scale
+        draw_h = float(img_h) * scale
+        draw_x = x + (w - draw_w) / 2.0
+        draw_y = y + (h - draw_h) / 2.0
+        pdf.drawImage(reader, draw_x, draw_y, width=draw_w, height=draw_h, preserveAspectRatio=True, mask="auto")
+        return True
+    except Exception:
+        logger.opt(exception=True).warning("unable to draw image on pdf", image=str(image_path))
+        return False
+
+
+def _generate_bug_pdf(
+    *,
+    context: ReportServerContext,
+    run_id: str,
+    report_dir: Path,
+    bug_rows: list[tuple[dict[str, Any], dict[str, Any]]],
+) -> tuple[str, int]:
+    if not bug_rows:
+        return "", 0
+    if not _REPORTLAB_AVAILABLE or canvas is None or _r_pagesizes is None:
+        logger.warning("reportlab not available; BUG pdf was skipped", run_id=run_id)
+        return "", 0
+
+    config = _load_bug_pdf_config(context.bug_pdf_config_path)
+    page_w, page_h = _r_pagesizes.landscape(_r_pagesizes.A4)
+    output = report_dir / f"{run_id}.pdf"
+    pdf = canvas.Canvas(str(output), pagesize=(page_w, page_h))
+
+    raw_fields = config.get("fields")
+    fields: list[Any] = raw_fields if isinstance(raw_fields, list) else []
+    raw_images = config.get("images")
+    image_defs: list[Any] = raw_images if isinstance(raw_images, list) else []
+
+    for row, tag_entry in bug_rows:
+        metadata = _as_dict(row.get("test_metadata"))
+        run_meta = _as_dict(metadata.get("run"))
+        scenario_meta = _as_dict(metadata.get("scenario"))
+        source = {
+            "run": {
+                "run_id": run_id,
+                "tester": str(run_meta.get("tester", row.get("tester", "")) or ""),
+                "run_note": str(run_meta.get("run_note", row.get("run_note", "")) or ""),
+            },
+            "scenario": {
+                "name": str(scenario_meta.get("name", row.get("scenario_id", "")) or ""),
+                "suite_id": str(scenario_meta.get("suite_id", row.get("suite_id", "")) or ""),
+                "target_url": str(scenario_meta.get("target_url", row.get("target_url", "")) or ""),
+                "viewport": str(scenario_meta.get("viewport", row.get("viewport", "")) or ""),
+                "browser": str(scenario_meta.get("browser", row.get("browser", "")) or ""),
+                "capture": _as_dict(scenario_meta.get("capture")),
+            },
+            "note": {
+                "text": str(_as_dict(tag_entry.get("note")).get("text", "") or "").strip(),
+            },
+        }
+
+        pdf.setFont("Helvetica-Bold", 14)
+        pdf.drawString(24, page_h - 28, f"BUG report | run={run_id} | scenario={row.get('scenario_id', '')}")
+        y = page_h - 52
+        pdf.setFont("Helvetica", 9)
+        for field_def in fields:
+            if not isinstance(field_def, dict):
+                continue
+            path = str(field_def.get("path", "") or "").strip()
+            label = str(field_def.get("label", path) or path)
+            required = bool(field_def.get("required", False))
+            if not path:
+                continue
+            value = _value_by_path(source, path)
+            text = str(value if value is not None else "").strip()
+            if not text and not required:
+                continue
+            if not text and required:
+                text = "(missing)"
+            pdf.drawString(24, y, f"{label}: {text}")
+            y -= 12
+            if y < page_h * 0.55:
+                break
+
+        image_top = page_h * 0.52
+        image_bottom = 30
+        image_height = image_top - image_bottom
+        col_gap = 12
+        col_width = (page_w - 24 * 2 - col_gap) / 2.0
+        row_height = (image_height - col_gap) / 2.0
+
+        grid = [
+            (24, image_bottom + row_height + col_gap),
+            (24 + col_width + col_gap, image_bottom + row_height + col_gap),
+            (24, image_bottom),
+            (24 + col_width + col_gap, image_bottom),
+        ]
+
+        image_source = {
+            "image": {
+                "baseline": str(row.get("baseline_path", "") or ""),
+                "actual": str(row.get("actual_path", "") or ""),
+                "diff": str(row.get("diff_path", "") or ""),
+                "heatmap": str(row.get("heatmap_path", "") or ""),
+            }
+        }
+        baseline_resolved = _resolve_baseline_image(context, report_dir, row)
+
+        for idx, image_def in enumerate(image_defs[:4]):
+            if not isinstance(image_def, dict):
+                continue
+            label = str(image_def.get("label", "image") or "image")
+            path = str(image_def.get("path", "") or "").strip()
+            gx, gy = grid[idx]
+            pdf.rect(gx, gy, col_width, row_height)
+            pdf.setFont("Helvetica-Bold", 8)
+            pdf.drawString(gx + 4, gy + row_height - 11, label.upper())
+            candidate: Path | None = None
+            if path == "image.baseline" and baseline_resolved is not None:
+                candidate = baseline_resolved
+            elif path:
+                raw = _value_by_path(image_source, path)
+                candidate = _resolve_report_image(report_dir, str(raw or ""))
+            if candidate is not None:
+                _draw_image_on_page(pdf, candidate, gx + 4, gy + 4, col_width - 8, row_height - 18)
+            else:
+                pdf.setFont("Helvetica", 8)
+                pdf.drawString(gx + 6, gy + 8, "image unavailable")
+
+        pdf.showPage()
+
+    pdf.save()
+    logger.info("bug_pdf_generated", run_id=run_id, pages=len(bug_rows), path=str(output))
+    return str(output), len(bug_rows)
+
+
 def _build_handler(context: ReportServerContext):
     class Handler(BaseHTTPRequestHandler):
         def _send_json(self, status: int, payload: dict[str, Any]) -> None:
@@ -498,7 +858,8 @@ def _build_handler(context: ReportServerContext):
                 return
 
             target = run_dir / "vrt-tags.json"
-            target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            normalized = _normalize_tag_snapshot(payload)
+            target.write_text(json.dumps(normalized, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
             self._send_json(HTTPStatus.OK, {"saved": True, "path": str(target)})
 
         def do_POST(self) -> None:
@@ -526,6 +887,190 @@ def _build_handler(context: ReportServerContext):
                         "challenge_id": challenge_id,
                         "phrase": phrase,
                         "expires_at": int(expires_at),
+                    },
+                )
+                return
+
+            m_report_send = re.match(r"^/api/reports/([^/]+)/report/send$", path)
+            if m_report_send:
+                try:
+                    run_id = _safe_run_id_or_error(m_report_send.group(1))
+                except ValueError as exc:
+                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                    return
+                report_dir = context.resolve_run_dir(run_id)
+                if report_dir is None:
+                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
+                    return
+
+                payload = {}
+                try:
+                    payload = self._read_json_body()
+                except Exception:
+                    payload = {}
+
+                incoming_tags = payload.get("tag_snapshot")
+                if incoming_tags is not None:
+                    normalized = _normalize_tag_snapshot(incoming_tags)
+                    _save_tag_snapshot(report_dir, normalized)
+
+                tag_snapshot = _read_tag_snapshot(report_dir)
+                rows = _read_results_rows(report_dir)
+
+                bug_rows: list[tuple[dict[str, Any], dict[str, Any]]] = []
+                bug_sendable: list[tuple[dict[str, Any], dict[str, Any]]] = []
+                aso_sendable: list[tuple[dict[str, Any], dict[str, Any]]] = []
+                skipped_bug_locked = 0
+                skipped_aso_locked = 0
+
+                for row in rows:
+                    key = _row_tag_key(row)
+                    tag_entry = tag_snapshot.get(key)
+                    if tag_entry is None:
+                        tag_entry = _normalize_single_tag_entry({})
+                        tag_snapshot[key] = tag_entry
+                    if tag_entry.get("bug"):
+                        bug_rows.append((row, tag_entry))
+                        if not bool(tag_entry.get("bug_reported", False)):
+                            bug_sendable.append((row, tag_entry))
+                        else:
+                            skipped_bug_locked += 1
+                    if tag_entry.get("aso"):
+                        if not bool(tag_entry.get("aso_reported", False)):
+                            aso_sendable.append((row, tag_entry))
+                        else:
+                            skipped_aso_locked += 1
+
+                logger.info(
+                    "report_send_start",
+                    run_id=run_id,
+                    bug_total=len(bug_rows),
+                    bug_sendable=len(bug_sendable),
+                    aso_sendable=len(aso_sendable),
+                )
+
+                bug_ok = 0
+                bug_failed = 0
+                aso_ok = 0
+                aso_failed = 0
+                sent_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+                has_client = context.reporting_client is not None
+                if not has_client:
+                    logger.warning("reporting client unavailable", run_id=run_id)
+
+                for row, tag_entry in aso_sendable:
+                    if not context.reporting_aso_endpoint:
+                        logger.warning("report_send_aso_missing_endpoint", run_id=run_id)
+                        aso_failed += 1
+                        continue
+                    req = _build_reporting_payload(run_id, "ASO", row, tag_entry)
+                    accepted = bool(
+                        context.reporting_client
+                        and context.reporting_client.send_payload(context.reporting_aso_endpoint, req)
+                    )
+                    if accepted:
+                        tag_entry["aso_reported"] = True
+                        tag_entry["aso_reported_at"] = sent_at
+                        logger.info(
+                            "report_send_aso_success",
+                            run_id=run_id,
+                            scenario_id=str(row.get("scenario_id", "") or ""),
+                        )
+                        aso_ok += 1
+                    else:
+                        logger.warning(
+                            "report_send_aso_failed",
+                            run_id=run_id,
+                            scenario_id=str(row.get("scenario_id", "") or ""),
+                        )
+                        aso_failed += 1
+
+                for row, tag_entry in bug_sendable:
+                    if not context.reporting_bug_endpoint:
+                        logger.warning("report_send_bug_missing_endpoint", run_id=run_id)
+                        bug_failed += 1
+                        continue
+                    req = _build_reporting_payload(run_id, "BUG", row, tag_entry)
+                    accepted = bool(
+                        context.reporting_client
+                        and context.reporting_client.send_payload(context.reporting_bug_endpoint, req)
+                    )
+                    if accepted:
+                        tag_entry["bug_reported"] = True
+                        tag_entry["bug_reported_at"] = sent_at
+                        logger.info(
+                            "report_send_bug_success",
+                            run_id=run_id,
+                            scenario_id=str(row.get("scenario_id", "") or ""),
+                        )
+                        bug_ok += 1
+                    else:
+                        logger.warning(
+                            "report_send_bug_failed",
+                            run_id=run_id,
+                            scenario_id=str(row.get("scenario_id", "") or ""),
+                        )
+                        bug_failed += 1
+
+                pdf_path, pdf_pages = _generate_bug_pdf(
+                    context=context,
+                    run_id=run_id,
+                    report_dir=report_dir,
+                    bug_rows=bug_rows,
+                )
+
+                _save_tag_snapshot(report_dir, tag_snapshot)
+                audit_entry = {
+                    "timestamp_utc": sent_at,
+                    "run_id": run_id,
+                    "bug": {
+                        "total": len(bug_rows),
+                        "sent": bug_ok,
+                        "failed": bug_failed,
+                        "skipped_locked": skipped_bug_locked,
+                    },
+                    "aso": {
+                        "sent": aso_ok,
+                        "failed": aso_failed,
+                        "skipped_locked": skipped_aso_locked,
+                    },
+                    "pdf": {
+                        "path": pdf_path,
+                        "pages": pdf_pages,
+                    },
+                }
+                _append_audit_entry(report_dir, audit_entry)
+                logger.info(
+                    "report_send_finish",
+                    run_id=run_id,
+                    bug_sent=bug_ok,
+                    bug_failed=bug_failed,
+                    aso_sent=aso_ok,
+                    aso_failed=aso_failed,
+                    pdf_pages=pdf_pages,
+                )
+                self._send_json(
+                    HTTPStatus.OK,
+                    {
+                        "accepted": True,
+                        "run_id": run_id,
+                        "bug": {
+                            "total": len(bug_rows),
+                            "sent": bug_ok,
+                            "failed": bug_failed,
+                            "skipped_locked": skipped_bug_locked,
+                        },
+                        "aso": {
+                            "sent": aso_ok,
+                            "failed": aso_failed,
+                            "skipped_locked": skipped_aso_locked,
+                        },
+                        "pdf": {
+                            "path": pdf_path,
+                            "pages": pdf_pages,
+                        },
+                        "tag_snapshot": tag_snapshot,
                     },
                 )
                 return
@@ -650,12 +1195,25 @@ def main() -> int:
         pinned_run_dirs[selected_run_id] = selected_report_dir
 
     env = load_env()
+    reporting_client = ReportingClient(
+        enabled=bool(str(env.reporting_api_url or "").strip()),
+        base_url=env.reporting_api_url,
+        token=env.reporting_api_token,
+        timeout_seconds=env.reporting_api_timeout_seconds,
+        retries=env.reporting_api_retries,
+    )
     context = ReportServerContext(
         repo_root=REPO_ROOT,
         ui_dist_dir=ui_dist_dir,
         baseline_store=BaselineStore(env, REPO_ROOT),
         run_dirs=run_dirs,
         pinned_run_dirs=pinned_run_dirs,
+        reporting_client=reporting_client,
+        reporting_bug_endpoint=str(env.reporting_api_bug_endpoint or "").strip(),
+        reporting_aso_endpoint=str(env.reporting_api_aso_endpoint or "").strip(),
+        bug_pdf_config_path=(
+            REPO_ROOT / "framework" / "visual" / "ui" / "src" / "config" / "bug_report_pdf_config.json"
+        ),
     )
     handler = _build_handler(context)
     server = ThreadingHTTPServer((args.host, int(args.port)), handler)
@@ -668,7 +1226,10 @@ def main() -> int:
         print(f"server listening: http://{args.host}:{args.port}/")
     print("endpoints: GET /api/reports, GET /api/reports/<run_id>/results, GET /api/reports/<run_id>/image/ref")
     print(
-        "endpoints: PUT /reports/<run_id>/vrt-tags.json, POST /api/reports/<run_id>/baseline/challenge, POST /api/reports/<run_id>/baseline/send"
+        "endpoints: PUT /reports/<run_id>/vrt-tags.json, "
+        "POST /api/reports/<run_id>/baseline/challenge, "
+        "POST /api/reports/<run_id>/baseline/send, "
+        "POST /api/reports/<run_id>/report/send"
     )
 
     try:

@@ -2,10 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("../lib/api/reportsApi", () => ({
   fetchReportResults: vi.fn(),
+  sendRunReport: vi.fn(),
 }));
 
 import ReportPage from "./ReportPage.vue";
-import { fetchReportResults } from "../lib/api/reportsApi";
+import { fetchReportResults, sendRunReport } from "../lib/api/reportsApi";
 import { createStore, filteredSorted } from "../lib/store";
 
 function buildContext(overrides = {}) {
@@ -40,12 +41,15 @@ function buildContext(overrides = {}) {
     })),
     sanitizeNoteText: ReportPage.methods.sanitizeNoteText,
     normalizeNoteDraft: ReportPage.methods.normalizeNoteDraft,
+    normalizeTagLog: ReportPage.methods.normalizeTagLog,
     persistTags: vi.fn(),
+    downloadBugPdf: vi.fn(),
     buildMetadataPayload: ReportPage.methods.buildMetadataPayload,
     closeMetadataPanel: ReportPage.methods.closeMetadataPanel,
     cancelNoteEditor: ReportPage.methods.cancelNoteEditor,
     deactivateSuperZoom: vi.fn(),
     cancelPrompt: vi.fn(),
+    isTagReported: ReportPage.methods.isTagReported,
     ...overrides,
   };
 }
@@ -153,6 +157,53 @@ describe("ReportPage metadata panel", () => {
     expect(ctx.metadataPanel.active).toBe(true);
     expect(ctx.metadataPanel.payload.run.run_id).toBe("run-1");
     expect(ctx.metadataPanel.payload.run.tester).toBe("jan.k");
+  });
+});
+
+describe("ReportPage report send", () => {
+  it("opens send-report prompt when candidates exist", () => {
+    const ctx = buildContext({
+      runId: "run-1",
+      reportCandidatesCount: 1,
+      reportMessage: "",
+    });
+
+    ReportPage.methods.promptSendReport.call(ctx);
+
+    expect(ctx.prompt).toEqual({ active: true, type: "send-report" });
+  });
+
+  it("sends report and refreshes tag snapshot", async () => {
+    sendRunReport.mockResolvedValueOnce({
+      bug: { sent: 1, failed: 0, skipped_locked: 0 },
+      aso: { sent: 0, failed: 0, skipped_locked: 0 },
+      pdf: { pages: 1 },
+      tag_snapshot: {
+        "scenario-1::actual.png::baseline.png::diff.png": {
+          bug: true,
+          aso: false,
+          baseline: false,
+          note: null,
+          bug_reported: true,
+          aso_reported: false,
+          bug_reported_at: "2026-02-19T11:00:00Z",
+          aso_reported_at: "",
+        },
+      },
+    });
+
+    const ctx = buildContext({
+      runId: "run-1",
+      reportMessage: "",
+      normalizeTagLog: ReportPage.methods.normalizeTagLog,
+    });
+
+    await ReportPage.methods.executeSendReport.call(ctx);
+
+    expect(sendRunReport).toHaveBeenCalledTimes(1);
+    expect(ctx.viewer.tagLog["scenario-1::actual.png::baseline.png::diff.png"].bug_reported).toBe(true);
+    expect(ctx.downloadBugPdf).toHaveBeenCalledTimes(1);
+    expect(ctx.persistTags).toHaveBeenCalledTimes(1);
   });
 });
 

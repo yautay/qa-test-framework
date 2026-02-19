@@ -50,6 +50,8 @@
                 <span v-if="rowHasTag(r, 'bug')" class="badge bg-danger">{{ t('tags.bug') }}</span>
                 <span v-if="rowHasTag(r, 'aso')" class="badge bg-warning text-dark">{{ t('tags.aso') }}</span>
                 <span v-if="rowHasTag(r, 'baseline')" class="badge bg-success">{{ t('tags.baseline') }}</span>
+                <span v-if="rowHasTag(r, 'bug_reported')" class="badge bg-secondary">{{ t('tags.bugSent') }}</span>
+                <span v-if="rowHasTag(r, 'aso_reported')" class="badge bg-secondary">{{ t('tags.asoSent') }}</span>
                 <button
                   v-if="rowHasNote(r)"
                   type="button"

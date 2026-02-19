@@ -18,3 +18,17 @@ export async function fetchReportResults(runId) {
   }
   return Array.isArray(payload?.results) ? payload.results : [];
 }
+
+export async function sendRunReport(runId, body = {}) {
+  const id = encodeURIComponent(String(runId || "").trim());
+  const response = await fetch(`/api/reports/${id}/report/send`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body || {}),
+  });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) {
+    throw new Error(payload?.error || "unable to send report");
+  }
+  return payload && typeof payload === "object" ? payload : {};
+}

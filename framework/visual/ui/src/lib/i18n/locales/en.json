@@ -73,7 +73,9 @@
   "report": {
     "title": "Visual Regression Report",
     "run": "Run",
-    "sendBaseline": "SEND BASELINE"
+    "sendBaseline": "SEND BASELINE",
+    "sendReport": "REPORT",
+    "confirmSend": "Send BUG/ASO report now?"
   },
   "modal": {
     "exit": "Exit (K-LSHIFT)",
@@ -96,7 +98,9 @@
     "bug": "BUG",
     "aso": "ASO",
     "baseline": "BASELINE",
-    "note": "NOTE"
+    "note": "NOTE",
+    "bugSent": "BUG SENT",
+    "asoSent": "ASO SENT"
   },
   "note": {
     "button": "Note",

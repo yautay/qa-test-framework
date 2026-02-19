@@ -6,6 +6,7 @@ import json
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import BinaryIO
 
 import requests
 from loguru import logger
@@ -57,9 +58,9 @@ class ReportingClient:
         # Simple linear backoff: 0.5s, 1.0s, 1.5s ...
         time.sleep(0.5 * (attempt + 1))
 
-    def _post(self, path: str, payload: dict) -> None:
+    def _post(self, path: str, payload: dict) -> bool:
         if not self.enabled or not self.base_url:
-            return
+            return False
 
         url = f"{self.base_url.rstrip('/')}{path}"
         headers = self._build_headers(payload, json_content_type=True)
@@ -75,7 +76,7 @@ class ReportingClient:
                 continue
 
             if response.ok:
-                return
+                return True
 
             logger.warning("reporting api non-2xx", status=response.status_code, url=url, **context)
 
@@ -83,17 +84,18 @@ class ReportingClient:
                 self._sleep_backoff(attempt)
                 continue
 
-            return  # do not retry non-retriable status codes
+            return False  # do not retry non-retriable status codes
 
-    def _post_test_result_with_screenshots(self, payload: dict) -> None:
+        return False
+
+    def _post_test_result_with_screenshots(self, payload: dict) -> bool:
         if not self.enabled or not self.base_url:
-            return
+            return False
 
         url = f"{self.base_url.rstrip('/')}{self.test_result_endpoint}"
         artifacts = payload.get("artifacts", {})
         if not isinstance(artifacts, dict):
-            self._post(self.test_result_endpoint, payload)
-            return
+            return self._post(self.test_result_endpoint, payload)
 
         raw_path = artifacts.get("screenshot_raw")
         ann_path = artifacts.get("screenshot_annotated")
@@ -101,14 +103,13 @@ class ReportingClient:
         file_paths = [p for p in (raw_path, ann_path) if isinstance(p, str) and p.strip()]
         existing_paths = [Path(p) for p in file_paths if Path(p).is_file()]
         if not existing_paths:
-            self._post(self.test_result_endpoint, payload)
-            return
+            return self._post(self.test_result_endpoint, payload)
 
         headers = self._build_headers(payload, json_content_type=False)
         context = self._log_context_from_payload(payload)
 
         for attempt in range(self.retries + 1):
-            opened_handles: list[object] = []
+            opened_handles: list[BinaryIO] = []
             try:
                 files = []
                 for file_path in existing_paths:
@@ -127,7 +128,7 @@ class ReportingClient:
                 )
 
                 if response.ok:
-                    return
+                    return True
 
                 logger.warning("reporting api non-2xx", status=response.status_code, url=url, **context)
 
@@ -135,7 +136,7 @@ class ReportingClient:
                     self._sleep_backoff(attempt)
                     continue
 
-                return  # do not retry non-retriable status codes
+                return False  # do not retry non-retriable status codes
 
             except requests.RequestException:
                 logger.opt(exception=True).warning("reporting screenshot upload failed", url=url, **context)
@@ -150,7 +151,7 @@ class ReportingClient:
                         pass
 
         # Final fallback: JSON-only
-        self._post(self.test_result_endpoint, payload)
+        return self._post(self.test_result_endpoint, payload)
 
     def run_start(self, payload: dict) -> None:
         self._post(self.run_start_endpoint, payload)
@@ -163,6 +164,9 @@ class ReportingClient:
 
     def run_finish(self, payload: dict) -> None:
         self._post(self.run_finish_endpoint, payload)
+
+    def send_payload(self, endpoint: str, payload: dict) -> bool:
+        return self._post(endpoint, payload)
 
     @staticmethod
     def _log_context_from_payload(payload: dict) -> dict[str, str]:

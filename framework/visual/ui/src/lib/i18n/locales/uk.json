@@ -73,7 +73,9 @@
   "report": {
     "title": "Звіт Visual Regression",
     "run": "Запуск",
-    "sendBaseline": "НАДІСЛАТИ BASELINE"
+    "sendBaseline": "НАДІСЛАТИ BASELINE",
+    "sendReport": "ЗВІТ",
+    "confirmSend": "Надіслати звіт BUG/ASO зараз?"
   },
   "modal": {
     "exit": "Вихід (K-LSHIFT)",
@@ -96,7 +98,9 @@
     "bug": "BUG",
     "aso": "ASO",
     "baseline": "BASELINE",
-    "note": "ПРИМІТКА"
+    "note": "ПРИМІТКА",
+    "bugSent": "BUG НАДІСЛАНО",
+    "asoSent": "ASO НАДІСЛАНО"
   },
   "note": {
     "button": "Примітка",

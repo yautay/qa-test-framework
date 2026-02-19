@@ -273,3 +273,99 @@ def test_report_server_ref_endpoint_validates_query_and_run(tmp_path: Path) -> N
         server.shutdown()
         server.server_close()
         thread.join(timeout=3)
+
+
+def test_report_send_endpoint_locks_per_test_per_tag_and_skips_resend(tmp_path: Path) -> None:
+    class _FakeReportingClient:
+        def __init__(self):
+            self.calls: list[tuple[str, dict[str, Any]]] = []
+
+        def send_payload(self, endpoint: str, payload: dict[str, Any]) -> bool:
+            self.calls.append((endpoint, payload))
+            return True
+
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    run_id = "run-report-1"
+    report_dir = repo_root / "artifacts" / run_id / "visual"
+    report_dir.mkdir(parents=True)
+    (report_dir / ".report-ready.json").write_text('{"ready": true}\n', encoding="utf-8")
+    (report_dir / "results.json").write_text(
+        json.dumps(
+            {
+                "results": [
+                    {
+                        "scenario_id": "scenario-1",
+                        "status": "failed",
+                        "suite_id": "suite-1",
+                        "viewport": "fhd",
+                        "browser": "chromium",
+                        "actual_path": "actual/scenario-1.png",
+                        "diff_path": "diff/scenario-1.png",
+                    },
+                    {
+                        "scenario_id": "scenario-2",
+                        "status": "failed",
+                        "suite_id": "suite-1",
+                        "viewport": "fhd",
+                        "browser": "chromium",
+                        "actual_path": "actual/scenario-2.png",
+                        "diff_path": "diff/scenario-2.png",
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    (report_dir / "actual").mkdir(parents=True)
+    (report_dir / "diff").mkdir(parents=True)
+    (report_dir / "actual" / "scenario-1.png").write_bytes(b"a")
+    (report_dir / "actual" / "scenario-2.png").write_bytes(b"a")
+    (report_dir / "diff" / "scenario-1.png").write_bytes(b"a")
+    (report_dir / "diff" / "scenario-2.png").write_bytes(b"a")
+
+    key_1 = "scenario-1::actual/scenario-1.png::::diff/scenario-1.png"
+    key_2 = "scenario-2::actual/scenario-2.png::::diff/scenario-2.png"
+    (report_dir / "vrt-tags.json").write_text(
+        json.dumps(
+            {
+                key_1: {"bug": True, "aso": True, "baseline": False, "note": {"text": "n1"}},
+                key_2: {"bug": True, "aso": False, "baseline": False, "note": None},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    ui_dist = tmp_path / "ui-dist"
+    ui_dist.mkdir(parents=True)
+    (ui_dist / "index.html").write_text("<html>ui</html>", encoding="utf-8")
+
+    fake_client = _FakeReportingClient()
+    context = ReportServerContext(
+        repo_root=repo_root,
+        ui_dist_dir=ui_dist,
+        baseline_store=BaselineStore(cast(Any, _env()), repo_root),
+        run_dirs={run_id: report_dir},
+        reporting_client=cast(Any, fake_client),
+        reporting_bug_endpoint="/bug",
+        reporting_aso_endpoint="/aso",
+    )
+    server, base_url, thread = _start_server(context)
+    try:
+        status, payload = _http_json(base_url, f"/api/reports/{run_id}/report/send", method="POST", body={})
+        assert status == 200
+        assert payload["bug"]["sent"] == 2
+        assert payload["aso"]["sent"] == 1
+        assert len(fake_client.calls) == 3
+
+        status, payload = _http_json(base_url, f"/api/reports/{run_id}/report/send", method="POST", body={})
+        assert status == 200
+        assert payload["bug"]["sent"] == 0
+        assert payload["bug"]["skipped_locked"] == 2
+        assert payload["aso"]["sent"] == 0
+        assert payload["aso"]["skipped_locked"] == 1
+        assert len(fake_client.calls) == 3
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)

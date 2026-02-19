@@ -12,9 +12,13 @@
             <button type="button" class="btn btn-success" @click="sendBaseline" :disabled="baselineCandidates.length === 0">
               {{ t('report.sendBaseline') }} ({{ baselineCandidates.length }})
             </button>
+            <button type="button" class="btn btn-primary" @click="promptSendReport" :disabled="!runId || reportCandidatesCount === 0">
+              {{ t('report.sendReport') }} ({{ reportCandidatesCount }})
+            </button>
           </div>
           <div v-if="tagSyncMessage" class="text-muted small">{{ tagSyncMessage }}</div>
           <div v-if="baselineMessage" class="text-muted small">{{ baselineMessage }}</div>
+          <div v-if="reportMessage" class="text-muted small">{{ reportMessage }}</div>
           <div class="text-muted small mono">{{ summaryText }}</div>
         </div>
       </div>
@@ -65,6 +69,13 @@
       @reset-cursor="resetCursor"
       @mouse-move="handleMouseMove"
     />
+    <div v-if="prompt.active && prompt.type === 'send-report'" class="global-prompt-overlay">
+      <div class="global-prompt-card">
+        <div class="global-prompt-title">{{ t('prompt.confirm') }}</div>
+        <div class="global-prompt-text">{{ t('report.confirmSend') }}</div>
+        <div class="global-prompt-hints">{{ t('prompt.shiftNo') }} &nbsp;•&nbsp; {{ t('prompt.spaceYes') }}</div>
+      </div>
+    </div>
     <TestMetadataPanel
       :active="metadataPanel.active"
       :metadata="metadataPanel.payload"
@@ -87,7 +98,7 @@ import {
   saveTagSnapshotToFile,
 } from "../lib/tagPersistence";
 import { requestBaselineChallengeForRun, sendBaselineSelectionForRun } from "../lib/baselineApi";
-import { fetchReportResults } from "../lib/api/reportsApi";
+import { fetchReportResults, sendRunReport } from "../lib/api/reportsApi";
 import {
   createViewerState,
   ensureModal,
@@ -132,6 +143,7 @@ export default {
       tagSyncTimer: null,
       tagSyncMessage: "",
       baselineMessage: "",
+      reportMessage: "",
       loadError: "",
       selectedIndex: -1,
       noteEditor: {
@@ -196,6 +208,15 @@ export default {
         return !!(tags?.baseline && row?.actual_path);
       });
     },
+    reportCandidatesCount() {
+      return this.store.rows.reduce((count, row) => {
+        const key = this.getRowTagKey(row);
+        const tags = this.viewer.tagLog?.[key] || {};
+        const canSendBug = !!tags.bug && !tags.bug_reported;
+        const canSendAso = !!tags.aso && !tags.aso_reported;
+        return count + (canSendBug || canSendAso ? 1 : 0);
+      }, 0);
+    },
   },
   methods: {
     t(key) {
@@ -247,6 +268,18 @@ export default {
         if (!Object.prototype.hasOwnProperty.call(existing, "note")) {
           existing.note = null;
         }
+        if (!Object.prototype.hasOwnProperty.call(existing, "bug_reported")) {
+          existing.bug_reported = false;
+        }
+        if (!Object.prototype.hasOwnProperty.call(existing, "aso_reported")) {
+          existing.aso_reported = false;
+        }
+        if (!Object.prototype.hasOwnProperty.call(existing, "bug_reported_at")) {
+          existing.bug_reported_at = "";
+        }
+        if (!Object.prototype.hasOwnProperty.call(existing, "aso_reported_at")) {
+          existing.aso_reported_at = "";
+        }
         return { key, entry: existing };
       }
       this.viewer.tagLog[key] = {
@@ -254,6 +287,10 @@ export default {
         aso: false,
         baseline: false,
         note: null,
+        bug_reported: false,
+        aso_reported: false,
+        bug_reported_at: "",
+        aso_reported_at: "",
       };
       return { key, entry: this.viewer.tagLog[key] };
     },
@@ -328,6 +365,68 @@ export default {
       } catch (error) {
         this.baselineMessage = `SEND BASELINE failed: ${error?.message || "unknown error"}`;
       }
+    },
+    promptSendReport() {
+      if (!this.runId) {
+        this.reportMessage = "Missing run id, unable to send report";
+        return;
+      }
+      if (this.reportCandidatesCount === 0) {
+        this.reportMessage = "No new BUG/ASO tags to send";
+        return;
+      }
+      this.prompt = { active: true, type: "send-report" };
+    },
+    async executeSendReport() {
+      if (!this.runId) return;
+      this.reportMessage = "Sending report...";
+      const payload = {
+        tag_snapshot: this.viewer.tagLog,
+      };
+      try {
+        const response = await sendRunReport(this.runId, payload);
+        if (response?.tag_snapshot && typeof response.tag_snapshot === "object") {
+          this.viewer.tagLog = this.normalizeTagLog(response.tag_snapshot);
+          if (this.viewer.modalRow) {
+            const key = this.getRowTagKey(this.viewer.modalRow);
+            const current = this.viewer.tagLog?.[key];
+            if (current) {
+              this.viewer.tags = { ...current };
+              this.viewer.tagLocked = this.viewer.tagLocked || {};
+              const previous = this.viewer.tagLocked[key] || { bug: false, aso: false, baseline: false };
+              this.viewer.tagLocked[key] = {
+                bug: previous.bug || !!current.bug || !!current.bug_reported,
+                aso: previous.aso || !!current.aso || !!current.aso_reported,
+                baseline: previous.baseline || !!current.baseline,
+              };
+            }
+          }
+        }
+        const bug = response?.bug || {};
+        const aso = response?.aso || {};
+        const pdf = response?.pdf || {};
+        const pdfInfo = Number(pdf.pages || 0) > 0 ? `, pdf_pages=${Number(pdf.pages || 0)}` : "";
+        this.reportMessage = `Report sent: bug sent=${Number(bug.sent || 0)} failed=${Number(bug.failed || 0)} skipped=${Number(bug.skipped_locked || 0)}, aso sent=${Number(aso.sent || 0)} failed=${Number(aso.failed || 0)} skipped=${Number(aso.skipped_locked || 0)}${pdfInfo}`;
+        if (Number(pdf.pages || 0) > 0) {
+          this.downloadBugPdf();
+        }
+        this.persistTags();
+      } catch (error) {
+        this.reportMessage = `RAPORT failed: ${error?.message || "unknown error"}`;
+      }
+    },
+    downloadBugPdf() {
+      if (!this.runId) return;
+      const run = String(this.runId || "").trim();
+      if (!run) return;
+      const href = `/reports/${encodeURIComponent(run)}/${encodeURIComponent(run)}.pdf?ts=${Date.now()}`;
+      const a = document.createElement("a");
+      a.href = href;
+      a.download = `${run}.pdf`;
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
     },
     reset() {
       resetFilters(this.store);
@@ -604,6 +703,14 @@ export default {
       const key = this.getRowTagKey(row);
       return !!this.viewer.tagLocked?.[key]?.[type];
     },
+    isTagReported(type, row = this.viewer.modalRow) {
+      if (!row) return false;
+      const key = this.getRowTagKey(row);
+      const tags = this.viewer.tagLog?.[key] || {};
+      if (type === "bug") return !!tags.bug_reported;
+      if (type === "aso") return !!tags.aso_reported;
+      return false;
+    },
     promptTag(type) {
       if (this.prompt.active) return;
       if (this.noteEditor.active) return;
@@ -613,10 +720,16 @@ export default {
     promptRemoveTag(type) {
       if (this.prompt.active) return;
       if (this.noteEditor.active) return;
+      if (this.isTagReported(type)) return;
       this.prompt = { active: true, type: `remove-${type}` };
     },
-    confirmPrompt() {
+    async confirmPrompt() {
       if (!this.prompt.active) return;
+      if (this.prompt.type === "send-report") {
+        this.prompt = { active: false, type: null };
+        await this.executeSendReport();
+        return;
+      }
       const type = this.prompt.type?.replace("remove-", "");
       if (this.prompt.type.startsWith("remove-")) {
         this.removeTag(type);
@@ -629,6 +742,7 @@ export default {
     removeTag(type) {
       const row = this.viewer.modalRow;
       if (!row) return;
+      if (this.isTagReported(type, row)) return;
       const key = this.getRowTagKey(row);
       if (this.viewer.tagLog[key]) {
         this.viewer.tagLog[key][type] = false;
@@ -694,5 +808,39 @@ export default {
   padding: 0.5rem;
   background: var(--card-bg);
   border-radius: 0.25rem;
+}
+
+.global-prompt-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.global-prompt-card {
+  width: 100%;
+  max-width: 360px;
+  background: var(--card-bg);
+  border-radius: 0.75rem;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.2);
+  padding: 1.25rem 1.5rem;
+  text-align: center;
+}
+
+.global-prompt-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.global-prompt-text {
+  margin-bottom: 0.5rem;
+}
+
+.global-prompt-hints {
+  color: var(--text-muted);
+  font-size: 0.85rem;
 }
 </style>

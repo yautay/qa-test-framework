@@ -48,10 +48,10 @@
             </button>
 
             <div class="btn-group btn-group-sm" role="group">
-              <button v-if="!viewer.tags.bug" type="button" class="btn btn-outline-danger" @click="$emit('prompt-tag','bug')">{{ t('tags.bug') }}! (K-S)</button>
-              <button v-if="viewer.tags.bug" type="button" class="btn btn-danger btn-sm" @click="$emit('prompt-remove-tag','bug')">{{ t('tags.bug') }} ✕</button>
-              <button v-if="!viewer.tags.aso" type="button" class="btn btn-outline-warning text-dark" @click="$emit('prompt-tag','aso')">{{ t('tags.aso') }} (K-C)</button>
-              <button v-if="viewer.tags.aso" type="button" class="btn btn-warning btn-sm text-dark" @click="$emit('prompt-remove-tag','aso')">{{ t('tags.aso') }} ✕</button>
+              <button v-if="!viewer.tags.bug" type="button" class="btn btn-outline-danger" :disabled="viewer.tags.bug_reported" @click="$emit('prompt-tag','bug')">{{ t('tags.bug') }}! (K-S)</button>
+              <button v-if="viewer.tags.bug" type="button" class="btn btn-danger btn-sm" :disabled="viewer.tags.bug_reported" @click="$emit('prompt-remove-tag','bug')">{{ t('tags.bug') }} ✕</button>
+              <button v-if="!viewer.tags.aso" type="button" class="btn btn-outline-warning text-dark" :disabled="viewer.tags.aso_reported" @click="$emit('prompt-tag','aso')">{{ t('tags.aso') }} (K-C)</button>
+              <button v-if="viewer.tags.aso" type="button" class="btn btn-warning btn-sm text-dark" :disabled="viewer.tags.aso_reported" @click="$emit('prompt-remove-tag','aso')">{{ t('tags.aso') }} ✕</button>
               <button v-if="!viewer.tags.baseline" type="button" class="btn btn-outline-success text-success" @click="$emit('prompt-tag','baseline')">{{ t('tags.baseline') }} (K-\)</button>
               <button v-if="viewer.tags.baseline" type="button" class="btn btn-success btn-sm" @click="$emit('prompt-remove-tag','baseline')">{{ t('tags.baseline') }} ✕</button>
             </div>

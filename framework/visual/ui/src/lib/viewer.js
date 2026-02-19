@@ -33,7 +33,16 @@ export function createViewerState() {
     columns: DEFAULT_SLOT_COUNT,
     cursorX: 50,
     cursorY: 50,
-    tags: { bug: false, aso: false, baseline: false, note: null },
+    tags: {
+      bug: false,
+      aso: false,
+      baseline: false,
+      note: null,
+      bug_reported: false,
+      aso_reported: false,
+      bug_reported_at: "",
+      aso_reported_at: "",
+    },
     tagLog: {},
     tagLocked: {},
     currentIndex: null,
@@ -112,12 +121,21 @@ export function openViewer(viewer, row, mode, index = null, options = {}) {
     const key = getRowTagKey(row);
     viewer.tags = viewer.tagLog[key]
       ? { ...viewer.tagLog[key] }
-      : { bug: false, aso: false, baseline: false, note: null };
+      : {
+          bug: false,
+          aso: false,
+          baseline: false,
+          note: null,
+          bug_reported: false,
+          aso_reported: false,
+          bug_reported_at: "",
+          aso_reported_at: "",
+        };
     viewer.tagLocked = viewer.tagLocked || {};
     const existingLock = viewer.tagLocked[key] || { bug: false, aso: false, baseline: false };
     viewer.tagLocked[key] = {
-      bug: existingLock.bug || !!viewer.tags.bug,
-      aso: existingLock.aso || !!viewer.tags.aso,
+      bug: existingLock.bug || !!viewer.tags.bug || !!viewer.tags.bug_reported,
+      aso: existingLock.aso || !!viewer.tags.aso || !!viewer.tags.aso_reported,
       baseline: existingLock.baseline || !!viewer.tags.baseline,
     };
   }

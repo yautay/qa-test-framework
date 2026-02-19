@@ -40,6 +40,10 @@ export function normalizeTagLogSnapshot(snapshot) {
       aso: !!tags.aso,
       baseline: !!tags.baseline,
       note: normalizeNote(tags.note),
+      bug_reported: !!tags.bug_reported,
+      aso_reported: !!tags.aso_reported,
+      bug_reported_at: typeof tags.bug_reported_at === "string" ? tags.bug_reported_at : "",
+      aso_reported_at: typeof tags.aso_reported_at === "string" ? tags.aso_reported_at : "",
     };
   }
   return normalized;
