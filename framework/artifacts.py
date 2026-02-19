@@ -3,7 +3,7 @@ from __future__ import annotations
 """Helper for preparing directories that collect test artifacts."""
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -47,7 +47,7 @@ def build_run_artifacts(base_dir: str) -> RunArtifacts:
         Object containing the paths to every artifact subdirectory.
     """
 
-    run_id = datetime.now(UTC).strftime("%Y%m%d_%H%M%S_%f")
+    run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
     root = (Path(base_dir) / run_id).resolve()
 
     traces = root / "traces"

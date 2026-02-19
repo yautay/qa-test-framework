@@ -11,6 +11,9 @@ def _validate_run_note(value: str) -> str:
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
+    def _has_option(option_name: str) -> bool:
+        return option_name in getattr(parser, "_option_string_actions", {})
+
     """
     Register custom command-line options for pytest.
 
@@ -114,12 +117,17 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=None,
         help="Server name for test env",
     )
-    parser.addoption(
-        "--base-url",
-        action="store",
-        default=None,
-        help="Override resolved base url",
-    )
+    if not _has_option("--base-url"):
+        try:
+            parser.addoption(
+                "--base-url",
+                action="store",
+                default=None,
+                help="Override resolved base url",
+            )
+        except ValueError as exc:
+            if "--base-url" not in str(exc):
+                raise
     parser.addoption(
         "--tester",
         action="store",

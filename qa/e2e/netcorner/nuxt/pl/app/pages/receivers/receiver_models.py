@@ -1,7 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import StrEnum
+
+try:
+    from enum import StrEnum
+except ImportError:  # Python < 3.11
+    from enum import Enum as _Enum
+
+    class StrEnum(str, _Enum):
+        def __str__(self) -> str:
+            return str(self.value)
 
 
 class ComponentContext(StrEnum):

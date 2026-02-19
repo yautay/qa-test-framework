@@ -6,7 +6,7 @@ import os
 import socket
 import time
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 import pytest
 import settings_cli
 from loguru import logger
@@ -35,7 +35,7 @@ def _get_scenario_description(item: pytest.Item) -> str | None:
 
 
 def _utc_now() -> str:
-    return datetime.now(UTC).isoformat()
+    return datetime.now(timezone.utc).isoformat()
 
 
 def _normalize_run_note(raw: object, source: str) -> str:

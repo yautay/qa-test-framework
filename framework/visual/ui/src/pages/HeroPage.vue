@@ -97,7 +97,7 @@ export default {
 
 <style scoped>
 .hero-wrap {
-  max-width: 1200px;
+  max-width: 96%;
   margin: 0 auto;
 }
 </style>

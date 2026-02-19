@@ -7,20 +7,17 @@
           <h3 class="mb-0">{{ t('report.title') }}</h3>
           <div class="text-muted small">{{ t('report.run') }}: <span class="mono">{{ runId || "unknown" }}</span></div>
         </div>
-        <div class="d-flex align-items-center gap-2">
-          <div class="btn-group btn-group-sm" role="group" aria-label="tag persistence">
-            <button type="button" class="btn btn-success" @click="sendBaseline" :disabled="baselineCandidates.length === 0">
-              {{ t('report.sendBaseline') }} ({{ baselineCandidates.length }})
-            </button>
-            <button type="button" class="btn btn-primary" @click="promptSendReport" :disabled="!runId || reportCandidatesCount === 0">
-              {{ t('report.sendReport') }} ({{ reportCandidatesCount }})
-            </button>
+          <div class="d-flex align-items-center gap-2">
+            <div class="btn-group btn-group-sm" role="group" aria-label="tag persistence">
+              <button type="button" class="btn btn-success" :class="{ 'btn-saturated': baselineCandidates.length > 0 }" @click="sendBaseline" :disabled="baselineCandidates.length === 0">
+                {{ t('report.sendBaseline') }}
+              </button>
+              <button type="button" class="btn btn-primary" :class="{ 'btn-saturated': reportCandidatesCount > 0 || pdfGenerated }" @click="promptSendReport" :disabled="!runId || (reportCandidatesCount === 0 && !pdfGenerated)">
+                {{ t('report.sendReport') }}
+              </button>
+            </div>
+            <div class="text-muted small mono">{{ summaryText }}</div>
           </div>
-          <div v-if="tagSyncMessage" class="text-muted small">{{ tagSyncMessage }}</div>
-          <div v-if="baselineMessage" class="text-muted small">{{ baselineMessage }}</div>
-          <div v-if="reportMessage" class="text-muted small">{{ reportMessage }}</div>
-          <div class="text-muted small mono">{{ summaryText }}</div>
-        </div>
       </div>
     </section>
 
@@ -145,6 +142,7 @@ export default {
       baselineMessage: "",
       reportMessage: "",
       reportSendInFlight: false,
+      pdfGenerated: false,
       loadError: "",
       selectedIndex: -1,
       noteEditor: {
@@ -355,7 +353,7 @@ export default {
     async sendBaseline() {
       const candidates = this.baselineCandidates;
       if (!candidates.length) {
-        this.baselineMessage = "No BASELINE-tagged TEST artifacts selected";
+        console.info("No BASELINE-tagged TEST artifacts selected");
         return;
       }
 
@@ -363,20 +361,20 @@ export default {
       try {
         challenge = await requestBaselineChallengeForRun(this.runId);
       } catch (_error) {
-        this.baselineMessage = "SEND BASELINE requires report server (run make visual-report-serve)";
+        console.info("SEND BASELINE requires report server (run make visual-report-serve)");
         return;
       }
 
       const phrase = String(challenge?.phrase || "").trim();
       const challengeId = String(challenge?.challenge_id || "").trim();
       if (!phrase || !challengeId) {
-        this.baselineMessage = "Unable to start baseline confirmation challenge";
+        console.info("Unable to start baseline confirmation challenge");
         return;
       }
 
       const typed = window.prompt(`Type this phrase to confirm baseline write:\n\n${phrase}`);
       if (typed === null) {
-        this.baselineMessage = "SEND BASELINE cancelled";
+        console.info("SEND BASELINE cancelled");
         return;
       }
 
@@ -396,24 +394,74 @@ export default {
         });
         const saved = Number(response?.saved_count || 0);
         const failed = Number(response?.failed_count || 0);
-        this.baselineMessage = `Baseline sync done: saved=${saved}, failed=${failed}`;
+        console.info(`Baseline sync done: saved=${saved}, failed=${failed}`);
       } catch (error) {
-        this.baselineMessage = `SEND BASELINE failed: ${error?.message || "unknown error"}`;
+        console.info(`SEND BASELINE failed: ${error?.message || "unknown error"}`);
       }
     },
     promptSendReport() {
       if (!this.runId) {
-        this.reportMessage = "Missing run id, unable to send report";
+        console.info("Missing run id, unable to send report");
         return;
       }
       if (this.reportSendInFlight) {
         return;
       }
-      if (this.reportCandidatesCount === 0) {
-        this.reportMessage = "No new BUG/ASO/NOTE tags to send";
+      if (this.reportCandidatesCount === 0 && !this.pdfGenerated) {
+        console.info("No new BUG/ASO/NOTE tags to send and no PDF generated");
         return;
       }
       this.prompt = { active: true, type: "send-report" };
+    },
+    async executeSendReport() {
+      if (!this.runId) return;
+      if (this.reportSendInFlight) return;
+      this.reportSendInFlight = true;
+      const payload = {
+        tag_snapshot: this.viewer.tagLog,
+      };
+      try {
+        const response = await sendRunReport(this.runId, payload);
+        if (response?.tag_snapshot && typeof response.tag_snapshot === "object") {
+          this.viewer.tagLog = this.normalizeTagLog(response.tag_snapshot);
+          if (this.viewer.modalRow) {
+            const key = this.getRowTagKey(this.viewer.modalRow);
+            const current = this.viewer.tagLog?.[key];
+            if (current) {
+              this.viewer.tags = { ...current };
+              this.viewer.tagLocked = this.viewer.tagLocked || {};
+              const previous = this.viewer.tagLocked[key] || { bug: false, aso: false, baseline: false };
+              this.viewer.tagLocked[key] = {
+                bug: previous.bug || !!current.bug || !!current.bug_reported,
+               aso: previous.aso || !!current.aso || !!current.aso_reported,
+                baseline: previous.baseline || !!current.baseline,
+              };
+            }
+          }
+        }
+        const bug = response?.bug || {};
+        constaso = response?.aso || {};
+        const note = response?.note || {};
+        const pdf = response?.pdf || {};
+        const pdfInfo = Number(pdf.pages || 0) > 0 ? `, pdf_pages=${Number(pdf.pages || 0)}` : "";
+        const hasNote = typeof note === "object" && note !== null && Object.keys(note).length > 0;
+        const noteInfo = hasNote
+          ? `, note sent=${Number(note.sent || 0)} failed=${Number(note.failed || 0)} skipped=${Number(note.skipped_locked || 0)}`
+          : "";
+        console.info(`Report sent: bug sent=${Number(bug.sent || 0)} failed=${Number(bug.failed || 0)} skipped=${Number(bug.skipped_locked || 0)}, aso sent=${Number(aso.sent || 0)} failed=${Number(aso.failed || 0)} skipped=${Number(aso.skipped_locked || 0)}${noteInfo}${pdfInfo}`);
+        if (Number(pdf.pages || 0) > 0) {
+          this.pdfGenerated = true;
+          this.downloadBugPdf();
+        }
+        this.persistTags();
+      } catch (error) {
+        if (error?.isNoResponse || error?.code === "NO_RESPONSE" || error?.name === "AbortError") {
+          return;
+        }
+        console.info(`RAPORT failed: ${error?.message || "unknown error"}`);
+      } finally {
+        this.reportSendInFlight = false;
+      }
     },
     async executeSendReport() {
       if (!this.runId) return;
@@ -853,7 +901,7 @@ export default {
 
 <style>
 .report-wrap {
-  max-width: 1200px;
+  max-width: 96%;
   margin: 0 auto;
 }
 .report-header {
@@ -865,6 +913,10 @@ export default {
   padding: 0.5rem;
   background: var(--card-bg);
   border-radius: 0.25rem;
+}
+
+.btn-saturated {
+  filter: saturate(1.4);
 }
 
 .global-prompt-overlay {
