@@ -3,6 +3,13 @@
 console_log_level = "WARNING"
 ignore_https_errors = True
 
+# General runtime defaults (CI pipelines may override via env)
+artifacts_dir = "artifacts"
+record_video = True
+video_min_seconds = 30
+highlight_on_fail = True
+min_expected_tests = 1
+
 # Remote Playwright grid compatibility defaults.
 grid_ws_endpoint = "ws://127.0.0.1:9323/"
 grid_connect_timeout_ms = 30000

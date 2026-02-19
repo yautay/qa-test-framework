@@ -130,20 +130,20 @@ def load_env() -> RuntimeEnv:
 
     # --- defaults from settings ----------------------------------------
 
-    settings_headless = bool(getattr(settings, "is_session_headless", True))
-    settings_grid_available = bool(getattr(settings, "is_grid_available", False))
-    settings_grid_ws_endpoint = str(getattr(settings, "grid_ws_endpoint", "ws://127.0.0.1:9323/"))
-    settings_grid_connect_timeout_ms = int(getattr(settings, "grid_connect_timeout_ms", 30000))
+    settings_headless = bool(settings_cli.is_session_headless)
+    settings_grid_available = bool(settings_cli.is_grid_available)
+    settings_grid_ws_endpoint = settings.grid_ws_endpoint
+    settings_grid_connect_timeout_ms = settings.grid_connect_timeout_ms
 
     configured_browser = env_str(
         "BROWSER",
-        str(getattr(settings, "browser", "chromium")),
+        str(settings_cli.browser),
     )
     browser = configured_browser.strip().lower()
 
     reporting_source_origin = env_str(
         "REPORTING_SOURCE_ORIGIN",
-        str(getattr(settings, "reporting_source_origin", "")),
+        str(settings.reporting_source_origin),
     ).strip()
 
     if not reporting_source_origin:
@@ -175,16 +175,16 @@ def load_env() -> RuntimeEnv:
         reporting_enabled=env_bool("REPORTING_ENABLED", settings.reporting_enabled),
         reporting_schema_version=env_str(
             "REPORTING_SCHEMA_VERSION",
-            str(getattr(settings, "reporting_schema_version", "2.0")),
+            str(settings.reporting_schema_version),
         ),
         reporting_source_project=env_str(
             "REPORTING_SOURCE_PROJECT",
-            str(getattr(settings, "reporting_source_project", Path.cwd().name)),
+            str(settings.reporting_source_project),
         ),
         reporting_source_origin=reporting_source_origin,
         framework_version=env_str(
             "FRAMEWORK_VERSION",
-            str(getattr(settings, "framework_version", "1.0.0")),
+            str(settings.framework_version),
         ),
         reporting_api_url=env_str("REPORTING_API_URL", settings.reporting_api_url),
         reporting_api_token=env_str("REPORTING_API_TOKEN", settings.reporting_api_token),
@@ -208,139 +208,139 @@ def load_env() -> RuntimeEnv:
             "REPORTING_API_RETRIES",
             settings.reporting_api_retries,
         ),
-        artifacts_dir=env_str("ARTIFACTS_DIR", "artifacts"),
-        highlight_on_fail=env_bool("HIGHLIGHT_ON_FAIL", True),
-        min_expected_tests=env_int("MIN_EXPECTED_TESTS", 1),
+        artifacts_dir=env_str("ARTIFACTS_DIR", settings.artifacts_dir),
+        highlight_on_fail=env_bool("HIGHLIGHT_ON_FAIL", settings.highlight_on_fail),
+        min_expected_tests=env_int("MIN_EXPECTED_TESTS", settings.min_expected_tests),
         visual_enabled=env_bool(
             "VISUAL_ENABLED",
-            bool(getattr(settings, "visual_enabled", False)),
+            bool(settings.visual_enabled),
         ),
         visual_compare_mode=env_str(
             "VISUAL_COMPARE_MODE",
-            str(getattr(settings, "visual_compare_mode", "hybrid")),
+            str(settings.visual_compare_mode),
         )
         .strip()
         .lower(),
         visual_baseline_provider=env_str(
             "VISUAL_BASELINE_PROVIDER",
-            str(getattr(settings, "visual_baseline_provider", "minio")),
+            str(settings.visual_baseline_provider),
         )
         .strip()
         .lower(),
         visual_baseline_profile=env_str(
             "VISUAL_BASELINE_PROFILE",
-            str(getattr(settings, "visual_baseline_profile", "test-ref")),
+            str(settings.visual_baseline_profile),
         ),
         visual_baseline_version=env_str(
             "VISUAL_BASELINE_VERSION",
-            str(getattr(settings, "visual_baseline_version", "latest")),
+            str(settings.visual_baseline_version),
         ),
         visual_cache_dir=env_str(
             "VISUAL_CACHE_DIR",
-            str(getattr(settings, "visual_cache_dir", ".visual_cache")),
+            str(settings.visual_cache_dir),
         ),
         visual_fail_on_missing_baseline=env_bool(
             "VISUAL_FAIL_ON_MISSING_BASELINE",
-            bool(getattr(settings, "visual_fail_on_missing_baseline", False)),
+            bool(settings.visual_fail_on_missing_baseline),
         ),
         visual_warn_as_fail=env_bool(
             "VISUAL_WARN_AS_FAIL",
-            bool(getattr(settings, "visual_warn_as_fail", False)),
+            bool(settings.visual_warn_as_fail),
         ),
         visual_minio_endpoint=env_str(
             "VISUAL_MINIO_ENDPOINT",
-            str(getattr(settings, "visual_minio_endpoint", "")),
+            str(settings.visual_minio_endpoint),
         ),
         visual_minio_access_key=env_str(
             "VISUAL_MINIO_ACCESS_KEY",
-            str(getattr(settings, "visual_minio_access_key", "")),
+            str(settings.visual_minio_access_key),
         ),
         visual_minio_secret_key=env_str(
             "VISUAL_MINIO_SECRET_KEY",
-            str(getattr(settings, "visual_minio_secret_key", "")),
+            str(settings.visual_minio_secret_key),
         ),
         visual_minio_bucket=env_str(
             "VISUAL_MINIO_BUCKET",
-            str(getattr(settings, "visual_minio_bucket", "visual-baselines")),
+            str(settings.visual_minio_bucket),
         ),
         visual_minio_secure=env_bool(
             "VISUAL_MINIO_SECURE",
-            bool(getattr(settings, "visual_minio_secure", True)),
+            bool(settings.visual_minio_secure),
         ),
         visual_perceptual_enabled=env_bool(
             "VISUAL_PERCEPTUAL_ENABLED",
-            bool(getattr(settings, "visual_perceptual_enabled", False)),
+            bool(settings.visual_perceptual_enabled),
         ),
         visual_perceptual_required=env_bool(
             "VISUAL_PERCEPTUAL_REQUIRED",
-            bool(getattr(settings, "visual_perceptual_required", False)),
+            bool(settings.visual_perceptual_required),
         ),
         visual_perceptual_api_url=env_str(
             "VISUAL_PERCEPTUAL_API_URL",
-            str(getattr(settings, "visual_perceptual_api_url", "")),
+            str(settings.visual_perceptual_api_url),
         ),
         visual_perceptual_timeout_seconds=env_int(
             "VISUAL_PERCEPTUAL_TIMEOUT_SECONDS",
-            int(getattr(settings, "visual_perceptual_timeout_seconds", 15)),
+            int(settings.visual_perceptual_timeout_seconds),
         ),
         visual_perceptual_health_timeout_seconds=env_int(
             "VISUAL_PERCEPTUAL_HEALTH_TIMEOUT_SECONDS",
-            int(getattr(settings, "visual_perceptual_health_timeout_seconds", 2)),
+            int(settings.visual_perceptual_health_timeout_seconds),
         ),
         visual_perceptual_retries=env_int(
             "VISUAL_PERCEPTUAL_RETRIES",
-            int(getattr(settings, "visual_perceptual_retries", 2)),
+            int(settings.visual_perceptual_retries),
         ),
         visual_perceptual_fail_fast_errors=env_int(
             "VISUAL_PERCEPTUAL_FAIL_FAST_ERRORS",
-            int(getattr(settings, "visual_perceptual_fail_fast_errors", 3)),
+            int(settings.visual_perceptual_fail_fast_errors),
         ),
         visual_perceptual_fallback_mode=env_str(
             "VISUAL_PERCEPTUAL_FALLBACK_MODE",
-            str(getattr(settings, "visual_perceptual_fallback_mode", "pixel")),
+            str(settings.visual_perceptual_fallback_mode),
         )
         .strip()
         .lower(),
         visual_perceptual_force_device=env_str(
             "VISUAL_PERCEPTUAL_FORCE_DEVICE",
-            str(getattr(settings, "visual_perceptual_force_device", "")),
+            str(settings.visual_perceptual_force_device),
         )
         .strip()
         .lower(),
         visual_perceptual_max_side=env_int(
             "VISUAL_PERCEPTUAL_MAX_SIDE",
-            int(getattr(settings, "visual_perceptual_max_side", 1024)),
+            int(settings.visual_perceptual_max_side),
         ),
         visual_perceptual_overlay_on=env_str(
             "VISUAL_PERCEPTUAL_OVERLAY_ON",
-            str(getattr(settings, "visual_perceptual_overlay_on", "test")),
+            str(settings.visual_perceptual_overlay_on),
         )
         .strip()
         .lower(),
         visual_perceptual_alpha=env_float(
             "VISUAL_PERCEPTUAL_ALPHA",
-            float(getattr(settings, "visual_perceptual_alpha", 0.45)),
+            float(settings.visual_perceptual_alpha),
         ),
         visual_perceptual_lpips_net=env_str(
             "VISUAL_PERCEPTUAL_LPIPS_NET",
-            str(getattr(settings, "visual_perceptual_lpips_net", "vgg")),
+            str(settings.visual_perceptual_lpips_net),
         )
         .strip()
         .lower(),
         visual_uncertain_enabled=env_bool(
             "VISUAL_UNCERTAIN_ENABLED",
-            bool(getattr(settings, "visual_uncertain_enabled", True)),
+            bool(settings.visual_uncertain_enabled),
         ),
         visual_uncertain_pixel_delta=env_float(
             "VISUAL_UNCERTAIN_PIXEL_DELTA",
-            float(getattr(settings, "visual_uncertain_pixel_delta", 0.001)),
+            float(settings.visual_uncertain_pixel_delta),
         ),
         visual_uncertain_lpips_delta=env_float(
             "VISUAL_UNCERTAIN_LPIPS_DELTA",
-            float(getattr(settings, "visual_uncertain_lpips_delta", 0.01)),
+            float(settings.visual_uncertain_lpips_delta),
         ),
         visual_uncertain_dists_delta=env_float(
             "VISUAL_UNCERTAIN_DISTS_DELTA",
-            float(getattr(settings, "visual_uncertain_dists_delta", 0.01)),
+            float(settings.visual_uncertain_dists_delta),
         ),
     )
