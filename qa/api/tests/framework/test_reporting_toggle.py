@@ -13,20 +13,23 @@ class _OkResponse:
     status_code = 200
 
 
-def test_reporting_client_skips_calls_when_disabled(monkeypatch):
+def test_reporting_client_skips_calls_when_disabled():
     calls: list[tuple[str, dict]] = []
 
-    def _fake_post(url, **kwargs):
-        calls.append((url, kwargs))
-        return _OkResponse()
+    class _FakeSession:
+        def __init__(self, sink: list[tuple[str, dict]]):
+            self._sink = sink
 
-    monkeypatch.setattr("framework.reporting_client.requests.post", _fake_post)
+        def post(self, url, **kwargs):
+            self._sink.append((url, kwargs))
+            return _OkResponse()
 
     client = ReportingClient(
         enabled=False,
         base_url="http://127.0.0.1:58473",
         token="",
     )
+    client.session = _FakeSession(calls)
 
     client.run_start({"run_id": "example"})
     client.test_result({"run_id": "example", "status": "passed"})
@@ -35,20 +38,23 @@ def test_reporting_client_skips_calls_when_disabled(monkeypatch):
     assert calls == []
 
 
-def test_reporting_client_calls_api_when_enabled(monkeypatch):
+def test_reporting_client_calls_api_when_enabled():
     calls: list[tuple[str, dict]] = []
 
-    def _fake_post(url, **kwargs):
-        calls.append((url, kwargs))
-        return _OkResponse()
+    class _FakeSession:
+        def __init__(self, sink: list[tuple[str, dict]]):
+            self._sink = sink
 
-    monkeypatch.setattr("framework.reporting_client.requests.post", _fake_post)
+        def post(self, url, **kwargs):
+            self._sink.append((url, kwargs))
+            return _OkResponse()
 
     client = ReportingClient(
         enabled=True,
         base_url="http://127.0.0.1:58473",
         token="",
     )
+    client.session = _FakeSession(calls)
 
     payload = {"run_id": "example", "status": "passed"}
     client.test_result(payload)
