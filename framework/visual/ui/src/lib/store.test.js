@@ -12,7 +12,13 @@ describe("store", () => {
       expect(store.status).toBe("");
       expect(store.viewport).toBe("");
       expect(store.sortKey).toBe("scenario_id");
-      expect(store.summary).toBe("total=0 passed=0 failed=0 skipped=0");
+      expect(store.summary).toEqual({
+        total: 0,
+        passed: 0,
+        failed: 0,
+        uncertain: 0,
+        skipped: 0,
+      });
     });
   });
 
@@ -28,9 +34,9 @@ describe("store", () => {
       setRows(store, rows);
 
       expect(store.rows).toHaveLength(3);
-      expect(store.summary).toContain("total=3");
-      expect(store.summary).toContain("passed=2");
-      expect(store.summary).toContain("failed=1");
+      expect(store.summary.total).toBe(3);
+      expect(store.summary.passed).toBe(2);
+      expect(store.summary.failed).toBe(1);
     });
 
     it("normalizes new status to failed", () => {
@@ -42,7 +48,7 @@ describe("store", () => {
       setRows(store, rows);
 
       expect(store.rows[0].status).toBe("failed");
-      expect(store.summary).toContain("failed=1");
+      expect(store.summary.failed).toBe(1);
     });
 
     it("handles non-array input", () => {

@@ -15,7 +15,7 @@
           </div>
           <div v-if="tagSyncMessage" class="text-muted small">{{ tagSyncMessage }}</div>
           <div v-if="baselineMessage" class="text-muted small">{{ baselineMessage }}</div>
-          <div class="text-muted small mono">{{ store.summary }}</div>
+          <div class="text-muted small mono">{{ summaryText }}</div>
         </div>
       </div>
     </section>
@@ -150,6 +150,16 @@ export default {
   computed: {
     rows() {
       return filteredSorted(this.store, this.viewer.tagLog);
+    },
+    summaryText() {
+      const summary = this.store?.summary || {};
+      const total = Number(summary.total || 0);
+      const passed = Number(summary.passed || 0);
+      const failed = Number(summary.failed || 0);
+      const skipped = Number(summary.skipped || 0);
+      const uncertain = Number(summary.uncertain || 0);
+      const base = `total=${total} passed=${passed} failed=${failed} skipped=${skipped}`;
+      return uncertain ? `${base} uncertain=${uncertain}` : base;
     },
     gridStyle() {
       const requested = Math.max(1, this.viewer.columns || 1);
