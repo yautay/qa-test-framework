@@ -2,23 +2,26 @@
   <div class="modal fade" id="vrtModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-fullscreen modal-dialog-scrollable">
       <div class="modal-content">
-        <div class="modal-header justify-content-between align-items-start">
-          <div class="modal-header-content">
-            <div class="modal-header-main">
-              <div class="mono fw-semibold">{{ viewer.modalTitle }}</div>
-              <div class="text-muted small mono">{{ viewer.modalSubtitle }}</div>
-            </div>
-            <div class="modal-header-meta">
-              <div v-if="headerBadges.length" class="modal-header-badges">
-                <span v-for="badge in headerBadges" :key="badge.key" class="badge" :class="badge.class" :style="badge.style">
-                  {{ badge.label }}
-                </span>
+          <div class="modal-header justify-content-between align-items-start">
+            <div class="modal-header-content">
+              <div class="modal-header-main">
+                <div class="mono fw-semibold">{{ viewer.modalTitle }}</div>
+                <div class="text-muted small mono">{{ viewer.modalSubtitle }}</div>
               </div>
-              <div v-if="scoringText" class="modal-scoring-text">{{ scoringText }}</div>
+              <div class="modal-header-meta">
+                <div v-if="headerBadges.length" class="modal-header-badges">
+                  <span v-for="badge in headerBadges" :key="badge.key" class="badge" :class="badge.class" :style="badge.style">
+                    {{ badge.label }}
+                  </span>
+                </div>
+                <div v-if="scoringText" class="modal-scoring-text">{{ scoringText }}</div>
+              </div>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="text-muted small">LShift</span>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
           </div>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
 
         <div class="modal-body d-flex flex-column"
              @mousemove="onMouseMove"
@@ -36,38 +39,32 @@
             </div>
 
             <div class="btn-group btn-group-sm" role="group">
-              <button type="button" class="btn" :class="keyHeld.a ? 'btn-primary' : 'btn-outline-secondary'" @mousedown="keyHeld.a=true" @mouseup="keyHeld.a=false" @click="$emit('navigate', -1)">← K-A</button>
-              <button type="button" class="btn" :class="keyHeld.d ? 'btn-primary' : 'btn-outline-secondary'" @mousedown="keyHeld.d=true" @mouseup="keyHeld.d=false" @click="$emit('navigate', 1)">K-D →</button>
+              <button type="button" class="btn" :class="keyHeld.a ? 'btn-primary' : 'btn-outline-secondary'" @mousedown="keyHeld.a=true" @mouseup="keyHeld.a=false" @click="$emit('navigate', -1)">← A</button>
+              <button type="button" class="btn" :class="keyHeld.d ? 'btn-primary' : 'btn-outline-secondary'" @mousedown="keyHeld.d=true" @mouseup="keyHeld.d=false" @click="$emit('navigate', 1)">D →</button>
             </div>
 
             <button type="button" :class="superZoomActive ? 'btn btn-primary ms-1' : 'btn btn-outline-secondary ms-1'"
                     @pointerdown.prevent="$emit('super-zoom-down')"
                     @pointerup.prevent="$emit('super-zoom-up')"
                     @pointerleave.prevent="$emit('super-zoom-up')">
-              🔍 K-W
+              🔍 W
             </button>
 
-            <div class="btn-group btn-group-sm" role="group">
-              <button v-if="!viewer.tags.bug" type="button" class="btn btn-outline-danger" :disabled="viewer.tags.bug_reported" @click="$emit('prompt-tag','bug')">{{ t('tags.bug') }}! (K-S)</button>
-              <button v-if="viewer.tags.bug && !viewer.tags.bug_reported" type="button" class="btn btn-danger btn-sm" @click="$emit('prompt-remove-tag','bug')">{{ t('tags.bug') }} ✕</button>
-              <button v-if="!viewer.tags.aso" type="button" class="btn btn-outline-warning text-dark" :disabled="viewer.tags.aso_reported" @click="$emit('prompt-tag','aso')">{{ t('tags.aso') }} (K-C)</button>
-              <button v-if="viewer.tags.aso && !viewer.tags.aso_reported" type="button" class="btn btn-warning btn-sm text-dark" @click="$emit('prompt-remove-tag','aso')">{{ t('tags.aso') }} ✕</button>
-              <button v-if="!viewer.tags.baseline" type="button" class="btn btn-outline-success text-success" @click="$emit('prompt-tag','baseline')">{{ t('tags.baseline') }} (K-\)</button>
-              <button v-if="viewer.tags.baseline" type="button" class="btn btn-success btn-sm" @click="$emit('prompt-remove-tag','baseline')">{{ t('tags.baseline') }} ✕</button>
-            </div>
+            <button v-if="!viewer.tags.bug" type="button" class="btn btn-outline-danger btn-sm" :disabled="viewer.tags.bug_reported" @click="$emit('prompt-tag','bug')">{{ t('tags.bug') }}! S</button>
+            <button v-if="viewer.tags.bug && !viewer.tags.bug_reported" type="button" class="btn btn-danger btn-sm" @click="$emit('prompt-remove-tag','bug')">{{ t('tags.bug') }} ✕</button>
+            <button v-if="!viewer.tags.aso" type="button" class="btn btn-outline-warning text-dark btn-sm" :disabled="viewer.tags.aso_reported" @click="$emit('prompt-tag','aso')">{{ t('tags.aso') }} C</button>
+            <button v-if="viewer.tags.aso && !viewer.tags.aso_reported" type="button" class="btn btn-warning btn-sm text-dark" @click="$emit('prompt-remove-tag','aso')">{{ t('tags.aso') }} ✕</button>
+            <button v-if="!viewer.tags.baseline" type="button" class="btn btn-outline-success text-success btn-sm" @click="$emit('prompt-tag','baseline')">{{ t('tags.baseline') }} \</button>
+            <button v-if="viewer.tags.baseline" type="button" class="btn btn-success btn-sm" @click="$emit('prompt-remove-tag','baseline')">{{ t('tags.baseline') }} ✕</button>
 
             <button type="button" class="btn btn-outline-secondary btn-sm" @click="$emit('open-note')">
-              {{ t('note.button') }} (K-N)
+              {{ t('note.button') }} N
             </button>
 
             <button type="button" class="btn btn-outline-secondary btn-sm" @click="$emit('open-metadata')">
               {{ t('metadata.open') }}
             </button>
-
-            <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" @click="$emit('close-modal')">{{ t('modal.exit') }}</button>
           </div>
-
-          <div class="text-muted small mb-2">{{ t('modal.keys') }}</div>
 
           <div class="flex-grow-1 overflow-auto pb-2 position-relative">
             <div class="slot-grid" :style="gridStyle">

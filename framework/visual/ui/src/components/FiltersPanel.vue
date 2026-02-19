@@ -1,5 +1,5 @@
 <template>
-  <div class="card mb-3 shadow-sm" :class="{ 'filters-panel-active': filtersActive }">
+  <div class="card mb-3 shadow-sm" :class="{ 'filters-panel-active': store.filtersActive }">
     <div class="card-body">
       <div class="row g-2 align-items-end">
         <div class="col-12 col-md-4">
@@ -28,7 +28,7 @@
           <label class="form-label">{{ t('filtersPanel.viewport') }}</label>
           <select class="form-select" :class="{ 'filter-active-field': viewportActive }" v-model="store.viewport">
             <option value="">{{ t('filtersPanel.all') }}</option>
-            <option v-for="vp in viewports" :key="vp" :value="vp">{{ vp }}</option>
+            <option v-for="vp in store.viewports" :key="vp" :value="vp">{{ vp }}</option>
           </select>
         </div>
 
@@ -36,7 +36,7 @@
           <label class="form-label">{{ t('filtersPanel.browser') }}</label>
           <select class="form-select" :class="{ 'filter-active-field': browserActive }" v-model="store.browser">
             <option value="">{{ t('filtersPanel.all') }}</option>
-            <option v-for="browser in browsers" :key="browser" :value="browser">{{ browser }}</option>
+            <option v-for="browser in store.browsers" :key="browser" :value="browser">{{ browser }}</option>
           </select>
         </div>
 
@@ -55,62 +55,24 @@
 
         <div class="col-6 col-md-2">
           <label class="form-label">&nbsp;</label>
-          <button class="btn btn-outline-secondary w-100" @click="$emit('reset')">{{ t('filtersPanel.reset') }}</button>
+          <button class="btn btn-outline-secondary w-100" @click="store.resetFilters()">{{ t('filtersPanel.reset') }}</button>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
+<script setup>
+import { computed } from "vue";
+import { useResultsStore } from "../stores/resultsStore";
 import { t } from "../lib/i18n";
 
-export default {
-  name: "FiltersPanel",
-  props: {
-    store: {
-      type: Object,
-      required: true,
-    },
-  },
-  emits: ["reset"],
-  computed: {
-    viewports() {
-      const vps = new Set();
-      for (const row of this.store.rows || []) {
-        if (row.viewport) vps.add(row.viewport);
-      }
-      return Array.from(vps).sort();
-    },
-    browsers() {
-      const items = new Set();
-      for (const row of this.store.rows || []) {
-        if (row.browser) items.add(row.browser);
-      }
-      return Array.from(items).sort();
-    },
-    searchActive() {
-      return !!(this.store.q || "").trim();
-    },
-    statusActive() {
-      return !!this.store.status;
-    },
-    viewportActive() {
-      return !!this.store.viewport;
-    },
-    browserActive() {
-      return !!this.store.browser;
-    },
-    filtersActive() {
-      return this.searchActive || this.statusActive || this.viewportActive || this.browserActive;
-    },
-  },
-  methods: {
-    t(key) {
-      return t(key);
-    },
-  },
-};
+const store = useResultsStore();
+
+const searchActive = computed(() => !!store.q.trim());
+const statusActive = computed(() => !!store.status);
+const viewportActive = computed(() => !!store.viewport);
+const browserActive = computed(() => !!store.browser);
 </script>
 
 <style scoped>

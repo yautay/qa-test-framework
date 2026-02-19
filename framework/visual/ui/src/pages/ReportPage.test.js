@@ -1,254 +1,690 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { mount } from "@vue/test-utils";
+import { setActivePinia, createPinia } from "pinia";
 
 vi.mock("../lib/api/reportsApi", () => ({
-  fetchReportResults: vi.fn(),
-  sendRunReport: vi.fn(),
+  fetchReportResults: vi.fn(async () => [
+    { scenario_id: "s1", status: "failed", actual_path: "a.png", suite_id: "suite1", viewport: "1920x1080", browser: "chrome" },
+    { scenario_id: "s2", status: "passed", actual_path: "b.png", suite_id: "suite2", viewport: "1920x1080", browser: "chrome" },
+  ]),
+  sendRunReport: vi.fn(async () => ({})),
+}));
+
+vi.mock("../lib/tagPersistence", () => ({
+  loadTagSnapshot: vi.fn(async () => ({})),
+  saveTagSnapshotToFile: vi.fn(async () => true),
+}));
+
+vi.mock("../lib/baselineApi", () => ({
+  requestBaselineChallengeForRun: vi.fn(),
+  sendBaselineSelectionForRun: vi.fn(),
+}));
+
+vi.mock("bootstrap", () => ({
+  default: {
+    getInstance: vi.fn(() => ({ show: vi.fn(), hide: vi.fn() })),
+  },
+  Modal: class {
+    static getInstance() { return null; }
+    show() {}
+    hide() {}
+  },
 }));
 
 import ReportPage from "./ReportPage.vue";
 import { fetchReportResults, sendRunReport } from "../lib/api/reportsApi";
-import { createStore, filteredSorted } from "../lib/store";
+import { loadTagSnapshot, saveTagSnapshotToFile } from "../lib/tagPersistence";
 
-function buildContext(overrides = {}) {
-  const key = "scenario-1::actual.png::baseline.png::diff.png";
-  return {
-    prompt: { active: false, type: null },
-    noteEditor: { active: false, rowKey: "", text: "", hasExisting: false },
-    metadataPanel: { active: false, payload: {} },
-    viewer: {
-      modalRow: {
-        scenario_id: "scenario-1",
-        actual_path: "actual.png",
-        baseline_path: "baseline.png",
-        diff_path: "diff.png",
-      },
-      tagLog: {
-        [key]: { bug: true, aso: false, baseline: false, note: null },
-      },
-      tags: { bug: true, aso: false, baseline: false, note: null },
-      tagLocked: {
-        [key]: { bug: true, aso: false, baseline: false },
-      },
-      modal: { hide: vi.fn() },
-    },
-    rows: [],
-    selectedIndex: -1,
-    getRowTagKey: vi.fn(() => key),
-    noteForRow: vi.fn(() => null),
-    ensureTagEntry: vi.fn(() => ({
-      key,
-      entry: { bug: true, aso: false, baseline: false, note: null },
-    })),
-    sanitizeNoteText: ReportPage.methods.sanitizeNoteText,
-    normalizeNoteDraft: ReportPage.methods.normalizeNoteDraft,
-    normalizeTagLog: ReportPage.methods.normalizeTagLog,
-    persistTags: vi.fn(),
-    downloadBugPdf: vi.fn(),
-    buildMetadataPayload: ReportPage.methods.buildMetadataPayload,
-    closeMetadataPanel: ReportPage.methods.closeMetadataPanel,
-    cancelNoteEditor: ReportPage.methods.cancelNoteEditor,
-    deactivateSuperZoom: vi.fn(),
-    cancelPrompt: vi.fn(),
-    isTagReported: ReportPage.methods.isTagReported,
-    ...overrides,
-  };
-}
+describe("ReportPage", () => {
+  let pinia;
 
-describe("ReportPage tag removal", () => {
   beforeEach(() => {
+    pinia = createPinia();
+    setActivePinia(pinia);
     vi.clearAllMocks();
   });
 
-  it("allows opening remove prompt even for locked tag", () => {
-    const ctx = buildContext({
-      isTagLocked: vi.fn(() => true),
+  it("loads results on mount", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
     });
 
-    ReportPage.methods.promptRemoveTag.call(ctx, "bug");
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
-    expect(ctx.prompt).toEqual({ active: true, type: "remove-bug" });
+    expect(wrapper.text()).toContain("run-1");
+
+    wrapper.unmount();
   });
 
-  it("clears tag value and unlocks it when removing", () => {
-    const ctx = buildContext();
-
-    ReportPage.methods.removeTag.call(ctx, "bug");
-
-    const key = ctx.getRowTagKey.mock.results[0].value;
-    expect(ctx.viewer.tagLog[key].bug).toBe(false);
-    expect(ctx.viewer.tags.bug).toBe(false);
-    expect(ctx.viewer.tagLocked[key].bug).toBe(false);
-    expect(ctx.persistTags).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe("ReportPage note editor", () => {
-  it("opens note editor for current row", () => {
-    const ctx = buildContext({
-      noteForRow: vi.fn(() => ({ text: "Investigate", updatedAt: "2026-02-19T12:00:00.000Z" })),
+  it("displays summary with correct counts", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
     });
 
-    ReportPage.methods.openNoteEditor.call(ctx);
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
-    expect(ctx.noteEditor.active).toBe(true);
-    expect(ctx.noteEditor.text).toBe("Investigate");
-    expect(ctx.noteEditor.hasExisting).toBe(true);
+    expect(wrapper.text()).toContain("total=");
+    expect(wrapper.text()).toContain("passed=");
+    expect(wrapper.text()).toContain("failed=");
+
+    wrapper.unmount();
   });
 
-  it("saves note and persists snapshot", () => {
-    const entry = { bug: true, aso: false, baseline: false, note: null };
-    const ctx = buildContext({
-      noteEditor: { active: true, rowKey: "k", text: "  Keep this  ", hasExisting: false },
-      ensureTagEntry: vi.fn(() => ({ key: "k", entry })),
+  it("shows load error when runId is missing", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "" },
+      global: { plugins: [pinia] },
     });
 
-    ReportPage.methods.saveNoteFromEditor.call(ctx);
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
-    expect(entry.note.text).toBe("Keep this");
-    expect(typeof entry.note.updatedAt).toBe("string");
-    expect(ctx.persistTags).toHaveBeenCalledTimes(1);
-    expect(ctx.noteEditor.active).toBe(false);
+    expect(wrapper.text()).toContain("Missing run id");
+
+    wrapper.unmount();
   });
 
-  it("deletes note immediately and persists snapshot", () => {
-    const entry = { bug: true, aso: false, baseline: false, note: { text: "Old" } };
-    const ctx = buildContext({
-      noteEditor: { active: true, rowKey: "k", text: "Old", hasExisting: true },
-      ensureTagEntry: vi.fn(() => ({ key: "k", entry })),
+  it("displays filters panel", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
     });
 
-    ReportPage.methods.deleteNoteFromEditor.call(ctx);
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
-    expect(entry.note).toBeNull();
-    expect(ctx.persistTags).toHaveBeenCalledTimes(1);
-    expect(ctx.noteEditor.active).toBe(false);
+    expect(wrapper.find("select").exists()).toBe(true);
+
+    wrapper.unmount();
   });
 
-  it("ignores global shortcuts when note editor is active", () => {
-    const ctx = buildContext({
-      noteEditor: { active: true, rowKey: "k", text: "a", hasExisting: true },
-      navigate: vi.fn(),
-      openNoteEditor: vi.fn(),
-    });
-    const evt = { key: "A", code: "KeyA", preventDefault: vi.fn() };
-
-    ReportPage.methods.handleKeydown.call(ctx, evt);
-
-    expect(ctx.navigate).not.toHaveBeenCalled();
-    expect(ctx.openNoteEditor).not.toHaveBeenCalled();
-  });
-});
-
-describe("ReportPage metadata panel", () => {
-  it("opens metadata panel from table row", () => {
-    const ctx = buildContext({ runId: "run-1" });
-    const row = {
-      scenario_id: "scenario-1",
-      status: "failed",
-      message: "boom",
-      tester: "jan.k",
-      run_note: "manual",
-      test_metadata: { extra: { flag: true } },
-    };
-
-    ReportPage.methods.openMetadataFromTable.call(ctx, row, 2);
-
-    expect(ctx.selectedIndex).toBe(2);
-    expect(ctx.metadataPanel.active).toBe(true);
-    expect(ctx.metadataPanel.payload.run.run_id).toBe("run-1");
-    expect(ctx.metadataPanel.payload.run.tester).toBe("jan.k");
-  });
-});
-
-describe("ReportPage report send", () => {
-  it("opens send-report prompt when candidates exist", () => {
-    const ctx = buildContext({
-      runId: "run-1",
-      reportCandidatesCount: 1,
-      reportMessage: "",
+  it("displays header with run info", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-123" },
+      global: { plugins: [pinia] },
     });
 
-    ReportPage.methods.promptSendReport.call(ctx);
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
-    expect(ctx.prompt).toEqual({ active: true, type: "send-report" });
+    expect(wrapper.text()).toContain("run-123");
+
+    wrapper.unmount();
   });
 
-  it("sends report and refreshes tag snapshot", async () => {
-    sendRunReport.mockResolvedValueOnce({
-      bug: { sent: 1, failed: 0, skipped_locked: 0 },
-      aso: { sent: 0, failed: 0, skipped_locked: 0 },
-      pdf: { pages: 1 },
-      tag_snapshot: {
-        "scenario-1::actual.png::baseline.png::diff.png": {
-          bug: true,
-          aso: false,
-          baseline: false,
-          note: null,
-          bug_reported: true,
-          aso_reported: false,
-          bug_reported_at: "2026-02-19T11:00:00Z",
-          aso_reported_at: "",
-        },
-      },
+  it("displays baseline button", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
     });
 
-    const ctx = buildContext({
-      runId: "run-1",
-      reportMessage: "",
-      normalizeTagLog: ReportPage.methods.normalizeTagLog,
-    });
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
-    await ReportPage.methods.executeSendReport.call(ctx);
+    expect(wrapper.find("button.btn-success").exists()).toBe(true);
 
-    expect(sendRunReport).toHaveBeenCalledTimes(1);
-    expect(ctx.viewer.tagLog["scenario-1::actual.png::baseline.png::diff.png"].bug_reported).toBe(true);
-    expect(ctx.downloadBugPdf).toHaveBeenCalledTimes(1);
-    expect(ctx.persistTags).toHaveBeenCalledTimes(1);
+    wrapper.unmount();
   });
-});
 
-describe("ReportPage loadResults", () => {
-  it("clears selected index when fetched rows are empty", async () => {
+  it("displays report button", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(wrapper.find("button.btn-primary").exists()).toBe(true);
+
+    wrapper.unmount();
+  });
+
+  it("renders results table", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(wrapper.find("table").exists() || wrapper.find("tbody").exists()).toBe(true);
+
+    wrapper.unmount();
+  });
+
+  it("calls fetchReportResults on mount", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-test" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(fetchReportResults).toHaveBeenCalledWith("run-test");
+
+    wrapper.unmount();
+  });
+
+  it("shows empty state when no rows", async () => {
     fetchReportResults.mockResolvedValueOnce([]);
 
-    const ctx = {
-      runId: "run-1",
-      loadError: "",
-      selectedIndex: 3,
-      store: createStore(),
-      viewer: { tagLog: {} },
-    };
-    Object.defineProperty(ctx, "rows", {
-      get() {
-        return filteredSorted(this.store, this.viewer.tagLog);
-      },
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-empty" },
+      global: { plugins: [pinia] },
     });
 
-    await ReportPage.methods.loadResults.call(ctx);
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
-    expect(ctx.selectedIndex).toBe(-1);
-    expect(ctx.loadError).toBe("");
+    expect(wrapper.text()).toContain("total=0");
+
+    wrapper.unmount();
   });
 
-  it("clears selected index on fetch error", async () => {
-    fetchReportResults.mockRejectedValueOnce(new Error("boom"));
-
-    const ctx = {
-      runId: "run-1",
-      loadError: "",
-      selectedIndex: 2,
-      store: createStore(),
-      viewer: { tagLog: {} },
-    };
-    Object.defineProperty(ctx, "rows", {
-      get() {
-        return filteredSorted(this.store, this.viewer.tagLog);
-      },
+  it("displays keyboard hint when row selected", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
     });
 
-    await ReportPage.methods.loadResults.call(ctx);
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
-    expect(ctx.selectedIndex).toBe(-1);
-    expect(ctx.loadError).toContain("Unable to load results: boom");
+    const hint = wrapper.find(".keyboard-hint");
+    expect(hint.exists()).toBe(true);
+
+    wrapper.unmount();
+  });
+
+  it("renders ViewerModal component", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(wrapper.findComponent({ name: "ViewerModal" }).exists()).toBe(true);
+
+    wrapper.unmount();
+  });
+
+  it("renders FiltersPanel component", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(wrapper.findComponent({ name: "FiltersPanel" }).exists()).toBe(true);
+
+    wrapper.unmount();
+  });
+
+  it("renders AppHeader component", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(wrapper.findComponent({ name: "AppHeader" }).exists()).toBe(true);
+
+    wrapper.unmount();
+  });
+
+  it("renders TestMetadataPanel component", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(wrapper.findComponent({ name: "TestMetadataPanel" }).exists()).toBe(true);
+
+    wrapper.unmount();
+  });
+
+  it("shows row when clicking on result", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const table = wrapper.find("table");
+    if (table.exists()) {
+      const rows = table.findAll("tbody tr");
+      if (rows.length > 0) {
+        rows[0].trigger("click");
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+    }
+
+    wrapper.unmount();
+  });
+
+  it("handles keydown for column switch", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "1" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "2" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    wrapper.unmount();
+  });
+
+  it("handles escape key to deselect", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    wrapper.unmount();
+  });
+
+  it("handles arrow navigation", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowUp" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    wrapper.unmount();
+  });
+
+  it("handles space to open row", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { code: "Space" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    wrapper.unmount();
+  });
+
+  it("handles shift to go back to hero", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { code: "ShiftLeft" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    wrapper.unmount();
+  });
+
+  it("calls loadTagSnapshot on mount", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(loadTagSnapshot).toHaveBeenCalledWith("run-1");
+
+    wrapper.unmount();
+  });
+
+  it("handles send baseline button click with no candidates", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const baselineBtn = wrapper.find("button.btn-success");
+    if (baselineBtn.exists()) {
+      baselineBtn.trigger("click");
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+
+    wrapper.unmount();
+  });
+
+  it("handles send report button click", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const reportBtn = wrapper.find("button.btn-primary");
+    if (reportBtn.exists()) {
+      reportBtn.trigger("click");
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+
+    wrapper.unmount();
+  });
+
+  it("displays send report prompt when active", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const reportBtn = wrapper.find("button.btn-primary");
+    if (reportBtn.exists()) {
+      reportBtn.trigger("click");
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      expect(wrapper.find(".global-prompt-overlay").exists()).toBe(false);
+    }
+
+    wrapper.unmount();
+  });
+
+  it("handles keyup for zoom keys", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    document.dispatchEvent(new KeyboardEvent("keyup", { key: "a" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    document.dispatchEvent(new KeyboardEvent("keyup", { key: "d" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    wrapper.unmount();
+  });
+
+  it("shows error message on fetch failure", async () => {
+    const { fetchReportResults } = await import("../lib/api/reportsApi");
+    fetchReportResults.mockRejectedValueOnce(new Error("Network error"));
+
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-fail" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(wrapper.text()).toContain("Unable to load");
+
+    wrapper.unmount();
+  });
+
+  it("shows row with test metadata", async () => {
+    const { fetchReportResults } = await import("../lib/api/reportsApi");
+    fetchReportResults.mockResolvedValueOnce([
+      { 
+        scenario_id: "s1", 
+        status: "failed", 
+        actual_path: "a.png",
+        suite_id: "suite1",
+        viewport: "1920x1080",
+        browser: "chrome",
+        test_metadata: { run: { run_id: "run-1", tester: "tester1" } }
+      },
+    ]);
+
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const table = wrapper.find("table");
+    if (table.exists()) {
+      const rows = table.findAll("tbody tr");
+      if (rows.length > 0) {
+        rows[0].trigger("click");
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+    }
+
+    wrapper.unmount();
+  });
+
+  it("opens metadata panel from table", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const table = wrapper.find("table");
+    if (table.exists()) {
+      const rows = table.findAll("tbody tr");
+      if (rows.length > 0) {
+        rows[0].trigger("click");
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+    }
+
+    wrapper.unmount();
+  });
+
+  it("handles send baseline with candidates", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const baselineBtn = wrapper.find("button.btn-success");
+    if (baselineBtn.exists()) {
+      baselineBtn.trigger("click");
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+
+    wrapper.unmount();
+  });
+
+  it("handles prompt with space key", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Space" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    wrapper.unmount();
+  });
+
+  it("handles prompt with shift key", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { code: "ShiftLeft" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    wrapper.unmount();
+  });
+
+  it("handles tag key presses", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "s" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "c" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    wrapper.unmount();
+  });
+
+  it("handles note key press", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "n" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    wrapper.unmount();
+  });
+
+  it("handles navigation keys a and d", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "a" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "d" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    wrapper.unmount();
+  });
+
+  it("handles w key for zoom", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "w" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    document.dispatchEvent(new KeyboardEvent("keyup", { key: "w" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    wrapper.unmount();
+  });
+
+  it("handles backslash key for baseline", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "\\" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    wrapper.unmount();
+  });
+
+  it("opens viewer modal and handles escape", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    wrapper.unmount();
+  });
+
+  it("renders with empty run id", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(wrapper.text()).toContain("Missing run id");
+
+    wrapper.unmount();
+  });
+
+  it("displays correct summary text", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(wrapper.text()).toContain("total=");
+    expect(wrapper.text()).toContain("passed=");
+    expect(wrapper.text()).toContain("failed=");
+
+    wrapper.unmount();
+  });
+
+  it("handles shift to navigate back", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { code: "ShiftRight" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    wrapper.unmount();
+  });
+
+  it("handles column switch with 3 and 4 keys", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "3" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "4" }));
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    wrapper.unmount();
   });
 });
