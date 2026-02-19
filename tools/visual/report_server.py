@@ -6,6 +6,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from secrets import token_urlsafe
+from threading import Lock
 from typing import Any
 from urllib.parse import parse_qs, unquote, urlparse
 import json
@@ -25,6 +26,7 @@ from framework.visual.baseline_store import BaselineStore
 DEFAULT_PORT = 4173
 CHALLENGE_TTL_SECONDS = 300
 _RUN_ID_SAFE = re.compile(r"^[A-Za-z0-9._-]+$")
+_READY_MARKER = ".report-ready.json"
 
 
 @dataclass
@@ -40,10 +42,31 @@ class ReportServerContext:
     ui_dist_dir: Path
     baseline_store: BaselineStore
     run_dirs: dict[str, Path]
+    pinned_run_dirs: dict[str, Path] = field(default_factory=dict)
     challenges: dict[str, ChallengeEntry] = field(default_factory=dict)
+    _lock: Any = field(default_factory=Lock)
 
     def resolve_run_dir(self, run_id: str) -> Path | None:
-        return self.run_dirs.get(run_id)
+        with self._lock:
+            existing = self.run_dirs.get(run_id)
+            if existing is not None:
+                return existing
+        self.refresh_run_dirs()
+        with self._lock:
+            return self.run_dirs.get(run_id)
+
+    def refresh_run_dirs(self) -> None:
+        discovered = _discover_visual_run_dirs(self.repo_root)
+        for run_id, report_dir in self.pinned_run_dirs.items():
+            if _is_ready_visual_dir(report_dir):
+                discovered[run_id] = report_dir
+        with self._lock:
+            self.run_dirs = discovered
+
+    def list_run_dirs(self) -> dict[str, Path]:
+        self.refresh_run_dirs()
+        with self._lock:
+            return dict(self.run_dirs)
 
 
 def _latest_visual_report_dir(repo_root: Path) -> Path:
@@ -101,9 +124,15 @@ def _discover_visual_run_dirs(repo_root: Path) -> dict[str, Path]:
         if not _RUN_ID_SAFE.match(run_id):
             continue
         visual_dir = (run_dir / "visual").resolve()
-        if visual_dir.is_dir():
+        if _is_ready_visual_dir(visual_dir):
             out[run_id] = visual_dir
     return out
+
+
+def _is_ready_visual_dir(visual_dir: Path) -> bool:
+    if not visual_dir.is_dir():
+        return False
+    return (visual_dir / _READY_MARKER).is_file()
 
 
 def _read_results_rows(report_dir: Path) -> list[dict[str, Any]]:
@@ -158,7 +187,8 @@ def _report_summary(rows: list[dict[str, Any]]) -> dict[str, int]:
 
 def _list_reports_payload(context: ReportServerContext) -> list[dict[str, Any]]:
     reports: list[dict[str, Any]] = []
-    for run_id, report_dir in sorted(context.run_dirs.items(), key=lambda item: item[0], reverse=True):
+    run_dirs = context.list_run_dirs()
+    for run_id, report_dir in sorted(run_dirs.items(), key=lambda item: item[0], reverse=True):
         rows = _read_results_rows(report_dir)
         run_metadata = _read_run_metadata(report_dir)
         stats = _report_summary(rows)
@@ -604,10 +634,11 @@ def main() -> int:
 
     run_dirs = _discover_visual_run_dirs(REPO_ROOT)
     selected_run_id = ""
+    pinned_run_dirs: dict[str, Path] = {}
     if args.run_id or args.report_dir:
         selected_report_dir = _resolve_report_dir(REPO_ROOT, args.report_dir or None, args.run_id or None)
         selected_run_id = _run_id_from_visual_dir(REPO_ROOT, selected_report_dir)
-        run_dirs[selected_run_id] = selected_report_dir
+        pinned_run_dirs[selected_run_id] = selected_report_dir
 
     env = load_env()
     context = ReportServerContext(
@@ -615,13 +646,14 @@ def main() -> int:
         ui_dist_dir=ui_dist_dir,
         baseline_store=BaselineStore(env, REPO_ROOT),
         run_dirs=run_dirs,
+        pinned_run_dirs=pinned_run_dirs,
     )
     handler = _build_handler(context)
     server = ThreadingHTTPServer((args.host, int(args.port)), handler)
 
     print(f"ui dist dir: {ui_dist_dir}")
     if selected_run_id:
-        print(f"selected report: {selected_run_id} -> {run_dirs.get(selected_run_id)}")
+        print(f"selected report: {selected_run_id} -> {pinned_run_dirs.get(selected_run_id)}")
         print(f"server listening: http://{args.host}:{args.port}/reports/{selected_run_id}")
     else:
         print(f"server listening: http://{args.host}:{args.port}/")

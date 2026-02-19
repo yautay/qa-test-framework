@@ -10,10 +10,14 @@ Outputs:
 
 import json
 import shutil
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from framework.visual.models import VisualResult
+
+
+READY_MARKER_FILENAME = ".report-ready.json"
 
 
 def _as_str_path(value: Any) -> str:
@@ -116,9 +120,30 @@ def _ensure_tag_snapshot_file(report_dir: Path) -> None:
     tag_file.write_text("{}\n", encoding="utf-8")
 
 
+def _clear_ready_marker(report_dir: Path) -> None:
+    marker = report_dir / READY_MARKER_FILENAME
+    try:
+        marker.unlink()
+    except FileNotFoundError:
+        return
+
+
+def _write_ready_marker(report_dir: Path, rows: list[dict[str, Any]]) -> None:
+    marker = report_dir / READY_MARKER_FILENAME
+    payload = {
+        "ready": True,
+        "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "results_count": len(rows),
+    }
+    temp_marker = report_dir / f"{READY_MARKER_FILENAME}.tmp"
+    temp_marker.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    temp_marker.replace(marker)
+
+
 def write_visual_report(report_dir: Path, results: list[VisualResult]) -> None:
     """Persist JSON + offline HTML report artifacts."""
     report_dir.mkdir(parents=True, exist_ok=True)
+    _clear_ready_marker(report_dir)
     _ensure_tag_snapshot_file(report_dir)
 
     # 1) Copy assets for offline usage
@@ -132,3 +157,6 @@ def write_visual_report(report_dir: Path, results: list[VisualResult]) -> None:
 
     # 4) Offline-friendly index.template.html (no fetch)
     _write_offline_index_html(report_dir, rows)
+
+    # 5) Ready marker used by live report server discovery.
+    _write_ready_marker(report_dir, rows)

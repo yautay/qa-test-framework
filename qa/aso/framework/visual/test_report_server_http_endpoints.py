@@ -74,6 +74,7 @@ def test_report_server_endpoints_handle_listing_results_ref_tags_and_baseline_fl
     run_id = "20260218_120000_000001"
     report_dir = repo_root / "artifacts" / run_id / "visual"
     report_dir.mkdir(parents=True)
+    (report_dir / ".report-ready.json").write_text('{"ready": true}\n', encoding="utf-8")
     (report_dir.parent / "run-metadata.json").write_text(
         json.dumps({"tester": "jan.k", "run_note": "manual smoke"}),
         encoding="utf-8",
@@ -203,6 +204,8 @@ def test_report_server_rejects_challenge_run_mismatch(tmp_path: Path) -> None:
     report_b = repo_root / "artifacts" / run_b / "visual"
     report_a.mkdir(parents=True)
     report_b.mkdir(parents=True)
+    (report_a / ".report-ready.json").write_text('{"ready": true}\n', encoding="utf-8")
+    (report_b / ".report-ready.json").write_text('{"ready": true}\n', encoding="utf-8")
 
     ui_dist = tmp_path / "ui-dist"
     ui_dist.mkdir(parents=True)
@@ -242,6 +245,7 @@ def test_report_server_ref_endpoint_validates_query_and_run(tmp_path: Path) -> N
     run_id = "run-1"
     report_dir = repo_root / "artifacts" / run_id / "visual"
     report_dir.mkdir(parents=True)
+    (report_dir / ".report-ready.json").write_text('{"ready": true}\n', encoding="utf-8")
 
     ui_dist = tmp_path / "ui-dist"
     ui_dist.mkdir(parents=True)

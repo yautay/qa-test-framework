@@ -14,6 +14,10 @@ from tools.visual.report_server import (
 pytestmark = [pytest.mark.aso]
 
 
+def _write_ready_marker(visual_dir: Path) -> None:
+    (visual_dir / ".report-ready.json").write_text('{"ready": true}\n', encoding="utf-8")
+
+
 def test_resolve_report_dir_prefers_run_id(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     report_dir = repo_root / "artifacts" / "20260101_120000_000001" / "visual"
@@ -69,6 +73,8 @@ def test_discover_visual_run_dirs_lists_artifacts_visual_dirs(tmp_path: Path) ->
     visual_b = repo_root / "artifacts" / "20260101_120000_000002" / "visual"
     visual_a.mkdir(parents=True)
     visual_b.mkdir(parents=True)
+    _write_ready_marker(visual_a)
+    _write_ready_marker(visual_b)
 
     discovered = _discover_visual_run_dirs(repo_root)
 

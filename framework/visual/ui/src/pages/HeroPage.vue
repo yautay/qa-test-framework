@@ -20,6 +20,8 @@ import ReportsFilters from "../components/hero/ReportsFilters.vue";
 import ReportsList from "../components/hero/ReportsList.vue";
 import { fetchReportsList } from "../lib/api/reportsApi";
 
+const REPORTS_REFRESH_INTERVAL_MS = 5000;
+
 export default {
   name: "HeroPage",
   components: {
@@ -33,6 +35,8 @@ export default {
       query: "",
       selectedTester: "",
       reports: [],
+      refreshTimer: null,
+      refreshInFlight: false,
     };
   },
   computed: {
@@ -63,11 +67,29 @@ export default {
       });
     },
   },
+  methods: {
+    async refreshReports() {
+      if (this.refreshInFlight) return;
+      this.refreshInFlight = true;
+      try {
+        this.reports = await fetchReportsList();
+      } catch (_error) {
+        this.reports = [];
+      } finally {
+        this.refreshInFlight = false;
+      }
+    },
+  },
   async mounted() {
-    try {
-      this.reports = await fetchReportsList();
-    } catch (_error) {
-      this.reports = [];
+    await this.refreshReports();
+    this.refreshTimer = window.setInterval(() => {
+      void this.refreshReports();
+    }, REPORTS_REFRESH_INTERVAL_MS);
+  },
+  beforeUnmount() {
+    if (this.refreshTimer) {
+      window.clearInterval(this.refreshTimer);
+      this.refreshTimer = null;
     }
   },
 };

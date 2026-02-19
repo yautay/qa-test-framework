@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { mount } from "@vue/test-utils";
 
 import HeroPage from "./HeroPage.vue";
+import { fetchReportsList } from "../lib/api/reportsApi";
 
 vi.mock("../lib/api/reportsApi", () => ({
   fetchReportsList: vi.fn(async () => [
@@ -37,6 +38,10 @@ function flushPromises() {
 }
 
 describe("HeroPage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("loads reports and filters by query", async () => {
     const wrapper = mount(HeroPage);
     await flushPromises();
@@ -49,16 +54,34 @@ describe("HeroPage", () => {
 
     expect(wrapper.text()).toContain("20260218_120000_000001");
     expect(wrapper.text()).not.toContain("20260217_120000_000001");
+    wrapper.unmount();
   });
 
   it("filters reports by tester select", async () => {
     const wrapper = mount(HeroPage);
     await flushPromises();
 
-    const select = wrapper.find("select");
+    const selects = wrapper.findAll("select");
+    const select = selects[selects.length - 1];
     await select.setValue("ola.z");
 
     expect(wrapper.text()).toContain("20260217_120000_000001");
     expect(wrapper.text()).not.toContain("20260218_120000_000001");
+    wrapper.unmount();
+  });
+
+  it("refreshes reports list in background", async () => {
+    vi.useFakeTimers();
+    const wrapper = mount(HeroPage);
+    await Promise.resolve();
+
+    expect(fetchReportsList).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(5000);
+    await Promise.resolve();
+    expect(fetchReportsList).toHaveBeenCalledTimes(2);
+
+    wrapper.unmount();
+    vi.useRealTimers();
   });
 });

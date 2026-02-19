@@ -87,6 +87,8 @@ def test_list_reports_payload_includes_stats_and_sorted_desc(tmp_path: Path) -> 
     ui_dist.mkdir()
     run_a.mkdir(parents=True)
     run_b.mkdir(parents=True)
+    (run_a / ".report-ready.json").write_text('{"ready": true}\n', encoding="utf-8")
+    (run_b / ".report-ready.json").write_text('{"ready": true}\n', encoding="utf-8")
 
     (run_a / "results.json").write_text(json.dumps({"results": [{"status": "failed"}]}), encoding="utf-8")
     (run_b / "results.json").write_text(
@@ -110,3 +112,44 @@ def test_list_reports_payload_includes_stats_and_sorted_desc(tmp_path: Path) -> 
     assert payload[0]["tester"] == ""
     assert payload[0]["run_note"] == ""
     assert payload[1]["failed"] == 1
+
+
+def test_list_reports_payload_skips_runs_without_ready_marker(tmp_path: Path) -> None:
+    run_dir = tmp_path / "artifacts" / "20260218" / "visual"
+    ui_dist = tmp_path / "ui"
+    ui_dist.mkdir()
+    run_dir.mkdir(parents=True)
+    (run_dir / "results.json").write_text(json.dumps({"results": [{"status": "failed"}]}), encoding="utf-8")
+
+    context = ReportServerContext(
+        repo_root=tmp_path,
+        ui_dist_dir=ui_dist,
+        baseline_store=cast(Any, _DummyBaselineStore()),
+        run_dirs={"20260218": run_dir},
+    )
+
+    payload = _list_reports_payload(context)
+
+    assert payload == []
+
+
+def test_list_reports_payload_picks_new_run_after_server_context_created(tmp_path: Path) -> None:
+    ui_dist = tmp_path / "ui"
+    ui_dist.mkdir()
+    context = ReportServerContext(
+        repo_root=tmp_path,
+        ui_dist_dir=ui_dist,
+        baseline_store=cast(Any, _DummyBaselineStore()),
+        run_dirs={},
+    )
+
+    assert _list_reports_payload(context) == []
+
+    run_dir = tmp_path / "artifacts" / "20260219" / "visual"
+    run_dir.mkdir(parents=True)
+    (run_dir / "results.json").write_text(json.dumps({"results": [{"status": "passed"}]}), encoding="utf-8")
+    (run_dir / ".report-ready.json").write_text('{"ready": true}\n', encoding="utf-8")
+
+    payload = _list_reports_payload(context)
+
+    assert [item["run_id"] for item in payload] == ["20260219"]
