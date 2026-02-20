@@ -269,10 +269,16 @@ function promptSendReport() {
   }
 
   const hasCandidates = store.reportCandidatesCount > 0;
+  const hasAnyBug = store.hasAnyBug > 0;
 
-  if (!hasCandidates) {
+  if (!hasCandidates && hasAnyBug) {
     console.info("No BUG/ASO/NOTATKA to send, generating PDF only");
     executeSendReport();
+    return;
+  }
+
+  if (!hasCandidates) {
+    console.info("Nothing to send and no BUG for PDF");
     return;
   }
 

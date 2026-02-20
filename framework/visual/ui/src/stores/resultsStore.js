@@ -228,29 +228,37 @@ export const useResultsStore = defineStore("results", {
         const tags = state.tagLog?.[key] || {};
         const canSendBug = !!tags.bug && !tags.bug_reported;
         const canSendAso = !!tags.aso && !tags.aso_reported;
+
         const noteText = tags.note?.text || "";
-        const noteUpdated = tags.note?.updatedAt || "";
-        const noteReportedAt = tags.note_reported_at || "";
         const noteHasText = typeof noteText === "string" && noteText.trim() !== "";
         let canSendNote = false;
+
         if (noteHasText) {
-          if (!tags.note_reported) {
-            canSendNote = true;
-          } else if (!noteReportedAt) {
-            canSendNote = true;
-          } else if (!noteUpdated) {
-            canSendNote = true;
-          } else {
-            const updatedMs = Date.parse(noteUpdated);
-            const reportedMs = Date.parse(noteReportedAt);
-            if (!Number.isNaN(updatedMs) && !Number.isNaN(reportedMs)) {
-              canSendNote = updatedMs > reportedMs;
-            } else {
-              canSendNote = true;
+          const noteUpdated = tags.note?.updatedAt;
+          const noteReportedAt = tags.note_reported_at;
+
+          if (tags.note_reported && noteReportedAt) {
+            if (noteUpdated) {
+              const updatedMs = Date.parse(noteUpdated);
+              const reportedMs = Date.parse(noteReportedAt);
+              if (!Number.isNaN(updatedMs) && !Number.isNaN(reportedMs)) {
+                canSendNote = updatedMs > reportedMs;
+              }
             }
+          } else if (!tags.note_reported) {
+            canSendNote = true;
           }
         }
+
         return count + (canSendBug || canSendAso || canSendNote ? 1 : 0);
+      }, 0);
+    },
+
+    hasAnyBug: (state) => {
+      return state.rows.reduce((count, row) => {
+        const key = getRowTagKey(row);
+        const tags = state.tagLog?.[key];
+        return count + (tags?.bug ? 1 : 0);
       }, 0);
     },
   },
