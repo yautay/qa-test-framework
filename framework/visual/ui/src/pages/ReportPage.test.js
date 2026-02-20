@@ -9,6 +9,8 @@ vi.mock("../lib/api/reportsApi", () => ({
     { scenario_id: "s2", status: "passed", actual_path: "b.png", suite_id: "suite2", viewport: "1920x1080", browser: "chrome" },
   ]),
   sendRunReport: vi.fn(async () => ({})),
+  sendSingleAttempt: vi.fn(async () => ({ accepted: true })),
+  retryFailedAttempts: vi.fn(async () => ({ accepted: true, retried: 0 })),
 }));
 
 vi.mock("../lib/tagPersistence", () => ({
@@ -442,16 +444,9 @@ describe("ReportPage", () => {
     const reportBtn = wrapper.find(".report-header button.btn-primary");
     expect(reportBtn.exists()).toBe(true);
     expect(reportBtn.element.disabled).toBe(false);
-    reportBtn.trigger("click");
-    await nextTick();
+    await reportBtn.trigger("click");
 
-    const promptOverlay = wrapper.find(".global-prompt-overlay");
-    expect(promptOverlay.exists()).toBe(true);
-    const confirmBtn = promptOverlay.find("button.btn-primary");
-    expect(confirmBtn.exists()).toBe(true);
-    confirmBtn.trigger("click");
-
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 20));
 
     expect(sendRunReport).toHaveBeenCalled();
     expect(anchor.click).toHaveBeenCalled();
@@ -512,14 +507,9 @@ describe("ReportPage", () => {
     await nextTick();
 
     const reportBtn = wrapper.find(".report-header button.btn-primary");
-    reportBtn.trigger("click");
-    await nextTick();
+    await reportBtn.trigger("click");
 
-    const promptOverlay = wrapper.find(".global-prompt-overlay");
-    const confirmBtn = promptOverlay.find("button.btn-primary");
-    confirmBtn.trigger("click");
-
-    await new Promise((resolve) => setTimeout(resolve, 10));
+    await new Promise((resolve) => setTimeout(resolve, 20));
 
     expect(sendRunReport).toHaveBeenCalled();
     expect(anchor.click).not.toHaveBeenCalled();
@@ -528,7 +518,7 @@ describe("ReportPage", () => {
     createSpy.mockRestore();
   });
 
-  it("displays send report prompt when active", async () => {
+  it("does not display send report prompt on click", async () => {
     const wrapper = mount(ReportPage, {
       props: { runId: "run-1" },
       global: { plugins: [pinia] },
