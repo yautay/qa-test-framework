@@ -960,13 +960,15 @@ def _generate_bug_pdf(
 
 def _build_handler(context: ReportServerContext):
     class Handler(BaseHTTPRequestHandler):
+        protocol_version = "HTTP/1.0"
+
         def log_message(self, format, *args):
             pass
 
         def handle(self):
             try:
                 super().handle()
-            except ConnectionAbortedError:
+            except (BrokenPipeError, ConnectionAbortedError, ConnectionResetError):
                 pass
 
         def _send_json(self, status: int, payload: dict[str, Any]) -> None:
@@ -975,13 +977,19 @@ def _build_handler(context: ReportServerContext):
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
-            self.wfile.write(body)
+            try:
+                self.wfile.write(body)
+            except (BrokenPipeError, ConnectionResetError):
+                return
 
         def _read_json_body(self) -> dict[str, Any]:
             content_length = int(self.headers.get("Content-Length", "0") or "0")
             if content_length <= 0:
                 return {}
-            raw = self.rfile.read(content_length)
+            try:
+                raw = self.rfile.read(content_length)
+            except ConnectionResetError as exc:
+                raise ValueError("client disconnected") from exc
             data = json.loads(raw.decode("utf-8"))
             if not isinstance(data, dict):
                 raise ValueError("request body must be a JSON object")
@@ -1107,395 +1115,415 @@ def _build_handler(context: ReportServerContext):
             return False
 
         def do_GET(self) -> None:
-            parsed = urlparse(self.path)
-            path = parsed.path
-            query = parse_qs(parsed.query)
+            try:
+                parsed = urlparse(self.path)
+                path = parsed.path
+                query = parse_qs(parsed.query)
 
-            if path == "/health":
-                self._send_json(HTTPStatus.OK, {"status": "ok"})
-                return
-
-            if path.startswith("/api/"):
-                handled = self._handle_api_get(path, query)
-                if handled:
+                if path == "/health":
+                    self._send_json(HTTPStatus.OK, {"status": "ok"})
                     return
-                self._send_json(HTTPStatus.NOT_FOUND, {"error": "unknown endpoint", "path": path})
-                return
 
-            if path == "/" or path == "/index.html":
-                self._serve_ui_index()
-                return
-
-            if path.startswith("/assets/"):
-                self._serve_ui_asset(path)
-                return
-
-            m_report = re.match(r"^/reports/([^/]+)(?:/(.*))?$", path)
-            if m_report:
-                try:
-                    run_id = _safe_run_id_or_error(m_report.group(1))
-                except ValueError as exc:
-                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                if path.startswith("/api/"):
+                    handled = self._handle_api_get(path, query)
+                    if handled:
+                        return
+                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "unknown endpoint", "path": path})
                     return
-                rel_path = (m_report.group(2) or "").strip()
-                if rel_path in {"", "index.html"}:
+
+                if path == "/" or path == "/index.html":
                     self._serve_ui_index()
                     return
-                self._serve_report_file(run_id, rel_path)
-                return
 
-            self.send_error(HTTPStatus.NOT_FOUND, "not found")
+                if path.startswith("/assets/"):
+                    self._serve_ui_asset(path)
+                    return
+
+                m_report = re.match(r"^/reports/([^/]+)(?:/(.*))?$", path)
+                if m_report:
+                    try:
+                        run_id = _safe_run_id_or_error(m_report.group(1))
+                    except ValueError as exc:
+                        self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                        return
+                    rel_path = (m_report.group(2) or "").strip()
+                    if rel_path in {"", "index.html"}:
+                        self._serve_ui_index()
+                        return
+                    self._serve_report_file(run_id, rel_path)
+                    return
+
+                self.send_error(HTTPStatus.NOT_FOUND, "not found")
+            except (BrokenPipeError, ConnectionResetError):
+                return
+            except Exception:
+                logger.opt(exception=True).warning("report server GET failed", path=self.path)
+                try:
+                    self._send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": "internal server error"})
+                except Exception:
+                    return
 
         def do_PUT(self) -> None:
             path = urlparse(self.path).path
             self._send_json(HTTPStatus.NOT_FOUND, {"error": "unknown endpoint", "path": path})
 
         def do_POST(self) -> None:
-            path = urlparse(self.path).path
+            try:
+                path = urlparse(self.path).path
 
-            m_challenge = re.match(r"^/api/reports/([^/]+)/baseline/challenge$", path)
-            if m_challenge:
+                m_challenge = re.match(r"^/api/reports/([^/]+)/baseline/challenge$", path)
+                if m_challenge:
+                    try:
+                        run_id = _safe_run_id_or_error(m_challenge.group(1))
+                    except ValueError as exc:
+                        self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                        return
+                    if context.resolve_run_dir(run_id) is None:
+                        self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
+                        return
+
+                    _cleanup_expired_challenges(context)
+                    challenge_id = token_urlsafe(12)
+                    phrase = _generate_phrase()
+                    expires_at = time.time() + CHALLENGE_TTL_SECONDS
+                    context.challenges[challenge_id] = ChallengeEntry(
+                        run_id=run_id, phrase=phrase, expires_at=expires_at
+                    )
+                    self._send_json(
+                        HTTPStatus.OK,
+                        {
+                            "challenge_id": challenge_id,
+                            "phrase": phrase,
+                            "expires_at": int(expires_at),
+                        },
+                    )
+                    return
+
+                m_lock_acquire = re.match(r"^/(?:api/)?builds/([^/]+)/lock/acquire$", path)
+                if m_lock_acquire:
+                    try:
+                        run_id = _safe_run_id_or_error(m_lock_acquire.group(1))
+                        build_dir = _build_dir(context.repo_root, run_id)
+                        payload = self._read_json_body()
+                        client_id = _validated_text(payload.get("client_id"), "client_id")
+                    except FileNotFoundError:
+                        self._send_json(HTTPStatus.NOT_FOUND, {"error": "build not found"})
+                        return
+                    except Exception as exc:
+                        self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                        return
+
+                    with context._lock:
+                        result = _acquire_lock(build_dir, client_id)
+                    status = HTTPStatus.OK if result.get("accepted") else HTTPStatus.CONFLICT
+                    self._send_json(status, result)
+                    return
+
+                m_lock_heartbeat = re.match(r"^/(?:api/)?builds/([^/]+)/lock/heartbeat$", path)
+                if m_lock_heartbeat:
+                    try:
+                        run_id = _safe_run_id_or_error(m_lock_heartbeat.group(1))
+                        build_dir = _build_dir(context.repo_root, run_id)
+                        payload = self._read_json_body()
+                        client_id = _validated_text(payload.get("client_id"), "client_id")
+                        lock_id = _validated_text(payload.get("lock_id"), "lock_id")
+                    except FileNotFoundError:
+                        self._send_json(HTTPStatus.NOT_FOUND, {"error": "build not found"})
+                        return
+                    except Exception as exc:
+                        self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                        return
+
+                    with context._lock:
+                        result = _heartbeat_lock(build_dir, client_id, lock_id)
+                    status = HTTPStatus.OK if result.get("accepted") else HTTPStatus.CONFLICT
+                    self._send_json(status, result)
+                    return
+
+                m_lock_release = re.match(r"^/(?:api/)?builds/([^/]+)/lock/release$", path)
+                if m_lock_release:
+                    try:
+                        run_id = _safe_run_id_or_error(m_lock_release.group(1))
+                        build_dir = _build_dir(context.repo_root, run_id)
+                        payload = self._read_json_body()
+                        client_id = _validated_text(payload.get("client_id"), "client_id")
+                        lock_id = _validated_text(payload.get("lock_id"), "lock_id")
+                    except FileNotFoundError:
+                        self._send_json(HTTPStatus.NOT_FOUND, {"error": "build not found"})
+                        return
+                    except Exception as exc:
+                        self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                        return
+
+                    with context._lock:
+                        result = _release_lock(build_dir, client_id, lock_id)
+                    self._send_json(HTTPStatus.OK, result)
+                    return
+
+                m_events = re.match(r"^/(?:api/)?builds/([^/]+)/events$", path)
+                if m_events:
+                    try:
+                        run_id = _safe_run_id_or_error(m_events.group(1))
+                    except ValueError as exc:
+                        self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                        return
+
+                    report_dir = context.resolve_run_dir(run_id)
+                    if report_dir is None:
+                        self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
+                        return
+
+                    try:
+                        payload = self._read_json_body()
+                    except Exception as exc:
+                        self._send_json(HTTPStatus.BAD_REQUEST, {"error": f"invalid request body: {exc}"})
+                        return
+
+                    event_id = _normalize_text(payload.get("event_id"), trim=True)
+                    event_type = str(payload.get("type", "")).strip().upper()
+                    case_id = _normalize_text(payload.get("test_case_id"), trim=True)
+                    event_payload = (
+                        cast(dict[str, Any], payload.get("payload")) if isinstance(payload.get("payload"), dict) else {}
+                    )
+
+                    if not event_id:
+                        self._send_json(HTTPStatus.BAD_REQUEST, {"error": "missing event_id"})
+                        return
+                    if event_type not in {"BUG_SET", "ASO_SET", "NOTE_UPSERT"}:
+                        self._send_json(HTTPStatus.BAD_REQUEST, {"error": "invalid event type"})
+                        return
+                    if not case_id:
+                        self._send_json(HTTPStatus.BAD_REQUEST, {"error": "missing test_case_id"})
+                        return
+
+                    build_dir = report_dir.parent
+                    with context._lock:
+                        state = _load_state(build_dir)
+                        outbox = state.setdefault("outbox", [])
+                        existing = next((item for item in outbox if item.get("event_id") == event_id), None)
+                        if existing:
+                            self._send_json(
+                                HTTPStatus.OK,
+                                {
+                                    "accepted": True,
+                                    "duplicate": True,
+                                    "event": existing,
+                                    "test_cases": state.get("test_cases", {}),
+                                },
+                            )
+                            return
+
+                        case_state = _ensure_case_state(state, case_id)
+                        if event_type == "BUG_SET" and case_state["bug"]["locked"]:
+                            self._send_json(HTTPStatus.CONFLICT, {"error": "BUG already locked"})
+                            return
+                        if event_type == "ASO_SET" and case_state["aso"]["locked"]:
+                            self._send_json(HTTPStatus.CONFLICT, {"error": "ASO already locked"})
+                            return
+
+                        prompt_note = _normalize_text(event_payload.get("note"), trim=True)
+                        if len(prompt_note) > TEXT_MAX_LENGTH:
+                            self._send_json(HTTPStatus.BAD_REQUEST, {"error": "note exceeds 200 characters"})
+                            return
+
+                        note_content = None
+                        if event_type == "NOTE_UPSERT":
+                            try:
+                                note_content = _validated_text(event_payload.get("note"), "note")
+                            except Exception as exc:
+                                self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                                return
+                            if not note_content:
+                                self._send_json(HTTPStatus.BAD_REQUEST, {"error": "note cannot be empty"})
+                                return
+
+                        if event_type == "NOTE_UPSERT":
+                            _supersede_note_events(outbox, case_id)
+
+                        case_state = _apply_event_to_state(state, case_id, event_type, note_content)
+
+                        event_payload_out: dict[str, Any] = {}
+                        if event_type == "NOTE_UPSERT":
+                            event_payload_out["note"] = note_content
+                        elif prompt_note:
+                            event_payload_out["note"] = prompt_note
+
+                        event_entry = {
+                            "event_id": event_id,
+                            "type": event_type,
+                            "payload": event_payload_out,
+                            "status": "pending",
+                            "attempts": 0,
+                            "last_attempt_at": "",
+                            "sent_at": "",
+                            "last_error": "",
+                            "test_case_id": case_id,
+                        }
+                        outbox.append(event_entry)
+
+                        rows = _read_results_rows(report_dir)
+                        rows_by_key = {_row_tag_key(row): row for row in rows}
+                        accepted, error = _send_outbox_event(
+                            context=context,
+                            run_id=run_id,
+                            rows_by_key=rows_by_key,
+                            state=state,
+                            event=event_entry,
+                        )
+                        _record_event_attempt(event_entry, accepted, error)
+                        if accepted:
+                            _mark_case_synced(case_state, event_type)
+
+                        _save_state(build_dir, state)
+
+                    self._send_json(
+                        HTTPStatus.OK,
+                        {
+                            "accepted": True,
+                            "event": event_entry,
+                            "test_cases": state.get("test_cases", {}),
+                        },
+                    )
+                    return
+
+                m_report = re.match(r"^/(?:api/)?builds/([^/]+)/report$", path)
+                if m_report:
+                    try:
+                        run_id = _safe_run_id_or_error(m_report.group(1))
+                    except ValueError as exc:
+                        self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                        return
+                    report_dir = context.resolve_run_dir(run_id)
+                    if report_dir is None:
+                        self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
+                        return
+
+                    state = _flush_pending(context, run_id, report_dir)
+                    bug_rows: list[tuple[dict[str, Any], dict[str, Any]]] = []
+                    for row in _read_results_rows(report_dir):
+                        case_id = _row_tag_key(row)
+                        case_state = state.get("test_cases", {}).get(case_id)
+                        if not isinstance(case_state, dict):
+                            continue
+                        if case_state.get("bug", {}).get("locked"):
+                            bug_rows.append((row, case_state))
+
+                    pdf_path, pdf_pages = _generate_bug_pdf(
+                        context=context,
+                        run_id=run_id,
+                        report_dir=report_dir,
+                        bug_rows=bug_rows,
+                    )
+
+                    self._send_json(
+                        HTTPStatus.OK,
+                        {
+                            "accepted": True,
+                            "run_id": run_id,
+                            "pdf": {"path": pdf_path, "pages": pdf_pages},
+                            "test_cases": state.get("test_cases", {}),
+                        },
+                    )
+                    return
+
+                m_send = re.match(r"^/api/reports/([^/]+)/baseline/send$", path)
+                if not m_send:
+                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "unknown endpoint", "path": path})
+                    return
+
                 try:
-                    run_id = _safe_run_id_or_error(m_challenge.group(1))
+                    run_id = _safe_run_id_or_error(m_send.group(1))
                 except ValueError as exc:
                     self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
                     return
-                if context.resolve_run_dir(run_id) is None:
+                report_dir = context.resolve_run_dir(run_id)
+                if report_dir is None:
                     self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
+                    return
+
+                try:
+                    payload = self._read_json_body()
+                    challenge_id = _as_non_empty_text(payload, "challenge_id")
+                    phrase = _as_non_empty_text(payload, "phrase")
+                    items = payload.get("items")
+                    if not isinstance(items, list):
+                        raise ValueError("missing or invalid field: items")
+                except Exception as exc:
+                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
                     return
 
                 _cleanup_expired_challenges(context)
-                challenge_id = token_urlsafe(12)
-                phrase = _generate_phrase()
-                expires_at = time.time() + CHALLENGE_TTL_SECONDS
-                context.challenges[challenge_id] = ChallengeEntry(run_id=run_id, phrase=phrase, expires_at=expires_at)
-                self._send_json(
-                    HTTPStatus.OK,
-                    {
-                        "challenge_id": challenge_id,
-                        "phrase": phrase,
-                        "expires_at": int(expires_at),
-                    },
-                )
-                return
-
-            m_lock_acquire = re.match(r"^/(?:api/)?builds/([^/]+)/lock/acquire$", path)
-            if m_lock_acquire:
-                try:
-                    run_id = _safe_run_id_or_error(m_lock_acquire.group(1))
-                    build_dir = _build_dir(context.repo_root, run_id)
-                    payload = self._read_json_body()
-                    client_id = _validated_text(payload.get("client_id"), "client_id")
-                except FileNotFoundError:
-                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "build not found"})
+                challenge = context.challenges.get(challenge_id)
+                if challenge is None:
+                    self._send_json(HTTPStatus.FORBIDDEN, {"error": "challenge is missing or expired"})
                     return
-                except Exception as exc:
-                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                if challenge.phrase != phrase:
+                    self._send_json(HTTPStatus.FORBIDDEN, {"error": "challenge phrase mismatch"})
+                    return
+                if challenge.run_id != run_id:
+                    self._send_json(HTTPStatus.FORBIDDEN, {"error": "challenge run mismatch"})
                     return
 
-                with context._lock:
-                    result = _acquire_lock(build_dir, client_id)
-                status = HTTPStatus.OK if result.get("accepted") else HTTPStatus.CONFLICT
-                self._send_json(status, result)
-                return
+                context.challenges.pop(challenge_id, None)
 
-            m_lock_heartbeat = re.match(r"^/(?:api/)?builds/([^/]+)/lock/heartbeat$", path)
-            if m_lock_heartbeat:
-                try:
-                    run_id = _safe_run_id_or_error(m_lock_heartbeat.group(1))
-                    build_dir = _build_dir(context.repo_root, run_id)
-                    payload = self._read_json_body()
-                    client_id = _validated_text(payload.get("client_id"), "client_id")
-                    lock_id = _validated_text(payload.get("lock_id"), "lock_id")
-                except FileNotFoundError:
-                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "build not found"})
-                    return
-                except Exception as exc:
-                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
-                    return
-
-                with context._lock:
-                    result = _heartbeat_lock(build_dir, client_id, lock_id)
-                status = HTTPStatus.OK if result.get("accepted") else HTTPStatus.CONFLICT
-                self._send_json(status, result)
-                return
-
-            m_lock_release = re.match(r"^/(?:api/)?builds/([^/]+)/lock/release$", path)
-            if m_lock_release:
-                try:
-                    run_id = _safe_run_id_or_error(m_lock_release.group(1))
-                    build_dir = _build_dir(context.repo_root, run_id)
-                    payload = self._read_json_body()
-                    client_id = _validated_text(payload.get("client_id"), "client_id")
-                    lock_id = _validated_text(payload.get("lock_id"), "lock_id")
-                except FileNotFoundError:
-                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "build not found"})
-                    return
-                except Exception as exc:
-                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
-                    return
-
-                with context._lock:
-                    result = _release_lock(build_dir, client_id, lock_id)
-                self._send_json(HTTPStatus.OK, result)
-                return
-
-            m_events = re.match(r"^/(?:api/)?builds/([^/]+)/events$", path)
-            if m_events:
-                try:
-                    run_id = _safe_run_id_or_error(m_events.group(1))
-                except ValueError as exc:
-                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
-                    return
-
-                report_dir = context.resolve_run_dir(run_id)
-                if report_dir is None:
-                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
-                    return
-
-                try:
-                    payload = self._read_json_body()
-                except Exception as exc:
-                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": f"invalid request body: {exc}"})
-                    return
-
-                event_id = _normalize_text(payload.get("event_id"), trim=True)
-                event_type = str(payload.get("type", "")).strip().upper()
-                case_id = _normalize_text(payload.get("test_case_id"), trim=True)
-                event_payload = (
-                    cast(dict[str, Any], payload.get("payload")) if isinstance(payload.get("payload"), dict) else {}
-                )
-
-                if not event_id:
-                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": "missing event_id"})
-                    return
-                if event_type not in {"BUG_SET", "ASO_SET", "NOTE_UPSERT"}:
-                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": "invalid event type"})
-                    return
-                if not case_id:
-                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": "missing test_case_id"})
-                    return
-
-                build_dir = report_dir.parent
-                with context._lock:
-                    state = _load_state(build_dir)
-                    outbox = state.setdefault("outbox", [])
-                    existing = next((item for item in outbox if item.get("event_id") == event_id), None)
-                    if existing:
-                        self._send_json(
-                            HTTPStatus.OK,
-                            {
-                                "accepted": True,
-                                "duplicate": True,
-                                "event": existing,
-                                "test_cases": state.get("test_cases", {}),
-                            },
-                        )
-                        return
-
-                    case_state = _ensure_case_state(state, case_id)
-                    if event_type == "BUG_SET" and case_state["bug"]["locked"]:
-                        self._send_json(HTTPStatus.CONFLICT, {"error": "BUG already locked"})
-                        return
-                    if event_type == "ASO_SET" and case_state["aso"]["locked"]:
-                        self._send_json(HTTPStatus.CONFLICT, {"error": "ASO already locked"})
-                        return
-
-                    prompt_note = _normalize_text(event_payload.get("note"), trim=True)
-                    if len(prompt_note) > TEXT_MAX_LENGTH:
-                        self._send_json(HTTPStatus.BAD_REQUEST, {"error": "note exceeds 200 characters"})
-                        return
-
-                    note_content = None
-                    if event_type == "NOTE_UPSERT":
-                        try:
-                            note_content = _validated_text(event_payload.get("note"), "note")
-                        except Exception as exc:
-                            self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
-                            return
-                        if not note_content:
-                            self._send_json(HTTPStatus.BAD_REQUEST, {"error": "note cannot be empty"})
-                            return
-
-                    if event_type == "NOTE_UPSERT":
-                        _supersede_note_events(outbox, case_id)
-
-                    case_state = _apply_event_to_state(state, case_id, event_type, note_content)
-
-                    event_payload_out: dict[str, Any] = {}
-                    if event_type == "NOTE_UPSERT":
-                        event_payload_out["note"] = note_content
-                    elif prompt_note:
-                        event_payload_out["note"] = prompt_note
-
-                    event_entry = {
-                        "event_id": event_id,
-                        "type": event_type,
-                        "payload": event_payload_out,
-                        "status": "pending",
-                        "attempts": 0,
-                        "last_attempt_at": "",
-                        "sent_at": "",
-                        "last_error": "",
-                        "test_case_id": case_id,
-                    }
-                    outbox.append(event_entry)
-
-                    rows = _read_results_rows(report_dir)
-                    rows_by_key = {_row_tag_key(row): row for row in rows}
-                    accepted, error = _send_outbox_event(
-                        context=context,
-                        run_id=run_id,
-                        rows_by_key=rows_by_key,
-                        state=state,
-                        event=event_entry,
-                    )
-                    _record_event_attempt(event_entry, accepted, error)
-                    if accepted:
-                        _mark_case_synced(case_state, event_type)
-
-                    _save_state(build_dir, state)
-
-                self._send_json(
-                    HTTPStatus.OK,
-                    {
-                        "accepted": True,
-                        "event": event_entry,
-                        "test_cases": state.get("test_cases", {}),
-                    },
-                )
-                return
-
-            m_report = re.match(r"^/(?:api/)?builds/([^/]+)/report$", path)
-            if m_report:
-                try:
-                    run_id = _safe_run_id_or_error(m_report.group(1))
-                except ValueError as exc:
-                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
-                    return
-                report_dir = context.resolve_run_dir(run_id)
-                if report_dir is None:
-                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
-                    return
-
-                state = _flush_pending(context, run_id, report_dir)
-                bug_rows: list[tuple[dict[str, Any], dict[str, Any]]] = []
-                for row in _read_results_rows(report_dir):
-                    case_id = _row_tag_key(row)
-                    case_state = state.get("test_cases", {}).get(case_id)
-                    if not isinstance(case_state, dict):
+                results: list[dict[str, Any]] = []
+                saved_count = 0
+                failed_count = 0
+                for raw_item in items:
+                    if not isinstance(raw_item, dict):
+                        failed_count += 1
+                        results.append({"status": "failed", "message": "item must be an object"})
                         continue
-                    if case_state.get("bug", {}).get("locked"):
-                        bug_rows.append((row, case_state))
-
-                pdf_path, pdf_pages = _generate_bug_pdf(
-                    context=context,
-                    run_id=run_id,
-                    report_dir=report_dir,
-                    bug_rows=bug_rows,
-                )
+                    try:
+                        scenario_id = _as_non_empty_text(raw_item, "scenario_id")
+                        suite_id = _as_non_empty_text(raw_item, "suite_id")
+                        viewport = _as_non_empty_text(raw_item, "viewport")
+                        browser = _as_non_empty_text(raw_item, "browser")
+                        actual_path = _as_non_empty_text(raw_item, "actual_path")
+                        source = _resolve_actual_png(report_dir, actual_path)
+                        target = cast(Any, context.baseline_store).store_local_baseline(
+                            suite_id,
+                            scenario_id,
+                            viewport,
+                            browser,
+                            source,
+                        )
+                        results.append(
+                            {
+                                "status": "saved",
+                                "scenario_id": scenario_id,
+                                "source_path": str(source),
+                                "target_path": str(target),
+                            }
+                        )
+                        saved_count += 1
+                    except Exception as exc:
+                        failed_count += 1
+                        results.append(
+                            {
+                                "status": "failed",
+                                "scenario_id": str(raw_item.get("scenario_id", "")),
+                                "message": str(exc),
+                            }
+                        )
 
                 self._send_json(
                     HTTPStatus.OK,
                     {
-                        "accepted": True,
-                        "run_id": run_id,
-                        "pdf": {"path": pdf_path, "pages": pdf_pages},
-                        "test_cases": state.get("test_cases", {}),
+                        "accepted": failed_count == 0,
+                        "saved_count": saved_count,
+                        "failed_count": failed_count,
+                        "results": results,
                     },
                 )
+            except (BrokenPipeError, ConnectionResetError):
                 return
-
-            m_send = re.match(r"^/api/reports/([^/]+)/baseline/send$", path)
-            if not m_send:
-                self._send_json(HTTPStatus.NOT_FOUND, {"error": "unknown endpoint", "path": path})
-                return
-
-            try:
-                run_id = _safe_run_id_or_error(m_send.group(1))
-            except ValueError as exc:
-                self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
-                return
-            report_dir = context.resolve_run_dir(run_id)
-            if report_dir is None:
-                self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
-                return
-
-            try:
-                payload = self._read_json_body()
-                challenge_id = _as_non_empty_text(payload, "challenge_id")
-                phrase = _as_non_empty_text(payload, "phrase")
-                items = payload.get("items")
-                if not isinstance(items, list):
-                    raise ValueError("missing or invalid field: items")
-            except Exception as exc:
-                self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
-                return
-
-            _cleanup_expired_challenges(context)
-            challenge = context.challenges.get(challenge_id)
-            if challenge is None:
-                self._send_json(HTTPStatus.FORBIDDEN, {"error": "challenge is missing or expired"})
-                return
-            if challenge.phrase != phrase:
-                self._send_json(HTTPStatus.FORBIDDEN, {"error": "challenge phrase mismatch"})
-                return
-            if challenge.run_id != run_id:
-                self._send_json(HTTPStatus.FORBIDDEN, {"error": "challenge run mismatch"})
-                return
-
-            context.challenges.pop(challenge_id, None)
-
-            results: list[dict[str, Any]] = []
-            saved_count = 0
-            failed_count = 0
-            for raw_item in items:
-                if not isinstance(raw_item, dict):
-                    failed_count += 1
-                    results.append({"status": "failed", "message": "item must be an object"})
-                    continue
+            except Exception:
+                logger.opt(exception=True).warning("report server POST failed", path=self.path)
                 try:
-                    scenario_id = _as_non_empty_text(raw_item, "scenario_id")
-                    suite_id = _as_non_empty_text(raw_item, "suite_id")
-                    viewport = _as_non_empty_text(raw_item, "viewport")
-                    browser = _as_non_empty_text(raw_item, "browser")
-                    actual_path = _as_non_empty_text(raw_item, "actual_path")
-                    source = _resolve_actual_png(report_dir, actual_path)
-                    target = cast(Any, context.baseline_store).store_local_baseline(
-                        suite_id,
-                        scenario_id,
-                        viewport,
-                        browser,
-                        source,
-                    )
-                    results.append(
-                        {
-                            "status": "saved",
-                            "scenario_id": scenario_id,
-                            "source_path": str(source),
-                            "target_path": str(target),
-                        }
-                    )
-                    saved_count += 1
-                except Exception as exc:
-                    failed_count += 1
-                    results.append(
-                        {
-                            "status": "failed",
-                            "scenario_id": str(raw_item.get("scenario_id", "")),
-                            "message": str(exc),
-                        }
-                    )
-
-            self._send_json(
-                HTTPStatus.OK,
-                {
-                    "accepted": failed_count == 0,
-                    "saved_count": saved_count,
-                    "failed_count": failed_count,
-                    "results": results,
-                },
-            )
+                    self._send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": "internal server error"})
+                except Exception:
+                    return
 
     return Handler
 

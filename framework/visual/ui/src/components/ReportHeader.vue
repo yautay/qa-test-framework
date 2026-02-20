@@ -5,17 +5,17 @@
         <h3 class="mb-0">{{ t('report.title') }}</h3>
         <div class="text-muted small">{{ t('report.run') }}: <span class="mono">{{ runId || "unknown" }}</span></div>
       </div>
-        <div class="d-flex align-items-center gap-2">
-          <div class="btn-group btn-group-sm" role="group" aria-label="tag persistence">
-            <button type="button" class="btn btn-success" :class="{ 'btn-saturated': store.baselineCandidates.length > 0 }" @click="$emit('send-baseline')" :disabled="store.baselineCandidates.length === 0">
-              {{ t('report.sendBaseline') }}
-            </button>
-            <button type="button" class="btn btn-primary" :class="{ 'btn-saturated': store.reportCandidatesCount > 0 || pdfGenerated }" @click="$emit('send-report')" :disabled="!runId">
-              {{ t('report.sendReport') }}
-            </button>
-          </div>
-          <div class="text-muted small mono">{{ store.summaryText }}</div>
+      <div class="d-flex align-items-center gap-2">
+        <div class="d-flex align-items-center gap-2 report-actions" role="group" aria-label="tag persistence">
+          <button type="button" class="btn btn-success btn-sm" :class="{ 'btn-saturated': store.baselineCandidates.length > 0 }" @click="$emit('send-baseline')" :disabled="store.baselineCandidates.length === 0">
+            {{ t('report.sendBaseline') }}
+          </button>
+          <button type="button" class="btn btn-primary btn-sm" :class="{ 'btn-saturated': store.reportCandidatesCount > 0 || pdfGenerated }" @click="$emit('send-report')" :disabled="!runId">
+            {{ t('report.sendReport') }}
+          </button>
         </div>
+        <div class="text-muted small mono">{{ store.summaryText }}</div>
+      </div>
     </div>
   </section>
 </template>

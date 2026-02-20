@@ -31,6 +31,8 @@
     "lpips": "LPIPS",
     "dists": "DISTS",
     "message": "Повідомлення",
+    "viewport": "Viewport",
+    "browser": "Browser",
     "artifacts": "Артефакти",
     "metadata": "Мета",
     "noResults": "Немає результатів для поточних фільтрів."

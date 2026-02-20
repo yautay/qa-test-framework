@@ -4,6 +4,7 @@
       <div class="d-flex align-items-center gap-3">
         <div class="theme-dropdown dropdown">
           <button
+            ref="dropdownButton"
             class="btn btn-theme dropdown-toggle"
             type="button"
             data-bs-toggle="dropdown"
@@ -71,6 +72,7 @@
 
 <script>
 import { ref, onMounted, onUnmounted, computed } from "vue";
+import { Dropdown } from "bootstrap";
 import { locale, setLocale } from "../lib/i18n";
 import { currentTheme, setTheme, presets } from "../lib/themes";
 
@@ -78,6 +80,8 @@ export default {
   name: "AppHeader",
   setup() {
     const formattedDateTime = ref("");
+    const dropdownButton = ref(null);
+    let dropdownInstance = null;
 
     const updateDateTime = () => {
       const now = new Date();
@@ -98,11 +102,18 @@ export default {
     onMounted(() => {
       updateDateTime();
       intervalId = setInterval(updateDateTime, 60000);
+      if (dropdownButton.value) {
+        dropdownInstance = Dropdown.getOrCreateInstance(dropdownButton.value);
+      }
     });
 
     onUnmounted(() => {
       if (intervalId) {
         clearInterval(intervalId);
+      }
+      if (dropdownInstance) {
+        dropdownInstance.dispose();
+        dropdownInstance = null;
       }
     });
 
@@ -114,6 +125,7 @@ export default {
       setTheme,
       presets,
       formattedDateTime,
+      dropdownButton,
     };
   },
 };
