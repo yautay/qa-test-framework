@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { summaryFor } from "../lib/format";
+import { normalizeTagLogSnapshot } from "../lib/notes";
 import { getRowTagKey } from "../lib/viewer";
 
 const NUMERIC_SORT_KEYS = ["pixel_changed_ratio", "lpips", "dists"];
@@ -401,27 +402,7 @@ export const useResultsStore = defineStore("results", {
         this.tagLog = {};
         return;
       }
-      const normalized = {};
-      for (const [key, value] of Object.entries(snapshot)) {
-        if (!value || typeof value !== "object") {
-          normalized[key] = value;
-          continue;
-        }
-        normalized[key] = {
-          bug: !!value.bug,
-          aso: !!value.aso,
-          baseline: !!value.baseline,
-          note: value.note && typeof value.note === "object" ? { ...value.note } : null,
-          bug_reported: !!value.bug_reported,
-          aso_reported: !!value.aso_reported,
-          note_reported: !!value.note_reported,
-          bug_reported_at: String(value.bug_reported_at || ""),
-          aso_reported_at: String(value.aso_reported_at || ""),
-          note_reported_at: String(value.note_reported_at || ""),
-          note_reported_hash: String(value.note_reported_hash || ""),
-        };
-      }
-      this.tagLog = normalized;
+      this.tagLog = normalizeTagLogSnapshot(snapshot);
     },
 
     setNoteForCurrentRow(note) {
