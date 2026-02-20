@@ -75,7 +75,7 @@
     "run": "Uruchomienie",
     "sendBaseline": "WYŚLIJ BASELINE",
     "sendReport": "RAPORT",
-    "confirmSend": "Czy wysłać raport BUG/ASO?"
+    "confirmSend": "Czy jesteś pewien i chcesz zgłosić BUG/ASO/NOTATKA?"
   },
   "modal": {
     "exit": "Wyjście (K-LSHIFT)",

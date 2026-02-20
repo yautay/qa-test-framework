@@ -75,7 +75,7 @@
     "run": "Run",
     "sendBaseline": "SEND BASELINE",
     "sendReport": "REPORT",
-    "confirmSend": "Send BUG/ASO report now?"
+    "confirmSend": "Are you sure you want to submit BUG/ASO/NOTATKA?"
   },
   "modal": {
     "exit": "Exit (K-LSHIFT)",

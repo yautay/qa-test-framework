@@ -267,6 +267,15 @@ function promptSendReport() {
     console.info("Missing run id, unable to send report");
     return;
   }
+
+  const hasCandidates = store.reportCandidatesCount > 0;
+
+  if (!hasCandidates) {
+    console.info("No BUG/ASO/NOTATKA to send, generating PDF only");
+    executeSendReport();
+    return;
+  }
+
   prompt.value = { active: true, type: "send-report" };
 }
 

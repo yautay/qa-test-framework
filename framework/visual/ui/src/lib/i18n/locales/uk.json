@@ -75,7 +75,7 @@
     "run": "Запуск",
     "sendBaseline": "НАДІСЛАТИ BASELINE",
     "sendReport": "ЗВІТ",
-    "confirmSend": "Надіслати звіт BUG/ASO зараз?"
+    "confirmSend": "Ви впевнені, що хочете надіслати BUG/ASO/NOTATKA?"
   },
   "modal": {
     "exit": "Вихід (K-LSHIFT)",
