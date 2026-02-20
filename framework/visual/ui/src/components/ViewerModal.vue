@@ -92,14 +92,6 @@
               </div>
             </div>
 
-            <div v-if="prompt.active" class="prompt-overlay">
-              <div class="prompt-card">
-                <div class="prompt-title">{{ t('prompt.confirm') }}</div>
-                <div class="prompt-text">{{ promptRemove ? t('prompt.removeTag') : t('prompt.areYouSure') }} {{ promptTypeLabel(prompt.type) }}?</div>
-                <div class="prompt-hints">{{ t('prompt.shiftNo') }} &nbsp;•&nbsp; {{ t('prompt.spaceYes') }}</div>
-              </div>
-            </div>
-
             <div v-if="noteEditor.active" class="prompt-overlay" @click.self="onCancelNote">
               <div class="prompt-card note-card">
                 <div class="prompt-title">{{ t('note.title') }}</div>

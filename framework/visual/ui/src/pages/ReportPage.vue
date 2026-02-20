@@ -84,9 +84,9 @@ import { Modal } from "bootstrap";
 import { getRowTagKey } from "../lib/viewer";
 import { loadTagSnapshot, saveTagSnapshotToFile } from "../lib/tagPersistence";
 import { requestBaselineChallengeForRun, sendBaselineSelectionForRun } from "../lib/baselineApi";
-import { fetchReportResults, sendRunReport } from "../lib/api/reportsApi";
+import { fetchReportResults, sendRunReport, sendSingleAttempt, retryFailedAttempts } from "../lib/api/reportsApi";
 import { NOTE_MAX_LENGTH, normalizeNoteDraft, sanitizeNoteText } from "../lib/notes";
-import { isAbsoluteUrl, buildReportAssetSrc, buildRefApiSrc } from "../composables/useUrlUtils";
+import { buildReportAssetSrc, buildRefApiSrc } from "../composables/useUrlUtils";
 
 const props = defineProps({
   runId: {
@@ -101,7 +101,6 @@ const keyHeld = ref({ a: false, d: false, w: false, s: false, c: false });
 const prompt = ref({ active: false, type: null });
 const tagSyncTimer = ref(null);
 const pdfGenerated = ref(false);
-const lastSendResponse = ref(null);
 const isSendingInProgress = ref(false);
 const noteEditor = ref({
   active: false,
@@ -274,7 +273,7 @@ async function sendBaseline() {
   }
 }
 
-function promptSendReport() {
+async function promptSendReport() {
   if (isSendingInProgress.value) {
     debugLog("DEBUG promptSendReport: sending in progress, skipping");
     return;
@@ -285,94 +284,30 @@ function promptSendReport() {
     return;
   }
 
-  debugLog("DEBUG promptSendReport:", {
-    reportCandidatesCount: store.reportCandidatesCount,
-    hasAnyBug: store.hasAnyBug,
-  });
+  isSendingInProgress.value = true;
+  debugLog("DEBUG promptSendReport: starting RAPORT flow (retry failed + PDF)");
 
-  const allNotes = Object.entries(store.tagLog || {})
-    .filter(([key, tags]) => tags?.note)
-    .map(([key, tags]) => ({
-      key,
-      note: tags.note?.text?.substring(0, 30),
-      note_reported: tags.note_reported,
-      note_reported_at: tags.note_reported_at,
-      note_updatedAt: tags.note?.updatedAt,
-    }));
-  debugLog("DEBUG all notes in tagLog:", allNotes);
+  try {
+    const retryResult = await retryFailedAttempts(props.runId);
+    debugLog("DEBUG retryFailedAttempts result:", retryResult);
 
-  const candidates = store.rows.map((row) => {
-    const key = getRowTagKey(row);
-    const tags = store.tagLog?.[key] || {};
-    const noteText = tags.note?.text || "";
-    const noteHasText = typeof noteText === "string" && noteText.trim() !== "";
-    const noteUpdated = tags.note?.updatedAt;
-    const noteReportedAt = tags.note_reported_at;
-    let canSendNote = false;
-    if (noteHasText) {
-      if (!tags.note_reported) {
-        canSendNote = true;
-      } else if (noteUpdated && noteReportedAt) {
-        const updatedMs = Date.parse(noteUpdated);
-        const reportedMs = Date.parse(noteReportedAt);
-        if (!Number.isNaN(updatedMs) && !Number.isNaN(reportedMs)) {
-          canSendNote = updatedMs > reportedMs;
-        }
-      }
+    if (retryResult?.tag_snapshot && typeof retryResult.tag_snapshot === "object") {
+      store.updateTagLog(retryResult.tag_snapshot);
     }
-    const modifiedToSend = noteHasText && tags.note_reported && noteUpdated && noteReportedAt
-      ? Date.parse(noteUpdated) > Date.parse(noteReportedAt)
-      : false;
-    return {
-      scenario_id: row.scenario_id,
-      bug: tags.bug,
-      bug_reported: tags.bug_reported,
-      canSendBug: !!tags.bug && !tags.bug_reported,
-      aso: tags.aso,
-      aso_reported: tags.aso_reported,
-      canSendAso: !!tags.aso && !tags.aso_reported,
-      note: tags.note?.text?.substring(0, 30),
-      note_reported: tags.note_reported,
-      note_updatedAt: tags.note?.updatedAt,
-      note_reported_at: tags.note_reported_at,
-      modified_to_send: modifiedToSend,
-    };
-  }).filter(r => r.canSendBug || r.canSendAso || (r.note && !r.note_reported) || r.modified_to_send);
 
-  debugLog("DEBUG candidates to send:", candidates);
-  debugLog("DEBUG tagLog sample:", Object.entries(store.tagLog || {}).slice(0, 3).map(([k, v]) => ({ key: k.slice(0, 50), note_reported: v?.note_reported, note_updatedAt: v?.note?.updatedAt, note_reported_at: v?.note_reported_at })));
+    console.info(`Retry completed: retried=${retryResult?.retried || 0}`);
+  } catch (error) {
+    debugLog("DEBUG retryFailedAttempts error:", error?.message);
+  }
 
-  const lastResponse = lastSendResponse.value;
-  const hadPreviousFailures = lastResponse?.previous_attempt_had_failures || false;
-
-  const hasCandidates = store.reportCandidatesCount > 0;
   const hasAnyBug = store.hasAnyBug > 0;
-
-  debugLog("DEBUG promptSendReport decision:", {
-    hadPreviousFailures,
-    previousAttemptHadFailures: lastResponse?.previous_attempt_had_failures,
-    hasCandidates,
-    hasAnyBug,
-  });
-
-  if (!hasCandidates && hadPreviousFailures) {
-    debugLog("DEBUG: no new candidates but previous send had failures, doing silent retry");
-    executeSendReport();
+  if (!hasAnyBug) {
+    console.info("No BUG for PDF");
+    isSendingInProgress.value = false;
     return;
   }
 
-  if (!hasCandidates && hasAnyBug) {
-    console.info("No BUG/ASO/NOTATKA to send, generating PDF only");
-    executeSendReport();
-    return;
-  }
-
-  if (!hasCandidates) {
-    console.info("Nothing to send and no BUG for PDF");
-    return;
-  }
-
-  prompt.value = { active: true, type: "send-report" };
+  await executeSendReport();
 }
 
 async function executeSendReport() {
@@ -386,7 +321,6 @@ async function executeSendReport() {
     const response = await sendRunReport(props.runId, payload);
     debugLog("DEBUG executeSendReport response:", JSON.stringify(response).slice(0, 500));
     debugLog("DEBUG response keys:", Object.keys(response || {}));
-    lastSendResponse.value = response;
     if (response?.tag_snapshot && typeof response.tag_snapshot === "object") {
       store.updateTagLog(response.tag_snapshot);
       if (store.modalRow) {
@@ -523,11 +457,34 @@ function updateNoteDraft(value) {
 }
 
 function saveNoteFromEditor() {
+  const now = Date.now();
+  if (now - lastPromptTime < PROMPT_DEBOUNCE_MS) {
+    return;
+  }
+  if (!noteEditor.value.active || !store.modalRow) return;
+  if (prompt.value.active) return;
+
+  const key = getRowTagKey(store.modalRow);
+  const existingNote = store.tagLog?.[key]?.note;
+  const existingText = existingNote?.text || "";
+  const newText = noteEditor.value.text;
+  const hasChanged = newText !== existingText;
+
+  lastPromptTime = now;
+  if (hasChanged || !existingNote?.text) {
+    prompt.value = { active: true, type: "save-note" };
+  } else {
+    cancelNoteEditor();
+  }
+}
+
+async function confirmSaveNote() {
   if (!noteEditor.value.active || !store.modalRow) return;
   const safeText = sanitizeNoteText(noteEditor.value.text);
   store.setNoteForCurrentRow(safeText ? safeText : null);
   persistTags();
   cancelNoteEditor();
+  await sendTagToBackend("note");
 }
 
 function deleteNoteFromEditor() {
@@ -563,21 +520,23 @@ function handleKeydown(evt) {
   const modalEl = document.getElementById("vrtModal");
   const isOpen = modalEl && modalEl.classList.contains("show");
 
-  if (noteEditor.value.active) {
-    return;
-  }
-
   if (!isOpen) {
     handleKeydownNonModal(evt);
     return;
   }
 
   if (prompt.value.active) {
+    evt.preventDefault();
+    evt.stopPropagation();
     if (evt.code === "Space") {
       confirmPrompt();
     } else if (evt.code === "ShiftLeft" || evt.code === "ShiftRight") {
       cancelPrompt();
     }
+    return;
+  }
+
+  if (noteEditor.value.active) {
     return;
   }
 
@@ -628,16 +587,18 @@ function handleKeydown(evt) {
 }
 
 function handleKeydownNonModal(evt) {
-  if (noteEditor.value.active) {
-    return;
-  }
-
   if (prompt.value.active) {
+    evt.preventDefault();
+    evt.stopPropagation();
     if (evt.code === "Space") {
       confirmPrompt();
     } else if (evt.code === "ShiftLeft" || evt.code === "ShiftRight") {
       cancelPrompt();
     }
+    return;
+  }
+
+  if (noteEditor.value.active) {
     return;
   }
 
@@ -694,13 +655,21 @@ function deactivateSuperZoom() {
   superZoomActive.value = false;
 }
 
+let lastPromptTime = 0;
+const PROMPT_DEBOUNCE_MS = 300;
+
 function promptTag(type) {
+  const now = Date.now();
+  if (now - lastPromptTime < PROMPT_DEBOUNCE_MS) {
+    return;
+  }
   if (prompt.value.active) return;
   if (noteEditor.value.active) return;
   if (type === "bug" || type === "aso") {
     if (store.isTagReported(type)) return;
   }
   if (store.isTagLocked(type)) return;
+  lastPromptTime = now;
   prompt.value = { active: true, type };
 }
 
@@ -711,6 +680,49 @@ function promptRemoveTag(type) {
   prompt.value = { active: true, type: `remove-${type}` };
 }
 
+async function sendTagToBackend(type) {
+  if (!props.runId || !store.modalRow) return;
+
+  const key = getRowTagKey(store.modalRow);
+  const tags = store.tagLog?.[key] || {};
+
+  let noteHash = null;
+  if (type === "note" && tags.note?.text) {
+    const text = tags.note.text;
+    let hash = 0;
+    for (let i = 0; i < text.length; i++) {
+      const char = text.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    noteHash = hash.toString(16);
+  }
+
+  try {
+    const result = await sendSingleAttempt(props.runId, key, type, noteHash);
+    debugLog("DEBUG sendSingleAttempt result:", result);
+
+    if (result?.tag_snapshot && typeof result.tag_snapshot === "object") {
+      store.updateTagLog(result.tag_snapshot);
+      if (store.modalRow) {
+        const currentKey = getRowTagKey(store.modalRow);
+        const currentTags = store.tagLog?.[currentKey];
+        if (currentTags) {
+          store.tags = { ...currentTags };
+        }
+      }
+    }
+
+    if (result?.accepted) {
+      console.info(`Tag ${type} sent successfully for ${key}`);
+    } else {
+      console.info(`Tag ${type} failed to send: ${result?.error || "unknown error"}`);
+    }
+  } catch (error) {
+    console.info(`Send ${type} failed: ${error?.message || "unknown error"}`);
+  }
+}
+
 async function confirmPrompt() {
   if (!prompt.value.active) return;
   if (prompt.value.type === "send-report") {
@@ -718,10 +730,19 @@ async function confirmPrompt() {
     await executeSendReport();
     return;
   }
+  if (prompt.value.type === "save-note") {
+    prompt.value = { active: false, type: null };
+    await confirmSaveNote();
+    return;
+  }
   const type = prompt.value.type?.replace("remove-", "");
   if (prompt.value.type.startsWith("remove-")) {
     store.removeTag(type);
     persistTags();
+  } else if (type === "bug" || type === "aso" || type === "note") {
+    store.toggleTag(type);
+    persistTags();
+    await sendTagToBackend(type);
   } else {
     store.toggleTag(type);
     persistTags();
@@ -731,6 +752,9 @@ async function confirmPrompt() {
 
 function cancelPrompt() {
   if (!prompt.value.active) return;
+  if (prompt.value.type === "save-note") {
+    cancelNoteEditor();
+  }
   prompt.value = { active: false, type: null };
 }
 

@@ -318,6 +318,91 @@ def _tag_file_path(report_dir: Path) -> Path:
     return report_dir / "vrt-tags.json"
 
 
+def _send_attempts_file_path(report_dir: Path) -> Path:
+    return report_dir / "send-attempts.json"
+
+
+def _read_send_attempts(report_dir: Path) -> dict[str, Any]:
+    attempts_file = _send_attempts_file_path(report_dir)
+    if not attempts_file.is_file():
+        return {"entries": []}
+    try:
+        data = json.loads(attempts_file.read_text(encoding="utf-8"))
+    except Exception:
+        return {"entries": []}
+    if not isinstance(data, dict):
+        return {"entries": []}
+    return data
+
+
+def _save_send_attempts(report_dir: Path, data: dict[str, Any]) -> None:
+    attempts_file = _send_attempts_file_path(report_dir)
+    attempts_file.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    logger.debug(
+        "send_attempts_saved",
+        run_id=_run_id_from_visual_dir(report_dir.parent, report_dir),
+        entries_count=len(data.get("entries", [])),
+    )
+
+
+def _update_send_attempt_entry(
+    report_dir: Path,
+    key: str,
+    entry_type: str,
+    note_hash: str | None = None,
+    sent: bool = False,
+    error: str | None = None,
+) -> dict[str, Any]:
+    attempts = _read_send_attempts(report_dir)
+    entries = attempts.get("entries", [])
+
+    existing_entry = None
+    for entry in entries:
+        if entry.get("key") == key and entry.get("type") == entry_type:
+            existing_entry = entry
+            break
+
+    timestamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+    if existing_entry:
+        existing_entry["timestamp"] = timestamp
+        existing_entry["sent"] = sent
+        existing_entry["error"] = error
+        existing_entry["retries"] = existing_entry.get("retries", 0) + (0 if sent else 1)
+        if note_hash:
+            existing_entry["note_hash"] = note_hash
+        result = existing_entry
+    else:
+        new_entry = {
+            "key": key,
+            "type": entry_type,
+            "timestamp": timestamp,
+            "sent": sent,
+            "error": error,
+            "retries": 0 if sent else 1,
+        }
+        if note_hash:
+            new_entry["note_hash"] = note_hash
+        entries.append(new_entry)
+        result = new_entry
+
+    _save_send_attempts(report_dir, {"entries": entries})
+    logger.debug(
+        "send_attempt_updated",
+        key=key,
+        type=entry_type,
+        sent=sent,
+        error=error,
+        retries=result.get("retries"),
+    )
+    return result
+
+
+def _get_failed_attempts(report_dir: Path) -> list[dict[str, Any]]:
+    attempts = _read_send_attempts(report_dir)
+    return [e for e in attempts.get("entries", []) if not e.get("sent", False)]
+
+
 def _default_pdf_config() -> dict[str, Any]:
     return {
         "fields": [
@@ -1340,6 +1425,259 @@ def _build_handler(context: ReportServerContext):
                             "path": pdf_path,
                             "pages": pdf_pages,
                         },
+                        "tag_snapshot": tag_snapshot,
+                    },
+                )
+                return
+
+            m_send_attempt = re.match(r"^/api/reports/([^/]+)/report/send-attempt$", path)
+            if m_send_attempt:
+                try:
+                    run_id = _safe_run_id_or_error(m_send_attempt.group(1))
+                except ValueError as exc:
+                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                    return
+                report_dir = context.resolve_run_dir(run_id)
+                if report_dir is None:
+                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
+                    return
+
+                try:
+                    payload = self._read_json_body()
+                except Exception as exc:
+                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": f"invalid request body: {exc}"})
+                    return
+
+                key = str(payload.get("key", "")).strip()
+                entry_type = str(payload.get("type", "")).strip().lower()
+                note_hash = str(payload.get("note_hash", "")).strip() or None
+
+                if not key or entry_type not in ("bug", "aso", "note"):
+                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": "missing or invalid key or type"})
+                    return
+
+                tag_snapshot = _read_tag_snapshot(report_dir)
+                tag_entry = tag_snapshot.get(key)
+                if tag_entry is None:
+                    tag_entry = _normalize_single_tag_entry({})
+                    tag_snapshot[key] = tag_entry
+
+                row = None
+                for r in _read_results_rows(report_dir):
+                    if _row_tag_key(r) == key:
+                        row = r
+                        break
+
+                sent_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+                accepted = False
+                error_msg = None
+
+                has_client = context.reporting_client is not None
+
+                if entry_type == "bug":
+                    if not context.reporting_bug_endpoint:
+                        error_msg = "endpoint not configured"
+                    elif has_client:
+                        req = _build_reporting_payload(run_id, "BUG", row or {}, tag_entry)
+                        accepted = bool(context.reporting_client.send_payload(context.reporting_bug_endpoint, req))
+                        if accepted:
+                            tag_entry["bug_reported"] = True
+                            tag_entry["bug_reported_at"] = sent_at
+                    if not accepted and not error_msg:
+                        error_msg = "api rejected"
+
+                elif entry_type == "aso":
+                    if not context.reporting_aso_endpoint:
+                        error_msg = "endpoint not configured"
+                    elif has_client:
+                        req = _build_reporting_payload(run_id, "ASO", row or {}, tag_entry)
+                        accepted = bool(context.reporting_client.send_payload(context.reporting_aso_endpoint, req))
+                        if accepted:
+                            tag_entry["aso_reported"] = True
+                            tag_entry["aso_reported_at"] = sent_at
+                    if not accepted and not error_msg:
+                        error_msg = "api rejected"
+
+                elif entry_type == "note":
+                    if not context.reporting_note_endpoint:
+                        error_msg = "endpoint not configured"
+                    elif has_client:
+                        note_text = str(_as_dict(tag_entry.get("note")).get("text", "") or "").strip()
+                        current_hash = _note_hash(note_text)
+                        req = _build_reporting_payload(
+                            run_id,
+                            "NOTE",
+                            row or {},
+                            tag_entry,
+                            event_type="visual_report_note",
+                        )
+                        accepted = bool(context.reporting_client.send_payload(context.reporting_note_endpoint, req))
+                        if accepted:
+                            tag_entry["note_reported"] = True
+                            tag_entry["note_reported_at"] = sent_at
+                            tag_entry["note_reported_hash"] = current_hash
+                    if not accepted and not error_msg:
+                        error_msg = "api rejected"
+
+                _save_tag_snapshot(report_dir, tag_snapshot)
+                _update_send_attempt_entry(
+                    report_dir,
+                    key=key,
+                    entry_type=entry_type,
+                    note_hash=note_hash,
+                    sent=accepted,
+                    error=error_msg,
+                )
+
+                logger.debug(
+                    "send_attempt_response",
+                    run_id=run_id,
+                    key=key,
+                    type=entry_type,
+                    accepted=accepted,
+                    error=error_msg,
+                )
+
+                self._send_json(
+                    HTTPStatus.OK,
+                    {
+                        "accepted": accepted,
+                        "run_id": run_id,
+                        "key": key,
+                        "type": entry_type,
+                        "error": error_msg,
+                        "tag_snapshot": tag_snapshot,
+                    },
+                )
+                return
+
+            m_retry_failed = re.match(r"^/api/reports/([^/]+)/report/retry-failed$", path)
+            if m_retry_failed:
+                try:
+                    run_id = _safe_run_id_or_error(m_retry_failed.group(1))
+                except ValueError as exc:
+                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                    return
+                report_dir = context.resolve_run_dir(run_id)
+                if report_dir is None:
+                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
+                    return
+
+                failed_attempts = _get_failed_attempts(report_dir)
+                logger.debug(
+                    "retry_failed_attempts",
+                    run_id=run_id,
+                    failed_count=len(failed_attempts),
+                )
+
+                if not failed_attempts:
+                    self._send_json(
+                        HTTPStatus.OK,
+                        {
+                            "accepted": True,
+                            "run_id": run_id,
+                            "retried": 0,
+                            "message": "no failed attempts to retry",
+                        },
+                    )
+                    return
+
+                tag_snapshot = _read_tag_snapshot(report_dir)
+                rows = _read_results_rows(report_dir)
+                rows_by_key = {_row_tag_key(r): r for r in rows}
+
+                retried_count = 0
+                sent_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+                for attempt in failed_attempts:
+                    key = attempt.get("key", "")
+                    entry_type = attempt.get("type", "")
+                    if not key or entry_type not in ("bug", "aso", "note"):
+                        continue
+
+                    tag_entry = tag_snapshot.get(key)
+                    if tag_entry is None:
+                        tag_entry = _normalize_single_tag_entry({})
+                        tag_snapshot[key] = tag_entry
+
+                    row = rows_by_key.get(key)
+
+                    accepted = False
+                    error_msg = None
+                    has_client = context.reporting_client is not None
+
+                    if entry_type == "bug":
+                        if not context.reporting_bug_endpoint:
+                            error_msg = "endpoint not configured"
+                        elif has_client:
+                            req = _build_reporting_payload(run_id, "BUG", row or {}, tag_entry)
+                            accepted = bool(context.reporting_client.send_payload(context.reporting_bug_endpoint, req))
+                            if accepted:
+                                tag_entry["bug_reported"] = True
+                                tag_entry["bug_reported_at"] = sent_at
+                        if not accepted and not error_msg:
+                            error_msg = "api rejected"
+
+                    elif entry_type == "aso":
+                        if not context.reporting_aso_endpoint:
+                            error_msg = "endpoint not configured"
+                        elif has_client:
+                            req = _build_reporting_payload(run_id, "ASO", row or {}, tag_entry)
+                            accepted = bool(context.reporting_client.send_payload(context.reporting_aso_endpoint, req))
+                            if accepted:
+                                tag_entry["aso_reported"] = True
+                                tag_entry["aso_reported_at"] = sent_at
+                        if not accepted and not error_msg:
+                            error_msg = "api rejected"
+
+                    elif entry_type == "note":
+                        if not context.reporting_note_endpoint:
+                            error_msg = "endpoint not configured"
+                        elif has_client:
+                            note_text = str(_as_dict(tag_entry.get("note")).get("text", "") or "").strip()
+                            current_hash = _note_hash(note_text)
+                            req = _build_reporting_payload(
+                                run_id,
+                                "NOTE",
+                                row or {},
+                                tag_entry,
+                                event_type="visual_report_note",
+                            )
+                            accepted = bool(context.reporting_client.send_payload(context.reporting_note_endpoint, req))
+                            if accepted:
+                                tag_entry["note_reported"] = True
+                                tag_entry["note_reported_at"] = sent_at
+                                tag_entry["note_reported_hash"] = current_hash
+                        if not accepted and not error_msg:
+                            error_msg = "api rejected"
+
+                    _update_send_attempt_entry(
+                        report_dir,
+                        key=key,
+                        entry_type=entry_type,
+                        note_hash=attempt.get("note_hash"),
+                        sent=accepted,
+                        error=error_msg,
+                    )
+
+                    if accepted:
+                        retried_count += 1
+
+                _save_tag_snapshot(report_dir, tag_snapshot)
+
+                logger.info(
+                    "retry_failed_finish",
+                    run_id=run_id,
+                    retried=retried_count,
+                    total_failed=len(failed_attempts),
+                )
+
+                self._send_json(
+                    HTTPStatus.OK,
+                    {
+                        "accepted": True,
+                        "run_id": run_id,
+                        "retried": retried_count,
                         "tag_snapshot": tag_snapshot,
                     },
                 )

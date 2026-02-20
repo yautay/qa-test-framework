@@ -97,41 +97,84 @@ W ViewerModal:
 
 Po potwierdzeniu tag jest zapisywany w `tagLog` i synchronizowany z plikiem na dysku (z opóźnieniem 250ms - debounce).
 
-### 3.3 Wysyłanie raportu (kluczowy flow)
+### 3.3 Tworzenie BUG/ASO (nowy flow)
+
+```
+Użytkownik w ViewerModal:
+    - Klawisz 'S' → prompt "Czy na pewno oznaczyć jako BUG?"
+    - Klawisz 'C' → prompt "Czy na pewno oznaczyć jako ASO?"
+    ↓ [potwierdzenie]
+store.toggleTag(type) → zapisz w tagLog
+    ↓
+sendTagToBackend(type) → POST /api/reports/{id}/report/send-attempt
+    ├── Backend: próbuje wysłać do zewnętrznego API
+    ├── Backend: zapisuje w send-attempts.json (sent=true/false, error, retries)
+    ├── Backend: aktualizuje tag z reported_at jeśli OK
+    └── Frontend: aktualizuje tagLog z odpowiedzi
+```
+
+### 3.4 Tworzenie notatki (nowy flow)
+
+```
+Użytkownik w ViewerModal:
+    - Klawisz 'N' → otwórz edytor notatek
+    - wpisuje tekst → klika "Zapisz"
+    ↓
+saveNoteFromEditor() → sprawdza czy tekst się zmienił
+    ├── Jeśli zmieniony → prompt "Czy zapisać i wysłać notatkę?"
+    └── Jeśli nie zmieniony → anuluj
+    ↓ [potwierdzenie]
+confirmSaveNote() → zapisz notatkę w tagLog
+    ↓
+sendTagToBackend('note') → POST /api/reports/{id}/report/send-attempt
+    └── Analogicznie jak wyżej
+```
+
+### 3.5 Przycisk RAPORT (nowy flow)
 
 ```
 Użytkownik klika "Wyślij raport" w ReportHeader
+    ↓ [zawsze bez prompta]
+retryFailedAttempts() → POST /api/reports/{id}/report/retry-failed
+    ├── Backend: odczytuje send-attempts.json
+    ├── Backend: znajduje wpisy z sent=false
+    ├── Backend: próbuje wysłać ponownie (dla każdego wpisu)
+    └── Frontend: aktualizuje tagLog
     ↓
-promptSendReport() sprawdza:
-    ├── Czy są elementy do wysłania? (BUG/ASO/NOTES)
-    ├── Czy były poprzednie nieudane próby?
-    ├── Czy są jakiekolwiek BUG (nawet już wysłane)?
-    ↓
-Decyzja:
-    ├── NIE ma kandydatów, ale BYŁY błędy → silent retry (bez pytania)
-    ├── NIE ma kandydatów, ale są BUGi → generuj PDF bez pytania
-    ├── NIE ma nic do wysłania → informacja "Nothing to send"
-    ├── Są kandydaci → pytaj o potwierdzenie
-    ↓
-executeSendReport() → API POST /api/reports/{id}/report/send
-    ├── payload: { tag_snapshot: {...} }
-    ├── response: { bug: {...},aso: {...},note: {...},pdf: {...}, tag_snapshot: {...} }
-    ├── Jeśli PDF wygenerowany → automatyczne pobranie
-    └── Aktualizacja tagLog z odpowiedzi (lockowanie)
+Jeśli są BUGi w tagLog:
+    executeSendReport() → POST /api/reports/{id}/report/send
+        └── Generuje PDF z BUGs (zawsze)
 ```
 
-#### Szczegóły logiki decyzyjnej
+### 3.6 Backend - send-attempts.json
 
-| Kandydaci do wysłania | Poprzednie błędy | Jakieś BUGi | Akcja |
-|-----------------------|------------------|-------------|-------|
-| ❌ | ✅ | ❌ | Silent retry |
-| ❌ | ❌ | ✅ | Generuj PDF (cicho) |
-| ❌ | ❌ | ❌ | Nic nie rób |
-| ✅ | - | - | Pytaj o potwierdzenie |
+Backend zapisuje historię prób wysyłki w pliku JSON:
 
-**Kandydat do wysłania** = BUG nie wysłany LUB ASO nie wysłane LUB nowa/notatka nie wysłana LUB notatka edytowana po ostatnim wysłaniu
+**Lokalizacja:** `artifacts/{run_id}/visual/send-attempts.json`
 
-### 3.4 Synchronizacja baseline
+**Struktura:**
+```json
+{
+  "entries": [
+    {
+      "key": "s1::a.png::::",
+      "type": "bug",
+      "note_hash": "abc123",
+      "timestamp": "2026-02-20T14:00:00Z",
+      "sent": false,
+      "error": "400",
+      "retries": 3
+    }
+  ]
+}
+```
+
+**Logika:**
+- Każda próba wysłania tworzy/aktualizuje wpis
+- `sent: false` + `error` = wymaga retry
+- Retry odbywa się automatycznie przy kliknięciu RAPORT
+
+### 3.7 Synchronizacja baseline
 
 ```
 Użytkownik klika "Wyślij baseline"
@@ -206,11 +249,50 @@ Wyślij wybrane obrazy do API
 | `GET` | `/api/reports` | Lista raportów |
 | `GET` | `/api/reports/{id}/results` | Wyniki testów dla raportu |
 | `GET` | `/api/reports/{id}/image/ref` | Obraz referencyjny (dynamiczny) |
-| `POST` | `/api/reports/{id}/report/send` | Wysłanie raportu |
+| `POST` | `/api/reports/{id}/report/send` | Wysłanie raportu (PDF + wysyłka wszystkiego) |
+| `POST` | `/api/reports/{id}/report/send-attempt` | Wysłanie pojedynczego tagu (BUG/ASO/NOTA) |
+| `POST` | `/api/reports/{id}/report/retry-failed` | Retry wszystkich failed z send-attempts.json |
 | `GET` | `/api/baseline/challenge` | Challenge dla baseline |
 | `POST` | `/api/baseline/submit` | Wysłanie baseline |
 
-### 5.2 Format odpowiedzi sendReport
+### 5.2 Format send-attempt
+
+**Request:**
+```javascript
+{
+  key: "s1::a.png::::",
+  type: "bug" | "aso" | "note",
+  note_hash: "abc123" // opcjonalnie, dla notatek
+}
+```
+
+**Response:**
+```javascript
+{
+  accepted: boolean,
+  run_id: string,
+  key: string,
+  type: string,
+  error: string | null,
+  tag_snapshot: { ... }
+}
+```
+
+### 5.3 Format retry-failed
+
+**Request:** `{}`
+
+**Response:**
+```javascript
+{
+  accepted: true,
+  run_id: string,
+  retried: number,  // ile elementów ponowiono
+  tag_snapshot: { ... }
+}
+```
+
+### 5.4 Format odpowiedzi sendReport
 
 ```javascript
 {

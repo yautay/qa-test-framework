@@ -10,7 +10,7 @@
             <button type="button" class="btn btn-success" :class="{ 'btn-saturated': store.baselineCandidates.length > 0 }" @click="$emit('send-baseline')" :disabled="store.baselineCandidates.length === 0">
               {{ t('report.sendBaseline') }}
             </button>
-            <button type="button" class="btn btn-primary" :class="{ 'btn-saturated': store.reportCandidatesCount > 0 || pdfGenerated }" @click="$emit('send-report')" :disabled="!runId || (store.reportCandidatesCount === 0 && !pdfGenerated)">
+            <button type="button" class="btn btn-primary" :class="{ 'btn-saturated': store.reportCandidatesCount > 0 || pdfGenerated }" @click="$emit('send-report')" :disabled="!runId">
               {{ t('report.sendReport') }}
             </button>
           </div>

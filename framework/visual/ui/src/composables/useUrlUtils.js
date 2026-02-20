@@ -30,26 +30,3 @@ export function buildRefApiSrc(runId, row) {
   return `/api/reports/${id}/image/ref?${query.toString()}`;
 }
 
-export function useUrlUtils(runId, row) {
-  const modalRefSrc = row ? buildRefApiSrc(runId, row) : "";
-  const modalTestSrc = row ? buildReportAssetSrc(runId, row.actual_path) : "";
-  const modalDiffSrc = row ? buildReportAssetSrc(runId, row.diff_path) : "";
-  const modalLpipsSrc = row ? buildReportAssetSrc(runId, row.heatmap_path) : "";
-
-  function slotImage(slot) {
-    const mode = slot?.mode;
-    if (mode === "ref") return modalRefSrc;
-    if (mode === "test") return modalTestSrc;
-    if (mode === "diff") return modalDiffSrc;
-    if (mode === "lpips") return modalLpipsSrc;
-    return "";
-  }
-
-  return {
-    modalRefSrc,
-    modalTestSrc,
-    modalDiffSrc,
-    modalLpipsSrc,
-    slotImage,
-  };
-}

@@ -257,3 +257,121 @@ class TestHadPreviousFailures:
 
     def test_returns_false_when_empty_dict(self) -> None:
         assert _had_previous_failures({}) is False
+
+
+class TestSendAttempts:
+    def test_read_send_attempts_returns_empty_when_no_file(self, tmp_path: Path) -> None:
+        from framework.visual.report_server import _read_send_attempts
+
+        report_dir = tmp_path / "artifacts" / "20260218" / "visual"
+        report_dir.mkdir(parents=True)
+
+        result = _read_send_attempts(report_dir)
+
+        assert result == {"entries": []}
+
+    def test_read_send_attempts_returns_entries(self, tmp_path: Path) -> None:
+        from framework.visual.report_server import _read_send_attempts
+
+        report_dir = tmp_path / "artifacts" / "20260218" / "visual"
+        report_dir.mkdir(parents=True)
+
+        attempts_file = report_dir / "send-attempts.json"
+        attempts_file.write_text(
+            json.dumps(
+                {"entries": [{"key": "s1::a.png::::", "type": "bug", "sent": False, "error": "400", "retries": 1}]}
+            )
+        )
+
+        result = _read_send_attempts(report_dir)
+
+        assert len(result["entries"]) == 1
+        assert result["entries"][0]["key"] == "s1::a.png::::"
+        assert result["entries"][0]["type"] == "bug"
+        assert result["entries"][0]["sent"] is False
+        assert result["entries"][0]["error"] == "400"
+        assert result["entries"][0]["retries"] == 1
+
+    def test_update_send_attempt_creates_new_entry(self, tmp_path: Path) -> None:
+        from framework.visual.report_server import _read_send_attempts, _update_send_attempt_entry
+
+        report_dir = tmp_path / "artifacts" / "20260218" / "visual"
+        report_dir.mkdir(parents=True)
+
+        result = _update_send_attempt_entry(
+            report_dir,
+            key="s1::a.png::::",
+            entry_type="bug",
+            sent=False,
+            error="400",
+        )
+
+        assert result["key"] == "s1::a.png::::"
+        assert result["type"] == "bug"
+        assert result["sent"] is False
+        assert result["error"] == "400"
+        assert result["retries"] == 1
+
+        attempts = _read_send_attempts(report_dir)
+        assert len(attempts["entries"]) == 1
+
+    def test_update_send_attempt_updates_existing(self, tmp_path: Path) -> None:
+        from framework.visual.report_server import _update_send_attempt_entry
+
+        report_dir = tmp_path / "artifacts" / "20260218" / "visual"
+        report_dir.mkdir(parents=True)
+
+        _update_send_attempt_entry(
+            report_dir,
+            key="s1::a.png::::",
+            entry_type="bug",
+            sent=False,
+            error="400",
+        )
+
+        result = _update_send_attempt_entry(
+            report_dir,
+            key="s1::a.png::::",
+            entry_type="bug",
+            sent=True,
+            error=None,
+        )
+
+        assert result["sent"] is True
+        assert result["retries"] == 1
+
+    def test_get_failed_attempts_returns_only_failed(self, tmp_path: Path) -> None:
+        from framework.visual.report_server import _get_failed_attempts, _update_send_attempt_entry
+
+        report_dir = tmp_path / "artifacts" / "20260218" / "visual"
+        report_dir.mkdir(parents=True)
+
+        _update_send_attempt_entry(
+            report_dir,
+            key="s1::a.png::::",
+            entry_type="bug",
+            sent=False,
+            error="400",
+        )
+        _update_send_attempt_entry(
+            report_dir,
+            key="s2::b.png::::",
+            entry_type="bug",
+            sent=True,
+            error=None,
+        )
+        _update_send_attempt_entry(
+            report_dir,
+            key="s3::c.png::::",
+            entry_type="aso",
+            sent=False,
+            error="500",
+        )
+
+        failed = _get_failed_attempts(report_dir)
+
+        assert len(failed) == 2
+        keys = [f["key"] for f in failed]
+        assert "s1::a.png::::" in keys
+        assert "s3::c.png::::" in keys
+        assert "s2::b.png::::" not in keys

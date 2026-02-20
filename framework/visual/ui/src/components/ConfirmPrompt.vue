@@ -1,8 +1,29 @@
 <template>
-  <div v-if="active && type === 'send-report'" class="global-prompt-overlay">
-    <div class="global-prompt-card">
+  <div v-if="active" class="global-prompt-overlay">
+    <div v-if="type === 'send-report'" class="global-prompt-card">
       <div class="global-prompt-title">{{ t('prompt.confirm') }}</div>
       <div class="global-prompt-text">{{ t('report.confirmSend') }}</div>
+      <div class="global-prompt-hints">{{ t('prompt.shiftNo') }} &nbsp;•&nbsp; {{ t('prompt.spaceYes') }}</div>
+      <div class="global-prompt-actions">
+        <button type="button" class="btn btn-sm btn-primary" @click="$emit('confirm')">{{ t('prompt.yes') }}</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" @click="$emit('cancel')">{{ t('prompt.no') }}</button>
+      </div>
+    </div>
+
+    <div v-else-if="type === 'bug' || type === 'aso' || type === 'save-note'" class="global-prompt-card">
+      <div class="global-prompt-title">{{ t('prompt.confirm') }}</div>
+      <div v-if="type === 'save-note'" class="global-prompt-text">{{ t('prompt.saveNote') }}</div>
+      <div v-else class="global-prompt-text">{{ t('prompt.areYouSure') }} {{ t('tags.' + type) }}?</div>
+      <div class="global-prompt-hints">{{ t('prompt.shiftNo') }} &nbsp;•&nbsp; {{ t('prompt.spaceYes') }}</div>
+      <div class="global-prompt-actions">
+        <button type="button" class="btn btn-sm btn-primary" @click="$emit('confirm')">{{ t('prompt.yes') }}</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" @click="$emit('cancel')">{{ t('prompt.no') }}</button>
+      </div>
+    </div>
+
+    <div v-else-if="isRemoveType" class="global-prompt-card">
+      <div class="global-prompt-title">{{ t('prompt.confirm') }}</div>
+      <div class="global-prompt-text">{{ t('prompt.removeTag') }} {{ t('tags.' + removeType) }}?</div>
       <div class="global-prompt-hints">{{ t('prompt.shiftNo') }} &nbsp;•&nbsp; {{ t('prompt.spaceYes') }}</div>
       <div class="global-prompt-actions">
         <button type="button" class="btn btn-sm btn-primary" @click="$emit('confirm')">{{ t('prompt.yes') }}</button>
@@ -13,9 +34,10 @@
 </template>
 
 <script setup>
+import { computed } from "vue";
 import { t } from "../lib/i18n";
 
-defineProps({
+const props = defineProps({
   active: {
     type: Boolean,
     default: false,
@@ -27,6 +49,17 @@ defineProps({
 });
 
 defineEmits(["confirm", "cancel"]);
+
+const isRemoveType = computed(() => {
+  return props.type && props.type.startsWith("remove-");
+});
+
+const removeType = computed(() => {
+  if (isRemoveType.value) {
+    return props.type.replace("remove-", "");
+  }
+  return "";
+});
 </script>
 
 <style scoped>

@@ -23,6 +23,6 @@ phone_for_production_tests = "123123123"
 base_url_override = ""
 
 # Optional run metadata defaults (CLI has priority).
-tester = "Michał"
-run_note = "NN-126533 - retesty"
+tester = "Michal"
+run_note = "Notatka-sratka"
 nn_ticket = "54654"
