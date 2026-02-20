@@ -312,7 +312,7 @@ describe("resultsStore", () => {
 
       const key = "s1::a.png::::";
       expect(store.tagLog[key].bug).toBe(true);
-      expect(store.tags.bug).toBe(true);
+      expect(store.currentTags.bug).toBe(true);
     });
 
     it("removes tag and updates tagLog", () => {
@@ -327,7 +327,7 @@ describe("resultsStore", () => {
 
       const key = "s1::a.png::::";
       expect(store.tagLog[key].bug).toBe(false);
-      expect(store.tags.bug).toBe(false);
+      expect(store.currentTags.bug).toBe(false);
     });
 
     it("isTagLocked returns correct value", () => {
@@ -384,7 +384,7 @@ describe("resultsStore", () => {
 
       const key = "s1::a.png::::";
       expect(store.tagLog[key].note.text).toBe("Test note");
-      expect(store.tags.note.text).toBe("Test note");
+      expect(store.currentTags.note.text).toBe("Test note");
     });
 
     it("clears note when null passed", () => {
@@ -660,8 +660,8 @@ describe("resultsStore", () => {
 
       store.openViewer(store.rows[0], "test", 0);
 
-      expect(store.tags.bug).toBe(true);
-      expect(store.tags.note.text).toBe("test");
+      expect(store.currentTags.bug).toBe(true);
+      expect(store.currentTags.note.text).toBe("test");
     });
 
     it("falls back to test mode for invalid modes", () => {

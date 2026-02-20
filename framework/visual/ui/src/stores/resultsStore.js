@@ -26,6 +26,24 @@ const SLOT_MODE_DEFAULTS = {
   4: "lpips",
 };
 
+const EMPTY_TAG_ENTRY = {
+  bug: false,
+  aso: false,
+  baseline: false,
+  note: null,
+  bug_reported: false,
+  aso_reported: false,
+  note_reported: false,
+  bug_reported_at: "",
+  aso_reported_at: "",
+  note_reported_at: "",
+  note_reported_hash: "",
+};
+
+function buildEmptyTagEntry() {
+  return { ...EMPTY_TAG_ENTRY };
+}
+
 function compareValues(av, bv, key) {
   if (av == null && bv == null) return 0;
   if (av == null) return 1;
@@ -100,20 +118,6 @@ export const useResultsStore = defineStore("results", {
     slots: [],
     slotModes: { 1: "ref", 2: "test", 3: "diff", 4: "lpips" },
     tagLog: {},
-    tagLocked: {},
-    tags: {
-      bug: false,
-      aso: false,
-      baseline: false,
-      note: null,
-      bug_reported: false,
-      aso_reported: false,
-      note_reported: false,
-      bug_reported_at: "",
-      aso_reported_at: "",
-      note_reported_at: "",
-      note_reported_hash: "",
-    },
 
     selectedIndex: -1,
     loadError: "",
@@ -262,6 +266,16 @@ export const useResultsStore = defineStore("results", {
         return count + (tags?.bug ? 1 : 0);
       }, 0);
     },
+
+    currentTagKey: (state) => {
+      return state.modalRow ? getRowTagKey(state.modalRow) : "";
+    },
+
+    currentTags: (state) => {
+      if (!state.modalRow) return buildEmptyTagEntry();
+      const key = getRowTagKey(state.modalRow);
+      return state.tagLog?.[key] || buildEmptyTagEntry();
+    },
   },
 
   actions: {
@@ -311,32 +325,6 @@ export const useResultsStore = defineStore("results", {
 
       this.slots = buildSlots(this.columns, this.slots, this.slotModes);
       this.currentIndex = index;
-
-      if (row) {
-        const key = getRowTagKey(row);
-        this.tags = this.tagLog[key]
-          ? { ...this.tagLog[key] }
-          : {
-              bug: false,
-              aso: false,
-              baseline: false,
-              note: null,
-              bug_reported: false,
-             aso_reported: false,
-              note_reported: false,
-              bug_reported_at: "",
-             aso_reported_at: "",
-              note_reported_at: "",
-              note_reported_hash: "",
-            };
-        this.tagLocked = this.tagLocked || {};
-        const existingLock = this.tagLocked[key] || { bug: false, aso: false, baseline: false };
-        this.tagLocked[key] = {
-          bug: existingLock.bug || !!this.tags.bug || !!this.tags.bug_reported,
-          aso: existingLock.aso || !!this.tags.aso || !!this.tags.aso_reported,
-          baseline: existingLock.baseline || !!this.tags.baseline,
-        };
-      }
     },
 
     closeViewer() {
@@ -360,38 +348,30 @@ export const useResultsStore = defineStore("results", {
 
     toggleTag(tagKey) {
       if (!this.modalRow) return;
-      this.tags[tagKey] = true;
       const key = getRowTagKey(this.modalRow);
-      const existing = this.tagLog[key] || {};
-      this.tagLog[key] = { ...existing, ...this.tags };
-      this.tagLocked[key] = this.tagLocked[key] || { bug: false, aso: false, baseline: false };
-      this.tagLocked[key][tagKey] = true;
+      const existing = this.tagLog[key] ? { ...this.tagLog[key] } : buildEmptyTagEntry();
+      existing[tagKey] = true;
+      this.tagLog[key] = existing;
     },
 
     removeTag(tagKey) {
       if (!this.modalRow) return;
       const key = getRowTagKey(this.modalRow);
-      if (this.tagLog[key]) {
-        this.tagLog[key][tagKey] = false;
-      }
-      if (this.tags) {
-        this.tags[tagKey] = false;
-      }
-      this.tagLocked = this.tagLocked || {};
-      this.tagLocked[key] = this.tagLocked[key] || { bug: false, aso: false, baseline: false };
-      this.tagLocked[key][tagKey] = false;
+      if (!this.tagLog[key]) return;
+      this.tagLog[key][tagKey] = false;
     },
 
     isTagLocked(type) {
-      if (!this.modalRow) return false;
-      const key = getRowTagKey(this.modalRow);
-      return !!this.tagLocked?.[key]?.[type];
+      const tags = this.currentTags;
+      if (type === "bug") return !!(tags.bug || tags.bug_reported);
+      if (type === "aso") return !!(tags.aso || tags.aso_reported);
+      if (type === "baseline") return !!tags.baseline;
+      return false;
     },
 
     isTagReported(type) {
       if (!this.modalRow) return false;
-      const key = getRowTagKey(this.modalRow);
-      const tags = this.tagLog?.[key] || {};
+      const tags = this.currentTags || {};
       if (type === "bug") return !!tags.bug_reported;
       if (type === "aso") return !!tags.aso_reported;
       return false;
@@ -408,31 +388,16 @@ export const useResultsStore = defineStore("results", {
     setNoteForCurrentRow(note) {
       if (!this.modalRow) return;
       const key = getRowTagKey(this.modalRow);
-      const existing = this.tagLog[key];
-      if (!existing) {
-        this.tagLog[key] = {
-          bug: false,
-         aso: false,
-          baseline: false,
-          note: null,
-          bug_reported: false,
-         aso_reported: false,
-          note_reported: false,
-          bug_reported_at: "",
-         aso_reported_at: "",
-          note_reported_at: "",
-          note_reported_hash: "",
-        };
-      }
+      const entry = this.tagLog[key] ? { ...this.tagLog[key] } : buildEmptyTagEntry();
       if (note) {
-        this.tagLog[key].note = { text: note, updatedAt: new Date().toISOString() };
+        entry.note = { text: note, updatedAt: new Date().toISOString() };
       } else {
-        this.tagLog[key].note = null;
-        this.tagLog[key].note_reported_at = "";
-        this.tagLog[key].note_reported_hash = "";
-        this.tagLog[key].note_reported = false;
+        entry.note = null;
+        entry.note_reported_at = "";
+        entry.note_reported_hash = "";
+        entry.note_reported = false;
       }
-      this.tags = { ...this.tagLog[key] };
+      this.tagLog[key] = entry;
     },
 
     navigateSelection(delta) {

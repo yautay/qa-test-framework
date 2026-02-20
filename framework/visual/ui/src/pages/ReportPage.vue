@@ -140,9 +140,8 @@ const viewerForModal = computed(() => ({
   columns: store.columns,
   cursorX: store.cursorX,
   cursorY: store.cursorY,
-  tags: store.tags,
+  tags: store.currentTags,
   tagLog: store.tagLog,
-  tagLocked: store.tagLocked,
   currentIndex: store.currentIndex,
   slots: store.slots,
   slotModes: store.slotModes,
@@ -323,13 +322,6 @@ async function executeSendReport() {
     debugLog("DEBUG response keys:", Object.keys(response || {}));
     if (response?.tag_snapshot && typeof response.tag_snapshot === "object") {
       store.updateTagLog(response.tag_snapshot);
-      if (store.modalRow) {
-        const key = getRowTagKey(store.modalRow);
-        const current = store.tagLog?.[key];
-        if (current) {
-          store.tags = { ...current };
-        }
-      }
     }
     const bug = response?.bug || {};
     const aso = response?.aso || {};
@@ -525,16 +517,7 @@ function handleKeydown(evt) {
     return;
   }
 
-  if (prompt.value.active) {
-    evt.preventDefault();
-    evt.stopPropagation();
-    if (evt.code === "Space") {
-      confirmPrompt();
-    } else if (evt.code === "ShiftLeft" || evt.code === "ShiftRight") {
-      cancelPrompt();
-    }
-    return;
-  }
+  if (handlePromptKeydown(evt)) return;
 
   if (noteEditor.value.active) {
     return;
@@ -587,16 +570,7 @@ function handleKeydown(evt) {
 }
 
 function handleKeydownNonModal(evt) {
-  if (prompt.value.active) {
-    evt.preventDefault();
-    evt.stopPropagation();
-    if (evt.code === "Space") {
-      confirmPrompt();
-    } else if (evt.code === "ShiftLeft" || evt.code === "ShiftRight") {
-      cancelPrompt();
-    }
-    return;
-  }
+  if (handlePromptKeydown(evt)) return;
 
   if (noteEditor.value.active) {
     return;
@@ -673,6 +647,21 @@ function promptTag(type) {
   prompt.value = { active: true, type };
 }
 
+function handlePromptKeydown(evt) {
+  if (!prompt.value.active) return false;
+  evt.preventDefault();
+  evt.stopPropagation();
+  if (evt.code === "Space") {
+    confirmPrompt();
+    return true;
+  }
+  if (evt.code === "ShiftLeft" || evt.code === "ShiftRight") {
+    cancelPrompt();
+    return true;
+  }
+  return true;
+}
+
 function promptRemoveTag(type) {
   if (prompt.value.active) return;
   if (noteEditor.value.active) return;
@@ -704,13 +693,6 @@ async function sendTagToBackend(type) {
 
     if (result?.tag_snapshot && typeof result.tag_snapshot === "object") {
       store.updateTagLog(result.tag_snapshot);
-      if (store.modalRow) {
-        const currentKey = getRowTagKey(store.modalRow);
-        const currentTags = store.tagLog?.[currentKey];
-        if (currentTags) {
-          store.tags = { ...currentTags };
-        }
-      }
     }
 
     if (result?.accepted) {
