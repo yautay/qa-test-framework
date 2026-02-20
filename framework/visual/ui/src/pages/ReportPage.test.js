@@ -33,7 +33,7 @@ vi.mock("bootstrap", () => ({
 }));
 
 import ReportPage from "./ReportPage.vue";
-import { fetchReportResults, sendBuildReport } from "../lib/api/reportsApi";
+import { fetchBuildState, fetchReportResults, sendBuildReport } from "../lib/api/reportsApi";
 import { useResultsStore } from "../stores/resultsStore";
 import { getRowTagKey } from "../lib/viewer";
 
@@ -342,7 +342,7 @@ describe("ReportPage", () => {
     wrapper.unmount();
   });
 
-  it("calls loadTagSnapshot on mount", async () => {
+  it("calls fetchBuildState on mount", async () => {
     const wrapper = mount(ReportPage, {
       props: { runId: "run-1" },
       global: { plugins: [pinia] },
@@ -350,7 +350,7 @@ describe("ReportPage", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 10));
 
-    expect(loadTagSnapshot).toHaveBeenCalledWith("run-1");
+    expect(fetchBuildState).toHaveBeenCalledWith("run-1");
 
     wrapper.unmount();
   });

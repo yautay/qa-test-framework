@@ -8,7 +8,7 @@ PYTEST ?= $(PYTHON) -m pytest
 
 .DEFAULT_GOAL := help
 
-.PHONY: help test test-aso test-functional test-visual validate-config visual-sync visual-approve visual-report-serve clean-artifacts clean-artifacts-older collect lint format format-check typecheck security verify-discovery verify-scenarios scenario-report test-api remote-up remote-down remote-smoke minio-up minio-down check
+.PHONY: help test test-aso tests-aso test-functional test-visual validate-config visual-sync visual-approve visual-report-serve clean-artifacts clean-artifacts-older collect lint format format-check typecheck security verify-discovery verify-scenarios scenario-report test-api remote-up remote-down remote-smoke minio-up minio-down check
 
 help: ## Show this help
 	$(PYTHON) tools/make/make_help.py
@@ -41,6 +41,9 @@ check: lint format-check typecheck security verify-discovery validate-config col
 test-aso: ## Testy oznaczone markerem aso (bez reportingu)
 	$(MAKE) validate-config
 	REPORTING_ENABLED=0 $(PYTEST) -m aso -q
+
+tests-aso: ## Alias dla test-aso
+	$(MAKE) test-aso
 
 collect: ## Collect-only (pytest)
 	$(PYTEST) --collect-only -q

@@ -34,6 +34,14 @@ export function normalizeNote(note) {
 export function normalizeCaseStateSnapshot(snapshot) {
   if (!snapshot || typeof snapshot !== "object") return {};
   const normalized = {};
+  const normalizeSynced = (value) => {
+    if (typeof value === "string") {
+      const lowered = value.trim().toLowerCase();
+      if (["true", "1", "yes", "y"].includes(lowered)) return true;
+      if (["false", "0", "no", "n", ""].includes(lowered)) return false;
+    }
+    return !!value;
+  };
   for (const [key, state] of Object.entries(snapshot)) {
     if (!state || typeof state !== "object") continue;
     const bug = state.bug && typeof state.bug === "object" ? state.bug : {};
@@ -41,9 +49,9 @@ export function normalizeCaseStateSnapshot(snapshot) {
     const note = state.note && typeof state.note === "object" ? state.note : {};
     const content = sanitizeNoteText(note.content || "");
     normalized[key] = {
-      bug: { locked: !!bug.locked, synced: !!bug.synced },
-      aso: { locked: !!aso.locked, synced: !!aso.synced },
-      note: { content, synced: !!note.synced },
+      bug: { locked: !!bug.locked, synced: normalizeSynced(bug.synced) },
+      aso: { locked: !!aso.locked, synced: normalizeSynced(aso.synced) },
+      note: { content, synced: normalizeSynced(note.synced) },
     };
   }
   return normalized;
