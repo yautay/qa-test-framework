@@ -6,8 +6,8 @@
           <button
             class="btn btn-theme dropdown-toggle"
             type="button"
-            data-bs-toggle="dropdown"
-            aria-expanded="false"
+            :aria-expanded="isOpen"
+            @click="isOpen = !isOpen"
           >
             <span
               class="theme-gradient-preview"
@@ -15,13 +15,13 @@
             ></span>
             <span class="theme-name">{{ currentPreset?.name }}</span>
           </button>
-          <ul class="dropdown-menu dropdown-menu-end">
+          <ul class="dropdown-menu dropdown-menu-end" :class="{ show: isOpen }">
             <li v-for="(preset, key) in presets" :key="key">
               <button
                 class="dropdown-item"
                 :class="{ active: key === currentTheme }"
                 type="button"
-                @click="setTheme(key)"
+                @click="selectTheme(key)"
               >
                 <span
                   class="theme-gradient-preview"
@@ -78,6 +78,18 @@ export default {
   name: "AppHeader",
   setup() {
     const formattedDateTime = ref("");
+    const isOpen = ref(false);
+
+    const selectTheme = (key) => {
+      setTheme(key);
+      isOpen.value = false;
+    };
+
+    const handleClickOutside = (event) => {
+      if (!event.target.closest(".theme-dropdown")) {
+        isOpen.value = false;
+      }
+    };
 
     const updateDateTime = () => {
       const now = new Date();
@@ -98,12 +110,14 @@ export default {
     onMounted(() => {
       updateDateTime();
       intervalId = setInterval(updateDateTime, 60000);
+      document.addEventListener("click", handleClickOutside);
     });
 
     onUnmounted(() => {
       if (intervalId) {
         clearInterval(intervalId);
       }
+      document.removeEventListener("click", handleClickOutside);
     });
 
     return {
@@ -114,6 +128,8 @@ export default {
       setTheme,
       presets,
       formattedDateTime,
+      isOpen,
+      selectTheme,
     };
   },
 };
@@ -164,6 +180,11 @@ export default {
   background-color: var(--card-bg);
   border-color: var(--border);
   min-width: 180px;
+  display: none;
+}
+
+.theme-dropdown .dropdown-menu.show {
+  display: block;
 }
 
 .theme-dropdown .dropdown-item {
