@@ -16,8 +16,7 @@
         <span class="meta-label">{{ t('card.runNote') }}:</span> {{ report.run_note }}
       </div>
 
-      <div class="d-flex flex-wrap gap-2 small">
-        <span class="badge text-bg-secondary">{{ report.total || 0 }}</span>
+      <div data-name="build-info" class="d-flex flex-wrap gap-2 small">
         <span class="badge text-bg-success">{{ report.passed || 0 }}</span>
         <span class="badge text-bg-danger">{{ report.failed || 0 }}</span>
         <span v-if="report.uncertain" class="badge text-bg-warning">{{ report.uncertain }}</span>
