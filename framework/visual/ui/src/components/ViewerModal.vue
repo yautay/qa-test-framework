@@ -50,10 +50,10 @@
               🔍 W
             </button>
 
-            <button v-if="!viewer.tags.bug" type="button" class="btn btn-outline-danger btn-sm" :disabled="viewer.tags.bug_reported" @click="$emit('prompt-tag','bug')">{{ t('tags.bug') }}! S</button>
-            <button v-if="viewer.tags.bug && !viewer.tags.bug_reported" type="button" class="btn btn-danger btn-sm" @click="$emit('prompt-remove-tag','bug')">{{ t('tags.bug') }} ✕</button>
-            <button v-if="!viewer.tags.aso" type="button" class="btn btn-outline-warning text-dark btn-sm" :disabled="viewer.tags.aso_reported" @click="$emit('prompt-tag','aso')">{{ t('tags.aso') }} C</button>
-            <button v-if="viewer.tags.aso && !viewer.tags.aso_reported" type="button" class="btn btn-warning btn-sm text-dark" @click="$emit('prompt-remove-tag','aso')">{{ t('tags.aso') }} ✕</button>
+            <button v-if="!viewer.tags.bug?.locked" type="button" class="btn btn-outline-danger btn-sm" @click="$emit('prompt-tag','bug')">{{ t('tags.bug') }}! S</button>
+            <button v-else type="button" class="btn btn-danger btn-sm" disabled>{{ t('tags.bug') }}</button>
+            <button v-if="!viewer.tags.aso?.locked" type="button" class="btn btn-outline-warning text-dark btn-sm" @click="$emit('prompt-tag','aso')">{{ t('tags.aso') }} C</button>
+            <button v-else type="button" class="btn btn-warning btn-sm text-dark" disabled>{{ t('tags.aso') }}</button>
             <button v-if="!viewer.tags.baseline" type="button" class="btn btn-outline-success text-success btn-sm" @click="$emit('prompt-tag','baseline')">{{ t('tags.baseline') }} \</button>
             <button v-if="viewer.tags.baseline" type="button" class="btn btn-success btn-sm" @click="$emit('prompt-remove-tag','baseline')">{{ t('tags.baseline') }} ✕</button>
 
@@ -106,7 +106,6 @@
                 <div class="note-actions">
                   <button type="button" class="btn btn-sm btn-primary" @click="onSaveNote">{{ t('note.save') }}</button>
                   <button type="button" class="btn btn-sm btn-outline-secondary" @click="onCancelNote">{{ t('note.cancel') }}</button>
-                  <button v-if="noteEditor.hasExisting" type="button" class="btn btn-sm btn-outline-danger" @click="onDeleteNote">{{ t('note.delete') }}</button>
                 </div>
               </div>
             </div>
@@ -133,7 +132,7 @@ export default {
     imageStyle: { type: Object, default: () => ({}) },
     prompt: { type: Object, default: () => ({ active: false, type: null }) },
     noteEditor: { type: Object, default: () => ({ active: false, text: "", hasExisting: false }) },
-    noteMaxLength: { type: Number, default: 2000 },
+    noteMaxLength: { type: Number, default: 200 },
     keyHeld: { type: Object, default: () => ({}) },
     superZoomActive: { type: Boolean, default: false },
     slotImage: { type: Function, required: true },
@@ -150,7 +149,6 @@ export default {
     "open-metadata",
     "save-note",
     "cancel-note",
-    "delete-note",
     "note-input",
     "close-modal",
     "reset-cursor",
@@ -198,29 +196,34 @@ export default {
         { key: "aso", label: this.t("tags.aso"), class: "bg-warning text-dark" },
         { key: "baseline", label: this.t("tags.baseline"), class: "bg-success" },
       ];
-      const tagBadges = mapping.filter((badge) => tags[badge.key]);
-      if (tags.bug_reported) {
+      const tagBadges = mapping.filter((badge) => {
+        if (badge.key === "bug") return !!tags.bug?.locked;
+        if (badge.key === "aso") return !!tags.aso?.locked;
+        if (badge.key === "baseline") return !!tags.baseline;
+        return false;
+      });
+      if (tags.bug?.synced) {
         tagBadges.push({
           key: "bug_sent",
           label: this.t("tags.bugSent"),
           class: "bg-secondary",
         });
       }
-      if (tags.aso_reported) {
+      if (tags.aso?.synced) {
         tagBadges.push({
           key: "aso_sent",
           label: this.t("tags.asoSent"),
           class: "bg-secondary",
         });
       }
-      if (tags.note_reported) {
+      if (tags.note?.synced) {
         tagBadges.push({
           key: "note_sent",
           label: this.t("tags.noteSent"),
           class: "bg-secondary",
         });
       }
-      const noteText = tags?.note?.text;
+      const noteText = tags?.note?.content;
       if (typeof noteText === "string" && noteText.trim()) {
         tagBadges.push({
           key: "note",
@@ -285,9 +288,6 @@ export default {
     },
     onCancelNote() {
       this.$emit("cancel-note");
-    },
-    onDeleteNote() {
-      this.$emit("delete-note");
     },
   },
 };

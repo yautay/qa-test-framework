@@ -65,7 +65,8 @@ describe("ResultsTable", () => {
         tagLog: {
           [key]: {
             note: {
-              text: "Keep this result",
+              content: "Keep this result",
+              synced: false,
             },
           },
         },

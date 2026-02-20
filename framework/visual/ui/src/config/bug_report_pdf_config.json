@@ -42,7 +42,7 @@
     },
     {
       "label": "NOTATKA",
-      "path": "note.text",
+      "path": "note.content",
       "required": false
     }
   ],

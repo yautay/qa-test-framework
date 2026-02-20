@@ -14,6 +14,16 @@
       <div class="global-prompt-title">{{ t('prompt.confirm') }}</div>
       <div v-if="type === 'save-note'" class="global-prompt-text">{{ t('prompt.saveNote') }}</div>
       <div v-else class="global-prompt-text">{{ t('prompt.areYouSure') }} {{ t('tags.' + type) }}?</div>
+      <div v-if="isTagPrompt" class="prompt-note">
+        <textarea
+          class="form-control prompt-textarea"
+          :value="note"
+          :maxlength="noteMaxLength"
+          :placeholder="t('prompt.notePlaceholder')"
+          @input="$emit('note-input', $event.target.value)"
+        ></textarea>
+        <div class="prompt-counter">{{ noteLength }}/{{ noteMaxLength }}</div>
+      </div>
       <div class="global-prompt-hints">{{ t('prompt.shiftNo') }} &nbsp;•&nbsp; {{ t('prompt.spaceYes') }}</div>
       <div class="global-prompt-actions">
         <button type="button" class="btn btn-sm btn-primary" @click="$emit('confirm')">{{ t('prompt.yes') }}</button>
@@ -46,12 +56,28 @@ const props = defineProps({
     type: String,
     default: null,
   },
+  note: {
+    type: String,
+    default: "",
+  },
+  noteMaxLength: {
+    type: Number,
+    default: 200,
+  },
 });
 
-defineEmits(["confirm", "cancel"]);
+defineEmits(["confirm", "cancel", "note-input"]);
 
 const isRemoveType = computed(() => {
   return props.type && props.type.startsWith("remove-");
+});
+
+const isTagPrompt = computed(() => {
+  return props.type === "bug" || props.type === "aso";
+});
+
+const noteLength = computed(() => {
+  return (props.note || "").length;
 });
 
 const removeType = computed(() => {
@@ -95,6 +121,32 @@ const removeType = computed(() => {
 .global-prompt-hints {
   color: var(--text-muted);
   font-size: 0.85rem;
+}
+
+.prompt-note {
+  margin: 0.65rem 0 0.5rem;
+  text-align: left;
+}
+
+.prompt-textarea {
+  min-height: 90px;
+  resize: vertical;
+  background: var(--card-bg);
+  color: var(--body-color);
+  border-color: var(--border);
+}
+
+.prompt-textarea:focus {
+  background: var(--card-bg);
+  color: var(--body-color);
+  border-color: var(--primary);
+}
+
+.prompt-counter {
+  margin-top: 0.35rem;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  text-align: right;
 }
 
 .global-prompt-actions {

@@ -135,11 +135,18 @@ export default {
     rowHasTag(row, tag) {
       const key = this.tagKeyForRow(row);
       const tags = this.tagLog?.[key];
-      return !!(tags && tags[tag]);
+      if (!tags) return false;
+      if (tag === "bug") return !!tags.bug?.locked;
+      if (tag === "aso") return !!tags.aso?.locked;
+      if (tag === "baseline") return !!tags.baseline;
+      if (tag === "bug_reported") return !!tags.bug?.synced;
+      if (tag === "aso_reported") return !!tags.aso?.synced;
+      if (tag === "note_reported") return !!tags.note?.synced;
+      return false;
     },
     rowHasNote(row) {
       const key = this.tagKeyForRow(row);
-      const noteText = this.tagLog?.[key]?.note?.text;
+      const noteText = this.tagLog?.[key]?.note?.content;
       return typeof noteText === "string" && !!noteText.trim();
     },
     rowKey(row, index) {

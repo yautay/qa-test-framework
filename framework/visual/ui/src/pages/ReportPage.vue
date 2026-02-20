@@ -49,7 +49,6 @@
       @note-input="updateNoteDraft"
       @save-note="saveNoteFromEditor"
       @cancel-note="cancelNoteEditor"
-      @delete-note="deleteNoteFromEditor"
       @close-modal="closeModal"
       @reset-cursor="store.resetCursor"
       @mouse-move="handleMouseMove"
@@ -57,8 +56,11 @@
     <ConfirmPrompt
       :active="prompt.active"
       :type="prompt.type"
+      :note="prompt.note"
+      :note-max-length="noteMaxLength"
       @confirm="confirmPrompt"
       @cancel="cancelPrompt"
+      @note-input="updatePromptNote"
     />
     <TestMetadataPanel
       :active="metadataPanel.active"
@@ -82,9 +84,16 @@ import { t } from "../lib/i18n";
 import { useResultsStore } from "../stores/resultsStore";
 import { Modal } from "bootstrap";
 import { getRowTagKey } from "../lib/viewer";
-import { loadTagSnapshot, saveTagSnapshotToFile } from "../lib/tagPersistence";
 import { requestBaselineChallengeForRun, sendBaselineSelectionForRun } from "../lib/baselineApi";
-import { fetchReportResults, sendRunReport, sendSingleAttempt, retryFailedAttempts } from "../lib/api/reportsApi";
+import {
+  fetchReportResults,
+  fetchBuildState,
+  postBuildEvent,
+  acquireBuildLock,
+  heartbeatBuildLock,
+  releaseBuildLock,
+  sendBuildReport,
+} from "../lib/api/reportsApi";
 import { NOTE_MAX_LENGTH, normalizeNoteDraft, sanitizeNoteText } from "../lib/notes";
 import { buildReportAssetSrc, buildRefApiSrc } from "../composables/useUrlUtils";
 
@@ -98,10 +107,13 @@ const props = defineProps({
 const store = useResultsStore();
 const superZoomActive = ref(false);
 const keyHeld = ref({ a: false, d: false, w: false, s: false, c: false });
-const prompt = ref({ active: false, type: null });
-const tagSyncTimer = ref(null);
+const pressedKeys = ref(new Set());
+const prompt = ref({ active: false, type: null, note: "" });
 const pdfGenerated = ref(false);
 const isSendingInProgress = ref(false);
+const lockInfo = ref({ lockId: "", ownerClientId: "", expiresAt: 0 });
+const lockHeartbeatTimer = ref(null);
+const lockDenied = ref(false);
 const noteEditor = ref({
   active: false,
   rowKey: "",
@@ -115,6 +127,28 @@ const metadataPanel = ref({
 const noteMaxLength = NOTE_MAX_LENGTH;
 
 const baseZoom = ref(100);
+const HEARTBEAT_MS = 15000;
+
+function getClientId() {
+  const key = "app.client_id";
+  if (typeof window === "undefined") return "";
+  const existing = window.localStorage.getItem(key);
+  if (existing) return existing;
+  const generated = window.crypto?.randomUUID
+    ? window.crypto.randomUUID()
+    : `client_${Math.random().toString(16).slice(2)}_${Date.now()}`;
+  window.localStorage.setItem(key, generated);
+  return generated;
+}
+
+function generateEventId() {
+  if (typeof window === "undefined") return `event_${Date.now()}`;
+  return window.crypto?.randomUUID
+    ? window.crypto.randomUUID()
+    : `event_${Math.random().toString(16).slice(2)}_${Date.now()}`;
+}
+
+const clientId = getClientId();
 
 function isDebugEnabled() {
   return document.cookie.split(';').some(c => c.trim().startsWith('debug=1'));
@@ -198,28 +232,89 @@ async function loadResults() {
   }
 }
 
-async function loadTags() {
+function startLockHeartbeat() {
+  if (lockHeartbeatTimer.value) {
+    window.clearInterval(lockHeartbeatTimer.value);
+  }
+  lockHeartbeatTimer.value = window.setInterval(async () => {
+    if (!props.runId || !lockInfo.value.lockId) return;
+    try {
+      const result = await heartbeatBuildLock(props.runId, clientId, lockInfo.value.lockId, {
+        timeoutMs: 8000,
+      });
+      if (!result?.accepted) {
+        lockDenied.value = true;
+        store.loadError = "Build lock expired or owned by another client.";
+        stopLockHeartbeat();
+        return;
+      }
+      const lock = result?.lock || {};
+      lockInfo.value = {
+        lockId: lock.lock_id || lockInfo.value.lockId,
+        ownerClientId: lock.owner_client_id || clientId,
+        expiresAt: Number(lock.expires_at || 0),
+      };
+    } catch (error) {
+      store.loadError = `Heartbeat failed: ${error?.message || "unknown error"}`;
+    }
+  }, HEARTBEAT_MS);
+}
+
+function stopLockHeartbeat() {
+  if (lockHeartbeatTimer.value) {
+    window.clearInterval(lockHeartbeatTimer.value);
+    lockHeartbeatTimer.value = null;
+  }
+}
+
+async function ensureLock() {
+  if (!props.runId || !clientId) return false;
+  if (lockInfo.value.lockId) return true;
+  try {
+    const result = await acquireBuildLock(props.runId, clientId, { timeoutMs: 8000 });
+    if (!result?.accepted) {
+      lockDenied.value = true;
+      store.loadError = "Build is locked by another client.";
+      return false;
+    }
+    const lock = result?.lock || {};
+    lockInfo.value = {
+      lockId: lock.lock_id || "",
+      ownerClientId: lock.owner_client_id || clientId,
+      expiresAt: Number(lock.expires_at || 0),
+    };
+    startLockHeartbeat();
+    return true;
+  } catch (error) {
+    store.loadError = `Unable to acquire lock: ${error?.message || "unknown error"}`;
+    return false;
+  }
+}
+
+async function releaseLock() {
+  if (!props.runId || !lockInfo.value.lockId) return;
+  try {
+    await releaseBuildLock(props.runId, clientId, lockInfo.value.lockId, { timeoutMs: 5000 });
+  } catch (_error) {
+    // best-effort
+  } finally {
+    lockInfo.value = { lockId: "", ownerClientId: "", expiresAt: 0 };
+    stopLockHeartbeat();
+  }
+}
+
+async function loadState() {
   if (!props.runId) return;
-  const snapshot = await loadTagSnapshot(props.runId);
+  const payload = await fetchBuildState(props.runId);
+  const snapshot = payload?.state?.test_cases;
   if (!snapshot || typeof snapshot !== "object") return;
   store.updateTagLog(snapshot);
 }
 
-function persistTags() {
-  scheduleTagFileSync();
-}
-
-function scheduleTagFileSync() {
-  if (!props.runId) {
-    return;
-  }
-  if (tagSyncTimer.value) {
-    window.clearTimeout(tagSyncTimer.value);
-  }
-  const runId = props.runId;
-  tagSyncTimer.value = window.setTimeout(async () => {
-    const synced = await saveTagSnapshotToFile(store.tagLog, runId);
-  }, 250);
+function applyStateFromResponse(response) {
+  const snapshot = response?.test_cases;
+  if (!snapshot || typeof snapshot !== "object") return;
+  store.updateTagLog(snapshot);
 }
 
 async function sendBaseline() {
@@ -282,62 +377,23 @@ async function promptSendReport() {
     console.info("Missing run id, unable to send report");
     return;
   }
-
-  isSendingInProgress.value = true;
-  debugLog("DEBUG promptSendReport: starting RAPORT flow (retry failed + PDF)");
-
-  try {
-    const retryResult = await retryFailedAttempts(props.runId);
-    debugLog("DEBUG retryFailedAttempts result:", retryResult);
-
-    if (retryResult?.tag_snapshot && typeof retryResult.tag_snapshot === "object") {
-      store.updateTagLog(retryResult.tag_snapshot);
-    }
-
-    console.info(`Retry completed: retried=${retryResult?.retried || 0}`);
-  } catch (error) {
-    debugLog("DEBUG retryFailedAttempts error:", error?.message);
-  }
-
-  const hasAnyBug = store.hasAnyBug > 0;
-  if (!hasAnyBug) {
-    console.info("No BUG for PDF");
-    isSendingInProgress.value = false;
+  const lockOk = await ensureLock();
+  if (!lockOk) {
     return;
   }
 
-  await executeSendReport();
-}
-
-async function executeSendReport() {
-  if (!props.runId) return;
   isSendingInProgress.value = true;
-  debugLog("DEBUG executeSendReport: starting");
-  const payload = {
-    tag_snapshot: store.tagLog,
-  };
+  debugLog("DEBUG promptSendReport: starting RAPORT flow (flush + PDF)");
+
   try {
-    const response = await sendRunReport(props.runId, payload);
-    debugLog("DEBUG executeSendReport response:", JSON.stringify(response).slice(0, 500));
-    debugLog("DEBUG response keys:", Object.keys(response || {}));
-    if (response?.tag_snapshot && typeof response.tag_snapshot === "object") {
-      store.updateTagLog(response.tag_snapshot);
-    }
-    const bug = response?.bug || {};
-    const aso = response?.aso || {};
-    const note = response?.note || {};
+    const response = await sendBuildReport(props.runId, { timeoutMs: 30000 });
+    debugLog("DEBUG sendBuildReport response:", JSON.stringify(response).slice(0, 500));
+    applyStateFromResponse(response);
     const pdf = response?.pdf || {};
-    const pdfInfo = Number(pdf.pages || 0) > 0 ? `, pdf_pages=${Number(pdf.pages || 0)}` : "";
-    const hasNote = typeof note === "object" && note !== null && Object.keys(note).length > 0;
-    const noteInfo = hasNote
-      ? `, note sent=${Number(note.sent || 0)} failed=${Number(note.failed || 0)} skipped=${Number(note.skipped_locked || 0)}`
-      : "";
-    console.info(`Report sent: bug sent=${Number(bug.sent || 0)} failed=${Number(bug.failed || 0)} skipped=${Number(bug.skipped_locked || 0)}, aso sent=${Number(aso.sent || 0)} failed=${Number(aso.failed || 0)} skipped=${Number(aso.skipped_locked || 0)}${noteInfo}${pdfInfo}`);
     if (Number(pdf.pages || 0) > 0) {
       pdfGenerated.value = true;
       downloadBugPdf();
     }
-    persistTags();
   } catch (error) {
     if (error?.isNoResponse || error?.code === "NO_RESPONSE" || error?.name === "AbortError") {
       return;
@@ -345,7 +401,7 @@ async function executeSendReport() {
     console.info(`RAPORT failed: ${error?.message || "unknown error"}`);
   } finally {
     isSendingInProgress.value = false;
-    debugLog("DEBUG executeSendReport: finished, isSendingInProgress = false");
+    debugLog("DEBUG promptSendReport: finished, isSendingInProgress = false");
   }
 }
 
@@ -363,7 +419,9 @@ function downloadBugPdf() {
   a.remove();
 }
 
-function show(row, mode, index = null) {
+async function show(row, mode, index = null) {
+  const lockOk = await ensureLock();
+  if (!lockOk) return;
   const fallbackMode = store.viewerMode || "test";
   const normalizedMode = mode === "compare" ? fallbackMode : (mode || fallbackMode);
   store.openViewer(row, normalizedMode, index);
@@ -382,8 +440,8 @@ function openNoteEditor(row = store.modalRow) {
   noteEditor.value = {
     active: true,
     rowKey: key,
-    text: note?.text || "",
-    hasExisting: !!(note && note.text),
+    text: note?.content || "",
+    hasExisting: !!(note && note.content),
   };
 }
 
@@ -448,6 +506,15 @@ function updateNoteDraft(value) {
   };
 }
 
+function updatePromptNote(value) {
+  if (!prompt.value.active) return;
+  const safeText = normalizeNoteDraft(value);
+  prompt.value = {
+    ...prompt.value,
+    note: safeText,
+  };
+}
+
 function saveNoteFromEditor() {
   const now = Date.now();
   if (now - lastPromptTime < PROMPT_DEBOUNCE_MS) {
@@ -458,7 +525,7 @@ function saveNoteFromEditor() {
 
   const key = getRowTagKey(store.modalRow);
   const existingNote = store.tagLog?.[key]?.note;
-  const existingText = existingNote?.text || "";
+  const existingText = existingNote?.content || "";
   const newText = noteEditor.value.text;
   const hasChanged = newText !== existingText;
 
@@ -473,16 +540,11 @@ function saveNoteFromEditor() {
 async function confirmSaveNote() {
   if (!noteEditor.value.active || !store.modalRow) return;
   const safeText = sanitizeNoteText(noteEditor.value.text);
-  store.setNoteForCurrentRow(safeText ? safeText : null);
-  persistTags();
-  cancelNoteEditor();
-  await sendTagToBackend("note");
-}
-
-function deleteNoteFromEditor() {
-  if (!noteEditor.value.active || !store.modalRow) return;
-  store.setNoteForCurrentRow(null);
-  persistTags();
+  if (!safeText) {
+    cancelNoteEditor();
+    return;
+  }
+  await postEvent("NOTE_UPSERT", { note: safeText });
   cancelNoteEditor();
 }
 
@@ -508,6 +570,19 @@ function goToHero() {
   window.dispatchEvent(new PopStateEvent("popstate"));
 }
 
+function registerKeyPress(evt) {
+  if (evt.repeat) return false;
+  const code = evt.code || evt.key;
+  if (pressedKeys.value.has(code)) return false;
+  pressedKeys.value.add(code);
+  return true;
+}
+
+function releaseKeyPress(evt) {
+  const code = evt.code || evt.key;
+  pressedKeys.value.delete(code);
+}
+
 function handleKeydown(evt) {
   const modalEl = document.getElementById("vrtModal");
   const isOpen = modalEl && modalEl.classList.contains("show");
@@ -517,11 +592,16 @@ function handleKeydown(evt) {
     return;
   }
 
-  if (handlePromptKeydown(evt)) return;
+  if (prompt.value.active) {
+    handlePromptKeydown(evt);
+    return;
+  }
 
   if (noteEditor.value.active) {
     return;
   }
+
+  if (!registerKeyPress(evt)) return;
 
   const k = evt.key;
 
@@ -570,11 +650,16 @@ function handleKeydown(evt) {
 }
 
 function handleKeydownNonModal(evt) {
-  if (handlePromptKeydown(evt)) return;
+  if (prompt.value.active) {
+    handlePromptKeydown(evt);
+    return;
+  }
 
   if (noteEditor.value.active) {
     return;
   }
+
+  if (!registerKeyPress(evt)) return;
 
   const k = evt.key;
 
@@ -595,6 +680,7 @@ function handleKeydownNonModal(evt) {
 }
 
 function handleKeyup(evt) {
+  releaseKeyPress(evt);
   if (noteEditor.value.active) {
     return;
   }
@@ -639,16 +725,19 @@ function promptTag(type) {
   }
   if (prompt.value.active) return;
   if (noteEditor.value.active) return;
-  if (type === "bug" || type === "aso") {
-    if (store.isTagReported(type)) return;
-  }
   if (store.isTagLocked(type)) return;
   lastPromptTime = now;
-  prompt.value = { active: true, type };
+  prompt.value = { active: true, type, note: "" };
 }
 
 function handlePromptKeydown(evt) {
   if (!prompt.value.active) return false;
+  const target = evt.target;
+  const tagName = target?.tagName?.toLowerCase?.();
+  if (tagName === "textarea" || tagName === "input") {
+    return false;
+  }
+  if (!registerKeyPress(evt)) return true;
   evt.preventDefault();
   evt.stopPropagation();
   if (evt.code === "Space") {
@@ -665,71 +754,73 @@ function handlePromptKeydown(evt) {
 function promptRemoveTag(type) {
   if (prompt.value.active) return;
   if (noteEditor.value.active) return;
-  if (store.isTagReported(type)) return;
-  prompt.value = { active: true, type: `remove-${type}` };
+  if (type !== "baseline") return;
+  prompt.value = { active: true, type: `remove-${type}`, note: "" };
 }
 
-async function sendTagToBackend(type) {
+async function postEvent(eventType, payload) {
   if (!props.runId || !store.modalRow) return;
-
+  const lockOk = await ensureLock();
+  if (!lockOk) return;
   const key = getRowTagKey(store.modalRow);
-  const tags = store.tagLog?.[key] || {};
-
-  let noteHash = null;
-  if (type === "note" && tags.note?.text) {
-    const text = tags.note.text;
-    let hash = 0;
-    for (let i = 0; i < text.length; i++) {
-      const char = text.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
-    }
-    noteHash = hash.toString(16);
-  }
-
   try {
-    const result = await sendSingleAttempt(props.runId, key, type, noteHash);
-    debugLog("DEBUG sendSingleAttempt result:", result);
-
-    if (result?.tag_snapshot && typeof result.tag_snapshot === "object") {
-      store.updateTagLog(result.tag_snapshot);
-    }
-
-    if (result?.accepted) {
-      console.info(`Tag ${type} sent successfully for ${key}`);
-    } else {
-      console.info(`Tag ${type} failed to send: ${result?.error || "unknown error"}`);
+    const result = await postBuildEvent(props.runId, {
+      event_id: generateEventId(),
+      type: eventType,
+      test_case_id: key,
+      payload: payload || {},
+    });
+    debugLog("DEBUG postBuildEvent result:", result);
+    applyStateFromResponse(result);
+    if (!result?.accepted) {
+      console.info(`Event ${eventType} failed for ${key}`);
     }
   } catch (error) {
-    console.info(`Send ${type} failed: ${error?.message || "unknown error"}`);
+    console.info(`Send ${eventType} failed: ${error?.message || "unknown error"}`);
+  }
+}
+
+async function sendEventToBackend(type, noteValue) {
+  if (type === "bug") {
+    const note = sanitizeNoteText(noteValue || "");
+    const payload = note ? { note } : {};
+    await postEvent("BUG_SET", payload);
+    return;
+  }
+  if (type === "aso") {
+    const note = sanitizeNoteText(noteValue || "");
+    const payload = note ? { note } : {};
+    await postEvent("ASO_SET", payload);
   }
 }
 
 async function confirmPrompt() {
   if (!prompt.value.active) return;
-  if (prompt.value.type === "send-report") {
-    prompt.value = { active: false, type: null };
-    await executeSendReport();
-    return;
-  }
-  if (prompt.value.type === "save-note") {
-    prompt.value = { active: false, type: null };
+  const currentType = prompt.value.type || "";
+  const promptNote = prompt.value.note || "";
+  prompt.value = { active: false, type: null, note: "" };
+
+  if (currentType === "save-note") {
     await confirmSaveNote();
     return;
   }
-  const type = prompt.value.type?.replace("remove-", "");
-  if (prompt.value.type.startsWith("remove-")) {
-    store.removeTag(type);
-    persistTags();
-  } else if (type === "bug" || type === "aso" || type === "note") {
-    store.toggleTag(type);
-    persistTags();
-    await sendTagToBackend(type);
-  } else {
-    store.toggleTag(type);
-    persistTags();
+
+  if (currentType.startsWith("remove-")) {
+    const type = currentType.replace("remove-", "");
+    if (type === "baseline") {
+      store.setBaseline(false);
+    }
+    return;
   }
-  prompt.value = { active: false, type: null };
+
+  if (currentType === "bug" || currentType === "aso") {
+    await sendEventToBackend(currentType, promptNote);
+    return;
+  }
+
+  if (currentType === "baseline") {
+    store.toggleBaseline();
+  }
 }
 
 function cancelPrompt() {
@@ -737,7 +828,7 @@ function cancelPrompt() {
   if (prompt.value.type === "save-note") {
     cancelNoteEditor();
   }
-  prompt.value = { active: false, type: null };
+  prompt.value = { active: false, type: null, note: "" };
 }
 
 function closeModal() {
@@ -756,8 +847,11 @@ function handleMouseMove(payload) {
 }
 
 onMounted(async () => {
-  await loadResults();
-  await loadTags();
+  await ensureLock();
+  if (!lockDenied.value) {
+    await loadResults();
+    await loadState();
+  }
   window.addEventListener("keydown", handleKeydown);
   window.addEventListener("keyup", handleKeyup);
   const modalEl = document.getElementById("vrtModal");
@@ -774,10 +868,8 @@ onBeforeUnmount(() => {
   if (modalEl) {
     modalEl.removeEventListener("hidden.bs.modal", closeModal);
   }
-  if (tagSyncTimer.value) {
-    window.clearTimeout(tagSyncTimer.value);
-    tagSyncTimer.value = null;
-  }
+  stopLockHeartbeat();
+  releaseLock();
 });
 </script>
 

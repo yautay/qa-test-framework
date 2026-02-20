@@ -300,34 +300,32 @@ describe("resultsStore", () => {
     });
   });
 
-  describe("toggleTag and removeTag", () => {
-    it("toggles tag and updates tagLog", () => {
+  describe("toggleBaseline and setBaseline", () => {
+    it("toggles baseline and updates tagLog", () => {
       const store = useResultsStore();
       store.setRows([
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.openViewer(store.rows[0], "test", 0);
 
-      store.toggleTag("bug");
+      store.toggleBaseline();
 
       const key = "s1::a.png::::";
-      expect(store.tagLog[key].bug).toBe(true);
-      expect(store.currentTags.bug).toBe(true);
+      expect(store.tagLog[key].baseline).toBe(true);
+      expect(store.currentTags.baseline).toBe(true);
     });
 
-    it("removes tag and updates tagLog", () => {
+    it("sets baseline explicitly", () => {
       const store = useResultsStore();
       store.setRows([
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.openViewer(store.rows[0], "test", 0);
-      store.toggleTag("bug");
 
-      store.removeTag("bug");
+      store.setBaseline(true);
 
       const key = "s1::a.png::::";
-      expect(store.tagLog[key].bug).toBe(false);
-      expect(store.currentTags.bug).toBe(false);
+      expect(store.tagLog[key].baseline).toBe(true);
     });
 
     it("isTagLocked returns correct value", () => {
@@ -336,7 +334,9 @@ describe("resultsStore", () => {
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.openViewer(store.rows[0], "test", 0);
-      store.toggleTag("bug");
+      store.updateTagLog({
+        "s1::a.png::::": { bug: { locked: true, synced: false } },
+      });
 
       expect(store.isTagLocked("bug")).toBe(true);
       expect(store.isTagLocked("aso")).toBe(false);
@@ -348,57 +348,27 @@ describe("resultsStore", () => {
       const store = useResultsStore();
       const snapshot = {
         "s1::a.png::::": {
-          bug: true,
-          note: { text: "test", updatedAt: "2026-01-01" },
+          bug: { locked: true, synced: false },
+          note: { content: "test", synced: true },
         },
       };
 
       store.updateTagLog(snapshot);
 
-      expect(store.tagLog["s1::a.png::::"].bug).toBe(true);
-      expect(store.tagLog["s1::a.png::::"].note.text).toBe("test");
+      expect(store.tagLog["s1::a.png::::"].bug.locked).toBe(true);
+      expect(store.tagLog["s1::a.png::::"].note.content).toBe("test");
     });
 
     it("handles null/undefined input", () => {
       const store = useResultsStore();
-      store.tagLog = { "test": { bug: true } };
+      store.tagLog = { "test": { bug: { locked: true, synced: false } } };
 
       store.updateTagLog(null);
       expect(store.tagLog).toEqual({});
 
-      store.tagLog = { "test": { bug: true } };
+      store.tagLog = { "test": { bug: { locked: true, synced: false } } };
       store.updateTagLog(undefined);
       expect(store.tagLog).toEqual({});
-    });
-  });
-
-  describe("setNoteForCurrentRow", () => {
-    it("sets note for current modal row", () => {
-      const store = useResultsStore();
-      store.setRows([
-        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
-      ]);
-      store.openViewer(store.rows[0], "test", 0);
-
-      store.setNoteForCurrentRow("Test note");
-
-      const key = "s1::a.png::::";
-      expect(store.tagLog[key].note.text).toBe("Test note");
-      expect(store.currentTags.note.text).toBe("Test note");
-    });
-
-    it("clears note when null passed", () => {
-      const store = useResultsStore();
-      store.setRows([
-        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
-      ]);
-      store.openViewer(store.rows[0], "test", 0);
-      store.setNoteForCurrentRow("Test note");
-
-      store.setNoteForCurrentRow(null);
-
-      const key = "s1::a.png::::";
-      expect(store.tagLog[key].note).toBeNull();
     });
   });
 
@@ -422,113 +392,76 @@ describe("resultsStore", () => {
   });
 
   describe("reportCandidatesCount", () => {
-    it("counts rows with untagged bugs", () => {
+    it("counts rows with unsent bugs", () => {
       const store = useResultsStore();
       store.setRows([
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
         { scenario_id: "s2", actual_path: "b.png", baseline_path: "", diff_path: "" },
       ]);
       store.tagLog = {
-        "s1::a.png::::": { bug: true, bug_reported: false },
-        "s2::b.png::::": { bug: false },
+        "s1::a.png::::": { bug: { locked: true, synced: false } },
+        "s2::b.png::::": { bug: { locked: false, synced: false } },
       };
 
       expect(store.reportCandidatesCount).toBe(1);
     });
 
-    it("counts rows with untagged asos", () => {
+    it("counts rows with unsent asos", () => {
       const store = useResultsStore();
       store.setRows([
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.tagLog = {
-        "s1::a.png::::": { bug: false, aso: true, aso_reported: false },
+        "s1::a.png::::": { aso: { locked: true, synced: false } },
       };
 
       expect(store.reportCandidatesCount).toBe(1);
     });
 
-    it("counts rows with untagged notes", () => {
+    it("counts rows with unsent notes", () => {
       const store = useResultsStore();
       store.setRows([
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.tagLog = {
-        "s1::a.png::::": { bug: false, note: { text: "test" } },
+        "s1::a.png::::": { note: { content: "test", synced: false } },
       };
 
       expect(store.reportCandidatesCount).toBe(1);
     });
 
-    it("does not count already reported bugs", () => {
+    it("does not count already synced bugs", () => {
       const store = useResultsStore();
       store.setRows([
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.tagLog = {
-        "s1::a.png::::": { bug: true, bug_reported: true },
+        "s1::a.png::::": { bug: { locked: true, synced: true } },
       };
 
       expect(store.reportCandidatesCount).toBe(0);
     });
 
-    it("does not count already reported asos", () => {
+    it("does not count already synced asos", () => {
       const store = useResultsStore();
       store.setRows([
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.tagLog = {
-        "s1::a.png::::": { bug: false, aso: true, aso_reported: true },
+        "s1::a.png::::": { aso: { locked: true, synced: true } },
       };
 
       expect(store.reportCandidatesCount).toBe(0);
     });
 
-    it("counts modified notes (newer than reported)", () => {
+    it("does not count synced notes", () => {
       const store = useResultsStore();
       store.setRows([
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.tagLog = {
         "s1::a.png::::": {
-          bug: false,
-          note: { text: "updated note", updatedAt: "2026-02-20T12:00:00.000Z" },
-          note_reported: true,
-          note_reported_at: "2026-02-20T11:00:00.000Z",
-        },
-      };
-
-      expect(store.reportCandidatesCount).toBe(1);
-    });
-
-    it("does not count unmodified reported notes", () => {
-      const store = useResultsStore();
-      store.setRows([
-        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
-      ]);
-      store.tagLog = {
-        "s1::a.png::::": {
-          bug: false,
-          note: { text: "same note", updatedAt: "2026-02-20T11:00:00.000Z" },
-          note_reported: true,
-          note_reported_at: "2026-02-20T11:00:00.000Z",
-        },
-      };
-
-      expect(store.reportCandidatesCount).toBe(0);
-    });
-
-    it("does not count notes without timestamp", () => {
-      const store = useResultsStore();
-      store.setRows([
-        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
-      ]);
-      store.tagLog = {
-        "s1::a.png::::": {
-          bug: false,
-          note: { text: "note without timestamp" },
-          note_reported: true,
-          note_reported_at: "2026-02-20T11:00:00.000Z",
+          note: { content: "note", synced: true },
         },
       };
 
@@ -545,9 +478,9 @@ describe("resultsStore", () => {
         { scenario_id: "s3", actual_path: "c.png" },
       ]);
       store.tagLog = {
-        "s1::a.png::::": { bug: true },
-        "s2::b.png::::": { bug: false },
-        "s3::c.png::::": { bug: true },
+        "s1::a.png::::": { bug: { locked: true, synced: false } },
+        "s2::b.png::::": { bug: { locked: false, synced: false } },
+        "s3::c.png::::": { bug: { locked: true, synced: true } },
       };
 
       expect(store.hasAnyBug).toBe(2);
@@ -559,19 +492,19 @@ describe("resultsStore", () => {
         { scenario_id: "s1", actual_path: "a.png" },
       ]);
       store.tagLog = {
-        "s1::a.png::::": { bug: false },
+        "s1::a.png::::": { bug: { locked: false, synced: false } },
       };
 
       expect(store.hasAnyBug).toBe(0);
     });
 
-    it("counts bugs regardless of reported status", () => {
+    it("counts bugs regardless of synced status", () => {
       const store = useResultsStore();
       store.setRows([
         { scenario_id: "s1", actual_path: "a.png" },
       ]);
       store.tagLog = {
-        "s1::a.png::::": { bug: true, bug_reported: true },
+        "s1::a.png::::": { bug: { locked: true, synced: true } },
       };
 
       expect(store.hasAnyBug).toBe(1);
@@ -655,13 +588,13 @@ describe("resultsStore", () => {
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.tagLog = {
-        "s1::a.png::::": { bug: true, note: { text: "test" } },
+        "s1::a.png::::": { bug: { locked: true, synced: false }, note: { content: "test", synced: false } },
       };
 
       store.openViewer(store.rows[0], "test", 0);
 
-      expect(store.currentTags.bug).toBe(true);
-      expect(store.currentTags.note.text).toBe("test");
+      expect(store.currentTags.bug.locked).toBe(true);
+      expect(store.currentTags.note.content).toBe("test");
     });
 
     it("falls back to test mode for invalid modes", () => {
@@ -895,40 +828,40 @@ describe("resultsStore", () => {
   });
 
   describe("isTagReported", () => {
-    it("returns true for reported bug", () => {
+    it("returns true for synced bug", () => {
       const store = useResultsStore();
       store.setRows([
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.openViewer(store.rows[0], "test", 0);
       store.tagLog = {
-        "s1::a.png::::": { bug_reported: true },
+        "s1::a.png::::": { bug: { locked: true, synced: true } },
       };
 
       expect(store.isTagReported("bug")).toBe(true);
     });
 
-    it("returns false for unreported bug", () => {
+    it("returns false for unsynced bug", () => {
       const store = useResultsStore();
       store.setRows([
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.openViewer(store.rows[0], "test", 0);
       store.tagLog = {
-        "s1::a.png::::": { bug_reported: false },
+        "s1::a.png::::": { bug: { locked: true, synced: false } },
       };
 
       expect(store.isTagReported("bug")).toBe(false);
     });
 
-    it("returns true for reportedaso", () => {
+    it("returns true for synced aso", () => {
       const store = useResultsStore();
       store.setRows([
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.openViewer(store.rows[0], "test", 0);
       store.tagLog = {
-        "s1::a.png::::": { aso_reported: true },
+        "s1::a.png::::": { aso: { locked: true, synced: true } },
       };
 
       expect(store.isTagReported("aso")).toBe(true);

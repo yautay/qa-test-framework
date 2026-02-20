@@ -92,6 +92,7 @@
     "areYouSure": "Are you sure you want to tag this as",
     "removeTag": "Are you sure you want to remove",
     "saveNote": "Do you want to save and send the note?",
+    "notePlaceholder": "Optional note (max 200 chars)",
     "yes": "Yes",
     "no": "No",
     "shiftNo": "Shift = NO",

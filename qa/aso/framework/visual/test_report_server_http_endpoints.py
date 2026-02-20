@@ -146,11 +146,10 @@ def test_report_server_endpoints_handle_listing_results_ref_tags_and_baseline_fl
         assert status == 200
         assert content == b"ref-bytes"
 
-        status, _payload = _http_json(
-            base_url, f"/reports/{run_id}/vrt-tags.json", method="PUT", body={"k": {"bug": True}}
-        )
+        status, payload = _http_json(base_url, f"/api/builds/{run_id}/state")
         assert status == 200
-        assert (report_dir / "vrt-tags.json").is_file()
+        assert payload["run_id"] == run_id
+        assert payload["state"]["test_cases"] == {}
 
         status, payload = _http_json(base_url, f"/api/reports/{run_id}/baseline/challenge", method="POST", body={})
         assert status == 200
@@ -275,18 +274,10 @@ def test_report_server_ref_endpoint_validates_query_and_run(tmp_path: Path) -> N
         thread.join(timeout=3)
 
 
-def test_report_send_endpoint_locks_per_test_per_tag_and_skips_resend(tmp_path: Path) -> None:
-    class _FakeReportingClient:
-        def __init__(self):
-            self.calls: list[tuple[str, dict[str, Any]]] = []
-
-        def send_payload(self, endpoint: str, payload: dict[str, Any]) -> bool:
-            self.calls.append((endpoint, payload))
-            return True
-
+def test_event_endpoint_is_idempotent_by_event_id(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
-    run_id = "run-report-1"
+    run_id = "run-events"
     report_dir = repo_root / "artifacts" / run_id / "visual"
     report_dir.mkdir(parents=True)
     (report_dir / ".report-ready.json").write_text('{"ready": true}\n', encoding="utf-8")
@@ -302,16 +293,7 @@ def test_report_send_endpoint_locks_per_test_per_tag_and_skips_resend(tmp_path: 
                         "browser": "chromium",
                         "actual_path": "actual/scenario-1.png",
                         "diff_path": "diff/scenario-1.png",
-                    },
-                    {
-                        "scenario_id": "scenario-2",
-                        "status": "failed",
-                        "suite_id": "suite-1",
-                        "viewport": "fhd",
-                        "browser": "chromium",
-                        "actual_path": "actual/scenario-2.png",
-                        "diff_path": "diff/scenario-2.png",
-                    },
+                    }
                 ]
             }
         ),
@@ -320,17 +302,161 @@ def test_report_send_endpoint_locks_per_test_per_tag_and_skips_resend(tmp_path: 
     (report_dir / "actual").mkdir(parents=True)
     (report_dir / "diff").mkdir(parents=True)
     (report_dir / "actual" / "scenario-1.png").write_bytes(b"a")
-    (report_dir / "actual" / "scenario-2.png").write_bytes(b"a")
     (report_dir / "diff" / "scenario-1.png").write_bytes(b"a")
-    (report_dir / "diff" / "scenario-2.png").write_bytes(b"a")
 
-    key_1 = "scenario-1::actual/scenario-1.png::::diff/scenario-1.png"
-    key_2 = "scenario-2::actual/scenario-2.png::::diff/scenario-2.png"
-    (report_dir / "vrt-tags.json").write_text(
+    ui_dist = tmp_path / "ui-dist"
+    ui_dist.mkdir(parents=True)
+    (ui_dist / "index.html").write_text("<html>ui</html>", encoding="utf-8")
+
+    context = ReportServerContext(
+        repo_root=repo_root,
+        ui_dist_dir=ui_dist,
+        baseline_store=BaselineStore(cast(Any, _env()), repo_root),
+        run_dirs={run_id: report_dir},
+    )
+    server, base_url, thread = _start_server(context)
+    try:
+        case_id = "scenario-1::actual/scenario-1.png::::diff/scenario-1.png"
+        status, payload = _http_json(
+            base_url,
+            f"/api/builds/{run_id}/events",
+            method="POST",
+            body={
+                "event_id": "evt-1",
+                "type": "BUG_SET",
+                "test_case_id": case_id,
+                "payload": {"note": "first"},
+            },
+        )
+        assert status == 200
+        assert payload["accepted"] is True
+
+        status, payload = _http_json(
+            base_url,
+            f"/api/builds/{run_id}/events",
+            method="POST",
+            body={
+                "event_id": "evt-1",
+                "type": "BUG_SET",
+                "test_case_id": case_id,
+                "payload": {"note": "second"},
+            },
+        )
+        assert status == 200
+        assert payload["duplicate"] is True
+
+        state = json.loads((report_dir.parent / "state.json").read_text(encoding="utf-8"))
+        assert len(state["outbox"]) == 1
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+
+
+def test_note_events_supersede_previous(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    run_id = "run-note"
+    report_dir = repo_root / "artifacts" / run_id / "visual"
+    report_dir.mkdir(parents=True)
+    (report_dir / ".report-ready.json").write_text('{"ready": true}\n', encoding="utf-8")
+    (report_dir / "results.json").write_text(
         json.dumps(
             {
-                key_1: {"bug": True, "aso": True, "baseline": False, "note": {"text": "n1"}},
-                key_2: {"bug": True, "aso": False, "baseline": False, "note": None},
+                "results": [
+                    {
+                        "scenario_id": "scenario-1",
+                        "status": "failed",
+                        "suite_id": "suite-1",
+                        "viewport": "fhd",
+                        "browser": "chromium",
+                        "actual_path": "actual/scenario-1.png",
+                        "diff_path": "diff/scenario-1.png",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    (report_dir / "actual").mkdir(parents=True)
+    (report_dir / "diff").mkdir(parents=True)
+    (report_dir / "actual" / "scenario-1.png").write_bytes(b"a")
+    (report_dir / "diff" / "scenario-1.png").write_bytes(b"a")
+
+    ui_dist = tmp_path / "ui-dist"
+    ui_dist.mkdir(parents=True)
+    (ui_dist / "index.html").write_text("<html>ui</html>", encoding="utf-8")
+
+    context = ReportServerContext(
+        repo_root=repo_root,
+        ui_dist_dir=ui_dist,
+        baseline_store=BaselineStore(cast(Any, _env()), repo_root),
+        run_dirs={run_id: report_dir},
+    )
+    server, base_url, thread = _start_server(context)
+    try:
+        case_id = "scenario-1::actual/scenario-1.png::::diff/scenario-1.png"
+        _http_json(
+            base_url,
+            f"/api/builds/{run_id}/events",
+            method="POST",
+            body={
+                "event_id": "note-1",
+                "type": "NOTE_UPSERT",
+                "test_case_id": case_id,
+                "payload": {"note": "first"},
+            },
+        )
+        _http_json(
+            base_url,
+            f"/api/builds/{run_id}/events",
+            method="POST",
+            body={
+                "event_id": "note-2",
+                "type": "NOTE_UPSERT",
+                "test_case_id": case_id,
+                "payload": {"note": "second"},
+            },
+        )
+
+        state = json.loads((report_dir.parent / "state.json").read_text(encoding="utf-8"))
+        statuses = [entry["status"] for entry in state["outbox"]]
+        assert "superseded" in statuses
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+
+
+def test_report_endpoint_flushes_and_generates_pdf(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    class _FakeReportingClient:
+        def __init__(self):
+            self.calls: list[tuple[str, dict[str, Any]]] = []
+
+        def send_payload(self, endpoint: str, payload: dict[str, Any]) -> bool:
+            self.calls.append((endpoint, payload))
+            return True
+
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    run_id = "run-flush"
+    report_dir = repo_root / "artifacts" / run_id / "visual"
+    report_dir.mkdir(parents=True)
+    (report_dir / ".report-ready.json").write_text('{"ready": true}\n', encoding="utf-8")
+    (report_dir / "results.json").write_text(
+        json.dumps(
+            {
+                "results": [
+                    {
+                        "scenario_id": "scenario-1",
+                        "status": "failed",
+                        "suite_id": "suite-1",
+                        "viewport": "fhd",
+                        "browser": "chromium",
+                        "actual_path": "actual/scenario-1.png",
+                        "diff_path": "diff/scenario-1.png",
+                    }
+                ]
             }
         ),
         encoding="utf-8",
@@ -340,6 +466,36 @@ def test_report_send_endpoint_locks_per_test_per_tag_and_skips_resend(tmp_path: 
     ui_dist.mkdir(parents=True)
     (ui_dist / "index.html").write_text("<html>ui</html>", encoding="utf-8")
 
+    case_id = "scenario-1::actual/scenario-1.png::::diff/scenario-1.png"
+    state_path = report_dir.parent / "state.json"
+    state_path.write_text(
+        json.dumps(
+            {
+                "test_cases": {
+                    case_id: {
+                        "bug": {"locked": True, "synced": False},
+                        "aso": {"locked": False, "synced": False},
+                        "note": {"content": "", "synced": False},
+                    }
+                },
+                "outbox": [
+                    {
+                        "event_id": "evt-1",
+                        "type": "BUG_SET",
+                        "payload": {},
+                        "status": "failed",
+                        "attempts": 1,
+                        "last_attempt_at": "",
+                        "sent_at": "",
+                        "last_error": "error",
+                        "test_case_id": case_id,
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
     fake_client = _FakeReportingClient()
     context = ReportServerContext(
         repo_root=repo_root,
@@ -348,36 +504,81 @@ def test_report_send_endpoint_locks_per_test_per_tag_and_skips_resend(tmp_path: 
         run_dirs={run_id: report_dir},
         reporting_client=cast(Any, fake_client),
         reporting_bug_endpoint="/bug",
-        reporting_aso_endpoint="/aso",
-        reporting_note_endpoint="/note",
+    )
+
+    monkeypatch.setattr(
+        "framework.visual.report_server._generate_bug_pdf",
+        lambda **_kwargs: ("/tmp/report.pdf", 1),
+    )
+
+    server, base_url, thread = _start_server(context)
+    try:
+        status, payload = _http_json(base_url, f"/api/builds/{run_id}/report", method="POST", body={})
+        assert status == 200
+        assert payload["pdf"]["pages"] == 1
+
+        state = json.loads((report_dir.parent / "state.json").read_text(encoding="utf-8"))
+        assert state["outbox"][0]["status"] == "sent"
+        assert state["test_cases"][case_id]["bug"]["synced"] is True
+        assert fake_client.calls
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=3)
+
+
+def test_event_endpoint_rejects_note_over_limit(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    run_id = "run-limit"
+    report_dir = repo_root / "artifacts" / run_id / "visual"
+    report_dir.mkdir(parents=True)
+    (report_dir / ".report-ready.json").write_text('{"ready": true}\n', encoding="utf-8")
+    (report_dir / "results.json").write_text(
+        json.dumps(
+            {
+                "results": [
+                    {
+                        "scenario_id": "scenario-1",
+                        "status": "failed",
+                        "suite_id": "suite-1",
+                        "viewport": "fhd",
+                        "browser": "chromium",
+                        "actual_path": "actual/scenario-1.png",
+                        "diff_path": "diff/scenario-1.png",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    ui_dist = tmp_path / "ui-dist"
+    ui_dist.mkdir(parents=True)
+    (ui_dist / "index.html").write_text("<html>ui</html>", encoding="utf-8")
+
+    context = ReportServerContext(
+        repo_root=repo_root,
+        ui_dist_dir=ui_dist,
+        baseline_store=BaselineStore(cast(Any, _env()), repo_root),
+        run_dirs={run_id: report_dir},
     )
     server, base_url, thread = _start_server(context)
     try:
-        status, payload = _http_json(base_url, f"/api/reports/{run_id}/report/send", method="POST", body={})
-        assert status == 200
-        assert payload["bug"]["sent"] == 2
-        assert payload["aso"]["sent"] == 1
-        assert payload["note"]["sent"] == 1
-        assert len(fake_client.calls) == 4
-
-        status, payload = _http_json(base_url, f"/api/reports/{run_id}/report/send", method="POST", body={})
-        assert status == 200
-        assert payload["bug"]["sent"] == 0
-        assert payload["bug"]["skipped_locked"] == 2
-        assert payload["aso"]["sent"] == 0
-        assert payload["aso"]["skipped_locked"] == 1
-        assert payload["note"]["sent"] == 0
-        assert payload["note"]["skipped_locked"] == 1
-        assert len(fake_client.calls) == 4
-
-        tag_snapshot = json.loads((report_dir / "vrt-tags.json").read_text(encoding="utf-8"))
-        tag_snapshot[key_1]["note"]["text"] = "n1 updated"
-        (report_dir / "vrt-tags.json").write_text(json.dumps(tag_snapshot), encoding="utf-8")
-
-        status, payload = _http_json(base_url, f"/api/reports/{run_id}/report/send", method="POST", body={})
-        assert status == 200
-        assert payload["note"]["sent"] == 1
-        assert len(fake_client.calls) == 5
+        case_id = "scenario-1::actual/scenario-1.png::::diff/scenario-1.png"
+        status, payload = _http_json(
+            base_url,
+            f"/api/builds/{run_id}/events",
+            method="POST",
+            body={
+                "event_id": "note-long",
+                "type": "NOTE_UPSERT",
+                "test_case_id": case_id,
+                "payload": {"note": "a" * 201},
+            },
+        )
+        assert status == 400
+        assert "200" in payload["error"]
     finally:
         server.shutdown()
         server.server_close()

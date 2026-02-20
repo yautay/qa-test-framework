@@ -7,10 +7,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from secrets import token_urlsafe
 from threading import Lock
-from typing import Any
+from typing import Any, cast
 from urllib.parse import parse_qs, unquote, urlparse
 import json
-import hashlib
 import mimetypes
 import re
 import sys
@@ -43,6 +42,9 @@ DEFAULT_PORT = 4173
 CHALLENGE_TTL_SECONDS = 300
 _RUN_ID_SAFE = re.compile(r"^[A-Za-z0-9._-]+$")
 _READY_MARKER = ".report-ready.json"
+LOCK_TTL_SECONDS = 110
+TEXT_MAX_LENGTH = 200
+_TEXT_CONTROL_CHAR_REGEX = re.compile(r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]")
 
 
 @dataclass
@@ -288,6 +290,33 @@ def _json_bytes(payload: dict[str, Any]) -> bytes:
     return json.dumps(payload, ensure_ascii=True, indent=2).encode("utf-8")
 
 
+def _normalize_text(value: Any, *, trim: bool = True) -> str:
+    if not isinstance(value, str):
+        return ""
+    normalized = value.replace("\r\n", "\n").replace("\r", "\n")
+    normalized = _TEXT_CONTROL_CHAR_REGEX.sub("", normalized)
+    if trim:
+        normalized = normalized.strip()
+    return normalized
+
+
+def _validated_text(value: Any, field_name: str) -> str:
+    text = _normalize_text(value, trim=True)
+    if len(text) > TEXT_MAX_LENGTH:
+        raise ValueError(f"{field_name} exceeds {TEXT_MAX_LENGTH} characters")
+    return text
+
+
+def _atomic_write_json(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    tmp_path.write_text(
+        json.dumps(payload, ensure_ascii=True, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    tmp_path.replace(path)
+
+
 def _content_type_for_path(path: Path) -> str:
     mime_type, _ = mimetypes.guess_type(str(path))
     if mime_type:
@@ -314,93 +343,198 @@ def _safe_run_id_or_error(raw_run_id: str) -> str:
     return run_id
 
 
-def _tag_file_path(report_dir: Path) -> Path:
-    return report_dir / "vrt-tags.json"
-
-
-def _send_attempts_file_path(report_dir: Path) -> Path:
-    return report_dir / "send-attempts.json"
-
-
-def _read_send_attempts(report_dir: Path) -> dict[str, Any]:
-    attempts_file = _send_attempts_file_path(report_dir)
-    if not attempts_file.is_file():
-        return {"entries": []}
+def _build_dir(repo_root: Path, run_id: str) -> Path:
+    artifacts_root = (repo_root / "artifacts").resolve()
+    build_dir = (artifacts_root / run_id).resolve()
     try:
-        data = json.loads(attempts_file.read_text(encoding="utf-8"))
+        build_dir.relative_to(artifacts_root)
+    except ValueError as exc:
+        raise ValueError("invalid build directory") from exc
+    if not build_dir.is_dir():
+        raise FileNotFoundError("build not found")
+    return build_dir
+
+
+def _lock_file_path(build_dir: Path) -> Path:
+    return build_dir / "build.lock.json"
+
+
+def _read_lock(build_dir: Path) -> dict[str, Any] | None:
+    lock_path = _lock_file_path(build_dir)
+    if not lock_path.is_file():
+        return None
+    try:
+        data = json.loads(lock_path.read_text(encoding="utf-8"))
     except Exception:
-        return {"entries": []}
-    if not isinstance(data, dict):
-        return {"entries": []}
-    return data
+        return None
+    return data if isinstance(data, dict) else None
 
 
-def _save_send_attempts(report_dir: Path, data: dict[str, Any]) -> None:
-    attempts_file = _send_attempts_file_path(report_dir)
-    attempts_file.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    logger.debug(
-        "send_attempts_saved",
-        run_id=_run_id_from_visual_dir(report_dir.parent, report_dir),
-        entries_count=len(data.get("entries", [])),
-    )
+def _is_lock_expired(lock_data: dict[str, Any], now: float) -> bool:
+    try:
+        return float(lock_data.get("expires_at", 0)) <= now
+    except Exception:
+        return True
 
 
-def _update_send_attempt_entry(
-    report_dir: Path,
-    key: str,
-    entry_type: str,
-    note_hash: str | None = None,
-    sent: bool = False,
-    error: str | None = None,
+def _write_lock(build_dir: Path, payload: dict[str, Any]) -> None:
+    _atomic_write_json(_lock_file_path(build_dir), payload)
+
+
+def _acquire_lock(
+    build_dir: Path,
+    client_id: str,
+    *,
+    now: float | None = None,
 ) -> dict[str, Any]:
-    attempts = _read_send_attempts(report_dir)
-    entries = attempts.get("entries", [])
-
-    existing_entry = None
-    for entry in entries:
-        if entry.get("key") == key and entry.get("type") == entry_type:
-            existing_entry = entry
-            break
-
-    timestamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-
-    if existing_entry:
-        existing_entry["timestamp"] = timestamp
-        existing_entry["sent"] = sent
-        existing_entry["error"] = error
-        existing_entry["retries"] = existing_entry.get("retries", 0) + (0 if sent else 1)
-        if note_hash:
-            existing_entry["note_hash"] = note_hash
-        result = existing_entry
-    else:
-        new_entry = {
-            "key": key,
-            "type": entry_type,
-            "timestamp": timestamp,
-            "sent": sent,
-            "error": error,
-            "retries": 0 if sent else 1,
+    timestamp = time.time() if now is None else float(now)
+    existing = _read_lock(build_dir)
+    if existing and not _is_lock_expired(existing, timestamp):
+        if str(existing.get("owner_client_id", "")) != client_id:
+            return {"accepted": False, "reason": "locked", "lock": existing}
+        lock_id = str(existing.get("lock_id") or "") or token_urlsafe(12)
+        updated = {
+            "build_id": str(existing.get("build_id") or ""),
+            "lock_id": lock_id,
+            "owner_client_id": client_id,
+            "created_at": float(existing.get("created_at") or timestamp),
+            "last_heartbeat_at": timestamp,
+            "expires_at": timestamp + LOCK_TTL_SECONDS,
         }
-        if note_hash:
-            new_entry["note_hash"] = note_hash
-        entries.append(new_entry)
-        result = new_entry
+        _write_lock(build_dir, updated)
+        return {"accepted": True, "lock": updated}
 
-    _save_send_attempts(report_dir, {"entries": entries})
-    logger.debug(
-        "send_attempt_updated",
-        key=key,
-        type=entry_type,
-        sent=sent,
-        error=error,
-        retries=result.get("retries"),
-    )
-    return result
+    lock_id = token_urlsafe(12)
+    payload = {
+        "build_id": build_dir.name,
+        "lock_id": lock_id,
+        "owner_client_id": client_id,
+        "created_at": timestamp,
+        "last_heartbeat_at": timestamp,
+        "expires_at": timestamp + LOCK_TTL_SECONDS,
+    }
+    _write_lock(build_dir, payload)
+    return {"accepted": True, "lock": payload}
 
 
-def _get_failed_attempts(report_dir: Path) -> list[dict[str, Any]]:
-    attempts = _read_send_attempts(report_dir)
-    return [e for e in attempts.get("entries", []) if not e.get("sent", False)]
+def _heartbeat_lock(
+    build_dir: Path,
+    client_id: str,
+    lock_id: str,
+    *,
+    now: float | None = None,
+) -> dict[str, Any]:
+    timestamp = time.time() if now is None else float(now)
+    existing = _read_lock(build_dir)
+    if not existing or _is_lock_expired(existing, timestamp):
+        return {"accepted": False, "reason": "expired"}
+    if str(existing.get("owner_client_id", "")) != client_id:
+        return {"accepted": False, "reason": "owner_mismatch", "lock": existing}
+    if str(existing.get("lock_id", "")) != lock_id:
+        return {"accepted": False, "reason": "lock_mismatch", "lock": existing}
+    updated = {
+        "build_id": str(existing.get("build_id") or build_dir.name),
+        "lock_id": lock_id,
+        "owner_client_id": client_id,
+        "created_at": float(existing.get("created_at") or timestamp),
+        "last_heartbeat_at": timestamp,
+        "expires_at": timestamp + LOCK_TTL_SECONDS,
+    }
+    _write_lock(build_dir, updated)
+    return {"accepted": True, "lock": updated}
+
+
+def _release_lock(build_dir: Path, client_id: str, lock_id: str) -> dict[str, Any]:
+    existing = _read_lock(build_dir)
+    if not existing:
+        return {"accepted": True}
+    if str(existing.get("owner_client_id", "")) != client_id:
+        return {"accepted": False, "reason": "owner_mismatch"}
+    if str(existing.get("lock_id", "")) != lock_id:
+        return {"accepted": False, "reason": "lock_mismatch"}
+    try:
+        _lock_file_path(build_dir).unlink(missing_ok=True)
+    except Exception:
+        pass
+    return {"accepted": True}
+
+
+def _state_file_path(build_dir: Path) -> Path:
+    return build_dir / "state.json"
+
+
+def _empty_case_state() -> dict[str, Any]:
+    return {
+        "bug": {"locked": False, "synced": False},
+        "aso": {"locked": False, "synced": False},
+        "note": {"content": "", "synced": False},
+    }
+
+
+def _normalize_case_state(raw: Any) -> dict[str, Any]:
+    base = raw if isinstance(raw, dict) else {}
+    bug = cast(dict[str, Any], base.get("bug")) if isinstance(base.get("bug"), dict) else {}
+    aso = cast(dict[str, Any], base.get("aso")) if isinstance(base.get("aso"), dict) else {}
+    note = cast(dict[str, Any], base.get("note")) if isinstance(base.get("note"), dict) else {}
+    content = _normalize_text(note.get("content"), trim=True)[:TEXT_MAX_LENGTH]
+    return {
+        "bug": {"locked": bool(bug.get("locked", False)), "synced": bool(bug.get("synced", False))},
+        "aso": {"locked": bool(aso.get("locked", False)), "synced": bool(aso.get("synced", False))},
+        "note": {"content": content, "synced": bool(note.get("synced", False))},
+    }
+
+
+def _normalize_outbox_entry(raw: Any) -> dict[str, Any]:
+    base = raw if isinstance(raw, dict) else {}
+    payload = base.get("payload") if isinstance(base.get("payload"), dict) else {}
+    return {
+        "event_id": str(base.get("event_id", "")),
+        "type": str(base.get("type", "")),
+        "payload": payload,
+        "status": str(base.get("status", "pending")),
+        "attempts": int(base.get("attempts", 0) or 0),
+        "last_attempt_at": str(base.get("last_attempt_at", "")),
+        "sent_at": str(base.get("sent_at", "")),
+        "last_error": str(base.get("last_error", "")),
+        "test_case_id": str(base.get("test_case_id", "")),
+    }
+
+
+def _load_state(build_dir: Path) -> dict[str, Any]:
+    state_path = _state_file_path(build_dir)
+    if not state_path.is_file():
+        return {"test_cases": {}, "outbox": []}
+    try:
+        data = json.loads(state_path.read_text(encoding="utf-8"))
+    except Exception:
+        return {"test_cases": {}, "outbox": []}
+    if not isinstance(data, dict):
+        return {"test_cases": {}, "outbox": []}
+    test_cases = cast(dict[str, Any], data.get("test_cases")) if isinstance(data.get("test_cases"), dict) else {}
+    outbox = cast(list[dict[str, Any]], data.get("outbox")) if isinstance(data.get("outbox"), list) else []
+    normalized_cases: dict[str, Any] = {}
+    for key, value in test_cases.items():
+        if not isinstance(key, str):
+            continue
+        normalized_cases[key] = _normalize_case_state(value)
+    normalized_outbox = [_normalize_outbox_entry(item) for item in outbox if isinstance(item, dict)]
+    return {"test_cases": normalized_cases, "outbox": normalized_outbox}
+
+
+def _save_state(build_dir: Path, state: dict[str, Any]) -> None:
+    _atomic_write_json(_state_file_path(build_dir), state)
+
+
+def _ensure_case_state(state: dict[str, Any], case_id: str) -> dict[str, Any]:
+    cases = state.setdefault("test_cases", {})
+    existing = cases.get(case_id)
+    if isinstance(existing, dict):
+        normalized = _normalize_case_state(existing)
+        cases[case_id] = normalized
+        return normalized
+    normalized = _empty_case_state()
+    cases[case_id] = normalized
+    return normalized
 
 
 def _default_pdf_config() -> dict[str, Any]:
@@ -414,7 +548,7 @@ def _default_pdf_config() -> dict[str, Any]:
             {"label": "scenario.viewport", "path": "scenario.viewport", "required": True},
             {"label": "scenario.browser", "path": "scenario.browser", "required": True},
             {"label": "scenario.capture.selector", "path": "scenario.capture.selector", "required": False},
-            {"label": "NOTATKA", "path": "note.text", "required": False},
+            {"label": "NOTATKA", "path": "note.content", "required": False},
         ],
         "images": [
             {"label": "baseline", "path": "image.baseline"},
@@ -444,59 +578,6 @@ def _load_bug_pdf_config(config_path: Path | None) -> dict[str, Any]:
     return merged
 
 
-def _normalize_single_tag_entry(raw: Any) -> dict[str, Any]:
-    base = raw if isinstance(raw, dict) else {}
-    note = base.get("note") if isinstance(base.get("note"), dict) else None
-    note_text = ""
-    if isinstance(note, dict):
-        note_text = str(note.get("text", "") or "").strip()
-    normalized_note = None
-    if note_text:
-        normalized_note = {
-            "text": note_text,
-            "updatedAt": str(note.get("updatedAt", "") or "") if isinstance(note, dict) else "",
-        }
-    return {
-        "bug": bool(base.get("bug", False)),
-        "aso": bool(base.get("aso", False)),
-        "baseline": bool(base.get("baseline", False)),
-        "note": normalized_note,
-        "bug_reported": bool(base.get("bug_reported", False)),
-        "aso_reported": bool(base.get("aso_reported", False)),
-        "note_reported": bool(base.get("note_reported", False)),
-        "bug_reported_at": str(base.get("bug_reported_at", "") or ""),
-        "aso_reported_at": str(base.get("aso_reported_at", "") or ""),
-        "note_reported_at": str(base.get("note_reported_at", "") or ""),
-        "note_reported_hash": str(base.get("note_reported_hash", "") or ""),
-    }
-
-
-def _normalize_tag_snapshot(raw: Any) -> dict[str, dict[str, Any]]:
-    if not isinstance(raw, dict):
-        return {}
-    out: dict[str, dict[str, Any]] = {}
-    for key, value in raw.items():
-        if not isinstance(key, str):
-            continue
-        out[key] = _normalize_single_tag_entry(value)
-    return out
-
-
-def _read_tag_snapshot(report_dir: Path) -> dict[str, dict[str, Any]]:
-    tag_file = _tag_file_path(report_dir)
-    if not tag_file.is_file():
-        return {}
-    try:
-        data = json.loads(tag_file.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
-    return _normalize_tag_snapshot(data)
-
-
-def _save_tag_snapshot(report_dir: Path, snapshot: dict[str, dict[str, Any]]) -> None:
-    _tag_file_path(report_dir).write_text(json.dumps(snapshot, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-
-
 def _row_tag_key(row: dict[str, Any]) -> str:
     return "::".join(
         [
@@ -506,6 +587,146 @@ def _row_tag_key(row: dict[str, Any]) -> str:
             str(row.get("diff_path", "") or ""),
         ]
     )
+
+
+def _utc_timestamp() -> str:
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+
+
+def _find_row_by_case_id(rows: list[dict[str, Any]], case_id: str) -> dict[str, Any] | None:
+    for row in rows:
+        if _row_tag_key(row) == case_id:
+            return row
+    return None
+
+
+def _supersede_note_events(outbox: list[dict[str, Any]], case_id: str) -> None:
+    for event in outbox:
+        if event.get("type") != "NOTE_UPSERT":
+            continue
+        if event.get("test_case_id") != case_id:
+            continue
+        if event.get("status") in {"pending", "failed"}:
+            event["status"] = "superseded"
+
+
+def _apply_event_to_state(
+    state: dict[str, Any],
+    case_id: str,
+    event_type: str,
+    note_content: str | None,
+) -> dict[str, Any]:
+    case_state = _ensure_case_state(state, case_id)
+    if event_type == "BUG_SET":
+        case_state["bug"]["locked"] = True
+        case_state["bug"]["synced"] = False
+    elif event_type == "ASO_SET":
+        case_state["aso"]["locked"] = True
+        case_state["aso"]["synced"] = False
+    elif event_type == "NOTE_UPSERT":
+        case_state["note"]["content"] = note_content or ""
+        case_state["note"]["synced"] = False
+    return case_state
+
+
+def _reporting_endpoint_for_event(context: ReportServerContext, event_type: str) -> str:
+    if event_type == "BUG_SET":
+        return context.reporting_bug_endpoint
+    if event_type == "ASO_SET":
+        return context.reporting_aso_endpoint
+    if event_type == "NOTE_UPSERT":
+        return context.reporting_note_endpoint
+    return ""
+
+
+def _send_outbox_event(
+    *,
+    context: ReportServerContext,
+    run_id: str,
+    rows_by_key: dict[str, dict[str, Any]],
+    state: dict[str, Any],
+    event: dict[str, Any],
+) -> tuple[bool, str]:
+    event_type = str(event.get("type", ""))
+    endpoint = _reporting_endpoint_for_event(context, event_type)
+    if not endpoint:
+        return False, "endpoint not configured"
+    if context.reporting_client is None:
+        return False, "reporting client unavailable"
+
+    case_id = str(event.get("test_case_id", ""))
+    case_state = _ensure_case_state(state, case_id)
+    row = rows_by_key.get(case_id)
+    if row is None:
+        return False, "test case not found"
+
+    payload_note = None
+    if event_type in {"BUG_SET", "ASO_SET"}:
+        payload_note = _normalize_text(event.get("payload", {}).get("note"), trim=True)
+
+    tag = "BUG" if event_type == "BUG_SET" else "ASO" if event_type == "ASO_SET" else "NOTE"
+    event_type_name = "visual_report_note" if event_type == "NOTE_UPSERT" else "visual_report"
+    req = _build_reporting_payload(
+        run_id,
+        tag,
+        row,
+        case_state,
+        event_type=event_type_name,
+        event_note=payload_note,
+        event_id=str(event.get("event_id", "")) or None,
+    )
+    accepted = bool(cast(Any, context.reporting_client).send_payload(endpoint, req))
+    if accepted:
+        return True, ""
+    return False, "api rejected"
+
+
+def _record_event_attempt(event: dict[str, Any], accepted: bool, error: str) -> None:
+    timestamp = _utc_timestamp()
+    event["attempts"] = int(event.get("attempts", 0) or 0) + 1
+    event["last_attempt_at"] = timestamp
+    if accepted:
+        event["status"] = "sent"
+        event["sent_at"] = timestamp
+        event["last_error"] = ""
+    else:
+        event["status"] = "failed"
+        event["last_error"] = error
+
+
+def _mark_case_synced(case_state: dict[str, Any], event_type: str) -> None:
+    if event_type == "BUG_SET":
+        case_state["bug"]["synced"] = True
+    elif event_type == "ASO_SET":
+        case_state["aso"]["synced"] = True
+    elif event_type == "NOTE_UPSERT":
+        case_state["note"]["synced"] = True
+
+
+def _flush_pending(context: ReportServerContext, run_id: str, report_dir: Path) -> dict[str, Any]:
+    build_dir = report_dir.parent
+    with context._lock:
+        state = _load_state(build_dir)
+        rows = _read_results_rows(report_dir)
+        rows_by_key = {_row_tag_key(row): row for row in rows}
+        for event in state.get("outbox", []):
+            if event.get("status") not in {"pending", "failed"}:
+                continue
+            if event.get("status") == "superseded":
+                continue
+            accepted, error = _send_outbox_event(
+                context=context,
+                run_id=run_id,
+                rows_by_key=rows_by_key,
+                state=state,
+                event=event,
+            )
+            _record_event_attempt(event, accepted, error)
+            if accepted:
+                case_state = _ensure_case_state(state, str(event.get("test_case_id", "")))
+                _mark_case_synced(case_state, str(event.get("type", "")))
+        _save_state(build_dir, state)
+        return state
 
 
 def _as_dict(value: Any) -> dict[str, Any]:
@@ -553,30 +774,20 @@ def _resolve_baseline_image(context: ReportServerContext, report_dir: Path, row:
     return candidate
 
 
-def _note_hash(text: str) -> str:
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
-
-
-def _hash_snapshot(snapshot: dict[str, Any]) -> str:
-    try:
-        encoded = json.dumps(snapshot, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    except TypeError:
-        encoded = json.dumps(snapshot, sort_keys=True, default=str, separators=(",", ":")).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
-
-
 def _build_reporting_payload(
     run_id: str,
     tag: str,
     row: dict[str, Any],
-    tag_entry: dict[str, Any],
+    case_state: dict[str, Any],
     event_type: str = "visual_report",
+    event_note: str | None = None,
+    event_id: str | None = None,
 ) -> dict[str, Any]:
     metadata = _as_dict(row.get("test_metadata"))
     run_meta = _as_dict(metadata.get("run"))
     scenario_meta = _as_dict(metadata.get("scenario"))
-    note_text = str(_as_dict(tag_entry.get("note")).get("text", "") or "").strip()
-    return {
+    note_text = str(_as_dict(case_state.get("note")).get("content", "") or "").strip()
+    payload: dict[str, Any] = {
         "event_type": event_type,
         "run_id": run_id,
         "tag": tag,
@@ -599,44 +810,11 @@ def _build_reporting_payload(
             "run_note": str(run_meta.get("run_note", row.get("run_note", "")) or ""),
         },
     }
-
-
-def _read_last_audit_entry(report_dir: Path) -> dict[str, Any] | None:
-    audit_path = report_dir / "reporting-audit.json"
-    if not audit_path.is_file():
-        return None
-    try:
-        loaded = json.loads(audit_path.read_text(encoding="utf-8"))
-        if isinstance(loaded, list) and len(loaded) > 0:
-            last_item = loaded[-1]
-            if isinstance(last_item, dict):
-                return last_item
-    except Exception:
-        pass
-    return None
-
-
-def _had_previous_failures(audit_entry: dict[str, Any] | None) -> bool:
-    if not audit_entry:
-        return False
-    prev_bug = audit_entry.get("bug", {})
-    prev_aso = audit_entry.get("aso", {})
-    prev_note = audit_entry.get("note", {})
-    return prev_bug.get("failed", 0) > 0 or prev_aso.get("failed", 0) > 0 or prev_note.get("failed", 0) > 0
-
-
-def _append_audit_entry(report_dir: Path, payload: dict[str, Any]) -> None:
-    audit_path = report_dir / "reporting-audit.json"
-    current: list[dict[str, Any]] = []
-    if audit_path.is_file():
-        try:
-            loaded = json.loads(audit_path.read_text(encoding="utf-8"))
-            if isinstance(loaded, list):
-                current = [item for item in loaded if isinstance(item, dict)]
-        except Exception:
-            current = []
-    current.append(payload)
-    audit_path.write_text(json.dumps(current, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    if event_note:
+        payload["prompt_note"] = event_note
+    if event_id:
+        payload["idempotency_key"] = event_id
+    return payload
 
 
 def _draw_image_on_page(pdf: Any, image_path: Path, x: float, y: float, w: float, h: float) -> bool:
@@ -682,7 +860,7 @@ def _generate_bug_pdf(
     raw_images = config.get("images")
     image_defs: list[Any] = raw_images if isinstance(raw_images, list) else []
 
-    for row, tag_entry in bug_rows:
+    for row, case_state in bug_rows:
         metadata = _as_dict(row.get("test_metadata"))
         run_meta = _as_dict(metadata.get("run"))
         scenario_meta = _as_dict(metadata.get("scenario"))
@@ -701,7 +879,7 @@ def _generate_bug_pdf(
                 "capture": _as_dict(scenario_meta.get("capture")),
             },
             "note": {
-                "text": str(_as_dict(tag_entry.get("note")).get("text", "") or "").strip(),
+                "content": str(_as_dict(case_state.get("note")).get("content", "") or "").strip(),
             },
         }
 
@@ -842,6 +1020,22 @@ def _build_handler(context: ReportServerContext):
             _serve_file(self, candidate)
 
         def _handle_api_get(self, path: str, query: dict[str, list[str]]) -> bool:
+            m_state = re.match(r"^/api/builds/([^/]+)/state$", path)
+            if m_state:
+                try:
+                    run_id = _safe_run_id_or_error(m_state.group(1))
+                except ValueError as exc:
+                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                    return True
+                report_dir = context.resolve_run_dir(run_id)
+                if report_dir is None:
+                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
+                    return True
+                build_dir = report_dir.parent
+                state = _load_state(build_dir)
+                self._send_json(HTTPStatus.OK, {"run_id": run_id, "state": state})
+                return True
+
             if path == "/api/reports":
                 self._send_json(HTTPStatus.OK, {"reports": _list_reports_payload(context)})
                 return True
@@ -917,24 +1111,6 @@ def _build_handler(context: ReportServerContext):
             path = parsed.path
             query = parse_qs(parsed.query)
 
-            m_tag = re.match(r"^/reports/([^/]+)/vrt-tags\.json$", path)
-            if m_tag:
-                try:
-                    run_id = _safe_run_id_or_error(m_tag.group(1))
-                except ValueError as exc:
-                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
-                    return
-                run_dir = context.resolve_run_dir(run_id)
-                if run_dir is None:
-                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
-                    return
-                tag_file = run_dir / "vrt-tags.json"
-                if not tag_file.is_file():
-                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "tag file not found", "run_id": run_id})
-                    return
-                _serve_file(self, tag_file)
-                return
-
             if path == "/health":
                 self._send_json(HTTPStatus.OK, {"status": "ok"})
                 return
@@ -972,31 +1148,7 @@ def _build_handler(context: ReportServerContext):
 
         def do_PUT(self) -> None:
             path = urlparse(self.path).path
-            m = re.match(r"^/reports/([^/]+)/vrt-tags\.json$", path)
-            if not m:
-                self._send_json(HTTPStatus.NOT_FOUND, {"error": "unknown endpoint", "path": path})
-                return
-
-            try:
-                run_id = _safe_run_id_or_error(m.group(1))
-            except ValueError as exc:
-                self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
-                return
-            run_dir = context.resolve_run_dir(run_id)
-            if run_dir is None:
-                self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
-                return
-
-            try:
-                payload = self._read_json_body()
-            except Exception as exc:
-                self._send_json(HTTPStatus.BAD_REQUEST, {"error": f"invalid request body: {exc}"})
-                return
-
-            target = run_dir / "vrt-tags.json"
-            normalized = _normalize_tag_snapshot(payload)
-            target.write_text(json.dumps(normalized, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-            self._send_json(HTTPStatus.OK, {"saved": True, "path": str(target)})
+            self._send_json(HTTPStatus.NOT_FOUND, {"error": "unknown endpoint", "path": path})
 
         def do_POST(self) -> None:
             path = urlparse(self.path).path
@@ -1027,416 +1179,75 @@ def _build_handler(context: ReportServerContext):
                 )
                 return
 
-            m_report_send = re.match(r"^/api/reports/([^/]+)/report/send$", path)
-            if m_report_send:
+            m_lock_acquire = re.match(r"^/(?:api/)?builds/([^/]+)/lock/acquire$", path)
+            if m_lock_acquire:
                 try:
-                    run_id = _safe_run_id_or_error(m_report_send.group(1))
-                except ValueError as exc:
+                    run_id = _safe_run_id_or_error(m_lock_acquire.group(1))
+                    build_dir = _build_dir(context.repo_root, run_id)
+                    payload = self._read_json_body()
+                    client_id = _validated_text(payload.get("client_id"), "client_id")
+                except FileNotFoundError:
+                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "build not found"})
+                    return
+                except Exception as exc:
                     self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
                     return
-                report_dir = context.resolve_run_dir(run_id)
-                if report_dir is None:
-                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
-                    return
 
-                payload = {}
-                try:
-                    payload = self._read_json_body()
-                except Exception:
-                    payload = {}
-
-                incoming_tags = payload.get("tag_snapshot")
-                if incoming_tags is not None:
-                    normalized = _normalize_tag_snapshot(incoming_tags)
-                    _save_tag_snapshot(report_dir, normalized)
-
-                tag_snapshot = _read_tag_snapshot(report_dir)
-                rows = _read_results_rows(report_dir)
-
-                bug_rows: list[tuple[dict[str, Any], dict[str, Any]]] = []
-                bug_sendable: list[tuple[dict[str, Any], dict[str, Any]]] = []
-                aso_sendable: list[tuple[dict[str, Any], dict[str, Any]]] = []
-                note_rows: list[tuple[dict[str, Any], dict[str, Any]]] = []
-                note_sendable: list[tuple[dict[str, Any], dict[str, Any], str]] = []
-                skipped_bug_locked = 0
-                skipped_aso_locked = 0
-                skipped_note_locked = 0
-
-                for row in rows:
-                    key = _row_tag_key(row)
-                    tag_entry = tag_snapshot.get(key)
-                    if tag_entry is None:
-                        tag_entry = _normalize_single_tag_entry({})
-                        tag_snapshot[key] = tag_entry
-                    if tag_entry.get("bug"):
-                        bug_rows.append((row, tag_entry))
-                        if not bool(tag_entry.get("bug_reported", False)):
-                            bug_sendable.append((row, tag_entry))
-                        else:
-                            skipped_bug_locked += 1
-                    if tag_entry.get("aso"):
-                        if not bool(tag_entry.get("aso_reported", False)):
-                            aso_sendable.append((row, tag_entry))
-                        else:
-                            skipped_aso_locked += 1
-                    note_text = str(_as_dict(tag_entry.get("note")).get("text", "") or "").strip()
-                    if note_text:
-                        note_rows.append((row, tag_entry))
-                        current_hash = _note_hash(note_text)
-                        previous_hash = str(tag_entry.get("note_reported_hash", "") or "").strip()
-                        if not previous_hash or previous_hash != current_hash:
-                            note_sendable.append((row, tag_entry, current_hash))
-                        else:
-                            skipped_note_locked += 1
-
-                logger.info(
-                    "report_send_start",
-                    run_id=run_id,
-                    bug_total=len(bug_rows),
-                    bug_sendable=len(bug_sendable),
-                    bug_skipped_locked=skipped_bug_locked,
-                    aso_total=len(aso_sendable) + skipped_aso_locked,
-                    aso_sendable=len(aso_sendable),
-                    aso_skipped_locked=skipped_aso_locked,
-                    note_total=len(note_rows),
-                    note_sendable=len(note_sendable),
-                    note_skipped_locked=skipped_note_locked,
-                )
-                logger.debug(
-                    "report_send_debug",
-                    run_id=run_id,
-                    rows_count=len(rows),
-                    tag_snapshot_count=len(tag_snapshot),
-                    tag_snapshot_hash=_hash_snapshot(tag_snapshot),
-                    has_client=context.reporting_client is not None,
-                    bug_endpoint=str(context.reporting_bug_endpoint or "").strip(),
-                    aso_endpoint=str(context.reporting_aso_endpoint or "").strip(),
-                    note_endpoint=str(context.reporting_note_endpoint or "").strip(),
-                )
-
-                bug_ok = 0
-                bug_failed = 0
-                aso_ok = 0
-                aso_failed = 0
-                note_ok = 0
-                note_failed = 0
-                sent_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-
-                has_client = context.reporting_client is not None
-                if not has_client:
-                    logger.warning("reporting client unavailable", run_id=run_id)
-
-                for row, tag_entry, note_hash in note_sendable:
-                    if not context.reporting_note_endpoint:
-                        logger.warning("report_send_note_missing_endpoint", run_id=run_id)
-                        note_failed += 1
-                        continue
-
-                    scenario_id = str(row.get("scenario_id", "") or "")
-                    current_note_reported = bool(tag_entry.get("note_reported", False))
-                    current_note_reported_at = str(tag_entry.get("note_reported_at", "") or "")
-                    current_note_reported_hash = str(tag_entry.get("note_reported_hash", "") or "")
-
-                    logger.debug(
-                        "report_send_note_before_api",
-                        run_id=run_id,
-                        scenario_id=scenario_id,
-                        endpoint=context.reporting_note_endpoint,
-                        note_reported=current_note_reported,
-                        note_reported_at=current_note_reported_at,
-                        note_reported_hash=current_note_reported_hash,
-                        new_note_hash=note_hash,
-                        hash_changed=current_note_reported_hash != note_hash,
-                    )
-
-                    req = _build_reporting_payload(
-                        run_id,
-                        "NOTE",
-                        row,
-                        tag_entry,
-                        event_type="visual_report_note",
-                    )
-                    accepted = bool(
-                        context.reporting_client
-                        and context.reporting_client.send_payload(context.reporting_note_endpoint, req)
-                    )
-
-                    logger.debug(
-                        "report_send_note_after_api",
-                        run_id=run_id,
-                        scenario_id=scenario_id,
-                        endpoint=context.reporting_note_endpoint,
-                        accepted=accepted,
-                        will_set_note_reported=accepted,
-                        will_set_note_reported_at=accepted,
-                        will_set_note_reported_hash=accepted,
-                    )
-
-                    if accepted:
-                        old_note_reported = tag_entry.get("note_reported")
-                        tag_entry["note_reported"] = True
-                        tag_entry["note_reported_at"] = sent_at
-                        tag_entry["note_reported_hash"] = note_hash
-                        logger.debug(
-                            "report_send_note_state_changed",
-                            run_id=run_id,
-                            scenario_id=scenario_id,
-                            action="set_reported",
-                            old_note_reported=old_note_reported,
-                            new_note_reported=True,
-                            new_note_reported_at=sent_at,
-                            new_note_reported_hash=note_hash,
-                        )
-                        logger.info(
-                            "report_send_note_success",
-                            run_id=run_id,
-                            scenario_id=scenario_id,
-                        )
-                        note_ok += 1
-                    else:
-                        logger.debug(
-                            "report_send_note_state_unchanged",
-                            run_id=run_id,
-                            scenario_id=scenario_id,
-                            action="keep_unreported",
-                            current_note_reported=tag_entry.get("note_reported"),
-                            current_note_reported_at=tag_entry.get("note_reported_at"),
-                            current_note_reported_hash=tag_entry.get("note_reported_hash"),
-                        )
-                        logger.warning(
-                            "report_send_note_failed",
-                            run_id=run_id,
-                            scenario_id=scenario_id,
-                        )
-                        note_failed += 1
-
-                for row, tag_entry in aso_sendable:
-                    if not context.reporting_aso_endpoint:
-                        logger.warning("report_send_aso_missing_endpoint", run_id=run_id)
-                        aso_failed += 1
-                        continue
-
-                    scenario_id = str(row.get("scenario_id", "") or "")
-                    current_aso_reported = bool(tag_entry.get("aso_reported", False))
-                    current_aso_reported_at = str(tag_entry.get("aso_reported_at", "") or "")
-
-                    logger.debug(
-                        "report_send_aso_before_api",
-                        run_id=run_id,
-                        scenario_id=scenario_id,
-                        endpoint=context.reporting_aso_endpoint,
-                        aso_reported=current_aso_reported,
-                        aso_reported_at=current_aso_reported_at,
-                    )
-
-                    req = _build_reporting_payload(run_id, "ASO", row, tag_entry)
-                    accepted = bool(
-                        context.reporting_client
-                        and context.reporting_client.send_payload(context.reporting_aso_endpoint, req)
-                    )
-
-                    logger.debug(
-                        "report_send_aso_after_api",
-                        run_id=run_id,
-                        scenario_id=scenario_id,
-                        endpoint=context.reporting_aso_endpoint,
-                        accepted=accepted,
-                        will_set_aso_reported=accepted,
-                        will_set_aso_reported_at=accepted,
-                    )
-
-                    if accepted:
-                        old_aso_reported = tag_entry.get("aso_reported")
-                        tag_entry["aso_reported"] = True
-                        tag_entry["aso_reported_at"] = sent_at
-                        logger.debug(
-                            "report_send_aso_state_changed",
-                            run_id=run_id,
-                            scenario_id=scenario_id,
-                            action="set_reported",
-                            old_aso_reported=old_aso_reported,
-                            new_aso_reported=True,
-                            new_aso_reported_at=sent_at,
-                        )
-                        logger.info(
-                            "report_send_aso_success",
-                            run_id=run_id,
-                            scenario_id=scenario_id,
-                        )
-                        aso_ok += 1
-                    else:
-                        logger.debug(
-                            "report_send_aso_state_unchanged",
-                            run_id=run_id,
-                            scenario_id=scenario_id,
-                            action="keep_unreported",
-                            current_aso_reported=tag_entry.get("aso_reported"),
-                            current_aso_reported_at=tag_entry.get("aso_reported_at"),
-                        )
-                        logger.warning(
-                            "report_send_aso_failed",
-                            run_id=run_id,
-                            scenario_id=scenario_id,
-                        )
-                        aso_failed += 1
-
-                for row, tag_entry in bug_sendable:
-                    if not context.reporting_bug_endpoint:
-                        logger.warning("report_send_bug_missing_endpoint", run_id=run_id)
-                        bug_failed += 1
-                        continue
-
-                    scenario_id = str(row.get("scenario_id", "") or "")
-                    current_bug_reported = bool(tag_entry.get("bug_reported", False))
-                    current_bug_reported_at = str(tag_entry.get("bug_reported_at", "") or "")
-
-                    logger.debug(
-                        "report_send_bug_before_api",
-                        run_id=run_id,
-                        scenario_id=scenario_id,
-                        endpoint=context.reporting_bug_endpoint,
-                        bug_reported=current_bug_reported,
-                        bug_reported_at=current_bug_reported_at,
-                    )
-
-                    req = _build_reporting_payload(run_id, "BUG", row, tag_entry)
-                    accepted = bool(
-                        context.reporting_client
-                        and context.reporting_client.send_payload(context.reporting_bug_endpoint, req)
-                    )
-
-                    logger.debug(
-                        "report_send_bug_after_api",
-                        run_id=run_id,
-                        scenario_id=scenario_id,
-                        endpoint=context.reporting_bug_endpoint,
-                        accepted=accepted,
-                        will_set_bug_reported=accepted,
-                        will_set_bug_reported_at=accepted,
-                    )
-
-                    if accepted:
-                        old_bug_reported = tag_entry.get("bug_reported")
-                        tag_entry["bug_reported"] = True
-                        tag_entry["bug_reported_at"] = sent_at
-                        logger.debug(
-                            "report_send_bug_state_changed",
-                            run_id=run_id,
-                            scenario_id=scenario_id,
-                            action="set_reported",
-                            old_bug_reported=old_bug_reported,
-                            new_bug_reported=True,
-                            new_bug_reported_at=sent_at,
-                        )
-                        logger.info(
-                            "report_send_bug_success",
-                            run_id=run_id,
-                            scenario_id=scenario_id,
-                        )
-                        bug_ok += 1
-                    else:
-                        logger.debug(
-                            "report_send_bug_state_unchanged",
-                            run_id=run_id,
-                            scenario_id=scenario_id,
-                            action="keep_unreported",
-                            current_bug_reported=tag_entry.get("bug_reported"),
-                            current_bug_reported_at=tag_entry.get("bug_reported_at"),
-                        )
-                        logger.warning(
-                            "report_send_bug_failed",
-                            run_id=run_id,
-                            scenario_id=scenario_id,
-                        )
-                        bug_failed += 1
-
-                pdf_path, pdf_pages = _generate_bug_pdf(
-                    context=context,
-                    run_id=run_id,
-                    report_dir=report_dir,
-                    bug_rows=bug_rows,
-                )
-
-                previous_audit = _read_last_audit_entry(report_dir)
-                had_previous_failures = _had_previous_failures(previous_audit)
-
-                audit_entry = {
-                    "timestamp_utc": sent_at,
-                    "run_id": run_id,
-                    "bug": {
-                        "total": len(bug_rows),
-                        "sent": bug_ok,
-                        "failed": bug_failed,
-                        "skipped_locked": skipped_bug_locked,
-                    },
-                    "aso": {
-                        "sent": aso_ok,
-                        "failed": aso_failed,
-                        "skipped_locked": skipped_aso_locked,
-                    },
-                    "note": {
-                        "total": len(note_rows),
-                        "sent": note_ok,
-                        "failed": note_failed,
-                        "skipped_locked": skipped_note_locked,
-                    },
-                    "pdf": {
-                        "path": pdf_path,
-                        "pages": pdf_pages,
-                    },
-                }
-                _save_tag_snapshot(report_dir, tag_snapshot)
-                _append_audit_entry(report_dir, audit_entry)
-                logger.info(
-                    "report_send_finish",
-                    run_id=run_id,
-                    bug_sent=bug_ok,
-                    bug_failed=bug_failed,
-                    aso_sent=aso_ok,
-                    aso_failed=aso_failed,
-                    note_sent=note_ok,
-                    note_failed=note_failed,
-                    pdf_pages=pdf_pages,
-                )
-                self._send_json(
-                    HTTPStatus.OK,
-                    {
-                        "accepted": True,
-                        "run_id": run_id,
-                        "previous_attempt_had_failures": had_previous_failures,
-                        "bug": {
-                            "total": len(bug_rows),
-                            "sent": bug_ok,
-                            "failed": bug_failed,
-                            "skipped_locked": skipped_bug_locked,
-                        },
-                        "aso": {
-                            "sent": aso_ok,
-                            "failed": aso_failed,
-                            "skipped_locked": skipped_aso_locked,
-                        },
-                        "note": {
-                            "total": len(note_rows),
-                            "sent": note_ok,
-                            "failed": note_failed,
-                            "skipped_locked": skipped_note_locked,
-                        },
-                        "pdf": {
-                            "path": pdf_path,
-                            "pages": pdf_pages,
-                        },
-                        "tag_snapshot": tag_snapshot,
-                    },
-                )
+                with context._lock:
+                    result = _acquire_lock(build_dir, client_id)
+                status = HTTPStatus.OK if result.get("accepted") else HTTPStatus.CONFLICT
+                self._send_json(status, result)
                 return
 
-            m_send_attempt = re.match(r"^/api/reports/([^/]+)/report/send-attempt$", path)
-            if m_send_attempt:
+            m_lock_heartbeat = re.match(r"^/(?:api/)?builds/([^/]+)/lock/heartbeat$", path)
+            if m_lock_heartbeat:
                 try:
-                    run_id = _safe_run_id_or_error(m_send_attempt.group(1))
+                    run_id = _safe_run_id_or_error(m_lock_heartbeat.group(1))
+                    build_dir = _build_dir(context.repo_root, run_id)
+                    payload = self._read_json_body()
+                    client_id = _validated_text(payload.get("client_id"), "client_id")
+                    lock_id = _validated_text(payload.get("lock_id"), "lock_id")
+                except FileNotFoundError:
+                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "build not found"})
+                    return
+                except Exception as exc:
+                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                    return
+
+                with context._lock:
+                    result = _heartbeat_lock(build_dir, client_id, lock_id)
+                status = HTTPStatus.OK if result.get("accepted") else HTTPStatus.CONFLICT
+                self._send_json(status, result)
+                return
+
+            m_lock_release = re.match(r"^/(?:api/)?builds/([^/]+)/lock/release$", path)
+            if m_lock_release:
+                try:
+                    run_id = _safe_run_id_or_error(m_lock_release.group(1))
+                    build_dir = _build_dir(context.repo_root, run_id)
+                    payload = self._read_json_body()
+                    client_id = _validated_text(payload.get("client_id"), "client_id")
+                    lock_id = _validated_text(payload.get("lock_id"), "lock_id")
+                except FileNotFoundError:
+                    self._send_json(HTTPStatus.NOT_FOUND, {"error": "build not found"})
+                    return
+                except Exception as exc:
+                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                    return
+
+                with context._lock:
+                    result = _release_lock(build_dir, client_id, lock_id)
+                self._send_json(HTTPStatus.OK, result)
+                return
+
+            m_events = re.match(r"^/(?:api/)?builds/([^/]+)/events$", path)
+            if m_events:
+                try:
+                    run_id = _safe_run_id_or_error(m_events.group(1))
                 except ValueError as exc:
                     self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
                     return
+
                 report_dir = context.resolve_run_dir(run_id)
                 if report_dir is None:
                     self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
@@ -1448,113 +1259,117 @@ def _build_handler(context: ReportServerContext):
                     self._send_json(HTTPStatus.BAD_REQUEST, {"error": f"invalid request body: {exc}"})
                     return
 
-                key = str(payload.get("key", "")).strip()
-                entry_type = str(payload.get("type", "")).strip().lower()
-                note_hash = str(payload.get("note_hash", "")).strip() or None
+                event_id = _normalize_text(payload.get("event_id"), trim=True)
+                event_type = str(payload.get("type", "")).strip().upper()
+                case_id = _normalize_text(payload.get("test_case_id"), trim=True)
+                event_payload = (
+                    cast(dict[str, Any], payload.get("payload")) if isinstance(payload.get("payload"), dict) else {}
+                )
 
-                if not key or entry_type not in ("bug", "aso", "note"):
-                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": "missing or invalid key or type"})
+                if not event_id:
+                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": "missing event_id"})
+                    return
+                if event_type not in {"BUG_SET", "ASO_SET", "NOTE_UPSERT"}:
+                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": "invalid event type"})
+                    return
+                if not case_id:
+                    self._send_json(HTTPStatus.BAD_REQUEST, {"error": "missing test_case_id"})
                     return
 
-                tag_snapshot = _read_tag_snapshot(report_dir)
-                tag_entry = tag_snapshot.get(key)
-                if tag_entry is None:
-                    tag_entry = _normalize_single_tag_entry({})
-                    tag_snapshot[key] = tag_entry
-
-                row = None
-                for r in _read_results_rows(report_dir):
-                    if _row_tag_key(r) == key:
-                        row = r
-                        break
-
-                sent_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-                accepted = False
-                error_msg = None
-
-                has_client = context.reporting_client is not None
-
-                if entry_type == "bug":
-                    if not context.reporting_bug_endpoint:
-                        error_msg = "endpoint not configured"
-                    elif has_client:
-                        req = _build_reporting_payload(run_id, "BUG", row or {}, tag_entry)
-                        accepted = bool(context.reporting_client.send_payload(context.reporting_bug_endpoint, req))
-                        if accepted:
-                            tag_entry["bug_reported"] = True
-                            tag_entry["bug_reported_at"] = sent_at
-                    if not accepted and not error_msg:
-                        error_msg = "api rejected"
-
-                elif entry_type == "aso":
-                    if not context.reporting_aso_endpoint:
-                        error_msg = "endpoint not configured"
-                    elif has_client:
-                        req = _build_reporting_payload(run_id, "ASO", row or {}, tag_entry)
-                        accepted = bool(context.reporting_client.send_payload(context.reporting_aso_endpoint, req))
-                        if accepted:
-                            tag_entry["aso_reported"] = True
-                            tag_entry["aso_reported_at"] = sent_at
-                    if not accepted and not error_msg:
-                        error_msg = "api rejected"
-
-                elif entry_type == "note":
-                    if not context.reporting_note_endpoint:
-                        error_msg = "endpoint not configured"
-                    elif has_client:
-                        note_text = str(_as_dict(tag_entry.get("note")).get("text", "") or "").strip()
-                        current_hash = _note_hash(note_text)
-                        req = _build_reporting_payload(
-                            run_id,
-                            "NOTE",
-                            row or {},
-                            tag_entry,
-                            event_type="visual_report_note",
+                build_dir = report_dir.parent
+                with context._lock:
+                    state = _load_state(build_dir)
+                    outbox = state.setdefault("outbox", [])
+                    existing = next((item for item in outbox if item.get("event_id") == event_id), None)
+                    if existing:
+                        self._send_json(
+                            HTTPStatus.OK,
+                            {
+                                "accepted": True,
+                                "duplicate": True,
+                                "event": existing,
+                                "test_cases": state.get("test_cases", {}),
+                            },
                         )
-                        accepted = bool(context.reporting_client.send_payload(context.reporting_note_endpoint, req))
-                        if accepted:
-                            tag_entry["note_reported"] = True
-                            tag_entry["note_reported_at"] = sent_at
-                            tag_entry["note_reported_hash"] = current_hash
-                    if not accepted and not error_msg:
-                        error_msg = "api rejected"
+                        return
 
-                _save_tag_snapshot(report_dir, tag_snapshot)
-                _update_send_attempt_entry(
-                    report_dir,
-                    key=key,
-                    entry_type=entry_type,
-                    note_hash=note_hash,
-                    sent=accepted,
-                    error=error_msg,
-                )
+                    case_state = _ensure_case_state(state, case_id)
+                    if event_type == "BUG_SET" and case_state["bug"]["locked"]:
+                        self._send_json(HTTPStatus.CONFLICT, {"error": "BUG already locked"})
+                        return
+                    if event_type == "ASO_SET" and case_state["aso"]["locked"]:
+                        self._send_json(HTTPStatus.CONFLICT, {"error": "ASO already locked"})
+                        return
 
-                logger.debug(
-                    "send_attempt_response",
-                    run_id=run_id,
-                    key=key,
-                    type=entry_type,
-                    accepted=accepted,
-                    error=error_msg,
-                )
+                    prompt_note = _normalize_text(event_payload.get("note"), trim=True)
+                    if len(prompt_note) > TEXT_MAX_LENGTH:
+                        self._send_json(HTTPStatus.BAD_REQUEST, {"error": "note exceeds 200 characters"})
+                        return
+
+                    note_content = None
+                    if event_type == "NOTE_UPSERT":
+                        try:
+                            note_content = _validated_text(event_payload.get("note"), "note")
+                        except Exception as exc:
+                            self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                            return
+                        if not note_content:
+                            self._send_json(HTTPStatus.BAD_REQUEST, {"error": "note cannot be empty"})
+                            return
+
+                    if event_type == "NOTE_UPSERT":
+                        _supersede_note_events(outbox, case_id)
+
+                    case_state = _apply_event_to_state(state, case_id, event_type, note_content)
+
+                    event_payload_out: dict[str, Any] = {}
+                    if event_type == "NOTE_UPSERT":
+                        event_payload_out["note"] = note_content
+                    elif prompt_note:
+                        event_payload_out["note"] = prompt_note
+
+                    event_entry = {
+                        "event_id": event_id,
+                        "type": event_type,
+                        "payload": event_payload_out,
+                        "status": "pending",
+                        "attempts": 0,
+                        "last_attempt_at": "",
+                        "sent_at": "",
+                        "last_error": "",
+                        "test_case_id": case_id,
+                    }
+                    outbox.append(event_entry)
+
+                    rows = _read_results_rows(report_dir)
+                    rows_by_key = {_row_tag_key(row): row for row in rows}
+                    accepted, error = _send_outbox_event(
+                        context=context,
+                        run_id=run_id,
+                        rows_by_key=rows_by_key,
+                        state=state,
+                        event=event_entry,
+                    )
+                    _record_event_attempt(event_entry, accepted, error)
+                    if accepted:
+                        _mark_case_synced(case_state, event_type)
+
+                    _save_state(build_dir, state)
 
                 self._send_json(
                     HTTPStatus.OK,
                     {
-                        "accepted": accepted,
-                        "run_id": run_id,
-                        "key": key,
-                        "type": entry_type,
-                        "error": error_msg,
-                        "tag_snapshot": tag_snapshot,
+                        "accepted": True,
+                        "event": event_entry,
+                        "test_cases": state.get("test_cases", {}),
                     },
                 )
                 return
 
-            m_retry_failed = re.match(r"^/api/reports/([^/]+)/report/retry-failed$", path)
-            if m_retry_failed:
+            m_report = re.match(r"^/(?:api/)?builds/([^/]+)/report$", path)
+            if m_report:
                 try:
-                    run_id = _safe_run_id_or_error(m_retry_failed.group(1))
+                    run_id = _safe_run_id_or_error(m_report.group(1))
                 except ValueError as exc:
                     self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
                     return
@@ -1563,113 +1378,21 @@ def _build_handler(context: ReportServerContext):
                     self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
                     return
 
-                failed_attempts = _get_failed_attempts(report_dir)
-                logger.debug(
-                    "retry_failed_attempts",
-                    run_id=run_id,
-                    failed_count=len(failed_attempts),
-                )
-
-                if not failed_attempts:
-                    self._send_json(
-                        HTTPStatus.OK,
-                        {
-                            "accepted": True,
-                            "run_id": run_id,
-                            "retried": 0,
-                            "message": "no failed attempts to retry",
-                        },
-                    )
-                    return
-
-                tag_snapshot = _read_tag_snapshot(report_dir)
-                rows = _read_results_rows(report_dir)
-                rows_by_key = {_row_tag_key(r): r for r in rows}
-
-                retried_count = 0
-                sent_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-
-                for attempt in failed_attempts:
-                    key = attempt.get("key", "")
-                    entry_type = attempt.get("type", "")
-                    if not key or entry_type not in ("bug", "aso", "note"):
+                state = _flush_pending(context, run_id, report_dir)
+                bug_rows: list[tuple[dict[str, Any], dict[str, Any]]] = []
+                for row in _read_results_rows(report_dir):
+                    case_id = _row_tag_key(row)
+                    case_state = state.get("test_cases", {}).get(case_id)
+                    if not isinstance(case_state, dict):
                         continue
+                    if case_state.get("bug", {}).get("locked"):
+                        bug_rows.append((row, case_state))
 
-                    tag_entry = tag_snapshot.get(key)
-                    if tag_entry is None:
-                        tag_entry = _normalize_single_tag_entry({})
-                        tag_snapshot[key] = tag_entry
-
-                    row = rows_by_key.get(key)
-
-                    accepted = False
-                    error_msg = None
-                    has_client = context.reporting_client is not None
-
-                    if entry_type == "bug":
-                        if not context.reporting_bug_endpoint:
-                            error_msg = "endpoint not configured"
-                        elif has_client:
-                            req = _build_reporting_payload(run_id, "BUG", row or {}, tag_entry)
-                            accepted = bool(context.reporting_client.send_payload(context.reporting_bug_endpoint, req))
-                            if accepted:
-                                tag_entry["bug_reported"] = True
-                                tag_entry["bug_reported_at"] = sent_at
-                        if not accepted and not error_msg:
-                            error_msg = "api rejected"
-
-                    elif entry_type == "aso":
-                        if not context.reporting_aso_endpoint:
-                            error_msg = "endpoint not configured"
-                        elif has_client:
-                            req = _build_reporting_payload(run_id, "ASO", row or {}, tag_entry)
-                            accepted = bool(context.reporting_client.send_payload(context.reporting_aso_endpoint, req))
-                            if accepted:
-                                tag_entry["aso_reported"] = True
-                                tag_entry["aso_reported_at"] = sent_at
-                        if not accepted and not error_msg:
-                            error_msg = "api rejected"
-
-                    elif entry_type == "note":
-                        if not context.reporting_note_endpoint:
-                            error_msg = "endpoint not configured"
-                        elif has_client:
-                            note_text = str(_as_dict(tag_entry.get("note")).get("text", "") or "").strip()
-                            current_hash = _note_hash(note_text)
-                            req = _build_reporting_payload(
-                                run_id,
-                                "NOTE",
-                                row or {},
-                                tag_entry,
-                                event_type="visual_report_note",
-                            )
-                            accepted = bool(context.reporting_client.send_payload(context.reporting_note_endpoint, req))
-                            if accepted:
-                                tag_entry["note_reported"] = True
-                                tag_entry["note_reported_at"] = sent_at
-                                tag_entry["note_reported_hash"] = current_hash
-                        if not accepted and not error_msg:
-                            error_msg = "api rejected"
-
-                    _update_send_attempt_entry(
-                        report_dir,
-                        key=key,
-                        entry_type=entry_type,
-                        note_hash=attempt.get("note_hash"),
-                        sent=accepted,
-                        error=error_msg,
-                    )
-
-                    if accepted:
-                        retried_count += 1
-
-                _save_tag_snapshot(report_dir, tag_snapshot)
-
-                logger.info(
-                    "retry_failed_finish",
+                pdf_path, pdf_pages = _generate_bug_pdf(
+                    context=context,
                     run_id=run_id,
-                    retried=retried_count,
-                    total_failed=len(failed_attempts),
+                    report_dir=report_dir,
+                    bug_rows=bug_rows,
                 )
 
                 self._send_json(
@@ -1677,8 +1400,8 @@ def _build_handler(context: ReportServerContext):
                     {
                         "accepted": True,
                         "run_id": run_id,
-                        "retried": retried_count,
-                        "tag_snapshot": tag_snapshot,
+                        "pdf": {"path": pdf_path, "pages": pdf_pages},
+                        "test_cases": state.get("test_cases", {}),
                     },
                 )
                 return
@@ -1738,7 +1461,7 @@ def _build_handler(context: ReportServerContext):
                     browser = _as_non_empty_text(raw_item, "browser")
                     actual_path = _as_non_empty_text(raw_item, "actual_path")
                     source = _resolve_actual_png(report_dir, actual_path)
-                    target = context.baseline_store.store_local_baseline(
+                    target = cast(Any, context.baseline_store).store_local_baseline(
                         suite_id,
                         scenario_id,
                         viewport,
@@ -1817,9 +1540,9 @@ def main() -> int:
         run_dirs=run_dirs,
         pinned_run_dirs=pinned_run_dirs,
         reporting_client=reporting_client,
-        reporting_bug_endpoint=str(env.reporting_api_bug_endpoint or "").strip(),
-        reporting_aso_endpoint=str(env.reporting_api_aso_endpoint or "").strip(),
-        reporting_note_endpoint=str(env.reporting_api_note_endpoint or "").strip(),
+        reporting_bug_endpoint=str(cast(Any, env).reporting_api_bug_endpoint or "").strip(),
+        reporting_aso_endpoint=str(cast(Any, env).reporting_api_aso_endpoint or "").strip(),
+        reporting_note_endpoint=str(cast(Any, env).reporting_api_note_endpoint or "").strip(),
         bug_pdf_config_path=(
             REPO_ROOT / "framework" / "visual" / "ui" / "src" / "config" / "bug_report_pdf_config.json"
         ),
@@ -1835,10 +1558,14 @@ def main() -> int:
         print(f"server listening: http://{args.host}:{args.port}/")
     print("endpoints: GET /api/reports, GET /api/reports/<run_id>/results, GET /api/reports/<run_id>/image/ref")
     print(
-        "endpoints: PUT /reports/<run_id>/vrt-tags.json, "
+        "endpoints: GET /api/builds/<run_id>/state, "
+        "POST /api/builds/<run_id>/events, "
+        "POST /api/builds/<run_id>/lock/acquire, "
+        "POST /api/builds/<run_id>/lock/heartbeat, "
+        "POST /api/builds/<run_id>/lock/release, "
+        "POST /api/builds/<run_id>/report, "
         "POST /api/reports/<run_id>/baseline/challenge, "
-        "POST /api/reports/<run_id>/baseline/send, "
-        "POST /api/reports/<run_id>/report/send"
+        "POST /api/reports/<run_id>/baseline/send"
     )
 
     try:

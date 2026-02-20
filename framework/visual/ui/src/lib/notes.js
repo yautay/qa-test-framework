@@ -1,4 +1,4 @@
-export const NOTE_MAX_LENGTH = 2000;
+export const NOTE_MAX_LENGTH = 200;
 
 const NOTE_CONTROL_CHAR_REGEX = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
 
@@ -21,7 +21,8 @@ export function normalizeNoteDraft(raw) {
 
 export function normalizeNote(note) {
   if (!note || typeof note !== "object") return null;
-  const text = sanitizeNoteText(note.text);
+  const raw = note.content !== undefined ? note.content : note.text;
+  const text = sanitizeNoteText(raw);
   if (!text) return null;
   const updatedAt = typeof note.updatedAt === "string" ? note.updatedAt : "";
   return {
@@ -30,23 +31,19 @@ export function normalizeNote(note) {
   };
 }
 
-export function normalizeTagLogSnapshot(snapshot) {
+export function normalizeCaseStateSnapshot(snapshot) {
   if (!snapshot || typeof snapshot !== "object") return {};
   const normalized = {};
-  for (const [key, tags] of Object.entries(snapshot)) {
-    if (!tags || typeof tags !== "object") continue;
+  for (const [key, state] of Object.entries(snapshot)) {
+    if (!state || typeof state !== "object") continue;
+    const bug = state.bug && typeof state.bug === "object" ? state.bug : {};
+    const aso = state.aso && typeof state.aso === "object" ? state.aso : {};
+    const note = state.note && typeof state.note === "object" ? state.note : {};
+    const content = sanitizeNoteText(note.content || "");
     normalized[key] = {
-      bug: !!tags.bug,
-      aso: !!tags.aso,
-      baseline: !!tags.baseline,
-      note: normalizeNote(tags.note),
-      bug_reported: !!tags.bug_reported,
-      aso_reported: !!tags.aso_reported,
-      note_reported: !!tags.note_reported,
-      bug_reported_at: typeof tags.bug_reported_at === "string" ? tags.bug_reported_at : "",
-      aso_reported_at: typeof tags.aso_reported_at === "string" ? tags.aso_reported_at : "",
-      note_reported_at: typeof tags.note_reported_at === "string" ? tags.note_reported_at : "",
-      note_reported_hash: typeof tags.note_reported_hash === "string" ? tags.note_reported_hash : "",
+      bug: { locked: !!bug.locked, synced: !!bug.synced },
+      aso: { locked: !!aso.locked, synced: !!aso.synced },
+      note: { content, synced: !!note.synced },
     };
   }
   return normalized;

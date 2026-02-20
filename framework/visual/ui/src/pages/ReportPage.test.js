@@ -8,14 +8,12 @@ vi.mock("../lib/api/reportsApi", () => ({
     { scenario_id: "s1", status: "failed", actual_path: "a.png", suite_id: "suite1", viewport: "1920x1080", browser: "chrome" },
     { scenario_id: "s2", status: "passed", actual_path: "b.png", suite_id: "suite2", viewport: "1920x1080", browser: "chrome" },
   ]),
-  sendRunReport: vi.fn(async () => ({})),
-  sendSingleAttempt: vi.fn(async () => ({ accepted: true })),
-  retryFailedAttempts: vi.fn(async () => ({ accepted: true, retried: 0 })),
-}));
-
-vi.mock("../lib/tagPersistence", () => ({
-  loadTagSnapshot: vi.fn(async () => ({})),
-  saveTagSnapshotToFile: vi.fn(async () => true),
+  fetchBuildState: vi.fn(async () => ({ state: { test_cases: {} } })),
+  postBuildEvent: vi.fn(async () => ({ accepted: true, test_cases: {} })),
+  acquireBuildLock: vi.fn(async () => ({ accepted: true, lock: { lock_id: "lock-1" } })),
+  heartbeatBuildLock: vi.fn(async () => ({ accepted: true, lock: { lock_id: "lock-1" } })),
+  releaseBuildLock: vi.fn(async () => ({ accepted: true })),
+  sendBuildReport: vi.fn(async () => ({ accepted: true, pdf: { pages: 0 }, test_cases: {} })),
 }));
 
 vi.mock("../lib/baselineApi", () => ({
@@ -35,8 +33,7 @@ vi.mock("bootstrap", () => ({
 }));
 
 import ReportPage from "./ReportPage.vue";
-import { fetchReportResults, sendRunReport } from "../lib/api/reportsApi";
-import { loadTagSnapshot, saveTagSnapshotToFile } from "../lib/tagPersistence";
+import { fetchReportResults, sendBuildReport } from "../lib/api/reportsApi";
 import { useResultsStore } from "../stores/resultsStore";
 import { getRowTagKey } from "../lib/viewer";
 
@@ -407,11 +404,9 @@ describe("ReportPage", () => {
     });
     const appendSpy = vi.spyOn(document.body, "appendChild").mockImplementation((node) => node);
 
-    sendRunReport.mockResolvedValueOnce({
-      bug: {},
-      aso: {},
-      note: {},
+    sendBuildReport.mockResolvedValueOnce({
       pdf: { pages: 2 },
+      test_cases: {},
     });
 
     const wrapper = mount(ReportPage, {
@@ -426,17 +421,9 @@ describe("ReportPage", () => {
     const key = getRowTagKey(firstRow);
     store.updateTagLog({
       [key]: {
-        bug: true,
-        aso: false,
-        baseline: false,
-        note: null,
-        bug_reported: false,
-        aso_reported: false,
-        note_reported: false,
-        bug_reported_at: "",
-        aso_reported_at: "",
-        note_reported_at: "",
-        note_reported_hash: "",
+        bug: { locked: true, synced: false },
+        aso: { locked: false, synced: false },
+        note: { content: "", synced: false },
       },
     });
     await nextTick();
@@ -448,7 +435,7 @@ describe("ReportPage", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 20));
 
-    expect(sendRunReport).toHaveBeenCalled();
+    expect(sendBuildReport).toHaveBeenCalled();
     expect(anchor.click).toHaveBeenCalled();
     expect(anchor.download).toBe("run-1.pdf");
     expect(anchor.href).toContain("/reports/run-1/run-1.pdf");
@@ -472,11 +459,9 @@ describe("ReportPage", () => {
       return originalCreateElement(tag);
     });
 
-    sendRunReport.mockResolvedValueOnce({
-      bug: {},
-      aso: {},
-      note: {},
+    sendBuildReport.mockResolvedValueOnce({
       pdf: { pages: 0 },
+      test_cases: {},
     });
 
     const wrapper = mount(ReportPage, {
@@ -491,17 +476,9 @@ describe("ReportPage", () => {
     const key = getRowTagKey(firstRow);
     store.updateTagLog({
       [key]: {
-        bug: true,
-        aso: false,
-        baseline: false,
-        note: null,
-        bug_reported: false,
-        aso_reported: false,
-        note_reported: false,
-        bug_reported_at: "",
-        aso_reported_at: "",
-        note_reported_at: "",
-        note_reported_hash: "",
+        bug: { locked: true, synced: false },
+        aso: { locked: false, synced: false },
+        note: { content: "", synced: false },
       },
     });
     await nextTick();
@@ -511,7 +488,7 @@ describe("ReportPage", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 20));
 
-    expect(sendRunReport).toHaveBeenCalled();
+    expect(sendBuildReport).toHaveBeenCalled();
     expect(anchor.click).not.toHaveBeenCalled();
 
     wrapper.unmount();
@@ -837,7 +814,7 @@ describe("promptSendReport logic", () => {
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.tagLog = {
-        "s1::a.png::::": { bug: true, bug_reported: false },
+        "s1::a.png::::": { bug: { locked: true, synced: false } },
       };
 
       expect(store.reportCandidatesCount).toBe(1);
@@ -849,7 +826,7 @@ describe("promptSendReport logic", () => {
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.tagLog = {
-        "s1::a.png::::": { bug: false,aso: true,aso_reported: false },
+        "s1::a.png::::": { aso: { locked: true, synced: false } },
       };
 
       expect(store.reportCandidatesCount).toBe(1);
@@ -860,7 +837,7 @@ describe("promptSendReport logic", () => {
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.tagLog = {
-        "s1::a.png::::": { bug: false, note: { text: "test note" } },
+        "s1::a.png::::": { note: { content: "test note", synced: false } },
       };
 
       expect(store.reportCandidatesCount).toBe(1);
@@ -872,10 +849,7 @@ describe("promptSendReport logic", () => {
       ]);
       store.tagLog = {
         "s1::a.png::::": {
-          bug: false,
-          note: { text: "modified", updatedAt: "2026-02-20T12:00:00.000Z" },
-          note_reported: true,
-          note_reported_at: "2026-02-20T11:00:00.000Z",
+          note: { content: "modified", synced: false },
         },
       };
 
@@ -889,7 +863,7 @@ describe("promptSendReport logic", () => {
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.tagLog = {
-        "s1::a.png::::": { bug: true, bug_reported: true },
+        "s1::a.png::::": { bug: { locked: true, synced: true } },
       };
 
       expect(store.reportCandidatesCount).toBe(0);
@@ -901,7 +875,7 @@ describe("promptSendReport logic", () => {
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.tagLog = {
-        "s1::a.png::::": { bug: false },
+        "s1::a.png::::": { bug: { locked: false, synced: false } },
       };
 
       expect(store.reportCandidatesCount).toBe(0);
@@ -915,7 +889,7 @@ describe("promptSendReport logic", () => {
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.tagLog = {
-        "s1::a.png::::": { bug: true, bug_reported: true },
+        "s1::a.png::::": { bug: { locked: true, synced: true } },
       };
 
       expect(store.reportCandidatesCount).toBe(0);
@@ -928,8 +902,8 @@ describe("promptSendReport logic", () => {
         { scenario_id: "s2", actual_path: "b.png", baseline_path: "", diff_path: "" },
       ]);
       store.tagLog = {
-        "s1::a.png::::": { bug: true, bug_reported: true },
-        "s2::b.png::::": { bug: true, bug_reported: false },
+        "s1::a.png::::": { bug: { locked: true, synced: true } },
+        "s2::b.png::::": { bug: { locked: true, synced: false } },
       };
 
       expect(store.reportCandidatesCount).toBe(1);

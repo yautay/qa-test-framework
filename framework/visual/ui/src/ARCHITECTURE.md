@@ -1,17 +1,13 @@
 # Visual Report UI - Dokumentacja Biznesowa
 
-## 1. Przegląd Aplikacji
+## 1. Przeglad Aplikacji
 
-Visual Report UI to aplikacja do przeglądania i zarządzania wynikami testów wizualnych (visual regression tests). Umożliwia testerom przeglądanie zrzutów ekranu, tagowanie wyników (BUG, ASO, BASELINE), dodawanie notatek oraz generowanie raportów PDF.
+Visual Report UI to aplikacja do przegladania wynikow testow wizualnych. Umozliwia:
+- przegladanie listy buildow (Hero page)
+- podglad szczegolow builda i testow (Raport)
+- podglad pojedynczego test case w modalu
 
-### Główne przypadki użycia
-
-1. **Przegląd wyników testów** - tester widzi listę testów z wynikami (passed/failed/uncertain)
-2. **Porównywanie obrazów** - otwiera modal z obrazkami (ref, test, diff, heatmap)
-3. **Tagowanie wyników** - oznaczanie testów jako BUG, ASO (acceptable software offset), lub BASELINE
-4. **Dodawanie notatek** - dodawanie opisu do konkretnego wyniku testu
-5. **Wysyłanie raportu** - wysyłanie oznaczonych wyników do zewnętrznego systemu (Jira/AHA) + generowanie PDF
-6. **Zarządzanie baseline** - synchronizacja obrazów referencyjnych
+Brak logowania uzytkownikow. Stan trwaly znajduje sie po stronie serwera w katalogu artefaktow i jest jedynym zrodlem prawdy.
 
 ---
 
@@ -21,414 +17,203 @@ Visual Report UI to aplikacja do przeglądania i zarządzania wynikami testów w
 
 ```javascript
 {
-  scenario_id: string,    // ID scenariusza testowego
-  suite_id: string,       // ID zestawu testów
-  status: string,         // 'passed' | 'failed' | 'skipped' | 'uncertain'
-  actual_path: string,   // ścieżka do obrazka testowego
-  baseline_path: string,  // ścieżka do obrazka referencyjnego
-  diff_path: string,      // ścieżka do obrazka różnicy
-  heatmap_path: string,  // ścieżka do mapy ciepła (LPIPS)
-  viewport: string,      // rozmiar ekranu (np. "1920x1080")
-  browser: string,        // przeglądarka (np. "chromium")
-  message: string,       // opis błędu
-  test_metadata: object   // dodatkowe metadane
+  scenario_id: string,
+  suite_id: string,
+  status: string,
+  actual_path: string,
+  baseline_path: string,
+  diff_path: string,
+  heatmap_path: string,
+  viewport: string,
+  browser: string,
+  message: string,
+  test_metadata: object
 }
 ```
 
-### 2.2 Tagi (tagLog)
+### 2.2 state.json (per build)
 
-Klucz tagu tworzony jest z 4 pól: `scenario_id::actual_path::baseline_path::diff_path`
+Plik: `artifacts/<run_id>/state.json`
 
-```javascript
-{
-  "s1::a.png::::": {
-    bug: boolean,           // czy oznaczony jako BUG
-    bug_reported: boolean,  // czy już wysłany do systemu zewnętrznego
-    bug_reported_at: string, // timestamp wysłania
-    
-   aso: boolean,            // czy oznaczony jako ASO
-   aso_reported: boolean,
-   aso_reported_at: string,
-    
-    baseline: boolean,      // czy oznaczony do synchronizacji baseline
-    
-    note: {                 // obiekt notatki
-      text: string,
-      updatedAt: string     // timestamp ostatniej edycji
-    } | null,
-    note_reported: boolean,
-    note_reported_at: string,
-    note_reported_hash: string  // hash treści już wysłanej
-  }
-}
-```
-
-### 2.3 Lockowanie tagów
-
-Po wysłaniu raportu, tagi są "lockowane" - użytkownik nie może ich usunąć ani zmienić, dopóki nie doda nowej notatki (wtedy unlock dla notatki).
-
----
-
-## 3. Przepływy (Flows)
-
-### 3.1 Przeglądanie wyników
-
-```
-HeroPage (lista raportów)
-    ↓ [kliknięcie w raport]
-ReportPage (szczegóły raportu)
-    ↓ [kliknięcie w wiersz]
-ViewerModal (porównanie obrazów)
-```
-
-- **HeroPage** (`/`) - lista dostępnych raportów z filtrami
-- **ReportPage** (`/:runId`) - szczegóły wybranego raportu z tabelą wyników
-- **ViewerModal** - modal z obrazkami: ref, test, diff, heatmap (do 4 slotów)
-
-### 3.2 Tagowanie wyników
-
-```
-W ViewerModal:
-- Klawisz 'S' → prompt "Dodać BUG?"
-- Klawisz 'C' → prompt "Dodać ASO?"
-- Klawisz '\' → prompt "Dodać BASELINE?"
-- Klawisz 'N' → otwórz edytor notatek
-```
-
-Po potwierdzeniu tag jest zapisywany w `tagLog` i synchronizowany z plikiem na dysku (z opóźnieniem 250ms - debounce).
-
-### 3.3 Tworzenie BUG/ASO (nowy flow)
-
-```
-Użytkownik w ViewerModal:
-    - Klawisz 'S' → prompt "Czy na pewno oznaczyć jako BUG?"
-    - Klawisz 'C' → prompt "Czy na pewno oznaczyć jako ASO?"
-    ↓ [potwierdzenie]
-store.toggleTag(type) → zapisz w tagLog
-    ↓
-sendTagToBackend(type) → POST /api/reports/{id}/report/send-attempt
-    ├── Backend: próbuje wysłać do zewnętrznego API
-    ├── Backend: zapisuje w send-attempts.json (sent=true/false, error, retries)
-    ├── Backend: aktualizuje tag z reported_at jeśli OK
-    └── Frontend: aktualizuje tagLog z odpowiedzi
-```
-
-### 3.4 Tworzenie notatki (nowy flow)
-
-```
-Użytkownik w ViewerModal:
-    - Klawisz 'N' → otwórz edytor notatek
-    - wpisuje tekst → klika "Zapisz"
-    ↓
-saveNoteFromEditor() → sprawdza czy tekst się zmienił
-    ├── Jeśli zmieniony → prompt "Czy zapisać i wysłać notatkę?"
-    └── Jeśli nie zmieniony → anuluj
-    ↓ [potwierdzenie]
-confirmSaveNote() → zapisz notatkę w tagLog
-    ↓
-sendTagToBackend('note') → POST /api/reports/{id}/report/send-attempt
-    └── Analogicznie jak wyżej
-```
-
-### 3.5 Przycisk RAPORT (nowy flow)
-
-```
-Użytkownik klika "Wyślij raport" w ReportHeader
-    ↓ [zawsze bez prompta]
-retryFailedAttempts() → POST /api/reports/{id}/report/retry-failed
-    ├── Backend: odczytuje send-attempts.json
-    ├── Backend: znajduje wpisy z sent=false
-    ├── Backend: próbuje wysłać ponownie (dla każdego wpisu)
-    └── Frontend: aktualizuje tagLog
-    ↓
-Jeśli są BUGi w tagLog:
-    executeSendReport() → POST /api/reports/{id}/report/send
-        └── Generuje PDF z BUGs (zawsze)
-```
-
-### 3.6 Backend - send-attempts.json
-
-Backend zapisuje historię prób wysyłki w pliku JSON:
-
-**Lokalizacja:** `artifacts/{run_id}/visual/send-attempts.json`
-
-**Struktura:**
 ```json
 {
-  "entries": [
+  "test_cases": {
+    "<case_id>": {
+      "bug": { "locked": false, "synced": false },
+      "aso": { "locked": false, "synced": false },
+      "note": { "content": "", "synced": false }
+    }
+  },
+  "outbox": [
     {
-      "key": "s1::a.png::::",
-      "type": "bug",
-      "note_hash": "abc123",
-      "timestamp": "2026-02-20T14:00:00Z",
-      "sent": false,
-      "error": "400",
-      "retries": 3
+      "event_id": "uuid",
+      "type": "BUG_SET | ASO_SET | NOTE_UPSERT",
+      "payload": { "note": "optional <=200" },
+      "status": "pending | sent | failed | superseded",
+      "attempts": 0,
+      "last_attempt_at": "",
+      "sent_at": "",
+      "last_error": "",
+      "test_case_id": "<case_id>"
     }
   ]
 }
 ```
 
-**Logika:**
-- Każda próba wysłania tworzy/aktualizuje wpis
-- `sent: false` + `error` = wymaga retry
-- Retry odbywa się automatycznie przy kliknięciu RAPORT
+`case_id` to klucz zbudowany z: `scenario_id::actual_path::baseline_path::diff_path`.
 
-### 3.7 Synchronizacja baseline
+### 2.3 build.lock.json
 
+Plik: `artifacts/<run_id>/build.lock.json`
+
+```json
+{
+  "build_id": "<run_id>",
+  "lock_id": "uuid",
+  "owner_client_id": "uuid",
+  "created_at": 1700000000,
+  "last_heartbeat_at": 1700000010,
+  "expires_at": 1700000120
+}
 ```
-Użytkownik klika "Wyślij baseline"
-    ↓
-Pobierz challenge ( CAPTCHA ) z serwera
-    ↓
-Użytkownik musi przepisać frazę (ochrona przed przypadkowym nadpisaniem)
-    ↓
-Wyślij wybrane obrazy do API
-```
+
+Lock zakladany jest przy wejsciu do Raportu lub otwarciu Modala i odnawiany heartbeatem.
 
 ---
 
-## 4. Architektura Komponentów
+## 3. Przeplywy (Flows)
 
-### 4.1 Strony (pages/)
+### 3.1 Przegladanie wynikow
 
-| Komponent | Ścieżka | Opis |
-|-----------|---------|------|
-| `HeroPage.vue` | `/` | Lista raportów, filtry, auto-refresh |
-| `ReportPage.vue` | `/:runId` | Tabela wyników, filtry, akcje |
+```
+HeroPage (lista buildow)
+    ↓
+ReportPage (szczegoly builda)
+    ↓
+ViewerModal (szczegoly test case)
+```
 
-### 4.2 Komponenty (components/)
+HeroPage nie wymaga locka.
 
-| Komponent | Opis |
-|----------|------|
-| `AppHeader.vue` | Nagłówek aplikacji (logo, język) |
-| `ReportHeader.vue` | Nagłówek raportu (ID, przyciski akcji) |
-| `FiltersPanel.vue` | Filtry wyników (status, viewport, browser, tekst) |
-| `ResultsTable.vue` | Tabela z wynikami testów |
-| `ViewerModal.vue` | Modal do przeglądania obrazów |
-| `ConfirmPrompt.vue` | Modal potwierdzenia (tak/nie) |
-| `TestMetadataPanel.vue` | Panel metadanych testu |
+### 3.2 Lock i heartbeat
 
-### 4.3 Komponenty Hero (components/hero/)
+- Frontend generuje `client_id` i zapisuje w `localStorage` pod kluczem `app.client_id`.
+- Przy wejsciu do Raportu lub otwarciu Modala: `POST /api/builds/{id}/lock/acquire`.
+- Heartbeat co ~15s: `POST /api/builds/{id}/lock/heartbeat`.
+- Lock TTL: 90-120s.
+- Release best-effort przy wyjsciu: `POST /api/builds/{id}/lock/release`.
 
-| Komponent | Opis |
-|----------|------|
-| `HeroHeader.vue` | Nagłówek strony głównej |
-| `ReportsFilters.vue` | Filtry na liście raportów |
-| `ReportsList.vue` | Lista raportów |
-| `ReportCard.vue` | Karta pojedynczego raportu |
-| `ReportsEmptyState.vue` | Stan pustej listy |
+### 3.3 BUG/ASO
 
-### 4.4 Store (Pinia)
+```
+Uzytkownik w ViewerModal:
+  - klawisz 'S' lub 'C' albo klik w UI
+  - prompt potwierdzenia + opcjonalna notatka (<=200)
+  ↓
+POST /api/builds/{id}/events (BUG_SET / ASO_SET)
+  - backend zapisuje domenowy stan (locked=true)
+  - dodaje event do outbox
+  - probuje wyslac do Reporting API (2xx = sukces)
+```
 
-| Store | Odpowiedzialność |
-|-------|-----------------|
-| `resultsStore.js` | Wyniki testów, filtry, tagi, stan modala |
-| `reportsStore.js` | Lista raportów, auto-refresh |
+BUG/ASO po potwierdzeniu sa zablokowane (nie mozna usunac).
 
-### 4.5 Biblioteki (lib/)
+### 3.4 Notatka (NOTE_UPSERT)
 
-| Moduł | Opis |
-|-------|------|
-| `viewer.js` | Logika parsowania ścieżek, klucze tagów |
-| `api/reportsApi.js` | API do komunikacji z backendem |
-| `baselineApi.js` | API do synchronizacji baseline |
-| `notes.js` | Walidacja i sanityzacja notatek |
-| `tagPersistence.js` | Zapis/odczyt tagów do pliku |
-| `format.js` | Formatowanie wyświetlanych danych |
-| `i18n/` | Wielojęzyczność (en, pl, uk) |
+```
+Uzytkownik w ViewerModal:
+  - klawisz 'N' → edytor notatki
+  - wpisuje tekst (<=200) → zapis
+  ↓
+POST /api/builds/{id}/events (NOTE_UPSERT)
+  - backend zapisuje note.content
+  - starsze pending/failed NOTE oznacza jako superseded
+```
+
+Notatka nie moze byc usunieta (tylko edycja).
+
+### 3.5 Przycisk RAPORT
+
+Klikniecie RAPORT:
+1) Backend robi flush pending/failed z outbox
+2) Generuje PDF
+3) Zwraca info o PDF
+
+Frontend nie pokazuje procesu flush.
 
 ---
 
-## 5. API Backend
+## 4. API Backend
 
-### 5.1 Endpointy
+### 4.1 Endpointy
 
-| Metoda | Ścieżka | Opis |
+| Metoda | Sciezka | Opis |
 |--------|---------|------|
-| `GET` | `/api/reports` | Lista raportów |
-| `GET` | `/api/reports/{id}/results` | Wyniki testów dla raportu |
-| `GET` | `/api/reports/{id}/image/ref` | Obraz referencyjny (dynamiczny) |
-| `POST` | `/api/reports/{id}/report/send` | Wysłanie raportu (PDF + wysyłka wszystkiego) |
-| `POST` | `/api/reports/{id}/report/send-attempt` | Wysłanie pojedynczego tagu (BUG/ASO/NOTA) |
-| `POST` | `/api/reports/{id}/report/retry-failed` | Retry wszystkich failed z send-attempts.json |
-| `GET` | `/api/baseline/challenge` | Challenge dla baseline |
-| `POST` | `/api/baseline/submit` | Wysłanie baseline |
+| GET | `/api/reports` | Lista buildow |
+| GET | `/api/reports/{id}/results` | Wyniki testow |
+| GET | `/api/reports/{id}/image/ref` | Obraz referencyjny |
+| GET | `/api/builds/{id}/state` | state.json (test_cases + outbox) |
+| POST | `/api/builds/{id}/events` | BUG_SET / ASO_SET / NOTE_UPSERT |
+| POST | `/api/builds/{id}/lock/acquire` | Soft-lock builda |
+| POST | `/api/builds/{id}/lock/heartbeat` | Heartbeat locka |
+| POST | `/api/builds/{id}/lock/release` | Release locka |
+| POST | `/api/builds/{id}/report` | Flush + PDF |
+| POST | `/api/reports/{id}/baseline/challenge` | Challenge dla baseline |
+| POST | `/api/reports/{id}/baseline/send` | Wyslanie baseline |
 
-### 5.2 Format send-attempt
-
-**Request:**
-```javascript
-{
-  key: "s1::a.png::::",
-  type: "bug" | "aso" | "note",
-  note_hash: "abc123" // opcjonalnie, dla notatek
-}
-```
-
-**Response:**
-```javascript
-{
-  accepted: boolean,
-  run_id: string,
-  key: string,
-  type: string,
-  error: string | null,
-  tag_snapshot: { ... }
-}
-```
-
-### 5.3 Format retry-failed
-
-**Request:** `{}`
-
-**Response:**
-```javascript
-{
-  accepted: true,
-  run_id: string,
-  retried: number,  // ile elementów ponowiono
-  tag_snapshot: { ... }
-}
-```
-
-### 5.4 Format odpowiedzi sendReport
+### 4.2 Payload eventu
 
 ```javascript
 {
-  bug: {
-    sent: number,      // ile wysłano pomyślnie
-    failed: number,    // ile nie wysłano (błąd API)
-    skipped_locked: number  // ile pominięto (locked)
-  },
-  aso: { ... },
-  note: { ... },
-  pdf: {
-    pages: number      // ile stron wygenerowano
-  },
-  previous_attempt_had_failures: boolean,  // czy poprzednia próba miała błędy
-  tag_snapshot: { ... }   // zaktualizowany stan tagów
+  event_id: "uuid",
+  type: "BUG_SET" | "ASO_SET" | "NOTE_UPSERT",
+  test_case_id: "scenario_id::actual_path::baseline_path::diff_path",
+  payload: {
+    note: "optional <= 200"
+  }
 }
 ```
+
+`note` z prompta BUG/ASO nie jest przechowywana w domenie. Jest wysylana tylko w payload eventu.
 
 ---
 
-## 6. Mechanizmy Specjalne
+## 5. Bezpieczenstwo
 
-### 6.1 Debounce zapisu tagów
+- wszystkie pola tekstowe <= 200 znakow
+- tekst traktowany jako nieufny
+- renderowanie tylko przez escaped moustache (bez `dangerouslySetInnerHTML`)
+- brak interpolacji do komend systemowych
+- walidacja build_id
+- PDF oparty o dane z escaped plain text
 
-Zmiany tagów nie są zapisywane od razu do pliku. Używany jest `setTimeout(250ms)` - jeśli użytkownik szybko zmienia tagi, zapis następuje dopiero po 250ms bezczynności.
+---
 
-### 6.2 Lockowanie tagów
+## 6. Klawisze i auto-repeat
 
-Po wysłaniu raportu, tagi które zostały wysłane są lockowane:
-- `tagLocked[key].bug = true` - jeśli bug wysłany
-- `tagLocked[key].aso = true` - jeśli ASO wysłane
-
-Lockuniętego taga nie można usunąć klawiszem. Odblokowanie następuje gdy:
-- Dla notatek: użytkownik doda nową treść (nowy timestamp > poprzedni reported_at)
-
-### 6.3 Hash treści notatki
-
-Przy wysyłaniu notatki, obliczany jest hash treści i zapisywany jako `note_reported_hash`. Przy ponownej próbie wysłania, jeśli hash się nie zmienił, notatka jest pomijana (nie wysyłana ponownie).
-
-### 6.4 Super Zoom
-
-Przy wciśnięciu klawisza 'W' (lub trzymaniu myszy na obrazku) aktywuje się tryb super zoom - obraz powiększa się 3x (100% + 200%) z transformacją origin na pozycję kursora.
-
-### 6.5 Klawisze skrótów
-
-| Klawisz | Kontekst | Akcja |
-|---------|----------|-------|
-| `1-4` | Modal | Liczba kolumn (slotów) |
-| `A` | Modal | Poprzedni obraz |
-| `D` | Modal | Następny obraz |
-| `W` | Modal | Super zoom (trzymaj) |
-| `S` | Modal | Dodaj BUG |
-| `C` | Modal | Dodaj ASO |
-| `\` | Modal | Dodaj BASELINE |
-| `N` | Modal | Otwórz edytor notatek |
-| `Space` | Modal/Tabela | Otwórz modal / Potwierdź prompt |
-| `Shift` | Modal/Tabela | Zamknij modal / Anuluj prompt |
-| `Esc` | Modal | Zamknij modal |
-| `↑/↓` | Tabela | Nawigacja po wierszach |
+- wszystkie skroty ignoruja auto-repeat
+- wymagany keyup przed kolejna akcja
+- LSHIFT nie moze powodowac kaskadowego wyjscia z prompta/modala/raportu
 
 ---
 
 ## 7. Testy
 
-Testy jednostkowe znajdują się w tych samych katalogach co pliki źródłowe, z rozszerzeniem `.test.js`.
+Testy jednostkowe sa w `.test.js`, testy backendu w `qa/aso/...`.
 
 ```bash
-# Uruchomienie testów
-npm run test:unit        # tylko testy
-npm run test:coverage    # z pokryciem kodu
-npm run build            # build + testy + coverage
+npm run test:unit
+npm run test:coverage
+npm run build
 ```
 
-### 7.1 Pokrycie testami
-
-- `resultsStore.test.js` - testy getterów (`reportCandidatesCount`, `hasAnyBug`)
-- `ReportPage.test.js` - testy funkcji promptowania
-- `reportsStore.test.js` - testy pobierania listy raportów
-- `viewer.test.js` - testy parsowania ścieżek
-- `notes.test.js` - testy walidacji notatek
-- Testy serwera w `qa/aso/framework/visual/test_report_server_units.py`
-
 ---
 
-## 8. Zależności
-
-### 8.1 Frontend
-
-- **Vue 3** - framework UI
-- **Pinia** - state management
-- **Bootstrap 5** - komponenty UI
-- **Vite** - bundler
-- **Vitest** - testy jednostkowe
-
-### 8.2 Backend (report_server.py)
-
-- **Flask/Python** - serwer HTTP
-- Raportowanie do zewnętrznych systemów (AHA/Jira)
-- Generowanie PDF z konfiguracji `bug_report_pdf_config.json`
-
----
-
-## 9. Pliki Konfiguracyjne
+## 8. Zalezne pliki
 
 | Plik | Opis |
 |------|------|
-| `bug_report_pdf_config.json` | Szablon PDF (nagłówek, stopka, logo) |
-| `vitest.config.js` | Konfiguracja testów |
-| `vite.config.js` | Konfiguracja bundlera |
-| `package.json` | Zależności npm |
-| `i18n/locales/{en,pl,uk}.json` | Tłumaczenia |
-
----
-
-## 10. Typowe problemy i rozwiązania
-
-### 10.1 Prompt pokazuje się w pętli
-
-**Przyczyna:** Flaga `isSendingInProgress` nie jest ustawiona podczas wysyłania.
-
-**Rozwiązanie:** Sprawdź czy `executeSendReport` ustawia `isSendingInProgress = true` na początku i `false` w bloku `finally`.
-
-### 10.2 PDF nie generuje się mimo BUG
-
-**Przyczyna:** Logika decyzyjna w `promptSendReport` nie uwzględnia poprawnie stanu `hasAnyBug`.
-
-**Rozwiązanie:** Upewnij się, że getter `hasAnyBug` w `resultsStore.js` poprawnie zlicza tagi z `bug: true`.
-
-### 10.3 Po błędzie API nie pyta ponownie
-
-**Przyczyna:** Serwer nie zwraca pola `previous_attempt_had_failures`.
-
-**Rozwiązanie:** Sprawdź czy `report_server.py` zwraca to pole w odpowiedzi `/report/send`.
-
-### 10.4 Testy klucza tagu nie przechodzą
-
-**Przyczyna:** Klucz musi mieć dokładnie 4 pola oddzielone `::`, nawet jeśli pola są puste.
-
-**Rozwiązanie:** Używaj formatu `scenario_id::actual_path::baseline_path::diff_path`, np. `"s1::a.png::::"`.
+| `bug_report_pdf_config.json` | konfiguracja PDF |
+| `vite.config.js` | konfiguracja bundlera |
+| `vitest.config.js` | konfiguracja testow |
+| `i18n/locales/{en,pl,uk}.json` | tlumaczenia |

@@ -7,13 +7,14 @@ from typing import Any, cast
 import pytest
 
 from framework.visual.report_server import (
-    _had_previous_failures,
+    LOCK_TTL_SECONDS,
+    _acquire_lock,
     _list_reports_payload,
-    _read_last_audit_entry,
     _read_results_rows,
     _report_summary,
     _safe_run_id_or_error,
     _run_id_from_visual_dir,
+    _supersede_note_events,
     ReportServerContext,
 )
 
@@ -176,202 +177,39 @@ def test_list_reports_payload_picks_new_run_after_server_context_created(tmp_pat
     assert [item["run_id"] for item in payload] == ["20260219"]
 
 
-class TestReadLastAuditEntry:
-    def test_returns_none_when_no_audit_file(self, tmp_path: Path) -> None:
-        result = _read_last_audit_entry(tmp_path)
-        assert result is None
+class TestLocks:
+    def test_acquire_lock_denies_active_lock(self, tmp_path: Path) -> None:
+        build_dir = tmp_path / "artifacts" / "run-1"
+        build_dir.mkdir(parents=True)
 
-    def test_returns_none_when_file_empty(self, tmp_path: Path) -> None:
-        audit_file = tmp_path / "reporting-audit.json"
-        audit_file.write_text("", encoding="utf-8")
-        result = _read_last_audit_entry(tmp_path)
-        assert result is None
+        first = _acquire_lock(build_dir, "client-a", now=1000.0)
+        assert first["accepted"] is True
 
-    def test_returns_none_when_file_invalid_json(self, tmp_path: Path) -> None:
-        audit_file = tmp_path / "reporting-audit.json"
-        audit_file.write_text("not valid json", encoding="utf-8")
-        result = _read_last_audit_entry(tmp_path)
-        assert result is None
+        second = _acquire_lock(build_dir, "client-b", now=1000.0 + LOCK_TTL_SECONDS - 1)
+        assert second["accepted"] is False
+        assert second["reason"] == "locked"
 
-    def test_returns_last_entry_from_list(self, tmp_path: Path) -> None:
-        audit_file = tmp_path / "reporting-audit.json"
-        audit_file.write_text(
-            json.dumps(
-                [
-                    {"timestamp_utc": "2026-02-20T10:00:00Z", "bug": {"sent": 1}},
-                    {"timestamp_utc": "2026-02-20T11:00:00Z", "bug": {"sent": 2}},
-                ]
-            ),
-            encoding="utf-8",
-        )
-        result = _read_last_audit_entry(tmp_path)
-        assert result is not None
-        assert result["timestamp_utc"] == "2026-02-20T11:00:00Z"
+    def test_acquire_lock_allows_takeover_after_expiry(self, tmp_path: Path) -> None:
+        build_dir = tmp_path / "artifacts" / "run-2"
+        build_dir.mkdir(parents=True)
 
-    def test_returns_none_when_list_empty(self, tmp_path: Path) -> None:
-        audit_file = tmp_path / "reporting-audit.json"
-        audit_file.write_text(json.dumps([]), encoding="utf-8")
-        result = _read_last_audit_entry(tmp_path)
-        assert result is None
+        first = _acquire_lock(build_dir, "client-a", now=2000.0)
+        assert first["accepted"] is True
+
+        second = _acquire_lock(build_dir, "client-b", now=2000.0 + LOCK_TTL_SECONDS + 1)
+        assert second["accepted"] is True
+        assert second["lock"]["owner_client_id"] == "client-b"
 
 
-class TestHadPreviousFailures:
-    def test_returns_false_when_none(self) -> None:
-        assert _had_previous_failures(None) is False
+def test_supersede_note_events_marks_pending() -> None:
+    outbox = [
+        {"event_id": "e1", "type": "NOTE_UPSERT", "status": "pending", "test_case_id": "case-1"},
+        {"event_id": "e2", "type": "BUG_SET", "status": "pending", "test_case_id": "case-1"},
+        {"event_id": "e3", "type": "NOTE_UPSERT", "status": "failed", "test_case_id": "case-2"},
+    ]
 
-    def test_returns_false_when_no_failures(self) -> None:
-        audit = {
-            "bug": {"sent": 1, "failed": 0},
-            "aso": {"sent": 1, "failed": 0},
-            "note": {"sent": 1, "failed": 0},
-        }
-        assert _had_previous_failures(audit) is False
+    _supersede_note_events(outbox, "case-1")
 
-    def test_returns_true_when_bug_failed(self) -> None:
-        audit = {
-            "bug": {"sent": 0, "failed": 1},
-            "aso": {"sent": 1, "failed": 0},
-            "note": {"sent": 1, "failed": 0},
-        }
-        assert _had_previous_failures(audit) is True
-
-    def test_returns_true_when_aso_failed(self) -> None:
-        audit = {
-            "bug": {"sent": 1, "failed": 0},
-            "aso": {"sent": 0, "failed": 1},
-            "note": {"sent": 1, "failed": 0},
-        }
-        assert _had_previous_failures(audit) is True
-
-    def test_returns_true_when_note_failed(self) -> None:
-        audit = {
-            "bug": {"sent": 1, "failed": 0},
-            "aso": {"sent": 1, "failed": 0},
-            "note": {"sent": 0, "failed": 1},
-        }
-        assert _had_previous_failures(audit) is True
-
-    def test_returns_false_when_missing_keys(self) -> None:
-        audit = {"bug": {}}
-        assert _had_previous_failures(audit) is False
-
-    def test_returns_false_when_empty_dict(self) -> None:
-        assert _had_previous_failures({}) is False
-
-
-class TestSendAttempts:
-    def test_read_send_attempts_returns_empty_when_no_file(self, tmp_path: Path) -> None:
-        from framework.visual.report_server import _read_send_attempts
-
-        report_dir = tmp_path / "artifacts" / "20260218" / "visual"
-        report_dir.mkdir(parents=True)
-
-        result = _read_send_attempts(report_dir)
-
-        assert result == {"entries": []}
-
-    def test_read_send_attempts_returns_entries(self, tmp_path: Path) -> None:
-        from framework.visual.report_server import _read_send_attempts
-
-        report_dir = tmp_path / "artifacts" / "20260218" / "visual"
-        report_dir.mkdir(parents=True)
-
-        attempts_file = report_dir / "send-attempts.json"
-        attempts_file.write_text(
-            json.dumps(
-                {"entries": [{"key": "s1::a.png::::", "type": "bug", "sent": False, "error": "400", "retries": 1}]}
-            )
-        )
-
-        result = _read_send_attempts(report_dir)
-
-        assert len(result["entries"]) == 1
-        assert result["entries"][0]["key"] == "s1::a.png::::"
-        assert result["entries"][0]["type"] == "bug"
-        assert result["entries"][0]["sent"] is False
-        assert result["entries"][0]["error"] == "400"
-        assert result["entries"][0]["retries"] == 1
-
-    def test_update_send_attempt_creates_new_entry(self, tmp_path: Path) -> None:
-        from framework.visual.report_server import _read_send_attempts, _update_send_attempt_entry
-
-        report_dir = tmp_path / "artifacts" / "20260218" / "visual"
-        report_dir.mkdir(parents=True)
-
-        result = _update_send_attempt_entry(
-            report_dir,
-            key="s1::a.png::::",
-            entry_type="bug",
-            sent=False,
-            error="400",
-        )
-
-        assert result["key"] == "s1::a.png::::"
-        assert result["type"] == "bug"
-        assert result["sent"] is False
-        assert result["error"] == "400"
-        assert result["retries"] == 1
-
-        attempts = _read_send_attempts(report_dir)
-        assert len(attempts["entries"]) == 1
-
-    def test_update_send_attempt_updates_existing(self, tmp_path: Path) -> None:
-        from framework.visual.report_server import _update_send_attempt_entry
-
-        report_dir = tmp_path / "artifacts" / "20260218" / "visual"
-        report_dir.mkdir(parents=True)
-
-        _update_send_attempt_entry(
-            report_dir,
-            key="s1::a.png::::",
-            entry_type="bug",
-            sent=False,
-            error="400",
-        )
-
-        result = _update_send_attempt_entry(
-            report_dir,
-            key="s1::a.png::::",
-            entry_type="bug",
-            sent=True,
-            error=None,
-        )
-
-        assert result["sent"] is True
-        assert result["retries"] == 1
-
-    def test_get_failed_attempts_returns_only_failed(self, tmp_path: Path) -> None:
-        from framework.visual.report_server import _get_failed_attempts, _update_send_attempt_entry
-
-        report_dir = tmp_path / "artifacts" / "20260218" / "visual"
-        report_dir.mkdir(parents=True)
-
-        _update_send_attempt_entry(
-            report_dir,
-            key="s1::a.png::::",
-            entry_type="bug",
-            sent=False,
-            error="400",
-        )
-        _update_send_attempt_entry(
-            report_dir,
-            key="s2::b.png::::",
-            entry_type="bug",
-            sent=True,
-            error=None,
-        )
-        _update_send_attempt_entry(
-            report_dir,
-            key="s3::c.png::::",
-            entry_type="aso",
-            sent=False,
-            error="500",
-        )
-
-        failed = _get_failed_attempts(report_dir)
-
-        assert len(failed) == 2
-        keys = [f["key"] for f in failed]
-        assert "s1::a.png::::" in keys
-        assert "s3::c.png::::" in keys
-        assert "s2::b.png::::" not in keys
+    assert outbox[0]["status"] == "superseded"
+    assert outbox[1]["status"] == "pending"
+    assert outbox[2]["status"] == "failed"

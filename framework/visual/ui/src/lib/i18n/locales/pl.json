@@ -92,6 +92,7 @@
     "areYouSure": "Czy na pewno oznaczyć to jako",
     "removeTag": "Czy na pewno usunąć",
     "saveNote": "Czy zapisać i wysłać notatkę?",
+    "notePlaceholder": "Notatka opcjonalna (max 200 znaków)",
     "yes": "Tak",
     "no": "Nie",
     "shiftNo": "Shift = NIE",

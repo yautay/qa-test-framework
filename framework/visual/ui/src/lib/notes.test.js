@@ -4,13 +4,13 @@ import {
   sanitizeNoteText,
   normalizeNoteDraft,
   normalizeNote,
-  normalizeTagLogSnapshot,
+  normalizeCaseStateSnapshot,
 } from "./notes";
 
 describe("notes.js", () => {
   describe("NOTE_MAX_LENGTH", () => {
-    it("is 2000", () => {
-      expect(NOTE_MAX_LENGTH).toBe(2000);
+    it("is 200", () => {
+      expect(NOTE_MAX_LENGTH).toBe(200);
     });
   });
 
@@ -50,6 +50,10 @@ describe("notes.js", () => {
     it("keeps valid text unchanged", () => {
       expect(sanitizeNoteText("Hello World")).toBe("Hello World");
       expect(sanitizeNoteText("Multi\nLine\nText")).toBe("Multi\nLine\nText");
+    });
+
+    it("preserves angle brackets for safe rendering", () => {
+      expect(sanitizeNoteText("<script>alert(1)</script>")).toBe("<script>alert(1)</script>");
     });
   });
 
@@ -121,65 +125,57 @@ describe("notes.js", () => {
     });
   });
 
-  describe("normalizeTagLogSnapshot", () => {
+  describe("normalizeCaseStateSnapshot", () => {
     it("returns empty object for non-object input", () => {
-      expect(normalizeTagLogSnapshot(null)).toEqual({});
-      expect(normalizeTagLogSnapshot(undefined)).toEqual({});
-      expect(normalizeTagLogSnapshot("string")).toEqual({});
-      expect(normalizeTagLogSnapshot(123)).toEqual({});
+      expect(normalizeCaseStateSnapshot(null)).toEqual({});
+      expect(normalizeCaseStateSnapshot(undefined)).toEqual({});
+      expect(normalizeCaseStateSnapshot("string")).toEqual({});
+      expect(normalizeCaseStateSnapshot(123)).toEqual({});
     });
 
-    it("normalizes tag entries", () => {
+    it("normalizes case entries", () => {
       const snapshot = {
         "key1": {
-          bug: "truthy",
-          aso: true,
-          baseline: 1,
-          note: { text: "note1", updatedAt: "2026-01-01" },
-          bug_reported: "yes",
-          note_reported: 0,
+          bug: { locked: "truthy", synced: 0 },
+          aso: { locked: true, synced: "yes" },
+          note: { content: "note1", synced: "no" },
         },
       };
 
-      const result = normalizeTagLogSnapshot(snapshot);
+      const result = normalizeCaseStateSnapshot(snapshot);
 
-      expect(result.key1.bug).toBe(true);
-      expect(result.key1.aso).toBe(true);
-      expect(result.key1.baseline).toBe(true);
-      expect(result.key1.note.text).toBe("note1");
-      expect(result.key1.bug_reported).toBe(true);
-      expect(result.key1.note_reported).toBe(false);
+      expect(result.key1.bug.locked).toBe(true);
+      expect(result.key1.bug.synced).toBe(false);
+      expect(result.key1.aso.locked).toBe(true);
+      expect(result.key1.aso.synced).toBe(true);
+      expect(result.key1.note.content).toBe("note1");
+      expect(result.key1.note.synced).toBe(false);
     });
 
     it("handles missing fields with defaults", () => {
       const snapshot = {
-        "key1": { bug: true },
+        "key1": { bug: { locked: true } },
       };
 
-      const result = normalizeTagLogSnapshot(snapshot);
+      const result = normalizeCaseStateSnapshot(snapshot);
 
-      expect(result.key1.bug).toBe(true);
-      expect(result.key1.aso).toBe(false);
-      expect(result.key1.baseline).toBe(false);
-      expect(result.key1.note).toBeNull();
-      expect(result.key1.bug_reported).toBe(false);
-      expect(result.key1.aso_reported).toBe(false);
-      expect(result.key1.note_reported).toBe(false);
-      expect(result.key1.bug_reported_at).toBe("");
-      expect(result.key1.aso_reported_at).toBe("");
-      expect(result.key1.note_reported_at).toBe("");
-      expect(result.key1.note_reported_hash).toBe("");
+      expect(result.key1.bug.locked).toBe(true);
+      expect(result.key1.bug.synced).toBe(false);
+      expect(result.key1.aso.locked).toBe(false);
+      expect(result.key1.aso.synced).toBe(false);
+      expect(result.key1.note.content).toBe("");
+      expect(result.key1.note.synced).toBe(false);
     });
 
-    it("skips non-object tag entries", () => {
+    it("skips non-object entries", () => {
       const snapshot = {
-        "key1": { bug: true },
+        "key1": { bug: { locked: true } },
         "key2": "invalid",
         "key3": null,
         "key4": 123,
       };
 
-      const result = normalizeTagLogSnapshot(snapshot);
+      const result = normalizeCaseStateSnapshot(snapshot);
 
       expect(result.key1).toBeDefined();
       expect(result.key2).toBeUndefined();
@@ -187,33 +183,30 @@ describe("notes.js", () => {
       expect(result.key4).toBeUndefined();
     });
 
-    it("normalizes note field", () => {
+    it("normalizes note content", () => {
       const snapshot = {
         "key1": {
-          note: { text: "  test  ", updatedAt: "2026-01-01" },
+          note: { content: "  test  ", synced: true },
         },
       };
 
-      const result = normalizeTagLogSnapshot(snapshot);
+      const result = normalizeCaseStateSnapshot(snapshot);
 
-      expect(result.key1.note.text).toBe("test");
-      expect(result.key1.note.updatedAt).toBe("2026-01-01");
+      expect(result.key1.note.content).toBe("test");
+      expect(result.key1.note.synced).toBe(true);
     });
 
-    it("handles non-string timestamp fields", () => {
+    it("handles non-string note content", () => {
       const snapshot = {
         "key1": {
-          bug_reported_at: 12345,
-          aso_reported_at: null,
-          note_reported_at: undefined,
+          note: { content: 12345, synced: 1 },
         },
       };
 
-      const result = normalizeTagLogSnapshot(snapshot);
+      const result = normalizeCaseStateSnapshot(snapshot);
 
-      expect(result.key1.bug_reported_at).toBe("");
-      expect(result.key1.aso_reported_at).toBe("");
-      expect(result.key1.note_reported_at).toBe("");
+      expect(result.key1.note.content).toBe("");
+      expect(result.key1.note.synced).toBe(true);
     });
   });
 });

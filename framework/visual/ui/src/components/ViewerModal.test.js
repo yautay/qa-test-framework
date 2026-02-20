@@ -27,12 +27,10 @@ describe("ViewerModal", () => {
       { id: 2, mode: "test" },
     ],
     tags: {
-      bug: false,
-      aso: false,
+      bug: { locked: false, synced: false },
+      aso: { locked: false, synced: false },
       baseline: false,
-      note: null,
-      bug_reported: false,
-      aso_reported: false,
+      note: { content: "", synced: false },
     },
     tagLog: {},
     tagLocked: {},
@@ -49,7 +47,7 @@ describe("ViewerModal", () => {
     imageStyle: { transform: "scale(1)" },
     prompt: { active: false, type: null },
     noteEditor: { active: false, text: "", hasExisting: false },
-    noteMaxLength: 2000,
+    noteMaxLength: 200,
     keyHeld: {},
     superZoomActive: false,
     slotImage: (slot) => slot.mode === "ref" ? "/ref.png" : "/test.png",
@@ -122,7 +120,10 @@ describe("ViewerModal", () => {
     });
 
     it("includes bug tag badge when present", () => {
-      const viewer = { ...defaultViewer, tags: { ...defaultViewer.tags, bug: true } };
+      const viewer = {
+        ...defaultViewer,
+        tags: { ...defaultViewer.tags, bug: { locked: true, synced: false } },
+      };
       const wrapper = mount(ViewerModal, {
         props: { ...defaultProps, viewer },
       });
@@ -133,7 +134,10 @@ describe("ViewerModal", () => {
     });
 
     it("includes bug reported badge when reported", () => {
-      const viewer = { ...defaultViewer, tags: { ...defaultViewer.tags, bug_reported: true } };
+      const viewer = {
+        ...defaultViewer,
+        tags: { ...defaultViewer.tags, bug: { locked: true, synced: true } },
+      };
       const wrapper = mount(ViewerModal, {
         props: { ...defaultProps, viewer },
       });
@@ -144,7 +148,10 @@ describe("ViewerModal", () => {
     });
 
     it("includes asotag badge when present", () => {
-      const viewer = { ...defaultViewer, tags: { ...defaultViewer.tags,aso: true } };
+      const viewer = {
+        ...defaultViewer,
+        tags: { ...defaultViewer.tags, aso: { locked: true, synced: false } },
+      };
       const wrapper = mount(ViewerModal, {
         props: { ...defaultProps, viewer },
       });
@@ -166,7 +173,10 @@ describe("ViewerModal", () => {
     });
 
     it("includes note badge when note exists", () => {
-      const viewer = { ...defaultViewer, tags: { ...defaultViewer.tags, note: { text: "Test note" } } };
+      const viewer = {
+        ...defaultViewer,
+        tags: { ...defaultViewer.tags, note: { content: "Test note", synced: false } },
+      };
       const wrapper = mount(ViewerModal, {
         props: { ...defaultProps, viewer },
       });

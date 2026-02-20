@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { summaryFor } from "../lib/format";
-import { normalizeTagLogSnapshot } from "../lib/notes";
+import { normalizeCaseStateSnapshot } from "../lib/notes";
 import { getRowTagKey } from "../lib/viewer";
 
 const NUMERIC_SORT_KEYS = ["pixel_changed_ratio", "lpips", "dists"];
@@ -27,21 +27,19 @@ const SLOT_MODE_DEFAULTS = {
 };
 
 const EMPTY_TAG_ENTRY = {
-  bug: false,
-  aso: false,
+  bug: { locked: false, synced: false },
+  aso: { locked: false, synced: false },
+  note: { content: "", synced: false },
   baseline: false,
-  note: null,
-  bug_reported: false,
-  aso_reported: false,
-  note_reported: false,
-  bug_reported_at: "",
-  aso_reported_at: "",
-  note_reported_at: "",
-  note_reported_hash: "",
 };
 
 function buildEmptyTagEntry() {
-  return { ...EMPTY_TAG_ENTRY };
+  return {
+    bug: { ...EMPTY_TAG_ENTRY.bug },
+    aso: { ...EMPTY_TAG_ENTRY.aso },
+    note: { ...EMPTY_TAG_ENTRY.note },
+    baseline: EMPTY_TAG_ENTRY.baseline,
+  };
 }
 
 function compareValues(av, bv, key) {
@@ -66,15 +64,15 @@ function getTagPriority(row, tagLog) {
   const key = getRowTagKey(row);
   const tags = tagLog?.[key];
   if (!tags) return 3;
-  if (tags.bug) return TAG_PRIORITY.bug;
-  if (tags.aso) return TAG_PRIORITY.aso;
+  if (tags.bug?.locked) return TAG_PRIORITY.bug;
+  if (tags.aso?.locked) return TAG_PRIORITY.aso;
   if (tags.baseline) return TAG_PRIORITY.baseline;
   return 3;
 }
 
 function hasRowNote(row, tagLog) {
   const key = getRowTagKey(row);
-  const text = tagLog?.[key]?.note?.text;
+  const text = tagLog?.[key]?.note?.content;
   return typeof text === "string" && !!text.trim();
 }
 
@@ -231,29 +229,12 @@ export const useResultsStore = defineStore("results", {
       return state.rows.reduce((count, row) => {
         const key = getRowTagKey(row);
         const tags = state.tagLog?.[key] || {};
-        const canSendBug = !!tags.bug && !tags.bug_reported;
-        const canSendAso = !!tags.aso && !tags.aso_reported;
+        const canSendBug = !!tags.bug?.locked && !tags.bug?.synced;
+        const canSendAso = !!tags.aso?.locked && !tags.aso?.synced;
 
-        const noteText = tags.note?.text || "";
+        const noteText = tags.note?.content || "";
         const noteHasText = typeof noteText === "string" && noteText.trim() !== "";
-        let canSendNote = false;
-
-        if (noteHasText) {
-          const noteUpdated = tags.note?.updatedAt;
-          const noteReportedAt = tags.note_reported_at;
-
-          if (tags.note_reported && noteReportedAt) {
-            if (noteUpdated) {
-              const updatedMs = Date.parse(noteUpdated);
-              const reportedMs = Date.parse(noteReportedAt);
-              if (!Number.isNaN(updatedMs) && !Number.isNaN(reportedMs)) {
-                canSendNote = updatedMs > reportedMs;
-              }
-            }
-          } else if (!tags.note_reported) {
-            canSendNote = true;
-          }
-        }
+        const canSendNote = noteHasText && !tags.note?.synced;
 
         return count + (canSendBug || canSendAso || canSendNote ? 1 : 0);
       }, 0);
@@ -263,7 +244,7 @@ export const useResultsStore = defineStore("results", {
       return state.rows.reduce((count, row) => {
         const key = getRowTagKey(row);
         const tags = state.tagLog?.[key];
-        return count + (tags?.bug ? 1 : 0);
+        return count + (tags?.bug?.locked ? 1 : 0);
       }, 0);
     },
 
@@ -346,25 +327,26 @@ export const useResultsStore = defineStore("results", {
       this.slotModes[slotId] = mode;
     },
 
-    toggleTag(tagKey) {
+    toggleBaseline() {
       if (!this.modalRow) return;
       const key = getRowTagKey(this.modalRow);
       const existing = this.tagLog[key] ? { ...this.tagLog[key] } : buildEmptyTagEntry();
-      existing[tagKey] = true;
+      existing.baseline = !existing.baseline;
       this.tagLog[key] = existing;
     },
 
-    removeTag(tagKey) {
+    setBaseline(value) {
       if (!this.modalRow) return;
       const key = getRowTagKey(this.modalRow);
-      if (!this.tagLog[key]) return;
-      this.tagLog[key][tagKey] = false;
+      const existing = this.tagLog[key] ? { ...this.tagLog[key] } : buildEmptyTagEntry();
+      existing.baseline = !!value;
+      this.tagLog[key] = existing;
     },
 
     isTagLocked(type) {
       const tags = this.currentTags;
-      if (type === "bug") return !!(tags.bug || tags.bug_reported);
-      if (type === "aso") return !!(tags.aso || tags.aso_reported);
+      if (type === "bug") return !!tags.bug?.locked;
+      if (type === "aso") return !!tags.aso?.locked;
       if (type === "baseline") return !!tags.baseline;
       return false;
     },
@@ -372,8 +354,9 @@ export const useResultsStore = defineStore("results", {
     isTagReported(type) {
       if (!this.modalRow) return false;
       const tags = this.currentTags || {};
-      if (type === "bug") return !!tags.bug_reported;
-      if (type === "aso") return !!tags.aso_reported;
+      if (type === "bug") return !!tags.bug?.synced;
+      if (type === "aso") return !!tags.aso?.synced;
+      if (type === "note") return !!tags.note?.synced;
       return false;
     },
 
@@ -382,22 +365,18 @@ export const useResultsStore = defineStore("results", {
         this.tagLog = {};
         return;
       }
-      this.tagLog = normalizeTagLogSnapshot(snapshot);
-    },
-
-    setNoteForCurrentRow(note) {
-      if (!this.modalRow) return;
-      const key = getRowTagKey(this.modalRow);
-      const entry = this.tagLog[key] ? { ...this.tagLog[key] } : buildEmptyTagEntry();
-      if (note) {
-        entry.note = { text: note, updatedAt: new Date().toISOString() };
-      } else {
-        entry.note = null;
-        entry.note_reported_at = "";
-        entry.note_reported_hash = "";
-        entry.note_reported = false;
+      const normalized = normalizeCaseStateSnapshot(snapshot);
+      const merged = {};
+      for (const [key, value] of Object.entries(normalized)) {
+        const baseline = this.tagLog?.[key]?.baseline || false;
+        merged[key] = { ...value, baseline };
       }
-      this.tagLog[key] = entry;
+      for (const [key, value] of Object.entries(this.tagLog || {})) {
+        if (!merged[key] && value?.baseline) {
+          merged[key] = { ...buildEmptyTagEntry(), baseline: true };
+        }
+      }
+      this.tagLog = merged;
     },
 
     navigateSelection(delta) {
