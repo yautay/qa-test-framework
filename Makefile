@@ -42,9 +42,6 @@ test-aso: ## Testy oznaczone markerem aso (bez reportingu)
 	$(MAKE) validate-config
 	REPORTING_ENABLED=0 $(PYTEST) -m aso -q
 
-tests-aso: ## Alias dla test-aso
-	$(MAKE) test-aso
-
 collect: ## Collect-only (pytest)
 	$(PYTEST) --collect-only -q
 
