@@ -1,6 +1,6 @@
 # Console log level for Loguru output in new framework.
 # Allowed values: TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL
-console_log_level = "INFO"
+console_log_level = "DEBUG"
 ignore_https_errors = True
 
 # General runtime defaults (CI pipelines may override via env)

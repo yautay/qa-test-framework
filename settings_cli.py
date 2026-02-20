@@ -25,3 +25,4 @@ base_url_override = ""
 # Optional run metadata defaults (CLI has priority).
 tester = "Michał"
 run_note = "NN-126533 - retesty"
+nn_ticket = "54654"

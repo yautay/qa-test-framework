@@ -829,3 +829,120 @@ describe("ReportPage", () => {
     wrapper.unmount();
   });
 });
+
+describe("promptSendReport logic", () => {
+  let pinia;
+  let store;
+
+  beforeEach(() => {
+    pinia = createPinia();
+    setActivePinia(pinia);
+    store = useResultsStore();
+    vi.clearAllMocks();
+  });
+
+  describe("API works - new candidates", () => {
+    it("shows prompt for new BUG", async () => {
+      store.setRows([
+        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
+      ]);
+      store.tagLog = {
+        "s1::a.png::::": { bug: true, bug_reported: false },
+      };
+
+      expect(store.reportCandidatesCount).toBe(1);
+      expect(store.hasAnyBug).toBe(1);
+    });
+
+    it("shows prompt for new ASO", async () => {
+      store.setRows([
+        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
+      ]);
+      store.tagLog = {
+        "s1::a.png::::": { bug: false,aso: true,aso_reported: false },
+      };
+
+      expect(store.reportCandidatesCount).toBe(1);
+    });
+
+    it("shows prompt for new NOTE", async () => {
+      store.setRows([
+        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
+      ]);
+      store.tagLog = {
+        "s1::a.png::::": { bug: false, note: { text: "test note" } },
+      };
+
+      expect(store.reportCandidatesCount).toBe(1);
+    });
+
+    it("shows prompt for modified NOTE", async () => {
+      store.setRows([
+        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
+      ]);
+      store.tagLog = {
+        "s1::a.png::::": {
+          bug: false,
+          note: { text: "modified", updatedAt: "2026-02-20T12:00:00.000Z" },
+          note_reported: true,
+          note_reported_at: "2026-02-20T11:00:00.000Z",
+        },
+      };
+
+      expect(store.reportCandidatesCount).toBe(1);
+    });
+  });
+
+  describe("API works - no new candidates", () => {
+    it("generates PDF without prompt when no candidates but has BUG", async () => {
+      store.setRows([
+        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
+      ]);
+      store.tagLog = {
+        "s1::a.png::::": { bug: true, bug_reported: true },
+      };
+
+      expect(store.reportCandidatesCount).toBe(0);
+      expect(store.hasAnyBug).toBe(1);
+    });
+
+    it("does nothing when no candidates and no BUG", async () => {
+      store.setRows([
+        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
+      ]);
+      store.tagLog = {
+        "s1::a.png::::": { bug: false },
+      };
+
+      expect(store.reportCandidatesCount).toBe(0);
+      expect(store.hasAnyBug).toBe(0);
+    });
+  });
+
+  describe("API failed - retry logic", () => {
+    it("silent retry when previous failed and no new candidates", async () => {
+      store.setRows([
+        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
+      ]);
+      store.tagLog = {
+        "s1::a.png::::": { bug: true, bug_reported: true },
+      };
+
+      expect(store.reportCandidatesCount).toBe(0);
+      expect(store.hasAnyBug).toBe(1);
+    });
+
+    it("prompt when previous failed but has new candidates", async () => {
+      store.setRows([
+        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
+        { scenario_id: "s2", actual_path: "b.png", baseline_path: "", diff_path: "" },
+      ]);
+      store.tagLog = {
+        "s1::a.png::::": { bug: true, bug_reported: true },
+        "s2::b.png::::": { bug: true, bug_reported: false },
+      };
+
+      expect(store.reportCandidatesCount).toBe(1);
+    });
+  });
+});

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from tools.visual.report_server import (
+from framework.visual.report_server import (
     _discover_visual_run_dirs,
     _resolve_actual_png,
     _resolve_report_dir,

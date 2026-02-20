@@ -80,7 +80,7 @@ visual-approve: ## Akceptacja zmian visual
 	REPORTING_ENABLED=0 VISUAL_ENABLED=1 $(PYTEST) -m visual -q --visual-approve
 
 visual-report-serve: ## Uruchom lokalny serwer raportu visual
-	$(PYTHON) tools/visual/report_server.py $(if $(RUN_ID),--run-id $(RUN_ID),) $(if $(REPORT_DIR),--report-dir $(REPORT_DIR),) $(if $(PORT),--port $(PORT),)
+	$(PYTHON)  framework/visual/report_server.py $(if $(RUN_ID),--run-id $(RUN_ID),) $(if $(REPORT_DIR),--report-dir $(REPORT_DIR),) $(if $(PORT),--port $(PORT),)
 
 ##@ Helpers
 

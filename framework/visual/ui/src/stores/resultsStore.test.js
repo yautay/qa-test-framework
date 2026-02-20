@@ -459,6 +459,123 @@ describe("resultsStore", () => {
 
       expect(store.reportCandidatesCount).toBe(1);
     });
+
+    it("does not count already reported bugs", () => {
+      const store = useResultsStore();
+      store.setRows([
+        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
+      ]);
+      store.tagLog = {
+        "s1::a.png::::": { bug: true, bug_reported: true },
+      };
+
+      expect(store.reportCandidatesCount).toBe(0);
+    });
+
+    it("does not count already reported asos", () => {
+      const store = useResultsStore();
+      store.setRows([
+        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
+      ]);
+      store.tagLog = {
+        "s1::a.png::::": { bug: false, aso: true, aso_reported: true },
+      };
+
+      expect(store.reportCandidatesCount).toBe(0);
+    });
+
+    it("counts modified notes (newer than reported)", () => {
+      const store = useResultsStore();
+      store.setRows([
+        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
+      ]);
+      store.tagLog = {
+        "s1::a.png::::": {
+          bug: false,
+          note: { text: "updated note", updatedAt: "2026-02-20T12:00:00.000Z" },
+          note_reported: true,
+          note_reported_at: "2026-02-20T11:00:00.000Z",
+        },
+      };
+
+      expect(store.reportCandidatesCount).toBe(1);
+    });
+
+    it("does not count unmodified reported notes", () => {
+      const store = useResultsStore();
+      store.setRows([
+        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
+      ]);
+      store.tagLog = {
+        "s1::a.png::::": {
+          bug: false,
+          note: { text: "same note", updatedAt: "2026-02-20T11:00:00.000Z" },
+          note_reported: true,
+          note_reported_at: "2026-02-20T11:00:00.000Z",
+        },
+      };
+
+      expect(store.reportCandidatesCount).toBe(0);
+    });
+
+    it("does not count notes without timestamp", () => {
+      const store = useResultsStore();
+      store.setRows([
+        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
+      ]);
+      store.tagLog = {
+        "s1::a.png::::": {
+          bug: false,
+          note: { text: "note without timestamp" },
+          note_reported: true,
+          note_reported_at: "2026-02-20T11:00:00.000Z",
+        },
+      };
+
+      expect(store.reportCandidatesCount).toBe(0);
+    });
+  });
+
+  describe("hasAnyBug", () => {
+    it("returns count of rows with bug tag", () => {
+      const store = useResultsStore();
+      store.setRows([
+        { scenario_id: "s1", actual_path: "a.png" },
+        { scenario_id: "s2", actual_path: "b.png" },
+        { scenario_id: "s3", actual_path: "c.png" },
+      ]);
+      store.tagLog = {
+        "s1::a.png::::": { bug: true },
+        "s2::b.png::::": { bug: false },
+        "s3::c.png::::": { bug: true },
+      };
+
+      expect(store.hasAnyBug).toBe(2);
+    });
+
+    it("returns 0 when no bugs", () => {
+      const store = useResultsStore();
+      store.setRows([
+        { scenario_id: "s1", actual_path: "a.png" },
+      ]);
+      store.tagLog = {
+        "s1::a.png::::": { bug: false },
+      };
+
+      expect(store.hasAnyBug).toBe(0);
+    });
+
+    it("counts bugs regardless of reported status", () => {
+      const store = useResultsStore();
+      store.setRows([
+        { scenario_id: "s1", actual_path: "a.png" },
+      ]);
+      store.tagLog = {
+        "s1::a.png::::": { bug: true, bug_reported: true },
+      };
+
+      expect(store.hasAnyBug).toBe(1);
+    });
   });
 
   describe("filtersActive", () => {

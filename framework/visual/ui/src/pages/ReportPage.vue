@@ -101,6 +101,8 @@ const keyHeld = ref({ a: false, d: false, w: false, s: false, c: false });
 const prompt = ref({ active: false, type: null });
 const tagSyncTimer = ref(null);
 const pdfGenerated = ref(false);
+const lastSendResponse = ref(null);
+const isSendingInProgress = ref(false);
 const noteEditor = ref({
   active: false,
   rowKey: "",
@@ -114,6 +116,16 @@ const metadataPanel = ref({
 const noteMaxLength = NOTE_MAX_LENGTH;
 
 const baseZoom = ref(100);
+
+function isDebugEnabled() {
+  return document.cookie.split(';').some(c => c.trim().startsWith('debug=1'));
+}
+
+function debugLog(...args) {
+  if (isDebugEnabled()) {
+    console.log("[DEBUG]", new Date().toISOString(), ...args);
+  }
+}
 
 const viewerForModal = computed(() => ({
   modalOpen: store.modalOpen,
@@ -263,13 +275,91 @@ async function sendBaseline() {
 }
 
 function promptSendReport() {
+  if (isSendingInProgress.value) {
+    debugLog("DEBUG promptSendReport: sending in progress, skipping");
+    return;
+  }
+
   if (!props.runId) {
     console.info("Missing run id, unable to send report");
     return;
   }
 
+  debugLog("DEBUG promptSendReport:", {
+    reportCandidatesCount: store.reportCandidatesCount,
+    hasAnyBug: store.hasAnyBug,
+  });
+
+  const allNotes = Object.entries(store.tagLog || {})
+    .filter(([key, tags]) => tags?.note)
+    .map(([key, tags]) => ({
+      key,
+      note: tags.note?.text?.substring(0, 30),
+      note_reported: tags.note_reported,
+      note_reported_at: tags.note_reported_at,
+      note_updatedAt: tags.note?.updatedAt,
+    }));
+  debugLog("DEBUG all notes in tagLog:", allNotes);
+
+  const candidates = store.rows.map((row) => {
+    const key = getRowTagKey(row);
+    const tags = store.tagLog?.[key] || {};
+    const noteText = tags.note?.text || "";
+    const noteHasText = typeof noteText === "string" && noteText.trim() !== "";
+    const noteUpdated = tags.note?.updatedAt;
+    const noteReportedAt = tags.note_reported_at;
+    let canSendNote = false;
+    if (noteHasText) {
+      if (!tags.note_reported) {
+        canSendNote = true;
+      } else if (noteUpdated && noteReportedAt) {
+        const updatedMs = Date.parse(noteUpdated);
+        const reportedMs = Date.parse(noteReportedAt);
+        if (!Number.isNaN(updatedMs) && !Number.isNaN(reportedMs)) {
+          canSendNote = updatedMs > reportedMs;
+        }
+      }
+    }
+    const modifiedToSend = noteHasText && tags.note_reported && noteUpdated && noteReportedAt
+      ? Date.parse(noteUpdated) > Date.parse(noteReportedAt)
+      : false;
+    return {
+      scenario_id: row.scenario_id,
+      bug: tags.bug,
+      bug_reported: tags.bug_reported,
+      canSendBug: !!tags.bug && !tags.bug_reported,
+      aso: tags.aso,
+      aso_reported: tags.aso_reported,
+      canSendAso: !!tags.aso && !tags.aso_reported,
+      note: tags.note?.text?.substring(0, 30),
+      note_reported: tags.note_reported,
+      note_updatedAt: tags.note?.updatedAt,
+      note_reported_at: tags.note_reported_at,
+      modified_to_send: modifiedToSend,
+    };
+  }).filter(r => r.canSendBug || r.canSendAso || (r.note && !r.note_reported) || r.modified_to_send);
+
+  debugLog("DEBUG candidates to send:", candidates);
+  debugLog("DEBUG tagLog sample:", Object.entries(store.tagLog || {}).slice(0, 3).map(([k, v]) => ({ key: k.slice(0, 50), note_reported: v?.note_reported, note_updatedAt: v?.note?.updatedAt, note_reported_at: v?.note_reported_at })));
+
+  const lastResponse = lastSendResponse.value;
+  const hadPreviousFailures = lastResponse?.previous_attempt_had_failures || false;
+
   const hasCandidates = store.reportCandidatesCount > 0;
   const hasAnyBug = store.hasAnyBug > 0;
+
+  debugLog("DEBUG promptSendReport decision:", {
+    hadPreviousFailures,
+    previousAttemptHadFailures: lastResponse?.previous_attempt_had_failures,
+    hasCandidates,
+    hasAnyBug,
+  });
+
+  if (!hasCandidates && hadPreviousFailures) {
+    debugLog("DEBUG: no new candidates but previous send had failures, doing silent retry");
+    executeSendReport();
+    return;
+  }
 
   if (!hasCandidates && hasAnyBug) {
     console.info("No BUG/ASO/NOTATKA to send, generating PDF only");
@@ -287,11 +377,16 @@ function promptSendReport() {
 
 async function executeSendReport() {
   if (!props.runId) return;
+  isSendingInProgress.value = true;
+  debugLog("DEBUG executeSendReport: starting");
   const payload = {
     tag_snapshot: store.tagLog,
   };
   try {
     const response = await sendRunReport(props.runId, payload);
+    debugLog("DEBUG executeSendReport response:", JSON.stringify(response).slice(0, 500));
+    debugLog("DEBUG response keys:", Object.keys(response || {}));
+    lastSendResponse.value = response;
     if (response?.tag_snapshot && typeof response.tag_snapshot === "object") {
       store.updateTagLog(response.tag_snapshot);
       if (store.modalRow) {
@@ -322,6 +417,9 @@ async function executeSendReport() {
       return;
     }
     console.info(`RAPORT failed: ${error?.message || "unknown error"}`);
+  } finally {
+    isSendingInProgress.value = false;
+    debugLog("DEBUG executeSendReport: finished, isSendingInProgress = false");
   }
 }
 

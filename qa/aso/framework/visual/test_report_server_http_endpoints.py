@@ -13,7 +13,7 @@ from urllib.request import Request, urlopen
 import pytest
 
 from framework.visual.baseline_store import BaselineStore
-from tools.visual.report_server import ReportServerContext, _build_handler
+from framework.visual.report_server import ReportServerContext, _build_handler
 
 pytestmark = [pytest.mark.aso]
 

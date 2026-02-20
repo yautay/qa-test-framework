@@ -6,8 +6,10 @@ from typing import Any, cast
 
 import pytest
 
-from tools.visual.report_server import (
+from framework.visual.report_server import (
+    _had_previous_failures,
     _list_reports_payload,
+    _read_last_audit_entry,
     _read_results_rows,
     _report_summary,
     _safe_run_id_or_error,
@@ -172,3 +174,86 @@ def test_list_reports_payload_picks_new_run_after_server_context_created(tmp_pat
     payload = _list_reports_payload(context)
 
     assert [item["run_id"] for item in payload] == ["20260219"]
+
+
+class TestReadLastAuditEntry:
+    def test_returns_none_when_no_audit_file(self, tmp_path: Path) -> None:
+        result = _read_last_audit_entry(tmp_path)
+        assert result is None
+
+    def test_returns_none_when_file_empty(self, tmp_path: Path) -> None:
+        audit_file = tmp_path / "reporting-audit.json"
+        audit_file.write_text("", encoding="utf-8")
+        result = _read_last_audit_entry(tmp_path)
+        assert result is None
+
+    def test_returns_none_when_file_invalid_json(self, tmp_path: Path) -> None:
+        audit_file = tmp_path / "reporting-audit.json"
+        audit_file.write_text("not valid json", encoding="utf-8")
+        result = _read_last_audit_entry(tmp_path)
+        assert result is None
+
+    def test_returns_last_entry_from_list(self, tmp_path: Path) -> None:
+        audit_file = tmp_path / "reporting-audit.json"
+        audit_file.write_text(
+            json.dumps(
+                [
+                    {"timestamp_utc": "2026-02-20T10:00:00Z", "bug": {"sent": 1}},
+                    {"timestamp_utc": "2026-02-20T11:00:00Z", "bug": {"sent": 2}},
+                ]
+            ),
+            encoding="utf-8",
+        )
+        result = _read_last_audit_entry(tmp_path)
+        assert result is not None
+        assert result["timestamp_utc"] == "2026-02-20T11:00:00Z"
+
+    def test_returns_none_when_list_empty(self, tmp_path: Path) -> None:
+        audit_file = tmp_path / "reporting-audit.json"
+        audit_file.write_text(json.dumps([]), encoding="utf-8")
+        result = _read_last_audit_entry(tmp_path)
+        assert result is None
+
+
+class TestHadPreviousFailures:
+    def test_returns_false_when_none(self) -> None:
+        assert _had_previous_failures(None) is False
+
+    def test_returns_false_when_no_failures(self) -> None:
+        audit = {
+            "bug": {"sent": 1, "failed": 0},
+            "aso": {"sent": 1, "failed": 0},
+            "note": {"sent": 1, "failed": 0},
+        }
+        assert _had_previous_failures(audit) is False
+
+    def test_returns_true_when_bug_failed(self) -> None:
+        audit = {
+            "bug": {"sent": 0, "failed": 1},
+            "aso": {"sent": 1, "failed": 0},
+            "note": {"sent": 1, "failed": 0},
+        }
+        assert _had_previous_failures(audit) is True
+
+    def test_returns_true_when_aso_failed(self) -> None:
+        audit = {
+            "bug": {"sent": 1, "failed": 0},
+            "aso": {"sent": 0, "failed": 1},
+            "note": {"sent": 1, "failed": 0},
+        }
+        assert _had_previous_failures(audit) is True
+
+    def test_returns_true_when_note_failed(self) -> None:
+        audit = {
+            "bug": {"sent": 1, "failed": 0},
+            "aso": {"sent": 1, "failed": 0},
+            "note": {"sent": 0, "failed": 1},
+        }
+        assert _had_previous_failures(audit) is True
+
+    def test_returns_false_when_missing_keys(self) -> None:
+        audit = {"bug": {}}
+        assert _had_previous_failures(audit) is False
+
+    def test_returns_false_when_empty_dict(self) -> None:
+        assert _had_previous_failures({}) is False

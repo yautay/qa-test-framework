@@ -88,7 +88,7 @@ class ReportingClient:
                 )
                 response = self.session.post(url, json=payload, headers=headers, timeout=self.timeout_seconds)
             except requests.RequestException:
-                logger.opt(exception=True).warning(
+                logger.warning(
                     "reporting api call failed",
                     url=url,
                     attempt=attempt,
@@ -194,7 +194,7 @@ class ReportingClient:
                 return False  # do not retry non-retriable status codes
 
             except requests.RequestException:
-                logger.opt(exception=True).warning(
+                logger.warning(
                     "reporting screenshot upload failed",
                     url=url,
                     attempt=attempt,

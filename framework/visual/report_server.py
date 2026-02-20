@@ -516,6 +516,30 @@ def _build_reporting_payload(
     }
 
 
+def _read_last_audit_entry(report_dir: Path) -> dict[str, Any] | None:
+    audit_path = report_dir / "reporting-audit.json"
+    if not audit_path.is_file():
+        return None
+    try:
+        loaded = json.loads(audit_path.read_text(encoding="utf-8"))
+        if isinstance(loaded, list) and len(loaded) > 0:
+            last_item = loaded[-1]
+            if isinstance(last_item, dict):
+                return last_item
+    except Exception:
+        pass
+    return None
+
+
+def _had_previous_failures(audit_entry: dict[str, Any] | None) -> bool:
+    if not audit_entry:
+        return False
+    prev_bug = audit_entry.get("bug", {})
+    prev_aso = audit_entry.get("aso", {})
+    prev_note = audit_entry.get("note", {})
+    return prev_bug.get("failed", 0) > 0 or prev_aso.get("failed", 0) > 0 or prev_note.get("failed", 0) > 0
+
+
 def _append_audit_entry(report_dir: Path, payload: dict[str, Any]) -> None:
     audit_path = report_dir / "reporting-audit.json"
     current: list[dict[str, Any]] = []
@@ -673,6 +697,15 @@ def _generate_bug_pdf(
 
 def _build_handler(context: ReportServerContext):
     class Handler(BaseHTTPRequestHandler):
+        def log_message(self, format, *args):
+            pass
+
+        def handle(self):
+            try:
+                super().handle()
+            except ConnectionAbortedError:
+                pass
+
         def _send_json(self, status: int, payload: dict[str, Any]) -> None:
             body = _json_bytes(payload)
             self.send_response(status)
@@ -976,8 +1009,13 @@ def _build_handler(context: ReportServerContext):
                     run_id=run_id,
                     bug_total=len(bug_rows),
                     bug_sendable=len(bug_sendable),
+                    bug_skipped_locked=skipped_bug_locked,
+                    aso_total=len(aso_sendable) + skipped_aso_locked,
                     aso_sendable=len(aso_sendable),
+                    aso_skipped_locked=skipped_aso_locked,
+                    note_total=len(note_rows),
                     note_sendable=len(note_sendable),
+                    note_skipped_locked=skipped_note_locked,
                 )
                 logger.debug(
                     "report_send_debug",
@@ -1008,14 +1046,24 @@ def _build_handler(context: ReportServerContext):
                         logger.warning("report_send_note_missing_endpoint", run_id=run_id)
                         note_failed += 1
                         continue
+
+                    scenario_id = str(row.get("scenario_id", "") or "")
+                    current_note_reported = bool(tag_entry.get("note_reported", False))
+                    current_note_reported_at = str(tag_entry.get("note_reported_at", "") or "")
+                    current_note_reported_hash = str(tag_entry.get("note_reported_hash", "") or "")
+
                     logger.debug(
-                        "report_send_note_attempt",
+                        "report_send_note_before_api",
                         run_id=run_id,
-                        scenario_id=str(row.get("scenario_id", "") or ""),
+                        scenario_id=scenario_id,
                         endpoint=context.reporting_note_endpoint,
-                        note_hash=note_hash,
-                        note_reported=bool(tag_entry.get("note_reported", False)),
+                        note_reported=current_note_reported,
+                        note_reported_at=current_note_reported_at,
+                        note_reported_hash=current_note_reported_hash,
+                        new_note_hash=note_hash,
+                        hash_changed=current_note_reported_hash != note_hash,
                     )
+
                     req = _build_reporting_payload(
                         run_id,
                         "NOTE",
@@ -1027,28 +1075,53 @@ def _build_handler(context: ReportServerContext):
                         context.reporting_client
                         and context.reporting_client.send_payload(context.reporting_note_endpoint, req)
                     )
+
                     logger.debug(
-                        "report_send_note_result",
+                        "report_send_note_after_api",
                         run_id=run_id,
-                        scenario_id=str(row.get("scenario_id", "") or ""),
+                        scenario_id=scenario_id,
                         endpoint=context.reporting_note_endpoint,
                         accepted=accepted,
+                        will_set_note_reported=accepted,
+                        will_set_note_reported_at=accepted,
+                        will_set_note_reported_hash=accepted,
                     )
+
                     if accepted:
+                        old_note_reported = tag_entry.get("note_reported")
                         tag_entry["note_reported"] = True
                         tag_entry["note_reported_at"] = sent_at
                         tag_entry["note_reported_hash"] = note_hash
+                        logger.debug(
+                            "report_send_note_state_changed",
+                            run_id=run_id,
+                            scenario_id=scenario_id,
+                            action="set_reported",
+                            old_note_reported=old_note_reported,
+                            new_note_reported=True,
+                            new_note_reported_at=sent_at,
+                            new_note_reported_hash=note_hash,
+                        )
                         logger.info(
                             "report_send_note_success",
                             run_id=run_id,
-                            scenario_id=str(row.get("scenario_id", "") or ""),
+                            scenario_id=scenario_id,
                         )
                         note_ok += 1
                     else:
+                        logger.debug(
+                            "report_send_note_state_unchanged",
+                            run_id=run_id,
+                            scenario_id=scenario_id,
+                            action="keep_unreported",
+                            current_note_reported=tag_entry.get("note_reported"),
+                            current_note_reported_at=tag_entry.get("note_reported_at"),
+                            current_note_reported_hash=tag_entry.get("note_reported_hash"),
+                        )
                         logger.warning(
                             "report_send_note_failed",
                             run_id=run_id,
-                            scenario_id=str(row.get("scenario_id", "") or ""),
+                            scenario_id=scenario_id,
                         )
                         note_failed += 1
 
@@ -1057,39 +1130,68 @@ def _build_handler(context: ReportServerContext):
                         logger.warning("report_send_aso_missing_endpoint", run_id=run_id)
                         aso_failed += 1
                         continue
+
+                    scenario_id = str(row.get("scenario_id", "") or "")
+                    current_aso_reported = bool(tag_entry.get("aso_reported", False))
+                    current_aso_reported_at = str(tag_entry.get("aso_reported_at", "") or "")
+
                     logger.debug(
-                        "report_send_aso_attempt",
+                        "report_send_aso_before_api",
                         run_id=run_id,
-                        scenario_id=str(row.get("scenario_id", "") or ""),
+                        scenario_id=scenario_id,
                         endpoint=context.reporting_aso_endpoint,
-                        aso_reported=bool(tag_entry.get("aso_reported", False)),
+                        aso_reported=current_aso_reported,
+                        aso_reported_at=current_aso_reported_at,
                     )
+
                     req = _build_reporting_payload(run_id, "ASO", row, tag_entry)
                     accepted = bool(
                         context.reporting_client
                         and context.reporting_client.send_payload(context.reporting_aso_endpoint, req)
                     )
+
                     logger.debug(
-                        "report_send_aso_result",
+                        "report_send_aso_after_api",
                         run_id=run_id,
-                        scenario_id=str(row.get("scenario_id", "") or ""),
+                        scenario_id=scenario_id,
                         endpoint=context.reporting_aso_endpoint,
                         accepted=accepted,
+                        will_set_aso_reported=accepted,
+                        will_set_aso_reported_at=accepted,
                     )
+
                     if accepted:
+                        old_aso_reported = tag_entry.get("aso_reported")
                         tag_entry["aso_reported"] = True
                         tag_entry["aso_reported_at"] = sent_at
+                        logger.debug(
+                            "report_send_aso_state_changed",
+                            run_id=run_id,
+                            scenario_id=scenario_id,
+                            action="set_reported",
+                            old_aso_reported=old_aso_reported,
+                            new_aso_reported=True,
+                            new_aso_reported_at=sent_at,
+                        )
                         logger.info(
                             "report_send_aso_success",
                             run_id=run_id,
-                            scenario_id=str(row.get("scenario_id", "") or ""),
+                            scenario_id=scenario_id,
                         )
                         aso_ok += 1
                     else:
+                        logger.debug(
+                            "report_send_aso_state_unchanged",
+                            run_id=run_id,
+                            scenario_id=scenario_id,
+                            action="keep_unreported",
+                            current_aso_reported=tag_entry.get("aso_reported"),
+                            current_aso_reported_at=tag_entry.get("aso_reported_at"),
+                        )
                         logger.warning(
                             "report_send_aso_failed",
                             run_id=run_id,
-                            scenario_id=str(row.get("scenario_id", "") or ""),
+                            scenario_id=scenario_id,
                         )
                         aso_failed += 1
 
@@ -1098,39 +1200,68 @@ def _build_handler(context: ReportServerContext):
                         logger.warning("report_send_bug_missing_endpoint", run_id=run_id)
                         bug_failed += 1
                         continue
+
+                    scenario_id = str(row.get("scenario_id", "") or "")
+                    current_bug_reported = bool(tag_entry.get("bug_reported", False))
+                    current_bug_reported_at = str(tag_entry.get("bug_reported_at", "") or "")
+
                     logger.debug(
-                        "report_send_bug_attempt",
+                        "report_send_bug_before_api",
                         run_id=run_id,
-                        scenario_id=str(row.get("scenario_id", "") or ""),
+                        scenario_id=scenario_id,
                         endpoint=context.reporting_bug_endpoint,
-                        bug_reported=bool(tag_entry.get("bug_reported", False)),
+                        bug_reported=current_bug_reported,
+                        bug_reported_at=current_bug_reported_at,
                     )
+
                     req = _build_reporting_payload(run_id, "BUG", row, tag_entry)
                     accepted = bool(
                         context.reporting_client
                         and context.reporting_client.send_payload(context.reporting_bug_endpoint, req)
                     )
+
                     logger.debug(
-                        "report_send_bug_result",
+                        "report_send_bug_after_api",
                         run_id=run_id,
-                        scenario_id=str(row.get("scenario_id", "") or ""),
+                        scenario_id=scenario_id,
                         endpoint=context.reporting_bug_endpoint,
                         accepted=accepted,
+                        will_set_bug_reported=accepted,
+                        will_set_bug_reported_at=accepted,
                     )
+
                     if accepted:
+                        old_bug_reported = tag_entry.get("bug_reported")
                         tag_entry["bug_reported"] = True
                         tag_entry["bug_reported_at"] = sent_at
+                        logger.debug(
+                            "report_send_bug_state_changed",
+                            run_id=run_id,
+                            scenario_id=scenario_id,
+                            action="set_reported",
+                            old_bug_reported=old_bug_reported,
+                            new_bug_reported=True,
+                            new_bug_reported_at=sent_at,
+                        )
                         logger.info(
                             "report_send_bug_success",
                             run_id=run_id,
-                            scenario_id=str(row.get("scenario_id", "") or ""),
+                            scenario_id=scenario_id,
                         )
                         bug_ok += 1
                     else:
+                        logger.debug(
+                            "report_send_bug_state_unchanged",
+                            run_id=run_id,
+                            scenario_id=scenario_id,
+                            action="keep_unreported",
+                            current_bug_reported=tag_entry.get("bug_reported"),
+                            current_bug_reported_at=tag_entry.get("bug_reported_at"),
+                        )
                         logger.warning(
                             "report_send_bug_failed",
                             run_id=run_id,
-                            scenario_id=str(row.get("scenario_id", "") or ""),
+                            scenario_id=scenario_id,
                         )
                         bug_failed += 1
 
@@ -1141,7 +1272,9 @@ def _build_handler(context: ReportServerContext):
                     bug_rows=bug_rows,
                 )
 
-                _save_tag_snapshot(report_dir, tag_snapshot)
+                previous_audit = _read_last_audit_entry(report_dir)
+                had_previous_failures = _had_previous_failures(previous_audit)
+
                 audit_entry = {
                     "timestamp_utc": sent_at,
                     "run_id": run_id,
@@ -1167,6 +1300,7 @@ def _build_handler(context: ReportServerContext):
                         "pages": pdf_pages,
                     },
                 }
+                _save_tag_snapshot(report_dir, tag_snapshot)
                 _append_audit_entry(report_dir, audit_entry)
                 logger.info(
                     "report_send_finish",
@@ -1184,6 +1318,7 @@ def _build_handler(context: ReportServerContext):
                     {
                         "accepted": True,
                         "run_id": run_id,
+                        "previous_attempt_had_failures": had_previous_failures,
                         "bug": {
                             "total": len(bug_rows),
                             "sent": bug_ok,
