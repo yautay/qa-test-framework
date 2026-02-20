@@ -31,6 +31,8 @@
     "lpips": "LPIPS",
     "dists": "DISTS",
     "message": "Message",
+    "viewport": "Viewport",
+    "browser": "Browser",
     "artifacts": "Artifacts",
     "metadata": "Meta",
     "noResults": "No results for current filters."
