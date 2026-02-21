@@ -1374,6 +1374,8 @@ def _build_handler(context: ReportServerContext):
                         }
                         outbox.append(event_entry)
 
+                        _save_state(build_dir, state)
+
                         reporting_enabled = bool(
                             context.reporting_enabled and context.reporting_client and context.reporting_client.enabled
                         )
@@ -1389,33 +1391,38 @@ def _build_handler(context: ReportServerContext):
                             rows_by_key = {_row_tag_key(row): row for row in rows}
                             from concurrent.futures import ThreadPoolExecutor
 
-                            event_id = event_entry["event_id"]
+                            event_id_to_send = event_entry["event_id"]
 
                             def send_async():
                                 build_dir_async = report_dir.parent
-                                state_async = _load_state(build_dir_async)
-                                outbox_async = state_async.get("outbox", [])
-                                event_async = next((e for e in outbox_async if e.get("event_id") == event_id), None)
-                                if event_async is None:
-                                    return
-                                accepted, error = _send_outbox_event(
-                                    context=context,
-                                    run_id=run_id,
-                                    rows_by_key=rows_by_key,
-                                    state=state_async,
-                                    event=event_async,
-                                )
-                                if accepted:
-                                    case_state = _ensure_case_state(
-                                        state_async, str(event_async.get("test_case_id", ""))
+                                with context._lock:
+                                    state_async = _load_state(build_dir_async)
+                                    outbox_async = state_async.get("outbox", [])
+                                    event_async = next(
+                                        (e for e in outbox_async if e.get("event_id") == event_id_to_send),
+                                        None,
                                     )
-                                    _mark_case_synced(case_state, str(event_async.get("type", "")))
+                                    if event_async is None:
+                                        return
+                                    if str(event_async.get("status", "")).lower() not in {"pending", "failed"}:
+                                        return
+                                    accepted, error = _send_outbox_event(
+                                        context=context,
+                                        run_id=run_id,
+                                        rows_by_key=rows_by_key,
+                                        state=state_async,
+                                        event=event_async,
+                                    )
+                                    _record_event_attempt(event_async, accepted, error)
+                                    if accepted:
+                                        case_state = _ensure_case_state(
+                                            state_async, str(event_async.get("test_case_id", ""))
+                                        )
+                                        _mark_case_synced(case_state, str(event_async.get("type", "")))
                                     _save_state(build_dir_async, state_async)
 
                             with ThreadPoolExecutor(max_workers=1) as executor:
                                 executor.submit(send_async)
-
-                        _save_state(build_dir, state)
 
                     self._send_json(
                         HTTPStatus.OK,
