@@ -8,7 +8,7 @@ import pytest
 
 from framework.visual.baseline_store import BaselineStore
 from framework.visual.report_server import ReportServerContext
-from qa.aso.framework.visual.report_server_http_test_helpers import _env, _http_json, _start_server
+from qa.aso.framework.visual.report_server_http_test_helpers import _env, _http_json, _start_server, _stop_server
 
 pytestmark = [pytest.mark.aso]
 
@@ -66,6 +66,4 @@ def test_report_server_reports_sync_issue_counters_on_reports_list(tmp_path: Pat
         assert report["sync_sending_count"] == 1
         assert report["sync_unsynced_count"] == 2
     finally:
-        server.shutdown()
-        server.server_close()
-        thread.join(timeout=3)
+        _stop_server(server, thread)

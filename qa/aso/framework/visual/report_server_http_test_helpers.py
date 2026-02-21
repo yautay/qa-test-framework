@@ -27,7 +27,7 @@ def _env() -> SimpleNamespace:
 
 def _http_json(base_url: str, path: str, method: str = "GET", body: dict | None = None) -> tuple[int, dict]:
     data = None
-    headers = {}
+    headers = {"Connection": "close"}
     if body is not None:
         data = json.dumps(body).encode("utf-8")
         headers["Content-Type"] = "application/json"
@@ -48,7 +48,7 @@ def _http_json(base_url: str, path: str, method: str = "GET", body: dict | None 
 
 
 def _http_bytes(base_url: str, path: str) -> tuple[int, bytes]:
-    req = Request(f"{base_url}{path}", method="GET")
+    req = Request(f"{base_url}{path}", method="GET", headers={"Connection": "close"})
     try:
         with urlopen(req) as resp:
             return int(resp.status), resp.read()
@@ -64,3 +64,9 @@ def _start_server(context: ReportServerContext) -> tuple[ThreadingHTTPServer, st
     host = server.server_address[0]
     port = server.server_address[1]
     return server, f"http://{host}:{port}", thread
+
+
+def _stop_server(server: ThreadingHTTPServer, thread: threading.Thread, timeout: float = 3.0) -> None:
+    server.shutdown()
+    thread.join(timeout=timeout)
+    server.server_close()

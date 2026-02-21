@@ -8,7 +8,7 @@ import pytest
 
 from framework.visual.baseline_store import BaselineStore
 from framework.visual.report_server import ReportServerContext
-from qa.aso.framework.visual.report_server_http_test_helpers import _env, _http_json, _start_server
+from qa.aso.framework.visual.report_server_http_test_helpers import _env, _http_json, _start_server, _stop_server
 
 pytestmark = [pytest.mark.aso]
 
@@ -82,9 +82,7 @@ def test_reporting_disabled_treats_sync_as_success_for_frontend(tmp_path: Path) 
         assert report["sync_sending_count"] == 0
         assert report["sync_unsynced_count"] == 0
     finally:
-        server.shutdown()
-        server.server_close()
-        thread.join(timeout=3)
+        _stop_server(server, thread)
 
 
 def test_report_endpoint_logs_single_skip_entry_when_reporting_disabled(
@@ -191,9 +189,7 @@ def test_report_endpoint_logs_single_skip_entry_when_reporting_disabled(
         assert all(entry["status"] == "sent" for entry in state["outbox"])
         assert state["test_cases"][case_id]["bug"]["synced"] is True
     finally:
-        server.shutdown()
-        server.server_close()
-        thread.join(timeout=3)
+        _stop_server(server, thread)
 
 
 def test_state_endpoint_normalizes_legacy_unsynced_state_when_reporting_disabled(tmp_path: Path) -> None:
@@ -270,6 +266,4 @@ def test_state_endpoint_normalizes_legacy_unsynced_state_when_reporting_disabled
         assert report["has_sync_issues"] is False
         assert report["sync_unsynced_count"] == 0
     finally:
-        server.shutdown()
-        server.server_close()
-        thread.join(timeout=3)
+        _stop_server(server, thread)

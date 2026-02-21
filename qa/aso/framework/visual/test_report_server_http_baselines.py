@@ -7,7 +7,7 @@ import pytest
 
 from framework.visual.baseline_store import BaselineStore
 from framework.visual.report_server import ReportServerContext
-from qa.aso.framework.visual.report_server_http_test_helpers import _env, _http_json, _start_server
+from qa.aso.framework.visual.report_server_http_test_helpers import _env, _http_json, _start_server, _stop_server
 
 pytestmark = [pytest.mark.aso]
 
@@ -51,9 +51,7 @@ def test_report_server_rejects_challenge_run_mismatch(tmp_path: Path) -> None:
         assert status == 403
         assert "run mismatch" in payload["error"]
     finally:
-        server.shutdown()
-        server.server_close()
-        thread.join(timeout=3)
+        _stop_server(server, thread)
 
 
 def test_report_server_ref_endpoint_validates_query_and_run(tmp_path: Path) -> None:
@@ -87,6 +85,4 @@ def test_report_server_ref_endpoint_validates_query_and_run(tmp_path: Path) -> N
         assert status == 404
         assert payload["error"] == "report not found"
     finally:
-        server.shutdown()
-        server.server_close()
-        thread.join(timeout=3)
+        _stop_server(server, thread)

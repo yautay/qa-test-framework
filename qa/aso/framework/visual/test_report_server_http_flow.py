@@ -9,7 +9,13 @@ import pytest
 
 from framework.visual.baseline_store import BaselineStore
 from framework.visual.report_server import ReportServerContext
-from qa.aso.framework.visual.report_server_http_test_helpers import _env, _http_bytes, _http_json, _start_server
+from qa.aso.framework.visual.report_server_http_test_helpers import (
+    _env,
+    _http_bytes,
+    _http_json,
+    _start_server,
+    _stop_server,
+)
 
 pytestmark = [pytest.mark.aso]
 
@@ -136,6 +142,4 @@ def test_report_server_endpoints_handle_listing_results_ref_tags_and_baseline_fl
         assert status == 200
         assert body == b"actual-bytes"
     finally:
-        server.shutdown()
-        server.server_close()
-        thread.join(timeout=3)
+        _stop_server(server, thread)

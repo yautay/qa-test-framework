@@ -8,7 +8,7 @@ import pytest
 
 from framework.visual.baseline_store import BaselineStore
 from framework.visual.report_server import ReportServerContext
-from qa.aso.framework.visual.report_server_http_test_helpers import _env, _http_json, _start_server
+from qa.aso.framework.visual.report_server_http_test_helpers import _env, _http_json, _start_server, _stop_server
 
 pytestmark = [pytest.mark.aso]
 
@@ -87,9 +87,7 @@ def test_event_endpoint_is_idempotent_by_event_id(tmp_path: Path) -> None:
         state = json.loads((report_dir.parent / "state.json").read_text(encoding="utf-8"))
         assert len(state["outbox"]) == 1
     finally:
-        server.shutdown()
-        server.server_close()
-        thread.join(timeout=3)
+        _stop_server(server, thread)
 
 
 def test_note_events_are_rejected_as_invalid_type(tmp_path: Path) -> None:
@@ -149,9 +147,7 @@ def test_note_events_are_rejected_as_invalid_type(tmp_path: Path) -> None:
         assert status == 400
         assert payload["error"] == "invalid event type"
     finally:
-        server.shutdown()
-        server.server_close()
-        thread.join(timeout=3)
+        _stop_server(server, thread)
 
 
 def test_event_endpoint_rejects_bug_note_over_limit(tmp_path: Path) -> None:
@@ -207,6 +203,4 @@ def test_event_endpoint_rejects_bug_note_over_limit(tmp_path: Path) -> None:
         assert status == 400
         assert "500" in payload["error"]
     finally:
-        server.shutdown()
-        server.server_close()
-        thread.join(timeout=3)
+        _stop_server(server, thread)
