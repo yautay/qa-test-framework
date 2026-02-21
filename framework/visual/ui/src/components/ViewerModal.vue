@@ -214,6 +214,15 @@ export default {
         ...badge,
         isPending: badge.pendingKey ? !!pending[badge.pendingKey] : false,
       }));
+      const noteContent = tags.note?.content;
+      if (noteContent) {
+        tagBadges.push({
+          key: "note",
+          label: this.t("tags.note"),
+          class: "badge note-badge",
+          isPending: !!pending.note,
+        });
+      }
       if (tags.bug?.synced) {
         tagBadges.push({
           key: "bug_sent",

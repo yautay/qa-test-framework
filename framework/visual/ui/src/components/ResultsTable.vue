@@ -58,6 +58,7 @@
                   v-if="rowHasNote(r)"
                   type="button"
                   class="badge note-badge"
+                  :class="{ 'tag-pending': isPendingTag(r, 'note') }"
                   @click.stop="$emit('open-note', r, index)"
                 >
                   {{ t('tags.note') }}

@@ -448,12 +448,14 @@ function openNoteEditor(row = store.modalRow) {
   if (!row) return;
   if (prompt.value.active) return;
   const key = getRowTagKey(row);
-  const note = store.tagLog?.[key]?.note || null;
+  const pendingNote = store.pendingTags?.[key]?.note;
+  const existingNote = store.tagLog?.[key]?.note;
+  const noteText = pendingNote !== undefined ? pendingNote : (existingNote?.content || null);
   noteEditor.value = {
     active: true,
     rowKey: key,
-    text: note?.content || "",
-    hasExisting: !!(note && note.content),
+    text: noteText || "",
+    hasExisting: !!(noteText),
   };
 }
 
@@ -536,13 +538,14 @@ function saveNoteFromEditor() {
   if (prompt.value.active) return;
 
   const key = getRowTagKey(store.modalRow);
+  const pendingNote = store.pendingTags?.[key]?.note;
   const existingNote = store.tagLog?.[key]?.note;
-  const existingText = existingNote?.content || "";
+  const existingText = pendingNote !== undefined ? pendingNote : (existingNote?.content || "");
   const newText = noteEditor.value.text;
   const hasChanged = newText !== existingText;
 
   lastPromptTime = now;
-  if (hasChanged || !existingNote?.text) {
+  if (hasChanged || !existingText) {
     prompt.value = { active: true, type: "save-note" };
   } else {
     cancelNoteEditor();
