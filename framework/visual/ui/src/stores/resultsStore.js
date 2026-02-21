@@ -2,6 +2,8 @@ import { defineStore } from "pinia";
 import { summaryFor } from "../lib/format";
 import { normalizeCaseStateSnapshot } from "../lib/notes";
 import { getRowTagKey } from "../lib/viewer";
+import { SYNC_POLL_INTERVAL_MS } from "../config/syncConfig";
+import { fetchBuildState } from "../lib/api/reportsApi";
 
 const NUMERIC_SORT_KEYS = ["pixel_changed_ratio", "lpips", "dists"];
 
@@ -118,6 +120,8 @@ export const useResultsStore = defineStore("results", {
     tagLog: {},
     pendingTags: {},
     syncErrors: {},
+    pollingActive: false,
+    pollingIntervalId: null,
 
     selectedIndex: -1,
     loadError: "",
@@ -428,6 +432,16 @@ export const useResultsStore = defineStore("results", {
       const existing = this.pendingTags[caseKey] || {};
       this.pendingTags[caseKey] = { ...existing, [type]: true };
       delete this.syncErrors[caseKey];
+      
+      const currentLog = this.tagLog[caseKey] || buildEmptyTagEntry();
+      if (type === "bug") {
+        currentLog.bug = { locked: true, synced: false };
+      } else if (type === "aso") {
+        currentLog.aso = { locked: true, synced: false };
+      } else if (type === "note") {
+        currentLog.note = { content: "", synced: false };
+      }
+      this.tagLog[caseKey] = currentLog;
     },
 
     confirmTagSync(caseKey, type) {
@@ -470,6 +484,67 @@ export const useResultsStore = defineStore("results", {
 
     getSyncError(caseKey) {
       return this.syncErrors[caseKey] || null;
+    },
+
+    isPendingTag(caseKey, type) {
+      return !!this.pendingTags[caseKey]?.[type];
+    },
+
+    startPolling(runId, intervalMs = SYNC_POLL_INTERVAL_MS) {
+      if (this.pollingActive) return;
+      if (!runId) return;
+      
+      this.pollingActive = true;
+      this.runId = runId;
+      
+      this.pollSyncState();
+      
+      this.pollingIntervalId = setInterval(() => {
+        this.pollSyncState();
+      }, intervalMs);
+    },
+
+    stopPolling() {
+      if (this.pollingIntervalId) {
+        clearInterval(this.pollingIntervalId);
+        this.pollingIntervalId = null;
+      }
+      this.pollingActive = false;
+    },
+
+    async pollSyncState() {
+      if (!this.runId) return;
+      
+      try {
+        const serverState = await fetchBuildState(this.runId);
+        const serverTags = serverState?.test_cases || {};
+        this.syncWithServer(serverTags);
+      } catch (e) {
+        // Silent fail - polling should be resilient
+      }
+    },
+
+    syncWithServer(serverTags) {
+      for (const [caseKey, pending] of Object.entries(this.pendingTags)) {
+        const serverTag = serverTags[caseKey];
+        
+        if (pending.bug && serverTag?.bug?.locked) {
+          delete pending.bug;
+        }
+        if (pending.aso && serverTag?.aso?.locked) {
+          delete pending.aso;
+        }
+        
+        if (Object.keys(pending).length === 0) {
+          delete this.pendingTags[caseKey];
+        } else {
+          this.pendingTags[caseKey] = pending;
+        }
+      }
+      
+      if (Object.keys(this.pendingTags).length === 0) {
+        this.updateTagLog(serverTags);
+      }
     },
   },
 });

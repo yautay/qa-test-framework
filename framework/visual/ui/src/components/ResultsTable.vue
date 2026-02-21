@@ -40,8 +40,16 @@
                       :title="getSyncErrorMessage(r)">
                   ⚠
                 </span>
-                <span v-if="rowHasTag(r, 'bug')" class="badge bg-danger">{{ t('tags.bug') }}</span>
-                <span v-if="rowHasTag(r, 'aso')" class="badge bg-warning text-dark">{{ t('tags.aso') }}</span>
+                <span v-if="rowHasTag(r, 'bug')" 
+                      class="badge bg-danger"
+                      :class="{ 'tag-pending': isPendingTag(r, 'bug') }">
+                  {{ t('tags.bug') }}
+                </span>
+                <span v-if="rowHasTag(r, 'aso')" 
+                      class="badge bg-warning text-dark"
+                      :class="{ 'tag-pending': isPendingTag(r, 'aso') }">
+                  {{ t('tags.aso') }}
+                </span>
                 <span v-if="rowHasTag(r, 'baseline')" class="badge bg-success">{{ t('tags.baseline') }}</span>
                 <span v-if="rowHasTag(r, 'bug_reported')" class="badge bg-secondary">{{ t('tags.bugSent') }}</span>
                 <span v-if="rowHasTag(r, 'aso_reported')" class="badge bg-secondary">{{ t('tags.asoSent') }}</span>
@@ -138,6 +146,10 @@ export default {
       type: Object,
       default: () => ({}),
     },
+    pendingTags: {
+      type: Object,
+      default: () => ({}),
+    },
   },
   emits: ["show", "select", "open-note", "open-metadata"],
   methods: {
@@ -180,6 +192,10 @@ export default {
       const key = this.tagKeyForRow(row);
       const error = this.syncErrors?.[key];
       return error?.message || "";
+    },
+    isPendingTag(row, tagType) {
+      const key = this.tagKeyForRow(row);
+      return !!this.pendingTags?.[key]?.[tagType];
     },
   },
 };
@@ -289,5 +305,21 @@ export default {
   padding: 0;
   font-weight: 700;
   line-height: 1;
+}
+
+.tag-pending {
+  animation: pulse-tag 1.5s infinite;
+  box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+}
+
+@keyframes pulse-tag {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
 }
 </style>

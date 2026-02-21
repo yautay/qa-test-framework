@@ -15,7 +15,10 @@
                         :title="viewerSyncError.message">
                     ⚠
                   </span>
-                  <span v-for="badge in headerBadges" :key="badge.key" class="badge" :class="badge.class" :style="badge.style">
+                  <span v-for="badge in headerBadges" :key="badge.key" 
+                        class="badge" 
+                        :class="[badge.class, { 'tag-pending': badge.isPending }]"
+                        :style="badge.style">
                     {{ badge.label }}
                   </span>
                 </div>
@@ -196,17 +199,21 @@ export default {
         });
       }
       const tags = this.viewer.tags || {};
+      const pending = this.viewerPendingTags || {};
       const mapping = [
-        { key: "bug", label: this.t("tags.bug"), class: "bg-danger" },
-        { key: "aso", label: this.t("tags.aso"), class: "bg-warning text-dark" },
-        { key: "baseline", label: this.t("tags.baseline"), class: "bg-success" },
+        { key: "bug", label: this.t("tags.bug"), class: "bg-danger", pendingKey: "bug" },
+        { key: "aso", label: this.t("tags.aso"), class: "bg-warning text-dark", pendingKey: "aso" },
+        { key: "baseline", label: this.t("tags.baseline"), class: "bg-success", pendingKey: null },
       ];
       const tagBadges = mapping.filter((badge) => {
         if (badge.key === "bug") return !!tags.bug?.locked;
         if (badge.key === "aso") return !!tags.aso?.locked;
         if (badge.key === "baseline") return !!tags.baseline;
         return false;
-      });
+      }).map((badge) => ({
+        ...badge,
+        isPending: badge.pendingKey ? !!pending[badge.pendingKey] : false,
+      }));
       if (tags.bug?.synced) {
         tagBadges.push({
           key: "bug_sent",
@@ -255,6 +262,11 @@ export default {
       const key = this.viewer.currentTagKey;
       if (!key) return null;
       return this.viewer.syncErrors?.[key] || null;
+    },
+    viewerPendingTags() {
+      const key = this.viewer.currentTagKey;
+      if (!key) return {};
+      return this.viewer.pendingTags?.[key] || {};
     },
   },
   methods: {
@@ -454,5 +466,21 @@ export default {
   gap: 0.5rem;
   justify-content: flex-end;
   margin-top: 0.75rem;
+}
+
+.tag-pending {
+  animation: pulse-tag 1.5s infinite;
+  box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+}
+
+@keyframes pulse-tag {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
 }
 </style>

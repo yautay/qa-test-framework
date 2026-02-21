@@ -227,6 +227,15 @@ def _list_reports_payload(context: ReportServerContext) -> list[dict[str, Any]]:
             updated_at = int(report_dir.stat().st_mtime)
         except Exception:
             updated_at = 0
+
+        build_dir = report_dir.parent
+        state = _load_state(build_dir)
+        test_cases = state.get("test_cases", {})
+
+        bug_count = sum(1 for tc in test_cases.values() if isinstance(tc, dict) and tc.get("bug", {}).get("locked"))
+        asso_count = sum(1 for tc in test_cases.values() if isinstance(tc, dict) and tc.get("aso", {}).get("locked"))
+        note_count = sum(1 for tc in test_cases.values() if isinstance(tc, dict) and tc.get("note", {}).get("content"))
+
         reports.append(
             {
                 "run_id": run_id,
@@ -241,6 +250,9 @@ def _list_reports_payload(context: ReportServerContext) -> list[dict[str, Any]]:
                 "new": stats["new"],
                 "tester": run_metadata.get("tester", ""),
                 "run_note": run_metadata.get("run_note", ""),
+                "bug_count": bug_count,
+                "aso_count": asso_count,
+                "note_count": note_count,
             }
         )
     return reports

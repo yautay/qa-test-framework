@@ -24,6 +24,18 @@
         <span class="badge text-bg-danger">{{ report.failed || 0 }}</span>
         <span v-if="report.uncertain" class="badge text-bg-warning">{{ report.uncertain }}</span>
         <span v-if="report.skipped" class="badge text-bg-secondary">{{ report.skipped }}</span>
+        
+        <div class="ms-auto d-flex gap-1">
+          <span v-if="report.bug_count" class="badge bg-danger" :title="t('tags.bug')">
+            {{ report.bug_count }}
+          </span>
+          <span v-if="report.aso_count" class="badge bg-warning text-dark" :title="t('tags.aso')">
+            {{ report.aso_count }}
+          </span>
+          <span v-if="report.note_count" class="badge bg-info text-dark" :title="t('tags.note')">
+            {{ report.note_count }}
+          </span>
+        </div>
       </div>
 
       <a :href="reportUrl" class="btn btn-primary btn-sm mt-2" @click="navigateToReport">{{ t('card.openReport') }}</a>

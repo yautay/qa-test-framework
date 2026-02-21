@@ -19,6 +19,7 @@
       :tag-key-for-row="getRowTagKey"
       :selected-index="store.selectedIndex"
       :sync-errors="store.syncErrors"
+      :pending-tags="store.pendingTags"
       @show="show"
       @select="store.selectRow"
       @open-note="openNoteFromTable"
@@ -101,6 +102,7 @@ import {
 import { NOTE_MAX_LENGTH, normalizeNoteDraft, sanitizeNoteText } from "../lib/notes";
 import { buildReportAssetSrc, buildRefApiSrc } from "../composables/useUrlUtils";
 import { useSyncAlerts } from "../composables/useSyncAlerts";
+import { SYNC_POLL_INTERVAL_MS } from "../config/syncConfig";
 
 const props = defineProps({
   runId: {
@@ -184,6 +186,7 @@ const viewerForModal = computed(() => ({
   tags: store.currentTags,
   tagLog: store.tagLog,
   syncErrors: store.syncErrors,
+  pendingTags: store.pendingTags,
   currentTagKey: store.currentTagKey,
   currentIndex: store.currentIndex,
   slots: store.slots,
@@ -876,6 +879,7 @@ onMounted(async () => {
   if (!lockDenied.value) {
     await loadResults();
     await loadState();
+    store.startPolling(props.runId, SYNC_POLL_INTERVAL_MS);
   }
   window.addEventListener("keydown", handleKeydown);
   window.addEventListener("keyup", handleKeyup);
@@ -893,6 +897,7 @@ onBeforeUnmount(() => {
   if (modalEl) {
     modalEl.removeEventListener("hidden.bs.modal", closeModal);
   }
+  store.stopPolling();
   stopLockHeartbeat();
   releaseLock();
 });
