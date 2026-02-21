@@ -429,13 +429,19 @@ export const useResultsStore = defineStore("results", {
       this.cursorY = 50;
     },
 
-    setPendingTag(caseKey, type, noteContent = null) {
+    setPendingTag(caseKey, type, options = {}) {
       if (!caseKey || !type) return;
+      const clearError = options?.clearError !== false;
+      const setRetryMarker = options?.setRetryMarker !== false;
       const existing = this.pendingTags[caseKey] || {};
       this.pendingTags[caseKey] = { ...existing, [type]: true };
-      delete this.syncErrors[caseKey];
-      const existingMarkers = this.retryMarkers[caseKey] || {};
-      this.retryMarkers[caseKey] = { ...existingMarkers, [type]: Date.now() };
+      if (clearError) {
+        delete this.syncErrors[caseKey];
+      }
+      if (setRetryMarker) {
+        const existingMarkers = this.retryMarkers[caseKey] || {};
+        this.retryMarkers[caseKey] = { ...existingMarkers, [type]: Date.now() };
+      }
     },
 
     setOptimisticTag(caseKey, type, noteContent = null) {

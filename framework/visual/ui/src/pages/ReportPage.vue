@@ -309,6 +309,11 @@ async function loadState() {
 }
 
 function applyStateFromResponse(response) {
+  const fullState = response?.state;
+  if (fullState && typeof fullState === "object") {
+    store.applyServerState(fullState);
+    return;
+  }
   const snapshot = response?.test_cases;
   if (!snapshot || typeof snapshot !== "object") return;
   store.updateTagLog(snapshot);
@@ -389,12 +394,10 @@ async function promptSendReport() {
     const testCases = response?.test_cases || {};
     for (const [caseKey, caseState] of Object.entries(testCases)) {
       if (caseState?.bug?.locked) {
-        store.clearSyncError(caseKey);
-        store.setPendingTag(caseKey, "bug");
+        store.setPendingTag(caseKey, "bug", { clearError: false, setRetryMarker: false });
       }
       if (caseState?.aso?.locked) {
-        store.clearSyncError(caseKey);
-        store.setPendingTag(caseKey, "aso");
+        store.setPendingTag(caseKey, "aso", { clearError: false, setRetryMarker: false });
       }
     }
     

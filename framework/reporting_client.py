@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import hashlib
+import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -73,7 +74,7 @@ class ReportingClient:
 
         url = f"{self.base_url.rstrip('/')}{path}"
         headers = self._build_headers(payload, json_content_type=True)
-        context = self._log_context_from_payload(payload)
+        context = {**self._log_context_from_payload(payload), **self._thread_context()}
         payload_hash = self._payload_hash(payload)
 
         for attempt in range(self.retries + 1):
@@ -173,7 +174,7 @@ class ReportingClient:
             return self._post(self.test_result_endpoint, payload)
 
         headers = self._build_headers(payload, json_content_type=False)
-        context = self._log_context_from_payload(payload)
+        context = {**self._log_context_from_payload(payload), **self._thread_context()}
         payload_hash = self._payload_hash(payload)
 
         for attempt in range(self.retries + 1):
@@ -321,4 +322,12 @@ class ReportingClient:
             "event_type": event_type,
             "tester": tester,
             "run_note": run_note,
+        }
+
+    @staticmethod
+    def _thread_context() -> dict[str, str]:
+        thread = threading.current_thread()
+        return {
+            "thread_name": str(thread.name or ""),
+            "thread_id": str(threading.get_ident()),
         }

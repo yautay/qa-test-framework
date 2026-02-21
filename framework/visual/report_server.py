@@ -796,7 +796,13 @@ def _schedule_outbox_event(
     )
 
 
-def _flush_pending(context: ReportServerContext, run_id: str, report_dir: Path) -> dict[str, Any]:
+def _flush_pending(
+    context: ReportServerContext,
+    run_id: str,
+    report_dir: Path,
+    *,
+    wait_for_completion: bool = True,
+) -> dict[str, Any]:
     build_dir = report_dir.parent
 
     event_ids_to_send: list[str] = []
@@ -827,15 +833,15 @@ def _flush_pending(context: ReportServerContext, run_id: str, report_dir: Path) 
         )
         if future is not None:
             scheduled.append(future)
-    for future in scheduled:
-        try:
-            future.result()
-        except Exception:
-            logger.opt(exception=True).warning("outbox_sync_worker_failed", run_id=run_id)
+    if wait_for_completion:
+        for future in scheduled:
+            try:
+                future.result()
+            except Exception:
+                logger.opt(exception=True).warning("outbox_sync_worker_failed", run_id=run_id)
 
     with context._lock:
         state = _load_state(build_dir)
-        _save_state(build_dir, state)
         return state
 
 
@@ -1528,7 +1534,7 @@ def _build_handler(context: ReportServerContext):
                         self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
                         return
 
-                    state = _flush_pending(context, run_id, report_dir)
+                    state = _flush_pending(context, run_id, report_dir, wait_for_completion=False)
                     bug_rows: list[tuple[dict[str, Any], dict[str, Any]]] = []
                     for row in _read_results_rows(report_dir):
                         case_id = _row_tag_key(row)
@@ -1551,6 +1557,7 @@ def _build_handler(context: ReportServerContext):
                             "accepted": True,
                             "run_id": run_id,
                             "pdf": {"path": pdf_path, "pages": pdf_pages},
+                            "state": state,
                             "test_cases": state.get("test_cases", {}),
                         },
                     )
