@@ -198,21 +198,8 @@ class VisualRunner:
             else:
                 base = self._env.base_url.rstrip("/")
                 page.goto(f"{base}/{scenario.target_url.lstrip('/')}")
-            self._wait_for_readiness(page)
         for step in scenario.steps:
             self._run_step(page, step.action, step.selector, step.value, step.timeout_ms, step.url)
-
-    def _wait_for_readiness(self, page: Page) -> None:
-        """Wait for a stable post-navigation state before scenario steps/capture."""
-        try:
-            page.wait_for_load_state("domcontentloaded", timeout=15000)
-        except Exception:
-            return
-        try:
-            page.wait_for_load_state("networkidle", timeout=10000)
-        except Exception:
-            pass
-        page.wait_for_timeout(200)
 
     def _run_step(self, page: Page, action: str, selector: str, value: str, timeout_ms: int, url: str) -> None:
         """Perform a single action specified in the scenario, such as click or fill."""
