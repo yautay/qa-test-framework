@@ -348,15 +348,14 @@ describe("resultsStore", () => {
       const store = useResultsStore();
       const snapshot = {
         "s1::a.png::::": {
-          bug: { locked: true, synced: false },
-          note: { content: "test", synced: true },
+          bug: { locked: true, synced: false, note: "test" },
         },
       };
 
       store.updateTagLog(snapshot);
 
       expect(store.tagLog["s1::a.png::::"].bug.locked).toBe(true);
-      expect(store.tagLog["s1::a.png::::"].note.content).toBe("test");
+      expect(store.tagLog["s1::a.png::::"].bug.note).toBe("test");
     });
 
     it("handles null/undefined input", () => {
@@ -418,18 +417,6 @@ describe("resultsStore", () => {
       expect(store.reportCandidatesCount).toBe(1);
     });
 
-    it("counts rows with unsent notes", () => {
-      const store = useResultsStore();
-      store.setRows([
-        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
-      ]);
-      store.tagLog = {
-        "s1::a.png::::": { note: { content: "test", synced: false } },
-      };
-
-      expect(store.reportCandidatesCount).toBe(1);
-    });
-
     it("does not count already synced bugs", () => {
       const store = useResultsStore();
       store.setRows([
@@ -454,19 +441,6 @@ describe("resultsStore", () => {
       expect(store.reportCandidatesCount).toBe(0);
     });
 
-    it("does not count synced notes", () => {
-      const store = useResultsStore();
-      store.setRows([
-        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
-      ]);
-      store.tagLog = {
-        "s1::a.png::::": {
-          note: { content: "note", synced: true },
-        },
-      };
-
-      expect(store.reportCandidatesCount).toBe(0);
-    });
   });
 
   describe("hasAnyBug", () => {
@@ -588,13 +562,13 @@ describe("resultsStore", () => {
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.tagLog = {
-        "s1::a.png::::": { bug: { locked: true, synced: false }, note: { content: "test", synced: false } },
+        "s1::a.png::::": { bug: { locked: true, synced: false, note: "test" } },
       };
 
       store.openViewer(store.rows[0], "test", 0);
 
       expect(store.currentTags.bug.locked).toBe(true);
-      expect(store.currentTags.note.content).toBe("test");
+      expect(store.currentTags.bug.note).toBe("test");
     });
 
     it("falls back to test mode for invalid modes", () => {
@@ -885,29 +859,6 @@ describe("resultsStore", () => {
       expect(store.pendingTags[caseKey].bug).toBe(true);
     });
 
-    it("sets optimistic note for case", () => {
-      const store = useResultsStore();
-      const caseKey = "s1::a.png::::";
-
-      store.setOptimisticTag(caseKey, "note", "test note content");
-
-      expect(store.pendingTags[caseKey].note).toBe("test note content");
-      expect(store.tagLog[caseKey].note.content).toBe("test note content");
-      expect(store.tagLog[caseKey].note.synced).toBe(false);
-    });
-
-    it("updates existing note content", () => {
-      const store = useResultsStore();
-      const caseKey = "s1::a.png::::";
-      store.tagLog[caseKey] = {
-        note: { content: "old note", synced: true },
-      };
-
-      store.setOptimisticTag(caseKey, "note", "new note content");
-
-      expect(store.tagLog[caseKey].note.content).toBe("new note content");
-      expect(store.tagLog[caseKey].note.synced).toBe(false);
-    });
 
     it("clears existing sync error when setting optimistic tag", () => {
       const store = useResultsStore();

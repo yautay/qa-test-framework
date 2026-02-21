@@ -9,8 +9,8 @@ import {
 
 describe("notes.js", () => {
   describe("NOTE_MAX_LENGTH", () => {
-    it("is 200", () => {
-      expect(NOTE_MAX_LENGTH).toBe(200);
+    it("is 500", () => {
+      expect(NOTE_MAX_LENGTH).toBe(500);
     });
   });
 
@@ -136,9 +136,8 @@ describe("notes.js", () => {
     it("normalizes case entries", () => {
       const snapshot = {
         "key1": {
-          bug: { locked: "truthy", synced: 0 },
-          aso: { locked: true, synced: "yes" },
-          note: { content: "note1", synced: "no" },
+          bug: { locked: "truthy", synced: 0, note: "note1" },
+          aso: { locked: true, synced: "yes", note: "aso1" },
         },
       };
 
@@ -148,8 +147,8 @@ describe("notes.js", () => {
       expect(result.key1.bug.synced).toBe(false);
       expect(result.key1.aso.locked).toBe(true);
       expect(result.key1.aso.synced).toBe(true);
-      expect(result.key1.note.content).toBe("note1");
-      expect(result.key1.note.synced).toBe(false);
+      expect(result.key1.bug.note).toBe("note1");
+      expect(result.key1.aso.note).toBe("aso1");
     });
 
     it("handles missing fields with defaults", () => {
@@ -163,8 +162,8 @@ describe("notes.js", () => {
       expect(result.key1.bug.synced).toBe(false);
       expect(result.key1.aso.locked).toBe(false);
       expect(result.key1.aso.synced).toBe(false);
-      expect(result.key1.note.content).toBe("");
-      expect(result.key1.note.synced).toBe(false);
+      expect(result.key1.bug.note).toBe("");
+      expect(result.key1.aso.note).toBe("");
     });
 
     it("skips non-object entries", () => {
@@ -186,27 +185,25 @@ describe("notes.js", () => {
     it("normalizes note content", () => {
       const snapshot = {
         "key1": {
-          note: { content: "  test  ", synced: true },
+          bug: { note: "  test  ", synced: true },
         },
       };
 
       const result = normalizeCaseStateSnapshot(snapshot);
 
-      expect(result.key1.note.content).toBe("test");
-      expect(result.key1.note.synced).toBe(true);
+      expect(result.key1.bug.note).toBe("test");
     });
 
     it("handles non-string note content", () => {
       const snapshot = {
         "key1": {
-          note: { content: 12345, synced: 1 },
+          bug: { note: 12345, synced: 1 },
         },
       };
 
       const result = normalizeCaseStateSnapshot(snapshot);
 
-      expect(result.key1.note.content).toBe("");
-      expect(result.key1.note.synced).toBe(true);
+      expect(result.key1.bug.note).toBe("");
     });
   });
 });

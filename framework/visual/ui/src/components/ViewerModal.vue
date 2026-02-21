@@ -83,7 +83,7 @@
                         {{ mode.label }}
                       </option>
                     </select>
-              </div>
+                  </div>
                 </div>
                 <div class="slot-divider"></div>
                 <div class="slot-media">
@@ -94,6 +94,7 @@
                   </div>
                 </div>
               </div>
+            </div>
           </div>
 
         </div>
@@ -116,7 +117,6 @@ export default {
     presentationStyle: { type: Object, default: () => ({}) },
     imageStyle: { type: Object, default: () => ({}) },
     prompt: { type: Object, default: () => ({ active: false, type: null }) },
-    noteEditor: { type: Object, default: () => ({ active: false, text: "", hasExisting: false }) },
     keyHeld: { type: Object, default: () => ({}) },
     superZoomActive: { type: Boolean, default: false },
     slotImage: { type: Function, required: true },

@@ -421,9 +421,8 @@ describe("ReportPage", () => {
     const key = getRowTagKey(firstRow);
     store.updateTagLog({
       [key]: {
-        bug: { locked: true, synced: false },
+        bug: { locked: true, synced: false, note: "" },
         aso: { locked: false, synced: false },
-        note: { content: "", synced: false },
       },
     });
     await nextTick();
@@ -476,9 +475,8 @@ describe("ReportPage", () => {
     const key = getRowTagKey(firstRow);
     store.updateTagLog({
       [key]: {
-        bug: { locked: true, synced: false },
+        bug: { locked: true, synced: false, note: "" },
         aso: { locked: false, synced: false },
-        note: { content: "", synced: false },
       },
     });
     await nextTick();
@@ -661,20 +659,6 @@ describe("ReportPage", () => {
     wrapper.unmount();
   });
 
-  it("handles note key press", async () => {
-    const wrapper = mount(ReportPage, {
-      props: { runId: "run-1" },
-      global: { plugins: [pinia] },
-    });
-
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    document.dispatchEvent(new KeyboardEvent("keydown", { key: "n" }));
-    await new Promise((resolve) => setTimeout(resolve, 10));
-
-    wrapper.unmount();
-  });
-
   it("handles navigation keys a and d", async () => {
     const wrapper = mount(ReportPage, {
       props: { runId: "run-1" },
@@ -832,29 +816,6 @@ describe("promptSendReport logic", () => {
       expect(store.reportCandidatesCount).toBe(1);
     });
 
-    it("shows prompt for new NOTE", async () => {
-      store.setRows([
-        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
-      ]);
-      store.tagLog = {
-        "s1::a.png::::": { note: { content: "test note", synced: false } },
-      };
-
-      expect(store.reportCandidatesCount).toBe(1);
-    });
-
-    it("shows prompt for modified NOTE", async () => {
-      store.setRows([
-        { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
-      ]);
-      store.tagLog = {
-        "s1::a.png::::": {
-          note: { content: "modified", synced: false },
-        },
-      };
-
-      expect(store.reportCandidatesCount).toBe(1);
-    });
   });
 
   describe("API works - no new candidates", () => {

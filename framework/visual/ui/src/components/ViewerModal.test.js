@@ -30,7 +30,6 @@ describe("ViewerModal", () => {
       bug: { locked: false, synced: false },
       aso: { locked: false, synced: false },
       baseline: false,
-      note: { content: "", synced: false },
     },
     tagLog: {},
     tagLocked: {},
@@ -46,8 +45,6 @@ describe("ViewerModal", () => {
     presentationStyle: { width: "100%" },
     imageStyle: { transform: "scale(1)" },
     prompt: { active: false, type: null },
-    noteEditor: { active: false, text: "", hasExisting: false },
-    noteMaxLength: 200,
     keyHeld: {},
     superZoomActive: false,
     slotImage: (slot) => slot.mode === "ref" ? "/ref.png" : "/test.png",
@@ -158,19 +155,6 @@ describe("ViewerModal", () => {
       expect(badges.some(b => b.key === "baseline")).toBe(true);
     });
 
-    it("includes note badge when note exists", () => {
-      const viewer = {
-        ...defaultViewer,
-        tags: { ...defaultViewer.tags, note: { content: "Test note", synced: false } },
-      };
-      const wrapper = mount(ViewerModal, {
-        props: { ...defaultProps, viewer },
-      });
-
-      const badges = wrapper.vm.headerBadges;
-
-      expect(badges.some(b => b.key === "note")).toBe(true);
-    });
   });
 
   describe("scoringText", () => {
@@ -347,17 +331,5 @@ describe("ViewerModal", () => {
       expect(wrapper.emitted("set-columns")).toBeTruthy();
     });
 
-    it("emits open-note when note button clicked", async () => {
-      const wrapper = mount(ViewerModal, {
-        props: defaultProps,
-      });
-
-      const buttons = wrapper.findAll("button");
-      const noteButton = buttons.find(b => b.text().includes("note.button"));
-      if (noteButton) {
-        await noteButton.trigger("click");
-        expect(wrapper.emitted("open-note")).toBeTruthy();
-      }
-    });
   });
 });

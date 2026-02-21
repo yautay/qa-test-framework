@@ -55,34 +55,6 @@ describe("ResultsTable", () => {
     expect(rows[0].text()).not.toContain("passed");
   });
 
-  it("emits open-note when note badge is clicked", async () => {
-    const row = makeRow({ actual_path: "actual-note.png" });
-    const key = rowKey(row);
-    const wrapper = mount(ResultsTable, {
-      props: {
-        rows: [row],
-        fmt: (value) => String(value ?? ""),
-        tagLog: {
-          [key]: {
-            note: {
-              content: "Keep this result",
-              synced: false,
-            },
-          },
-        },
-        tagKeyForRow: rowKey,
-        selectedIndex: -1,
-      },
-    });
-
-    await wrapper.get(".note-badge").trigger("click");
-
-    const emitted = wrapper.emitted("open-note");
-    expect(emitted).toBeTruthy();
-    expect(emitted[0][0]).toEqual(row);
-    expect(emitted[0][1]).toBe(0);
-  });
-
   it("emits open-metadata when metadata icon is clicked", async () => {
     const row = makeRow({ actual_path: "actual-meta.png" });
     const wrapper = mount(ResultsTable, {
