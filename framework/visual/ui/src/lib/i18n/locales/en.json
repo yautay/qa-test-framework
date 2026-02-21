@@ -115,6 +115,11 @@
   "navigate": {
     "backToHero": "Press Shift to return to dashboard"
   },
+  "language": {
+    "english": "English",
+    "polish": "Polski",
+    "ukrainian": "Українська"
+  },
   "sync": {
     "errorPrefix": "Sync failed",
     "timeout": "Server not responding",
@@ -122,6 +127,8 @@
     "conflict": "Conflict with existing state",
     "buildHasErrors": "Build has sync issues",
     "tagAlreadyExists": "Tag is already set for this test case",
+    "pendingTooltip": "Sync in progress",
+    "unsyncedTooltip": "Sync is not complete",
     "failedCount": "failed",
     "pendingCount": "pending",
     "sendingCount": "sending",

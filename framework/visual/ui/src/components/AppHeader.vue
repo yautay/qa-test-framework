@@ -38,7 +38,7 @@
             class="btn"
             :class="locale === 'en' ? 'btn-primary' : 'btn-outline-primary'"
             @click="setLocale('en')"
-            title="English"
+            :title="t('language.english')"
           >
             🇬🇧
           </button>
@@ -47,7 +47,7 @@
             class="btn"
             :class="locale === 'pl' ? 'btn-primary' : 'btn-outline-primary'"
             @click="setLocale('pl')"
-            title="Polski"
+            :title="t('language.polish')"
           >
             🇵🇱
           </button>
@@ -56,7 +56,7 @@
             class="btn"
             :class="locale === 'uk' ? 'btn-primary' : 'btn-outline-primary'"
             @click="setLocale('uk')"
-            title="Українська"
+            :title="t('language.ukrainian')"
           >
             🇺🇦
           </button>
@@ -71,7 +71,7 @@
 
 <script>
 import { ref, onMounted, onUnmounted, computed } from "vue";
-import { locale, setLocale } from "../lib/i18n";
+import { locale, setLocale, t } from "../lib/i18n";
 import { currentTheme, setTheme, presets } from "../lib/themes";
 
 export default {
@@ -123,6 +123,7 @@ export default {
     return {
       locale,
       setLocale,
+      t,
       currentTheme,
       currentPreset: computed(() => presets[currentTheme.value]),
       setTheme,

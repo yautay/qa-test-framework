@@ -155,6 +155,27 @@ describe("ViewerModal", () => {
       expect(badges.some(b => b.key === "baseline")).toBe(true);
     });
 
+    it("shows sync warning when one tag is unsynced", () => {
+      const viewer = {
+        ...defaultViewer,
+        tags: {
+          bug: { locked: true, synced: true },
+          aso: { locked: true, synced: false },
+          baseline: false,
+        },
+        currentTagKey: "test-case",
+        syncErrors: {},
+        pendingTags: {},
+      };
+      const wrapper = mount(ViewerModal, {
+        props: { ...defaultProps, viewer },
+      });
+
+      const warning = wrapper.find(".modal-header-badges .badge.bg-warning.text-dark.me-1");
+      expect(warning.exists()).toBe(true);
+      expect(warning.attributes("title")).toBe("sync.unsyncedTooltip");
+    });
+
   });
 
   describe("scoringText", () => {

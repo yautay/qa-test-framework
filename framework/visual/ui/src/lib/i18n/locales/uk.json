@@ -115,6 +115,11 @@
   "navigate": {
     "backToHero": "Натисніть Shift, щоб повернутися до панелі"
   },
+  "language": {
+    "english": "Англійська",
+    "polish": "Польська",
+    "ukrainian": "Українська"
+  },
   "sync": {
     "errorPrefix": "Помилка синхронізації",
     "timeout": "Сервер не відповідає",
@@ -122,6 +127,8 @@
     "conflict": "Конфлікт з існуючим станом",
     "buildHasErrors": "Build має проблеми з синхронізацією",
     "tagAlreadyExists": "Тег вже встановлено для цього тестового випадку",
+    "pendingTooltip": "Синхронізація триває",
+    "unsyncedTooltip": "Синхронізація не завершена",
     "failedCount": "помилки",
     "pendingCount": "очікує",
     "sendingCount": "надсилається",

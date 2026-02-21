@@ -7,6 +7,7 @@ import AppHeader from "./AppHeader.vue";
 vi.mock("../lib/i18n", () => ({
   locale: ref("en"),
   setLocale: vi.fn(),
+  t: (key) => key,
 }));
 
 vi.mock("../lib/themes", () => ({

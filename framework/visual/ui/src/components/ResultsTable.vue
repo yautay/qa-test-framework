@@ -35,9 +35,9 @@
             <td class="small-col mono">{{ fmt(r.dists) }}</td>
             <td style="max-width: 420px;">
               <div class="d-flex flex-wrap gap-1 mb-1">
-                <span v-if="rowHasSyncError(r)" 
+                <span v-if="rowHasSyncIssue(r)" 
                       class="badge bg-warning text-dark sync-error-icon" 
-                      :title="getSyncErrorMessage(r)">
+                      :title="getSyncIssueMessage(r)">
                   ⚠
                 </span>
                 <span v-if="rowHasTag(r, 'bug')" 
@@ -165,14 +165,46 @@ export default {
     badgeStyle(type, value) {
       return computeBadgeStyle(type, value);
     },
-    rowHasSyncError(row) {
+    getSyncIssue(row) {
       const key = this.tagKeyForRow(row);
-      return !!this.syncErrors?.[key];
+      if (!key) return { hasIssue: false, title: "" };
+      const tags = this.tagLog?.[key] || {};
+      const pending = this.pendingTags?.[key] || {};
+      const syncError = this.syncErrors?.[key] || null;
+      const bugUnsynced = !!tags.bug?.locked && !tags.bug?.synced;
+      const asoUnsynced = !!tags.aso?.locked && !tags.aso?.synced;
+      const bugPending = !!pending.bug;
+      const asoPending = !!pending.aso;
+
+      if (syncError) {
+        const message = syncError.message || t("sync.unknown");
+        return {
+          hasIssue: true,
+          title: `${t("sync.errorPrefix")}: ${message}`,
+        };
+      }
+
+      if (bugPending || asoPending) {
+        return {
+          hasIssue: true,
+          title: t("sync.pendingTooltip"),
+        };
+      }
+
+      if (bugUnsynced || asoUnsynced) {
+        return {
+          hasIssue: true,
+          title: t("sync.unsyncedTooltip"),
+        };
+      }
+
+      return { hasIssue: false, title: "" };
     },
-    getSyncErrorMessage(row) {
-      const key = this.tagKeyForRow(row);
-      const error = this.syncErrors?.[key];
-      return error?.message || "";
+    rowHasSyncIssue(row) {
+      return this.getSyncIssue(row).hasIssue;
+    },
+    getSyncIssueMessage(row) {
+      return this.getSyncIssue(row).title;
     },
     isPendingTag(row, tagType) {
       const key = this.tagKeyForRow(row);

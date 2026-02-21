@@ -74,4 +74,49 @@ describe("ResultsTable", () => {
     expect(emitted[0][0]).toEqual(row);
     expect(emitted[0][1]).toBe(0);
   });
+
+  it("shows sync warning when one tag remains unsynced", () => {
+    const row = makeRow();
+    const key = rowKey(row);
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [row],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {
+          [key]: {
+            bug: { locked: true, synced: true },
+            aso: { locked: true, synced: false },
+            baseline: false,
+          },
+        },
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    const warning = wrapper.find(".sync-error-icon");
+    expect(warning.exists()).toBe(true);
+    expect(warning.attributes("title")).toBe("sync.unsyncedTooltip");
+  });
+
+  it("shows localized error tooltip when sync error exists", () => {
+    const row = makeRow();
+    const key = rowKey(row);
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [row],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {},
+        syncErrors: {
+          [key]: { message: "timeout" },
+        },
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    const warning = wrapper.find(".sync-error-icon");
+    expect(warning.exists()).toBe(true);
+    expect(warning.attributes("title")).toBe("sync.errorPrefix: timeout");
+  });
 });

@@ -10,9 +10,9 @@
               </div>
               <div class="modal-header-meta">
                 <div v-if="headerBadges.length" class="modal-header-badges">
-                  <span v-if="viewerSyncError" 
+                  <span v-if="viewerHasSyncIssue" 
                         class="badge bg-warning text-dark me-1" 
-                        :title="viewerSyncError.message">
+                        :title="viewerSyncIssueTitle">
                     ⚠
                   </span>
                   <span v-for="badge in headerBadges" :key="badge.key" 
@@ -210,6 +210,27 @@ export default {
       const key = this.viewer.currentTagKey;
       if (!key) return {};
       return this.viewer.pendingTags?.[key] || {};
+    },
+    viewerHasSyncIssue() {
+      const tags = this.viewer.tags || {};
+      const pending = this.viewerPendingTags || {};
+      const hasError = !!this.viewerSyncError;
+      const hasPending = !!pending.bug || !!pending.aso;
+      const hasUnsynced =
+        (!!tags.bug?.locked && !tags.bug?.synced) ||
+        (!!tags.aso?.locked && !tags.aso?.synced);
+      return hasError || hasPending || hasUnsynced;
+    },
+    viewerSyncIssueTitle() {
+      if (this.viewerSyncError) {
+        const message = this.viewerSyncError.message || this.t("sync.unknown");
+        return `${this.t("sync.errorPrefix")}: ${message}`;
+      }
+      const pending = this.viewerPendingTags || {};
+      if (pending.bug || pending.aso) {
+        return this.t("sync.pendingTooltip");
+      }
+      return this.t("sync.unsyncedTooltip");
     },
   },
   methods: {
