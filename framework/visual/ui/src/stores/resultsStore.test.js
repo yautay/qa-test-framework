@@ -874,4 +874,143 @@ describe("resultsStore", () => {
       expect(store.isTagReported("bug")).toBe(false);
     });
   });
+
+  describe("setOptimisticTag", () => {
+    it("sets optimistic tag for case", () => {
+      const store = useResultsStore();
+      const caseKey = "s1::a.png::::";
+
+      store.setOptimisticTag(caseKey, "bug");
+
+      expect(store.pendingTags[caseKey].bug).toBe(true);
+    });
+
+    it("clears existing sync error when setting optimistic tag", () => {
+      const store = useResultsStore();
+      const caseKey = "s1::a.png::::";
+      store.syncErrors[caseKey] = { message: "timeout", timestamp: Date.now() };
+
+      store.setOptimisticTag(caseKey, "bug");
+
+      expect(store.syncErrors[caseKey]).toBeUndefined();
+    });
+
+    it("does nothing with invalid inputs", () => {
+      const store = useResultsStore();
+
+      store.setOptimisticTag(null, "bug");
+      store.setOptimisticTag("key", null);
+      store.setOptimisticTag("", "bug");
+
+      expect(store.pendingTags).toEqual({});
+    });
+  });
+
+  describe("confirmTagSync", () => {
+    it("removes pending tag after successful sync", () => {
+      const store = useResultsStore();
+      const caseKey = "s1::a.png::::";
+      store.pendingTags[caseKey] = { bug: true, aso: false };
+
+      store.confirmTagSync(caseKey, "bug");
+
+      expect(store.pendingTags[caseKey].bug).toBeUndefined();
+    });
+
+    it("clears sync error on confirm", () => {
+      const store = useResultsStore();
+      const caseKey = "s1::a.png::::";
+      store.pendingTags[caseKey] = { bug: true };
+      store.syncErrors[caseKey] = { message: "timeout", timestamp: Date.now() };
+
+      store.confirmTagSync(caseKey, "bug");
+
+      expect(store.syncErrors[caseKey]).toBeUndefined();
+    });
+
+    it("removes case from pending when no tags left", () => {
+      const store = useResultsStore();
+      const caseKey = "s1::a.png::::";
+      store.pendingTags[caseKey] = { bug: true };
+
+      store.confirmTagSync(caseKey, "bug");
+
+      expect(store.pendingTags[caseKey]).toBeUndefined();
+    });
+  });
+
+  describe("setSyncError", () => {
+    it("sets sync error for case", () => {
+      const store = useResultsStore();
+      const caseKey = "s1::a.png::::";
+
+      store.setSyncError(caseKey, "timeout");
+
+      expect(store.syncErrors[caseKey].message).toBe("timeout");
+      expect(store.syncErrors[caseKey].timestamp).toBeDefined();
+    });
+
+    it("defaults error message to unknown", () => {
+      const store = useResultsStore();
+      const caseKey = "s1::a.png::::";
+
+      store.setSyncError(caseKey, null);
+
+      expect(store.syncErrors[caseKey].message).toBe("unknown");
+    });
+  });
+
+  describe("clearSyncError", () => {
+    it("removes sync error for case", () => {
+      const store = useResultsStore();
+      const caseKey = "s1::a.png::::";
+      store.syncErrors[caseKey] = { message: "timeout", timestamp: Date.now() };
+
+      store.clearSyncError(caseKey);
+
+      expect(store.syncErrors[caseKey]).toBeUndefined();
+    });
+  });
+
+  describe("hasPendingTag", () => {
+    it("returns true when tag is pending", () => {
+      const store = useResultsStore();
+      const caseKey = "s1::a.png::::";
+      store.pendingTags[caseKey] = { bug: true };
+
+      expect(store.hasPendingTag(caseKey, "bug")).toBe(true);
+    });
+
+    it("returns false when tag is not pending", () => {
+      const store = useResultsStore();
+      const caseKey = "s1::a.png::::";
+      store.pendingTags[caseKey] = { bug: true };
+
+      expect(store.hasPendingTag(caseKey, "aso")).toBe(false);
+    });
+
+    it("returns false when case has no pending tags", () => {
+      const store = useResultsStore();
+
+      expect(store.hasPendingTag("s1::a.png::::", "bug")).toBe(false);
+    });
+  });
+
+  describe("getSyncError", () => {
+    it("returns sync error for case", () => {
+      const store = useResultsStore();
+      const caseKey = "s1::a.png::::";
+      store.syncErrors[caseKey] = { message: "timeout", timestamp: 123 };
+
+      const error = store.getSyncError(caseKey);
+
+      expect(error.message).toBe("timeout");
+    });
+
+    it("returns null when no error", () => {
+      const store = useResultsStore();
+
+      expect(store.getSyncError("s1::a.png::::")).toBeNull();
+    });
+  });
 });

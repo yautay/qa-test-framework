@@ -3,7 +3,10 @@
     <div class="card-body d-flex flex-column gap-2">
       <div class="d-flex justify-content-between align-items-center gap-2">
         <div class="mono fw-semibold">{{ report.run_id }}</div>
-        <span class="badge text-bg-secondary">{{ report.total || 0 }} {{ t('card.tests') }}</span>
+        <div class="d-flex gap-1">
+          <span v-if="hasSyncErrors" class="badge bg-warning text-dark" :title="t('sync.buildHasErrors')">⚠</span>
+          <span class="badge text-bg-secondary">{{ report.total || 0 }} {{ t('card.tests') }}</span>
+        </div>
       </div>
 
       <div class="text-muted small">{{ report.updated_at || "unknown" }}</div>
@@ -38,6 +41,10 @@ export default {
     report: {
       type: Object,
       required: true,
+    },
+    hasSyncErrors: {
+      type: Boolean,
+      default: false,
     },
   },
   computed: {

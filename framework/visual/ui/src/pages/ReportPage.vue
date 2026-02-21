@@ -18,6 +18,7 @@
       :tag-log="store.tagLog" 
       :tag-key-for-row="getRowTagKey"
       :selected-index="store.selectedIndex"
+      :sync-errors="store.syncErrors"
       @show="show"
       @select="store.selectRow"
       @open-note="openNoteFromTable"
@@ -67,6 +68,7 @@
       :metadata="metadataPanel.payload"
       @close="closeMetadataPanel"
     />
+    <SyncToasts />
   </div>
 </template>
 
@@ -79,9 +81,11 @@ import ResultsTable from "../components/ResultsTable.vue";
 import TestMetadataPanel from "../components/TestMetadataPanel.vue";
 import ViewerModal from "../components/ViewerModal.vue";
 import ConfirmPrompt from "../components/ConfirmPrompt.vue";
+import SyncToasts from "../components/SyncToasts.vue";
 import { fmt } from "../lib/format";
 import { t } from "../lib/i18n";
 import { useResultsStore } from "../stores/resultsStore";
+import { useReportsStore } from "../stores/reportsStore";
 import { Modal } from "bootstrap";
 import { getRowTagKey } from "../lib/viewer";
 import { requestBaselineChallengeForRun, sendBaselineSelectionForRun } from "../lib/baselineApi";
@@ -96,6 +100,7 @@ import {
 } from "../lib/api/reportsApi";
 import { NOTE_MAX_LENGTH, normalizeNoteDraft, sanitizeNoteText } from "../lib/notes";
 import { buildReportAssetSrc, buildRefApiSrc } from "../composables/useUrlUtils";
+import { useSyncAlerts } from "../composables/useSyncAlerts";
 
 const props = defineProps({
   runId: {
@@ -105,6 +110,8 @@ const props = defineProps({
 });
 
 const store = useResultsStore();
+const reportsStore = useReportsStore();
+const { showToast } = useSyncAlerts();
 const superZoomActive = ref(false);
 const keyHeld = ref({ a: false, d: false, w: false, s: false, c: false });
 const pressedKeys = ref(new Set());
@@ -176,6 +183,8 @@ const viewerForModal = computed(() => ({
   cursorY: store.cursorY,
   tags: store.currentTags,
   tagLog: store.tagLog,
+  syncErrors: store.syncErrors,
+  currentTagKey: store.currentTagKey,
   currentIndex: store.currentIndex,
   slots: store.slots,
   slotModes: store.slotModes,
@@ -763,6 +772,12 @@ async function postEvent(eventType, payload) {
   const lockOk = await ensureLock();
   if (!lockOk) return;
   const key = getRowTagKey(store.modalRow);
+  const tagType = eventType === "BUG_SET" ? "bug" : eventType === "ASO_SET" ? "aso" : null;
+  
+  if (tagType) {
+    store.setOptimisticTag(key, tagType);
+  }
+  
   try {
     const result = await postBuildEvent(props.runId, {
       event_id: generateEventId(),
@@ -773,10 +788,20 @@ async function postEvent(eventType, payload) {
     debugLog("DEBUG postBuildEvent result:", result);
     applyStateFromResponse(result);
     if (!result?.accepted) {
-      console.info(`Event ${eventType} failed for ${key}`);
+      const errorMsg = result?.error || "unknown";
+      store.setSyncError(key, errorMsg);
+      reportsStore.setReportSyncError(props.runId, { message: errorMsg });
+      showToast(`${t("sync.errorPrefix")}: ${t("sync." + errorMsg) || errorMsg}`, "error");
+    } else if (tagType) {
+      store.confirmTagSync(key, tagType);
+      reportsStore.clearReportSyncError(props.runId);
     }
   } catch (error) {
     console.info(`Send ${eventType} failed: ${error?.message || "unknown error"}`);
+    const errorMsg = error?.isNoResponse ? "timeout" : error?.message || "unknown";
+    store.setSyncError(key, errorMsg);
+    reportsStore.setReportSyncError(props.runId, { message: errorMsg });
+    showToast(`${t("sync.errorPrefix")}: ${t("sync." + errorMsg) || errorMsg}`, "error");
   }
 }
 

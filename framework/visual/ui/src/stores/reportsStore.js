@@ -10,9 +10,13 @@ export const useReportsStore = defineStore("reports", {
     selectedTester: "",
     refreshTimer: null,
     refreshInFlight: false,
+    syncErrors: {},
   }),
 
   getters: {
+    getReportSyncErrors: (state) => (runId) => {
+      return state.syncErrors[runId] || null;
+    },
     testerOptions: (state) => {
       const unique = new Set();
       for (const item of state.reports) {
@@ -75,6 +79,24 @@ export const useReportsStore = defineStore("reports", {
         window.clearInterval(this.refreshTimer);
         this.refreshTimer = null;
       }
+    },
+
+    setReportSyncError(runId, error) {
+      if (!runId) return;
+      this.syncErrors[runId] = {
+        message: error?.message || "sync failed",
+        timestamp: Date.now(),
+      };
+    },
+
+    clearReportSyncError(runId) {
+      if (!runId) return;
+      delete this.syncErrors[runId];
+    },
+
+    hasReportSyncErrors(runId) {
+      if (!runId) return false;
+      return !!this.syncErrors[runId];
     },
   },
 });

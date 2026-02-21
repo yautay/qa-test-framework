@@ -1371,6 +1371,14 @@ def _build_handler(context: ReportServerContext):
                             event=event_entry,
                         )
                         _record_event_attempt(event_entry, accepted, error)
+                        if not accepted:
+                            logger.error(
+                                "tag_sync_failed",
+                                run_id=run_id,
+                                case_id=case_id,
+                                event_type=event_type,
+                                error=error or "unknown",
+                            )
                         if accepted:
                             _mark_case_synced(case_state, event_type)
 

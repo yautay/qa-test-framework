@@ -126,5 +126,12 @@
   },
   "navigate": {
     "backToHero": "Press Shift to return to dashboard"
+  },
+  "sync": {
+    "errorPrefix": "Sync failed",
+    "timeout": "Server not responding",
+    "unknown": "Unknown error",
+    "conflict": "Conflict with existing state",
+    "buildHasErrors": "Build has sync issues"
   }
 }

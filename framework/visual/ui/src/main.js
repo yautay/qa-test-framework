@@ -9,4 +9,13 @@ import bootstrap from "bootstrap/dist/js/bootstrap.bundle.min.js";
 const pinia = createPinia();
 
 initTheme();
-createApp(App).use(pinia).mount("#app");
+const app = createApp(App);
+app.use(pinia);
+
+if (import.meta.env.DEV) {
+  import("vue-devtools").then((vueDevtools) => {
+    app.use(vueDevtools.default);
+  });
+}
+
+app.mount("#app");

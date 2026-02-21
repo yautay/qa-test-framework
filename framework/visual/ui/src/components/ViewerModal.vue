@@ -10,6 +10,11 @@
               </div>
               <div class="modal-header-meta">
                 <div v-if="headerBadges.length" class="modal-header-badges">
+                  <span v-if="viewerSyncError" 
+                        class="badge bg-warning text-dark me-1" 
+                        :title="viewerSyncError.message">
+                    ⚠
+                  </span>
                   <span v-for="badge in headerBadges" :key="badge.key" class="badge" :class="badge.class" :style="badge.style">
                     {{ badge.label }}
                   </span>
@@ -245,6 +250,11 @@ export default {
       return `${this.t("modal.scoringLabel")}: ${this.t("modal.scoringPixel")} ${pixel} / ${this.t(
         "modal.scoringLpips"
       )} ${lpips} / ${this.t("modal.scoringDists")} ${dists}`;
+    },
+    viewerSyncError() {
+      const key = this.viewer.currentTagKey;
+      if (!key) return null;
+      return this.viewer.syncErrors?.[key] || null;
     },
   },
   methods: {

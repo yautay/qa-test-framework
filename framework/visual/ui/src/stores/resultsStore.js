@@ -116,6 +116,8 @@ export const useResultsStore = defineStore("results", {
     slots: [],
     slotModes: { 1: "ref", 2: "test", 3: "diff", 4: "lpips" },
     tagLog: {},
+    pendingTags: {},
+    syncErrors: {},
 
     selectedIndex: -1,
     loadError: "",
@@ -419,6 +421,55 @@ export const useResultsStore = defineStore("results", {
     resetCursor() {
       this.cursorX = 50;
       this.cursorY = 50;
+    },
+
+    setOptimisticTag(caseKey, type) {
+      if (!caseKey || !type) return;
+      const existing = this.pendingTags[caseKey] || {};
+      this.pendingTags[caseKey] = { ...existing, [type]: true };
+      delete this.syncErrors[caseKey];
+    },
+
+    confirmTagSync(caseKey, type) {
+      if (!caseKey || !type) return;
+      const pending = this.pendingTags[caseKey];
+      if (pending) {
+        delete pending[type];
+        if (Object.keys(pending).length === 0) {
+          delete this.pendingTags[caseKey];
+        } else {
+          this.pendingTags[caseKey] = pending;
+        }
+      }
+      delete this.syncErrors[caseKey];
+    },
+
+    setSyncError(caseKey, message) {
+      if (!caseKey) return;
+      this.syncErrors[caseKey] = {
+        message: message || 'unknown',
+        timestamp: Date.now(),
+      };
+      const pending = this.pendingTags[caseKey];
+      if (pending) {
+        delete pending[type];
+        if (Object.keys(pending).length === 0) {
+          delete this.pendingTags[caseKey];
+        }
+      }
+    },
+
+    clearSyncError(caseKey) {
+      if (!caseKey) return;
+      delete this.syncErrors[caseKey];
+    },
+
+    hasPendingTag(caseKey, type) {
+      return !!this.pendingTags[caseKey]?.[type];
+    },
+
+    getSyncError(caseKey) {
+      return this.syncErrors[caseKey] || null;
     },
   },
 });

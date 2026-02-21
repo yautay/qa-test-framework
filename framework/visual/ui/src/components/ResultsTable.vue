@@ -35,6 +35,11 @@
             <td class="small-col mono">{{ fmt(r.dists) }}</td>
             <td style="max-width: 420px;">
               <div class="d-flex flex-wrap gap-1 mb-1">
+                <span v-if="rowHasSyncError(r)" 
+                      class="badge bg-warning text-dark sync-error-icon" 
+                      :title="getSyncErrorMessage(r)">
+                  ⚠
+                </span>
                 <span v-if="rowHasTag(r, 'bug')" class="badge bg-danger">{{ t('tags.bug') }}</span>
                 <span v-if="rowHasTag(r, 'aso')" class="badge bg-warning text-dark">{{ t('tags.aso') }}</span>
                 <span v-if="rowHasTag(r, 'baseline')" class="badge bg-success">{{ t('tags.baseline') }}</span>
@@ -129,6 +134,10 @@ export default {
       type: Number,
       default: -1,
     },
+    syncErrors: {
+      type: Object,
+      default: () => ({}),
+    },
   },
   emits: ["show", "select", "open-note", "open-metadata"],
   methods: {
@@ -162,6 +171,15 @@ export default {
     },
     badgeStyle(type, value) {
       return computeBadgeStyle(type, value);
+    },
+    rowHasSyncError(row) {
+      const key = this.tagKeyForRow(row);
+      return !!this.syncErrors?.[key];
+    },
+    getSyncErrorMessage(row) {
+      const key = this.tagKeyForRow(row);
+      const error = this.syncErrors?.[key];
+      return error?.message || "";
     },
   },
 };
@@ -258,6 +276,10 @@ export default {
 
 .note-badge:hover {
   border-color: var(--filter-highlight-border, var(--primary));
+}
+
+.sync-error-icon {
+  cursor: help;
 }
 
 .metadata-icon {

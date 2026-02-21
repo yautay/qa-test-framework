@@ -255,4 +255,92 @@ describe("reportsStore", () => {
       store.stopAutoRefresh();
     });
   });
+
+  describe("sync errors", () => {
+    it("initializes with empty syncErrors", () => {
+      const store = useReportsStore();
+
+      expect(store.syncErrors).toEqual({});
+    });
+
+    it("setReportSyncError sets error for runId", () => {
+      const store = useReportsStore();
+
+      store.setReportSyncError("run-123", { message: "timeout" });
+
+      expect(store.syncErrors["run-123"].message).toBe("timeout");
+      expect(store.syncErrors["run-123"].timestamp).toBeDefined();
+    });
+
+    it("setReportSyncError defaults message", () => {
+      const store = useReportsStore();
+
+      store.setReportSyncError("run-123", null);
+
+      expect(store.syncErrors["run-123"].message).toBe("sync failed");
+    });
+
+    it("setReportSyncError does nothing with empty runId", () => {
+      const store = useReportsStore();
+
+      store.setReportSyncError("", { message: "error" });
+      store.setReportSyncError(null, { message: "error" });
+
+      expect(store.syncErrors).toEqual({});
+    });
+
+    it("clearReportSyncError removes error", () => {
+      const store = useReportsStore();
+      store.syncErrors = { "run-123": { message: "timeout", timestamp: 123 } };
+
+      store.clearReportSyncError("run-123");
+
+      expect(store.syncErrors["run-123"]).toBeUndefined();
+    });
+
+    it("clearReportSyncError does nothing with empty runId", () => {
+      const store = useReportsStore();
+      store.syncErrors = { "run-123": { message: "timeout", timestamp: 123 } };
+
+      store.clearReportSyncError("");
+      store.clearReportSyncError(null);
+
+      expect(store.syncErrors["run-123"]).toBeDefined();
+    });
+
+    it("hasReportSyncErrors returns true when error exists", () => {
+      const store = useReportsStore();
+      store.syncErrors = { "run-123": { message: "timeout", timestamp: 123 } };
+
+      expect(store.hasReportSyncErrors("run-123")).toBe(true);
+    });
+
+    it("hasReportSyncErrors returns false when no error", () => {
+      const store = useReportsStore();
+
+      expect(store.hasReportSyncErrors("run-123")).toBe(false);
+    });
+
+    it("hasReportSyncErrors returns false with empty runId", () => {
+      const store = useReportsStore();
+
+      expect(store.hasReportSyncErrors("")).toBe(false);
+      expect(store.hasReportSyncErrors(null)).toBe(false);
+    });
+
+    it("getReportSyncErrors returns error object", () => {
+      const store = useReportsStore();
+      store.syncErrors = { "run-123": { message: "timeout", timestamp: 123 } };
+
+      const result = store.getReportSyncErrors("run-123");
+
+      expect(result.message).toBe("timeout");
+    });
+
+    it("getReportSyncErrors returns null when no error", () => {
+      const store = useReportsStore();
+
+      expect(store.getReportSyncErrors("run-123")).toBeNull();
+    });
+  });
 });

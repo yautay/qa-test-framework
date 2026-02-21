@@ -126,5 +126,12 @@
   },
   "navigate": {
     "backToHero": "Naciśnij Shift aby wrócić do dashboardu"
+  },
+  "sync": {
+    "errorPrefix": "Błąd synchronizacji",
+    "timeout": "Serwer nie odpowiada",
+    "unknown": "Nieznany błąd",
+    "conflict": "Konflikt z istniejącym stanem",
+    "buildHasErrors": "Build ma problemy z synchronizacją"
   }
 }
