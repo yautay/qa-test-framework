@@ -778,6 +778,15 @@ async function postEvent(eventType, payload) {
   const tagType = eventType === "BUG_SET" ? "bug" : eventType === "ASO_SET" ? "aso" : null;
   
   if (tagType) {
+    const existingTag = store.tagLog?.[key];
+    if (tagType === 'bug' && existingTag?.bug?.locked) {
+      showToast(t("sync.tagAlreadyExists"), "warning");
+      return;
+    }
+    if (tagType === 'aso' && existingTag?.aso?.locked) {
+      showToast(t("sync.tagAlreadyExists"), "warning");
+      return;
+    }
     store.setOptimisticTag(key, tagType);
   }
   

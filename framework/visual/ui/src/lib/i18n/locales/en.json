@@ -132,6 +132,7 @@
     "timeout": "Server not responding",
     "unknown": "Unknown error",
     "conflict": "Conflict with existing state",
-    "buildHasErrors": "Build has sync issues"
+    "buildHasErrors": "Build has sync issues",
+    "tagAlreadyExists": "Tag is already set for this test case"
   }
 }
