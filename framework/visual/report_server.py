@@ -235,7 +235,12 @@ def _list_reports_payload(context: ReportServerContext) -> list[dict[str, Any]]:
             updated_at = 0
 
         build_dir = report_dir.parent
-        state = _load_state(build_dir)
+        with context._lock:
+            state = _load_state(build_dir)
+            if not context.reporting_enabled:
+                synced_cases, sent_events = _treat_reporting_disabled_as_success(state)
+                if synced_cases > 0 or sent_events > 0:
+                    _save_state(build_dir, state)
         test_cases = state.get("test_cases", {})
         outbox = state.get("outbox", [])
 
@@ -745,6 +750,50 @@ def _mark_case_synced(case_state: dict[str, Any], event_type: str) -> None:
         case_state["aso"]["synced"] = True
 
 
+def _is_reporting_tag_event(event_type: str) -> bool:
+    return event_type in {"BUG_SET", "ASO_SET"}
+
+
+def _treat_reporting_disabled_as_success(state: dict[str, Any]) -> tuple[int, int]:
+    synced_cases = 0
+    sent_events = 0
+
+    test_cases = state.get("test_cases", {})
+    if isinstance(test_cases, dict):
+        for case_id, raw_case in test_cases.items():
+            if not isinstance(case_id, str):
+                continue
+            case_state = _ensure_case_state(state, case_id)
+            bug = case_state.get("bug", {}) if isinstance(case_state.get("bug"), dict) else {}
+            aso = case_state.get("aso", {}) if isinstance(case_state.get("aso"), dict) else {}
+
+            changed = False
+            if bool(bug.get("locked")) and not bool(bug.get("synced")):
+                case_state["bug"]["synced"] = True
+                changed = True
+            if bool(aso.get("locked")) and not bool(aso.get("synced")):
+                case_state["aso"]["synced"] = True
+                changed = True
+            if changed:
+                synced_cases += 1
+
+    outbox = state.get("outbox", [])
+    if isinstance(outbox, list):
+        for entry in outbox:
+            if not isinstance(entry, dict):
+                continue
+            event_type = str(entry.get("type", "")).upper()
+            if not _is_reporting_tag_event(event_type):
+                continue
+            status = str(entry.get("status", "pending")).lower()
+            if status in {"sent", "superseded"}:
+                continue
+            _record_event_attempt(entry, True, "")
+            sent_events += 1
+
+    return synced_cases, sent_events
+
+
 def _resolve_sync_workers(configured_workers: int | None) -> int:
     cpu = os.cpu_count() or 2
     auto_workers = min(12, max(2, cpu * 2))
@@ -857,6 +906,18 @@ def _flush_pending(
             event_id = str(event.get("event_id", "")).strip()
             if event_id:
                 event_ids_to_send.append(event_id)
+
+        if not context.reporting_enabled:
+            synced_cases, sent_events = _treat_reporting_disabled_as_success(state)
+            if synced_cases > 0 or sent_events > 0:
+                _save_state(build_dir, state)
+            logger.debug(
+                "reporting_api_disabled_skipping_sync",
+                run_id=run_id,
+                source="report_flush",
+                events_count=sent_events,
+            )
+            return state
 
     scheduled: list[Future[Any]] = []
     for event_id in event_ids_to_send:
@@ -1203,7 +1264,12 @@ def _build_handler(context: ReportServerContext):
                     self._send_json(HTTPStatus.NOT_FOUND, {"error": "report not found", "run_id": run_id})
                     return True
                 build_dir = report_dir.parent
-                state = _load_state(build_dir)
+                with context._lock:
+                    state = _load_state(build_dir)
+                    if not context.reporting_enabled:
+                        synced_cases, sent_events = _treat_reporting_disabled_as_success(state)
+                        if synced_cases > 0 or sent_events > 0:
+                            _save_state(build_dir, state)
                 self._send_json(HTTPStatus.OK, {"run_id": run_id, "state": state})
                 return True
 
@@ -1513,6 +1579,10 @@ def _build_handler(context: ReportServerContext):
                             "test_case_id": case_id,
                         }
                         outbox.append(event_entry)
+
+                        if not context.reporting_enabled:
+                            _record_event_attempt(event_entry, True, "")
+                            _mark_case_synced(case_state, event_type)
 
                         _save_state(build_dir, state)
 
