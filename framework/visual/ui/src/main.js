@@ -13,7 +13,7 @@ const app = createApp(App);
 app.use(pinia);
 
 if (import.meta.env.DEV) {
-  import("vue-devtools").then((vueDevtools) => {
+  import("@vue/devtools").then((vueDevtools) => {
     app.use(vueDevtools.default);
   });
 }
