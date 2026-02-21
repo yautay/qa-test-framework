@@ -15,7 +15,6 @@
           ></textarea>
           <div class="prompt-counter">{{ noteLength }}/{{ noteMaxLength }}</div>
         </div>
-        <div class="global-prompt-hints">{{ t('prompt.shiftNo') }} &nbsp;•&nbsp; {{ t('prompt.spaceYes') }}</div>
         <div class="global-prompt-actions">
           <button type="button" class="btn btn-sm btn-primary" @click="$emit('confirm')">{{ t('prompt.yes') }}</button>
           <button type="button" class="btn btn-sm btn-outline-secondary" @click="$emit('cancel')">{{ t('prompt.no') }}</button>

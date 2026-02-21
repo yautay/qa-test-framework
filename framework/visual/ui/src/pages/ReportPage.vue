@@ -555,10 +555,14 @@ function handleKeydown(evt) {
     }
   } else if (k.toUpperCase() === "S") {
     if (!store.isTagLocked("bug")) {
+      evt.preventDefault();
+      evt.stopPropagation();
       promptTag("bug");
     }
   } else if (k.toUpperCase() === "C") {
     if (!store.isTagLocked("aso")) {
+      evt.preventDefault();
+      evt.stopPropagation();
       promptTag("aso");
     }
   } else if (k === "\\") {
@@ -655,6 +659,9 @@ function promptTag(type) {
 
 function handlePromptKeydown(evt) {
   if (!prompt.value.active) return false;
+  if (prompt.value.type === "bug" || prompt.value.type === "aso") {
+    return false;
+  }
   const target = evt.target;
   const tagName = target?.tagName?.toLowerCase?.();
   if (tagName === "textarea" || tagName === "input") {

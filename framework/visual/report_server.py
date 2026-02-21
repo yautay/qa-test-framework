@@ -6,7 +6,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from secrets import token_urlsafe
-from threading import Lock
+from threading import Lock, Thread
 from typing import Any, cast
 from urllib.parse import parse_qs, unquote, urlparse
 import json
@@ -1322,6 +1322,8 @@ def _build_handler(context: ReportServerContext):
                         return
 
                     build_dir = report_dir.parent
+                    reporting_enabled = False
+                    event_id_to_send = ""
                     with context._lock:
                         state = _load_state(build_dir)
                         outbox = state.setdefault("outbox", [])
@@ -1379,50 +1381,50 @@ def _build_handler(context: ReportServerContext):
                         reporting_enabled = bool(
                             context.reporting_enabled and context.reporting_client and context.reporting_client.enabled
                         )
-                        if not reporting_enabled:
-                            logger.debug(
-                                "reporting_api_disabled_skipping_sync",
-                                run_id=run_id,
-                                event_type=event_type,
-                                case_id=case_id,
-                            )
-                        else:
-                            rows = _read_results_rows(report_dir)
-                            rows_by_key = {_row_tag_key(row): row for row in rows}
-                            from concurrent.futures import ThreadPoolExecutor
 
-                            event_id_to_send = event_entry["event_id"]
+                        if reporting_enabled:
+                            event_id_to_send = str(event_entry.get("event_id", ""))
 
-                            def send_async():
-                                build_dir_async = report_dir.parent
-                                with context._lock:
-                                    state_async = _load_state(build_dir_async)
-                                    outbox_async = state_async.get("outbox", [])
-                                    event_async = next(
-                                        (e for e in outbox_async if e.get("event_id") == event_id_to_send),
-                                        None,
+                    if not reporting_enabled:
+                        logger.debug(
+                            "reporting_api_disabled_skipping_sync",
+                            run_id=run_id,
+                            event_type=event_type,
+                            case_id=case_id,
+                        )
+                    elif event_id_to_send:
+                        rows = _read_results_rows(report_dir)
+                        rows_by_key = {_row_tag_key(row): row for row in rows}
+
+                        def send_async() -> None:
+                            build_dir_async = report_dir.parent
+                            with context._lock:
+                                state_async = _load_state(build_dir_async)
+                                outbox_async = state_async.get("outbox", [])
+                                event_async = next(
+                                    (e for e in outbox_async if e.get("event_id") == event_id_to_send),
+                                    None,
+                                )
+                                if event_async is None:
+                                    return
+                                if str(event_async.get("status", "")).lower() not in {"pending", "failed"}:
+                                    return
+                                accepted, error = _send_outbox_event(
+                                    context=context,
+                                    run_id=run_id,
+                                    rows_by_key=rows_by_key,
+                                    state=state_async,
+                                    event=event_async,
+                                )
+                                _record_event_attempt(event_async, accepted, error)
+                                if accepted:
+                                    case_state = _ensure_case_state(
+                                        state_async, str(event_async.get("test_case_id", ""))
                                     )
-                                    if event_async is None:
-                                        return
-                                    if str(event_async.get("status", "")).lower() not in {"pending", "failed"}:
-                                        return
-                                    accepted, error = _send_outbox_event(
-                                        context=context,
-                                        run_id=run_id,
-                                        rows_by_key=rows_by_key,
-                                        state=state_async,
-                                        event=event_async,
-                                    )
-                                    _record_event_attempt(event_async, accepted, error)
-                                    if accepted:
-                                        case_state = _ensure_case_state(
-                                            state_async, str(event_async.get("test_case_id", ""))
-                                        )
-                                        _mark_case_synced(case_state, str(event_async.get("type", "")))
-                                    _save_state(build_dir_async, state_async)
+                                    _mark_case_synced(case_state, str(event_async.get("type", "")))
+                                _save_state(build_dir_async, state_async)
 
-                            with ThreadPoolExecutor(max_workers=1) as executor:
-                                executor.submit(send_async)
+                        Thread(target=send_async, daemon=True).start()
 
                     self._send_json(
                         HTTPStatus.OK,
