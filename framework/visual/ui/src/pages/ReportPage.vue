@@ -318,9 +318,7 @@ async function releaseLock() {
 async function loadState() {
   if (!props.runId) return;
   const payload = await fetchBuildState(props.runId);
-  console.log("DEBUG loadState payload:", payload);
   const snapshot = payload?.state?.test_cases;
-  console.log("DEBUG loadState snapshot:", snapshot);
   if (!snapshot || typeof snapshot !== "object") return;
   store.updateTagLog(snapshot);
 }
