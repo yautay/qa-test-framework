@@ -367,11 +367,13 @@ export const useResultsStore = defineStore("results", {
     },
 
     updateTagLog(snapshot) {
+      console.log("DEBUG updateTagLog input snapshot:", snapshot);
       if (!snapshot || typeof snapshot !== "object") {
         this.tagLog = {};
         return;
       }
       const normalized = normalizeCaseStateSnapshot(snapshot);
+      console.log("DEBUG updateTagLog normalized:", normalized);
       const merged = {};
       for (const [key, value] of Object.entries(normalized)) {
         const baseline = this.tagLog?.[key]?.baseline || false;
@@ -382,6 +384,7 @@ export const useResultsStore = defineStore("results", {
           merged[key] = { ...buildEmptyTagEntry(), baseline: true };
         }
       }
+      console.log("DEBUG updateTagLog merged result:", merged);
       this.tagLog = merged;
     },
 
