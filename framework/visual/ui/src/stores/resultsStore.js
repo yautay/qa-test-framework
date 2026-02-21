@@ -464,13 +464,7 @@ export const useResultsStore = defineStore("results", {
         message: message || 'unknown',
         timestamp: Date.now(),
       };
-      const pending = this.pendingTags[caseKey];
-      if (pending) {
-        delete pending[type];
-        if (Object.keys(pending).length === 0) {
-          delete this.pendingTags[caseKey];
-        }
-      }
+      delete this.pendingTags[caseKey];
     },
 
     clearSyncError(caseKey) {

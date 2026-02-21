@@ -991,7 +991,8 @@ def _build_handler(context: ReportServerContext):
             self.end_headers()
             try:
                 self.wfile.write(body)
-            except (BrokenPipeError, ConnectionResetError):
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError) as e:
+                logger.debug(f"Client disconnected before response sent: {e}")
                 return
 
         def _read_json_body(self) -> dict[str, Any]:
