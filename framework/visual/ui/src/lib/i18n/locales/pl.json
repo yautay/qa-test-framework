@@ -133,6 +133,7 @@
     "unknown": "Nieznany błąd",
     "conflict": "Konflikt z istniejącym stanem",
     "buildHasErrors": "Build ma problemy z synchronizacją",
-    "tagAlreadyExists": "Tag jest już ustawiony dla tego przypadku testowego"
+    "tagAlreadyExists": "Tag jest już ustawiony dla tego przypadku testowego",
+    "noteAlreadyExists": "Notatka jest już ustawiona dla tego przypadku testowego"
   }
 }

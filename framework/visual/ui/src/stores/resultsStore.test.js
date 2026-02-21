@@ -885,6 +885,30 @@ describe("resultsStore", () => {
       expect(store.pendingTags[caseKey].bug).toBe(true);
     });
 
+    it("sets optimistic note for case", () => {
+      const store = useResultsStore();
+      const caseKey = "s1::a.png::::";
+
+      store.setOptimisticTag(caseKey, "note", "test note content");
+
+      expect(store.pendingTags[caseKey].note).toBe("test note content");
+      expect(store.tagLog[caseKey].note.content).toBe("test note content");
+      expect(store.tagLog[caseKey].note.synced).toBe(false);
+    });
+
+    it("updates existing note content", () => {
+      const store = useResultsStore();
+      const caseKey = "s1::a.png::::";
+      store.tagLog[caseKey] = {
+        note: { content: "old note", synced: true },
+      };
+
+      store.setOptimisticTag(caseKey, "note", "new note content");
+
+      expect(store.tagLog[caseKey].note.content).toBe("new note content");
+      expect(store.tagLog[caseKey].note.synced).toBe(false);
+    });
+
     it("clears existing sync error when setting optimistic tag", () => {
       const store = useResultsStore();
       const caseKey = "s1::a.png::::";

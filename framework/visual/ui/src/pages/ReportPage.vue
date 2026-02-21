@@ -775,9 +775,12 @@ async function postEvent(eventType, payload) {
   const lockOk = await ensureLock();
   if (!lockOk) return;
   const key = getRowTagKey(store.modalRow);
-  const tagType = eventType === "BUG_SET" ? "bug" : eventType === "ASO_SET" ? "aso" : null;
+  const tagType = eventType === "BUG_SET" ? "bug" : eventType === "ASO_SET" ? "aso" : eventType === "NOTE_UPSERT" ? "note" : null;
   
-  if (tagType) {
+  if (tagType === "note") {
+    const newNoteContent = payload?.note || "";
+    store.setOptimisticTag(key, "note", newNoteContent);
+  } else if (tagType) {
     const existingTag = store.tagLog?.[key];
     if (tagType === 'bug' && existingTag?.bug?.locked) {
       showToast(t("sync.tagAlreadyExists"), "warning");

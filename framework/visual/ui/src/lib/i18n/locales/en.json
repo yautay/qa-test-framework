@@ -133,6 +133,7 @@
     "unknown": "Unknown error",
     "conflict": "Conflict with existing state",
     "buildHasErrors": "Build has sync issues",
-    "tagAlreadyExists": "Tag is already set for this test case"
+    "tagAlreadyExists": "Tag is already set for this test case",
+    "noteAlreadyExists": "Note already exists for this test case"
   }
 }

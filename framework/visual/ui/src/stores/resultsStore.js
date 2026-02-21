@@ -427,10 +427,15 @@ export const useResultsStore = defineStore("results", {
       this.cursorY = 50;
     },
 
-    setOptimisticTag(caseKey, type) {
+    setOptimisticTag(caseKey, type, noteContent = null) {
       if (!caseKey || !type) return;
       const existing = this.pendingTags[caseKey] || {};
-      this.pendingTags[caseKey] = { ...existing, [type]: true };
+      
+      if (type === "note" && noteContent !== null) {
+        this.pendingTags[caseKey] = { ...existing, note: noteContent };
+      } else {
+        this.pendingTags[caseKey] = { ...existing, [type]: true };
+      }
       delete this.syncErrors[caseKey];
       
       const currentLog = this.tagLog[caseKey] || buildEmptyTagEntry();
@@ -438,8 +443,8 @@ export const useResultsStore = defineStore("results", {
         currentLog.bug = { locked: true, synced: false };
       } else if (type === "aso") {
         currentLog.aso = { locked: true, synced: false };
-      } else if (type === "note") {
-        currentLog.note = { content: "", synced: false };
+      } else if (type === "note" && noteContent !== null) {
+        currentLog.note = { content: noteContent, synced: false };
       }
       this.tagLog[caseKey] = currentLog;
     },
@@ -527,6 +532,13 @@ export const useResultsStore = defineStore("results", {
         }
         if (pending.aso && serverTag?.aso?.locked) {
           delete pending.aso;
+        }
+        if (pending.note !== undefined) {
+          if (serverTag?.note?.content === pending.note) {
+            delete pending.note;
+          } else if (serverTag?.note?.content !== undefined) {
+            delete pending.note;
+          }
         }
         
         if (Object.keys(pending).length === 0) {
