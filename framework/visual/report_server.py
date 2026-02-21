@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from argparse import ArgumentParser
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import os
 from pathlib import Path
 from secrets import token_urlsafe
-from threading import Lock, Thread
+from threading import Lock
 from typing import Any, cast
 from urllib.parse import parse_qs, unquote, urlparse
 import json
@@ -36,6 +38,7 @@ if str(REPO_ROOT) not in sys.path:
 from framework.env import load_env
 from framework.reporting_client import ReportingClient
 from framework.visual.baseline_store import BaselineStore
+from framework.visual.config.server import REPORT_SYNC_WORKERS
 
 
 DEFAULT_PORT = 4173
@@ -68,6 +71,8 @@ class ReportServerContext:
     reporting_aso_endpoint: str = ""
     reporting_note_endpoint: str = ""
     bug_pdf_config_path: Path | None = None
+    sync_workers: int = 0
+    sync_executor: ThreadPoolExecutor | None = field(default=None, repr=False)
     _lock: Any = field(default_factory=Lock)
 
     def resolve_run_dir(self, run_id: str) -> Path | None:
@@ -704,10 +709,97 @@ def _mark_case_synced(case_state: dict[str, Any], event_type: str) -> None:
         case_state["aso"]["synced"] = True
 
 
+def _resolve_sync_workers(configured_workers: int | None) -> int:
+    cpu = os.cpu_count() or 2
+    auto_workers = min(12, max(2, cpu * 2))
+    if configured_workers is None:
+        return auto_workers
+    try:
+        requested = int(configured_workers)
+    except Exception:
+        return auto_workers
+    if requested <= 0:
+        return auto_workers
+    return requested
+
+
+def _process_outbox_event(
+    *,
+    context: ReportServerContext,
+    run_id: str,
+    report_dir: Path,
+    rows_by_key: dict[str, dict[str, Any]],
+    event_id: str,
+) -> None:
+    build_dir = report_dir.parent
+    event_snapshot: dict[str, Any] | None = None
+    state_snapshot: dict[str, Any] = {}
+
+    with context._lock:
+        state_for_claim = _load_state(build_dir)
+        outbox_for_claim = state_for_claim.get("outbox", [])
+        event_for_claim = next((e for e in outbox_for_claim if str(e.get("event_id", "")) == event_id), None)
+        if event_for_claim is None:
+            return
+        if str(event_for_claim.get("status", "")).lower() not in {"pending", "failed"}:
+            return
+        event_for_claim["status"] = "sending"
+        event_snapshot = dict(event_for_claim)
+        state_snapshot = state_for_claim
+        _save_state(build_dir, state_for_claim)
+
+    if event_snapshot is None:
+        return
+
+    accepted, error = _send_outbox_event(
+        context=context,
+        run_id=run_id,
+        rows_by_key=rows_by_key,
+        state=state_snapshot,
+        event=event_snapshot,
+    )
+
+    with context._lock:
+        state_after_send = _load_state(build_dir)
+        outbox_after_send = state_after_send.get("outbox", [])
+        event_after_send = next((e for e in outbox_after_send if str(e.get("event_id", "")) == event_id), None)
+        if event_after_send is None:
+            return
+        current_status = str(event_after_send.get("status", "")).lower()
+        if current_status not in {"sending", "pending", "failed"}:
+            return
+        _record_event_attempt(event_after_send, accepted, error)
+        if accepted:
+            case_state = _ensure_case_state(state_after_send, str(event_after_send.get("test_case_id", "")))
+            _mark_case_synced(case_state, str(event_after_send.get("type", "")))
+        _save_state(build_dir, state_after_send)
+
+
+def _schedule_outbox_event(
+    *,
+    context: ReportServerContext,
+    run_id: str,
+    report_dir: Path,
+    rows_by_key: dict[str, dict[str, Any]],
+    event_id: str,
+) -> Future[Any] | None:
+    executor = context.sync_executor
+    if executor is None:
+        return None
+    return executor.submit(
+        _process_outbox_event,
+        context=context,
+        run_id=run_id,
+        report_dir=report_dir,
+        rows_by_key=rows_by_key,
+        event_id=event_id,
+    )
+
+
 def _flush_pending(context: ReportServerContext, run_id: str, report_dir: Path) -> dict[str, Any]:
     build_dir = report_dir.parent
 
-    events_to_send: list[dict[str, Any]] = []
+    event_ids_to_send: list[str] = []
     rows_by_key: dict[str, dict[str, Any]] = {}
     state: dict[str, Any] = {}
 
@@ -720,25 +812,29 @@ def _flush_pending(context: ReportServerContext, run_id: str, report_dir: Path) 
                 continue
             if event.get("status") == "superseded":
                 continue
-            events_to_send.append(event)
+            event_id = str(event.get("event_id", "")).strip()
+            if event_id:
+                event_ids_to_send.append(event_id)
 
-    send_results: list[tuple[dict[str, Any], bool, str]] = []
-    for event in events_to_send:
-        accepted, error = _send_outbox_event(
+    scheduled: list[Future[Any]] = []
+    for event_id in event_ids_to_send:
+        future = _schedule_outbox_event(
             context=context,
             run_id=run_id,
+            report_dir=report_dir,
             rows_by_key=rows_by_key,
-            state=state,
-            event=event,
+            event_id=event_id,
         )
-        send_results.append((event, accepted, error))
+        if future is not None:
+            scheduled.append(future)
+    for future in scheduled:
+        try:
+            future.result()
+        except Exception:
+            logger.opt(exception=True).warning("outbox_sync_worker_failed", run_id=run_id)
 
     with context._lock:
-        for event, accepted, error in send_results:
-            _record_event_attempt(event, accepted, error)
-            if accepted:
-                case_state = _ensure_case_state(state, str(event.get("test_case_id", "")))
-                _mark_case_synced(case_state, str(event.get("type", "")))
+        state = _load_state(build_dir)
         _save_state(build_dir, state)
         return state
 
@@ -997,11 +1093,11 @@ def _build_handler(context: ReportServerContext):
 
         def _send_json(self, status: int, payload: dict[str, Any]) -> None:
             body = _json_bytes(payload)
-            self.send_response(status)
-            self.send_header("Content-Type", "application/json; charset=utf-8")
-            self.send_header("Content-Length", str(len(body)))
-            self.end_headers()
             try:
+                self.send_response(status)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
                 self.wfile.write(body)
             except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError) as e:
                 logger.debug(f"Client disconnected before response sent: {e}")
@@ -1179,7 +1275,7 @@ def _build_handler(context: ReportServerContext):
                     return
 
                 self.send_error(HTTPStatus.NOT_FOUND, "not found")
-            except (BrokenPipeError, ConnectionResetError):
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError):
                 return
             except Exception:
                 logger.opt(exception=True).warning("report server GET failed", path=self.path)
@@ -1395,36 +1491,20 @@ def _build_handler(context: ReportServerContext):
                     elif event_id_to_send:
                         rows = _read_results_rows(report_dir)
                         rows_by_key = {_row_tag_key(row): row for row in rows}
-
-                        def send_async() -> None:
-                            build_dir_async = report_dir.parent
-                            with context._lock:
-                                state_async = _load_state(build_dir_async)
-                                outbox_async = state_async.get("outbox", [])
-                                event_async = next(
-                                    (e for e in outbox_async if e.get("event_id") == event_id_to_send),
-                                    None,
-                                )
-                                if event_async is None:
-                                    return
-                                if str(event_async.get("status", "")).lower() not in {"pending", "failed"}:
-                                    return
-                                accepted, error = _send_outbox_event(
-                                    context=context,
-                                    run_id=run_id,
-                                    rows_by_key=rows_by_key,
-                                    state=state_async,
-                                    event=event_async,
-                                )
-                                _record_event_attempt(event_async, accepted, error)
-                                if accepted:
-                                    case_state = _ensure_case_state(
-                                        state_async, str(event_async.get("test_case_id", ""))
-                                    )
-                                    _mark_case_synced(case_state, str(event_async.get("type", "")))
-                                _save_state(build_dir_async, state_async)
-
-                        Thread(target=send_async, daemon=True).start()
+                        future = _schedule_outbox_event(
+                            context=context,
+                            run_id=run_id,
+                            report_dir=report_dir,
+                            rows_by_key=rows_by_key,
+                            event_id=event_id_to_send,
+                        )
+                        if future is None:
+                            logger.warning(
+                                "reporting_sync_executor_unavailable",
+                                run_id=run_id,
+                                event_type=event_type,
+                                case_id=case_id,
+                            )
 
                     self._send_json(
                         HTTPStatus.OK,
@@ -1566,7 +1646,7 @@ def _build_handler(context: ReportServerContext):
                         "results": results,
                     },
                 )
-            except (BrokenPipeError, ConnectionResetError):
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError):
                 return
             except Exception:
                 logger.opt(exception=True).warning("report server POST failed", path=self.path)
@@ -1606,6 +1686,8 @@ def main() -> int:
     env = load_env()
     reporting_enabled = bool(env.reporting_enabled)
     reporting_api_url = str(env.reporting_api_url or "").strip()
+    sync_workers = _resolve_sync_workers(REPORT_SYNC_WORKERS)
+    sync_executor = ThreadPoolExecutor(max_workers=sync_workers)
     reporting_client: ReportingClient | None = None
     if reporting_enabled:
         if not reporting_api_url:
@@ -1632,6 +1714,8 @@ def main() -> int:
         reporting_bug_endpoint=str(cast(Any, env).reporting_api_bug_endpoint or "").strip(),
         reporting_aso_endpoint=str(cast(Any, env).reporting_api_aso_endpoint or "").strip(),
         reporting_note_endpoint=str(cast(Any, env).reporting_api_note_endpoint or "").strip(),
+        sync_workers=sync_workers,
+        sync_executor=sync_executor,
         bug_pdf_config_path=(
             REPO_ROOT / "framework" / "visual" / "ui" / "src" / "config" / "bug_report_pdf_config.json"
         ),
@@ -1645,6 +1729,7 @@ def main() -> int:
         print(f"server listening: http://{args.host}:{args.port}/reports/{selected_run_id}")
     else:
         print(f"server listening: http://{args.host}:{args.port}/")
+    print(f"report sync workers: {sync_workers}")
     print("endpoints: GET /api/reports, GET /api/reports/<run_id>/results, GET /api/reports/<run_id>/image/ref")
     print(
         "endpoints: GET /api/builds/<run_id>/state, "
@@ -1663,6 +1748,7 @@ def main() -> int:
         print("shutting down report server")
     finally:
         server.server_close()
+        sync_executor.shutdown(wait=False, cancel_futures=False)
     return 0
 
 
