@@ -121,6 +121,10 @@
     "unknown": "Unknown error",
     "conflict": "Conflict with existing state",
     "buildHasErrors": "Build has sync issues",
-    "tagAlreadyExists": "Tag is already set for this test case"
+    "tagAlreadyExists": "Tag is already set for this test case",
+    "failedCount": "failed",
+    "pendingCount": "pending",
+    "sendingCount": "sending",
+    "unsyncedCount": "unsynced"
   }
 }

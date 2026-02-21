@@ -4,7 +4,7 @@
       <div class="d-flex justify-content-between align-items-center gap-2">
         <div class="mono fw-semibold">{{ report.run_id }}</div>
         <div class="d-flex gap-1">
-          <span v-if="hasSyncErrors" class="badge bg-warning text-dark" :title="t('sync.buildHasErrors')">⚠</span>
+          <span v-if="showSyncWarning" class="badge bg-warning text-dark" :title="syncWarningTitle">⚠</span>
           <span class="badge text-bg-secondary">{{ report.total || 0 }} {{ t('card.tests') }}</span>
         </div>
       </div>
@@ -59,6 +59,23 @@ export default {
   computed: {
     reportUrl() {
       return reportPath(this.report?.run_id || "");
+    },
+    showSyncWarning() {
+      return !!(this.hasSyncErrors || this.report?.has_sync_issues);
+    },
+    syncWarningTitle() {
+      const base = t("sync.buildHasErrors");
+      const failed = Number(this.report?.sync_failed_count || 0);
+      const pending = Number(this.report?.sync_pending_count || 0);
+      const sending = Number(this.report?.sync_sending_count || 0);
+      const unsynced = Number(this.report?.sync_unsynced_count || 0);
+      const counters = [
+        `${t("sync.failedCount")}: ${failed}`,
+        `${t("sync.pendingCount")}: ${pending}`,
+        `${t("sync.sendingCount")}: ${sending}`,
+        `${t("sync.unsyncedCount")}: ${unsynced}`,
+      ].join(", ");
+      return `${base}: ${counters}`;
     },
   },
   methods: {

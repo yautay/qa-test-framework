@@ -29,4 +29,29 @@ describe("ReportCard", () => {
     expect(wrapper.text()).toContain("Run note: manual smoke");
     expect(wrapper.find("a.btn").attributes("href")).toBe("/reports/20260218_120000_000001");
   });
+
+  it("shows sync warning badge with diagnostic counters", () => {
+    const wrapper = mount(ReportCard, {
+      props: {
+        report: {
+          run_id: "20260218_120000_000001",
+          total: 10,
+          passed: 5,
+          failed: 5,
+          has_sync_issues: true,
+          sync_failed_count: 2,
+          sync_pending_count: 3,
+          sync_sending_count: 1,
+          sync_unsynced_count: 4,
+        },
+      },
+    });
+
+    const warning = wrapper.find(".badge.bg-warning.text-dark");
+    expect(warning.exists()).toBe(true);
+    expect(warning.attributes("title")).toContain("failed: 2");
+    expect(warning.attributes("title")).toContain("pending: 3");
+    expect(warning.attributes("title")).toContain("sending: 1");
+    expect(warning.attributes("title")).toContain("unsynced: 4");
+  });
 });

@@ -121,6 +121,10 @@
     "unknown": "Невідома помилка",
     "conflict": "Конфлікт з існуючим станом",
     "buildHasErrors": "Build має проблеми з синхронізацією",
-    "tagAlreadyExists": "Тег вже встановлено для цього тестового випадку"
+    "tagAlreadyExists": "Тег вже встановлено для цього тестового випадку",
+    "failedCount": "помилки",
+    "pendingCount": "очікує",
+    "sendingCount": "надсилається",
+    "unsyncedCount": "не синхронізовано"
   }
 }

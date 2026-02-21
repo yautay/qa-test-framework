@@ -29,6 +29,18 @@ class ReportingClient:
 
     # Reuse TCP connections
     session: requests.Session = field(default_factory=requests.Session, repr=False)
+    _thread_local: threading.local = field(default_factory=threading.local, repr=False)
+
+    def _session(self) -> requests.Session:
+        existing = getattr(self._thread_local, "session", None)
+        if isinstance(existing, requests.Session):
+            return existing
+        if threading.current_thread() is threading.main_thread():
+            self._thread_local.session = self.session
+            return self.session
+        worker_session = requests.Session()
+        self._thread_local.session = worker_session
+        return worker_session
 
     def _build_headers(self, payload: dict, json_content_type: bool = True) -> dict[str, str]:
         headers: dict[str, str] = {}
@@ -90,7 +102,7 @@ class ReportingClient:
                     payload_size=len(json.dumps(payload, default=str)),
                     **context,
                 )
-                response = self.session.post(url, json=payload, headers=headers, timeout=self.timeout_seconds)
+                response = self._session().post(url, json=payload, headers=headers, timeout=self.timeout_seconds)
             except requests.RequestException as e:
                 logger.warning(
                     f"reporting api call failed endpoint={path}",
@@ -198,7 +210,7 @@ class ReportingClient:
                     files.append(("screenshots", (file_path.name, handle, "image/png")))
 
                 data = {"payload": json.dumps(payload)}
-                response = self.session.post(
+                response = self._session().post(
                     url,
                     data=data,
                     files=files,

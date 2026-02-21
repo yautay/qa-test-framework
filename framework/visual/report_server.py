@@ -237,6 +237,7 @@ def _list_reports_payload(context: ReportServerContext) -> list[dict[str, Any]]:
         build_dir = report_dir.parent
         state = _load_state(build_dir)
         test_cases = state.get("test_cases", {})
+        outbox = state.get("outbox", [])
 
         bug_count = sum(1 for tc in test_cases.values() if isinstance(tc, dict) and tc.get("bug", {}).get("locked"))
         asso_count = sum(1 for tc in test_cases.values() if isinstance(tc, dict) and tc.get("aso", {}).get("locked"))
@@ -244,6 +245,36 @@ def _list_reports_payload(context: ReportServerContext) -> list[dict[str, Any]]:
             1
             for tc in test_cases.values()
             if isinstance(tc, dict) and (tc.get("bug", {}).get("note") or tc.get("aso", {}).get("note"))
+        )
+        sync_unsynced_count = sum(
+            1
+            for tc in test_cases.values()
+            if isinstance(tc, dict)
+            and (
+                (tc.get("bug", {}).get("locked") and not tc.get("bug", {}).get("synced"))
+                or (tc.get("aso", {}).get("locked") and not tc.get("aso", {}).get("synced"))
+            )
+        )
+
+        sync_failed_count = 0
+        sync_pending_count = 0
+        sync_sending_count = 0
+        for entry in outbox:
+            if not isinstance(entry, dict):
+                continue
+            event_type = str(entry.get("type", "")).upper()
+            if event_type not in {"BUG_SET", "ASO_SET"}:
+                continue
+            status = str(entry.get("status", "pending")).lower()
+            if status == "failed":
+                sync_failed_count += 1
+            elif status == "pending":
+                sync_pending_count += 1
+            elif status == "sending":
+                sync_sending_count += 1
+
+        has_sync_issues = bool(
+            sync_unsynced_count > 0 or sync_failed_count > 0 or sync_pending_count > 0 or sync_sending_count > 0
         )
 
         reports.append(
@@ -263,6 +294,11 @@ def _list_reports_payload(context: ReportServerContext) -> list[dict[str, Any]]:
                 "bug_count": bug_count,
                 "aso_count": asso_count,
                 "note_count": note_count,
+                "has_sync_issues": has_sync_issues,
+                "sync_unsynced_count": sync_unsynced_count,
+                "sync_failed_count": sync_failed_count,
+                "sync_pending_count": sync_pending_count,
+                "sync_sending_count": sync_sending_count,
             }
         )
     return reports
@@ -1694,7 +1730,7 @@ def main() -> int:
     reporting_enabled = bool(env.reporting_enabled)
     reporting_api_url = str(env.reporting_api_url or "").strip()
     sync_workers = _resolve_sync_workers(REPORT_SYNC_WORKERS)
-    sync_executor = ThreadPoolExecutor(max_workers=sync_workers)
+    sync_executor = ThreadPoolExecutor(max_workers=sync_workers, thread_name_prefix="report-sync")
     reporting_client: ReportingClient | None = None
     if reporting_enabled:
         if not reporting_api_url:
