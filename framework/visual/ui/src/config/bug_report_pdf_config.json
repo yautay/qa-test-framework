@@ -41,8 +41,13 @@
       "required": false
     },
     {
-      "label": "NOTATKA",
-      "path": "note.content",
+      "label": "Notatka BUG",
+      "path": "bug.note",
+      "required": false
+    },
+    {
+      "label": "Notatka ASO",
+      "path": "aso.note",
       "required": false
     }
   ],

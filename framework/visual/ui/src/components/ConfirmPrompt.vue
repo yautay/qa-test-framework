@@ -10,10 +10,9 @@
       </div>
     </div>
 
-    <div v-else-if="type === 'bug' || type === 'aso' || type === 'save-note'" class="global-prompt-card">
+    <div v-else-if="type === 'bug' || type === 'aso'" class="global-prompt-card">
       <div class="global-prompt-title">{{ t('prompt.confirm') }}</div>
-      <div v-if="type === 'save-note'" class="global-prompt-text">{{ t('prompt.saveNote') }}</div>
-      <div v-else class="global-prompt-text">{{ t('prompt.areYouSure') }} {{ t('tags.' + type) }}?</div>
+      <div class="global-prompt-text">{{ t('prompt.areYouSure') }} {{ t('tags.' + type) }}?</div>
       <div v-if="isTagPrompt" class="prompt-note">
         <textarea
           class="form-control prompt-textarea"
@@ -62,7 +61,7 @@ const props = defineProps({
   },
   noteMaxLength: {
     type: Number,
-    default: 200,
+    default: 500,
   },
 });
 

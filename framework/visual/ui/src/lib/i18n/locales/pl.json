@@ -77,11 +77,11 @@
     "run": "Uruchomienie",
     "sendBaseline": "WYŚLIJ BASELINE",
     "sendReport": "RAPORT",
-    "confirmSend": "Czy jesteś pewien i chcesz zgłosić BUG/ASO/NOTATKA?"
+    "confirmSend": "Czy jesteś pewien i chcesz zgłosić BUG/ASO?"
   },
   "modal": {
     "exit": "Wyjście (K-LSHIFT)",
-    "keys": "Klawisze: 1-4 układ, A/D nawigacja, W trzymaj super zoom, S/C/\\ tagi prompt, N notatka, Shift = wyjście",
+    "keys": "Klawisze: 1-4 układ, A/D nawigacja, W trzymaj super zoom, S/C/\\ tagi prompt, Shift = wyjście",
     "slot": "Slot",
     "noImage": "Brak obrazu dla",
     "scoringLabel": "Ocena",
@@ -93,8 +93,7 @@
     "confirm": "Potwierdzenie",
     "areYouSure": "Czy na pewno oznaczyć to jako",
     "removeTag": "Czy na pewno usunąć",
-    "saveNote": "Czy zapisać i wysłać notatkę?",
-    "notePlaceholder": "Notatka opcjonalna (max 200 znaków)",
+    "notePlaceholder": "Notatka opcjonalna (max 500 znaków)",
     "yes": "Tak",
     "no": "Nie",
     "shiftNo": "Shift = NIE",
@@ -104,19 +103,8 @@
     "bug": "BUG",
     "aso": "ASO",
     "baseline": "BASELINE",
-    "note": "NOTATKA",
     "bugSent": "BUG WYSŁANY",
-    "asoSent": "ASO WYSŁANE",
-    "noteSent": "NOTATKA WYSŁANA"
-  },
-  "note": {
-    "button": "Notatka",
-    "title": "Notatka do testu",
-    "placeholder": "Opisz kontekst tego przypadku testowego...",
-    "save": "Zapisz",
-    "cancel": "Odrzuć",
-    "delete": "Usuń",
-    "mouseOnly": "Tylko mysz: zapis/odrzucenie/usunięcie działa wyłącznie po kliknięciu."
+    "asoSent": "ASO WYSŁANE"
   },
   "artifacts": {
     "ref": "ref",
@@ -133,7 +121,6 @@
     "unknown": "Nieznany błąd",
     "conflict": "Konflikt z istniejącym stanem",
     "buildHasErrors": "Build ma problemy z synchronizacją",
-    "tagAlreadyExists": "Tag jest już ustawiony dla tego przypadku testowego",
-    "noteAlreadyExists": "Notatka jest już ustawiona dla tego przypadku testowego"
+    "tagAlreadyExists": "Tag jest już ustawiony dla tego przypadku testowego"
   }
 }

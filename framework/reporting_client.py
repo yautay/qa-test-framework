@@ -81,17 +81,23 @@ class ReportingClient:
                 logger.debug(
                     "reporting_api_post_attempt",
                     url=url,
+                    method="POST",
                     attempt=attempt,
+                    max_retries=self.retries,
                     timeout_seconds=self.timeout_seconds,
                     payload_hash=payload_hash,
+                    payload_size=len(json.dumps(payload, default=str)),
                     **context,
                 )
                 response = self.session.post(url, json=payload, headers=headers, timeout=self.timeout_seconds)
-            except requests.RequestException:
+            except requests.RequestException as e:
                 logger.warning(
                     "reporting api call failed",
                     url=url,
+                    method="POST",
                     attempt=attempt,
+                    error=str(e),
+                    error_type=type(e).__name__,
                     payload_hash=payload_hash,
                     **context,
                 )
@@ -100,6 +106,14 @@ class ReportingClient:
                 continue
 
             if response.ok:
+                logger.info(
+                    "reporting_api_call_success",
+                    url=url,
+                    method="POST",
+                    status=response.status_code,
+                    payload_hash=payload_hash,
+                    **context,
+                )
                 return True
 
             try:
@@ -110,6 +124,7 @@ class ReportingClient:
                 "reporting api non-2xx",
                 status=response.status_code,
                 url=url,
+                method="POST",
                 payload_hash=payload_hash,
                 response_preview=preview,
                 **context,
@@ -119,8 +134,25 @@ class ReportingClient:
                 self._sleep_backoff(attempt)
                 continue
 
+            logger.error(
+                "reporting_api_call_failed",
+                url=url,
+                method="POST",
+                status=response.status_code,
+                payload_hash=payload_hash,
+                response_preview=preview,
+                **context,
+            )
             return False  # do not retry non-retriable status codes
 
+        logger.critical(
+            "reporting_api_call_final_failure",
+            url=url,
+            method="POST",
+            total_attempts=self.retries + 1,
+            payload_hash=payload_hash,
+            **context,
+        )
         return False
 
     def _post_test_result_with_screenshots(self, payload: dict) -> bool:
@@ -150,16 +182,18 @@ class ReportingClient:
                 logger.debug(
                     "reporting_api_post_files_attempt",
                     url=url,
+                    method="POST",
                     attempt=attempt,
+                    max_retries=self.retries,
                     timeout_seconds=self.timeout_seconds,
                     payload_hash=payload_hash,
+                    file_count=len(existing_paths),
                     **context,
                 )
                 files = []
                 for file_path in existing_paths:
                     handle = file_path.open("rb")
                     opened_handles.append(handle)
-                    # If your backend expects always PNG, keep as-is; otherwise consider mimetypes.
                     files.append(("screenshots", (file_path.name, handle, "image/png")))
 
                 data = {"payload": json.dumps(payload)}
@@ -172,6 +206,14 @@ class ReportingClient:
                 )
 
                 if response.ok:
+                    logger.info(
+                        "reporting_api_call_success",
+                        url=url,
+                        method="POST",
+                        status=response.status_code,
+                        payload_hash=payload_hash,
+                        **context,
+                    )
                     return True
 
                 try:
@@ -182,6 +224,7 @@ class ReportingClient:
                     "reporting api non-2xx",
                     status=response.status_code,
                     url=url,
+                    method="POST",
                     payload_hash=payload_hash,
                     response_preview=preview,
                     **context,
@@ -191,13 +234,25 @@ class ReportingClient:
                     self._sleep_backoff(attempt)
                     continue
 
+                logger.error(
+                    "reporting_api_call_failed",
+                    url=url,
+                    method="POST",
+                    status=response.status_code,
+                    payload_hash=payload_hash,
+                    response_preview=preview,
+                    **context,
+                )
                 return False  # do not retry non-retriable status codes
 
-            except requests.RequestException:
+            except requests.RequestException as e:
                 logger.warning(
                     "reporting screenshot upload failed",
                     url=url,
+                    method="POST",
                     attempt=attempt,
+                    error=str(e),
+                    error_type=type(e).__name__,
                     payload_hash=payload_hash,
                     **context,
                 )
@@ -211,6 +266,14 @@ class ReportingClient:
                     except Exception:
                         pass
 
+        logger.critical(
+            "reporting_api_call_final_failure",
+            url=url,
+            method="POST",
+            total_attempts=self.retries + 1,
+            payload_hash=payload_hash,
+            **context,
+        )
         # Final fallback: JSON-only
         return self._post(self.test_result_endpoint, payload)
 

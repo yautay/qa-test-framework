@@ -1,4 +1,4 @@
-export const NOTE_MAX_LENGTH = 200;
+export const NOTE_MAX_LENGTH = 500;
 
 const NOTE_CONTROL_CHAR_REGEX = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
 
@@ -46,12 +46,11 @@ export function normalizeCaseStateSnapshot(snapshot) {
     if (!state || typeof state !== "object") continue;
     const bug = state.bug && typeof state.bug === "object" ? state.bug : {};
     const aso = state.aso && typeof state.aso === "object" ? state.aso : {};
-    const note = state.note && typeof state.note === "object" ? state.note : {};
-    const content = sanitizeNoteText(note.content || "");
+    const bugNote = sanitizeNoteText(bug.note || "");
+    const asoNote = sanitizeNoteText(aso.note || "");
     normalized[key] = {
-      bug: { locked: !!bug.locked, synced: normalizeSynced(bug.synced) },
-      aso: { locked: !!aso.locked, synced: normalizeSynced(aso.synced) },
-      note: { content, synced: normalizeSynced(note.synced) },
+      bug: { locked: !!bug.locked, synced: normalizeSynced(bug.synced), note: bugNote },
+      aso: { locked: !!aso.locked, synced: normalizeSynced(aso.synced), note: asoNote },
     };
   }
   return normalized;

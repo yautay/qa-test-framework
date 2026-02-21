@@ -29,9 +29,8 @@ const SLOT_MODE_DEFAULTS = {
 };
 
 const EMPTY_TAG_ENTRY = {
-  bug: { locked: false, synced: false },
-  aso: { locked: false, synced: false },
-  note: { content: "", synced: false },
+  bug: { locked: false, synced: false, note: "" },
+  aso: { locked: false, synced: false, note: "" },
   baseline: false,
 };
 
@@ -39,7 +38,6 @@ function buildEmptyTagEntry() {
   return {
     bug: { ...EMPTY_TAG_ENTRY.bug },
     aso: { ...EMPTY_TAG_ENTRY.aso },
-    note: { ...EMPTY_TAG_ENTRY.note },
     baseline: EMPTY_TAG_ENTRY.baseline,
   };
 }
@@ -74,8 +72,9 @@ function getTagPriority(row, tagLog) {
 
 function hasRowNote(row, tagLog) {
   const key = getRowTagKey(row);
-  const text = tagLog?.[key]?.note?.content;
-  return typeof text === "string" && !!text.trim();
+  const bugNote = tagLog?.[key]?.bug?.note || "";
+  const asoNote = tagLog?.[key]?.aso?.note || "";
+  return [bugNote, asoNote].some((text) => typeof text === "string" && !!text.trim());
 }
 
 function defaultSlotMode(slotId) {
@@ -238,11 +237,7 @@ export const useResultsStore = defineStore("results", {
         const canSendBug = !!tags.bug?.locked && !tags.bug?.synced;
         const canSendAso = !!tags.aso?.locked && !tags.aso?.synced;
 
-        const noteText = tags.note?.content || "";
-        const noteHasText = typeof noteText === "string" && noteText.trim() !== "";
-        const canSendNote = noteHasText && !tags.note?.synced;
-
-        return count + (canSendBug || canSendAso || canSendNote ? 1 : 0);
+        return count + (canSendBug || canSendAso ? 1 : 0);
       }, 0);
     },
 
@@ -362,7 +357,6 @@ export const useResultsStore = defineStore("results", {
       const tags = this.currentTags || {};
       if (type === "bug") return !!tags.bug?.synced;
       if (type === "aso") return !!tags.aso?.synced;
-      if (type === "note") return !!tags.note?.synced;
       return false;
     },
 
@@ -427,24 +421,25 @@ export const useResultsStore = defineStore("results", {
       this.cursorY = 50;
     },
 
+    setPendingTag(caseKey, type, noteContent = null) {
+      if (!caseKey || !type) return;
+      const existing = this.pendingTags[caseKey] || {};
+      this.pendingTags[caseKey] = { ...existing, [type]: true };
+      delete this.syncErrors[caseKey];
+    },
+
     setOptimisticTag(caseKey, type, noteContent = null) {
       if (!caseKey || !type) return;
       const existing = this.pendingTags[caseKey] || {};
       
-      if (type === "note" && noteContent !== null) {
-        this.pendingTags[caseKey] = { ...existing, note: noteContent };
-      } else {
-        this.pendingTags[caseKey] = { ...existing, [type]: true };
-      }
+      this.pendingTags[caseKey] = { ...existing, [type]: true };
       delete this.syncErrors[caseKey];
       
       const currentLog = this.tagLog[caseKey] || buildEmptyTagEntry();
       if (type === "bug") {
-        currentLog.bug = { locked: true, synced: false };
+        currentLog.bug = { ...currentLog.bug, locked: true, synced: false };
       } else if (type === "aso") {
-        currentLog.aso = { locked: true, synced: false };
-      } else if (type === "note" && noteContent !== null) {
-        currentLog.note = { content: noteContent, synced: false };
+        currentLog.aso = { ...currentLog.aso, locked: true, synced: false };
       }
       this.tagLog[caseKey] = currentLog;
     },
@@ -532,13 +527,6 @@ export const useResultsStore = defineStore("results", {
         }
         if (pending.aso && serverTag?.aso?.locked) {
           delete pending.aso;
-        }
-        if (pending.note !== undefined) {
-          if (serverTag?.note?.content === pending.note) {
-            delete pending.note;
-          } else if (serverTag?.note?.content !== undefined) {
-            delete pending.note;
-          }
         }
         
         if (Object.keys(pending).length === 0) {

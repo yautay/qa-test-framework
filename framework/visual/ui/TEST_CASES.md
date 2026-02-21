@@ -8,11 +8,8 @@
 |---|-----------|-------|------------------|---------------|------------|
 | A1 | Nowy BUG (bug=true, bug_reported=false) | Kliknij REPORT | → prompt | ✅ | - |
 | A2 | Nowa ASO (aso=true, asoreported=false) | Kliknij REPORT | → prompt | ✅ | - |
-| A3 | Nowa NOTATKA (note.text, note_reported=false) | Kliknij REPORT | → prompt | ✅ | - |
-| A4 | Zmodyfikowana NOTATKA (updatedAt > reportedAt) | Kliknij REPORT | → prompt | ✅ | - |
 | A5 | BUG już wysłany (bug=true, bug_reported=true) | Kliknij REPORT | → PDF bez promptu | ✅ | - |
 | A6 | ASO już wysłana | Kliknij REPORT | → PDF bez promptu | ✅ | - |
-| A7 | NOTATKA już wysłana i niezmieniona | Kliknij REPORT | → PDF bez promptu | ✅ | - |
 | A8 | Wszystko wysłane + brak BUG | Kliknij REPORT | → nic (disabled) | ✅ | - |
 
 ### B) Zewnętrzny API nie działa (timeout/błąd)
@@ -54,7 +51,6 @@
 | `test_returns_false_when_no_failures` | Wszystko OK = False |
 | `test_returns_true_when_bug_failed` | BUG failed = True |
 | `test_returns_true_when_aso_failed` | ASO failed = True |
-| `test_returns_true_when_note_failed` | NOTATKA failed = True |
 | `test_returns_false_when_missing_keys` | Brak kluczy = False |
 | `test_returns_false_when_empty_dict` | Pusty dict = False |
 

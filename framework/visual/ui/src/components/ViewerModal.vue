@@ -65,10 +65,6 @@
             <button v-if="!viewer.tags.baseline" type="button" class="btn btn-outline-success text-success btn-sm" @click="$emit('prompt-tag','baseline')">{{ t('tags.baseline') }} \</button>
             <button v-if="viewer.tags.baseline" type="button" class="btn btn-success btn-sm" @click="$emit('prompt-remove-tag','baseline')">{{ t('tags.baseline') }} ✕</button>
 
-            <button type="button" class="btn btn-outline-secondary btn-sm" @click="$emit('open-note')">
-              {{ t('note.button') }} N
-            </button>
-
             <button type="button" class="btn btn-outline-secondary btn-sm" @click="$emit('open-metadata')">
               {{ t('metadata.open') }}
             </button>
@@ -98,25 +94,6 @@
                   </div>
                 </div>
               </div>
-            </div>
-
-            <div v-if="noteEditor.active" class="prompt-overlay" @click.self="onCancelNote">
-              <div class="prompt-card note-card">
-                <div class="prompt-title">{{ t('note.title') }}</div>
-                <textarea
-                  class="form-control note-textarea"
-                  :value="noteEditor.text"
-                  :maxlength="noteMaxLength"
-                  :placeholder="t('note.placeholder')"
-                  @input="onNoteInput"
-                ></textarea>
-                <div class="note-meta">{{ t('note.mouseOnly') }}</div>
-                <div class="note-actions">
-                  <button type="button" class="btn btn-sm btn-primary" @click="onSaveNote">{{ t('note.save') }}</button>
-                  <button type="button" class="btn btn-sm btn-outline-secondary" @click="onCancelNote">{{ t('note.cancel') }}</button>
-                </div>
-              </div>
-            </div>
           </div>
 
         </div>
@@ -140,7 +117,6 @@ export default {
     imageStyle: { type: Object, default: () => ({}) },
     prompt: { type: Object, default: () => ({ active: false, type: null }) },
     noteEditor: { type: Object, default: () => ({ active: false, text: "", hasExisting: false }) },
-    noteMaxLength: { type: Number, default: 200 },
     keyHeld: { type: Object, default: () => ({}) },
     superZoomActive: { type: Boolean, default: false },
     slotImage: { type: Function, required: true },
@@ -153,11 +129,7 @@ export default {
     "super-zoom-up",
     "prompt-tag",
     "prompt-remove-tag",
-    "open-note",
     "open-metadata",
-    "save-note",
-    "cancel-note",
-    "note-input",
     "close-modal",
     "reset-cursor",
     "mouse-move",
@@ -214,44 +186,6 @@ export default {
         ...badge,
         isPending: badge.pendingKey ? !!pending[badge.pendingKey] : false,
       }));
-      const noteContent = tags.note?.content;
-      if (noteContent) {
-        tagBadges.push({
-          key: "note",
-          label: this.t("tags.note"),
-          class: "badge note-badge",
-          isPending: !!pending.note,
-        });
-      }
-      if (tags.bug?.synced) {
-        tagBadges.push({
-          key: "bug_sent",
-          label: this.t("tags.bugSent"),
-          class: "bg-secondary",
-        });
-      }
-      if (tags.aso?.synced) {
-        tagBadges.push({
-          key: "aso_sent",
-          label: this.t("tags.asoSent"),
-          class: "bg-secondary",
-        });
-      }
-      if (tags.note?.synced) {
-        tagBadges.push({
-          key: "note_sent",
-          label: this.t("tags.noteSent"),
-          class: "bg-secondary",
-        });
-      }
-      const noteText = tags?.note?.content;
-      if (typeof noteText === "string" && noteText.trim()) {
-        tagBadges.push({
-          key: "note",
-          label: this.t("tags.note"),
-          class: "badge-note",
-        });
-      }
       return [...badges, ...tagBadges];
     },
     scoringText() {
@@ -310,15 +244,6 @@ export default {
       if (tagType === "aso") return t('tags.aso');
       if (tagType === "baseline") return t('tags.baseline');
       return "";
-    },
-    onNoteInput(event) {
-      this.$emit("note-input", event?.target?.value || "");
-    },
-    onSaveNote() {
-      this.$emit("save-note");
-    },
-    onCancelNote() {
-      this.$emit("cancel-note");
     },
   },
 };
@@ -437,44 +362,6 @@ export default {
 .slot-mode-select option {
   background-color: var(--card-bg);
   color: var(--body-color);
-}
-
-.badge-note {
-  border: 1px solid var(--filter-highlight-border, var(--primary));
-  background: var(--filter-highlight-bg, rgba(13, 110, 253, 0.12));
-  color: var(--body-color);
-}
-
-.note-card {
-  max-width: 520px;
-  text-align: left;
-}
-
-.note-textarea {
-  min-height: 180px;
-  resize: vertical;
-  background: var(--card-bg);
-  color: var(--body-color);
-  border-color: var(--border);
-}
-
-.note-textarea:focus {
-  background: var(--card-bg);
-  color: var(--body-color);
-  border-color: var(--primary);
-}
-
-.note-meta {
-  margin-top: 0.5rem;
-  color: var(--text-muted);
-  font-size: 0.8rem;
-}
-
-.note-actions {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: flex-end;
-  margin-top: 0.75rem;
 }
 
 .tag-pending {

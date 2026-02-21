@@ -133,20 +133,6 @@ describe("ViewerModal", () => {
       expect(badges.some(b => b.key === "bug")).toBe(true);
     });
 
-    it("includes bug reported badge when reported", () => {
-      const viewer = {
-        ...defaultViewer,
-        tags: { ...defaultViewer.tags, bug: { locked: true, synced: true } },
-      };
-      const wrapper = mount(ViewerModal, {
-        props: { ...defaultProps, viewer },
-      });
-
-      const badges = wrapper.vm.headerBadges;
-
-      expect(badges.some(b => b.key === "bug_sent")).toBe(true);
-    });
-
     it("includes asotag badge when present", () => {
       const viewer = {
         ...defaultViewer,

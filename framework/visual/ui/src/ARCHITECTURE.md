@@ -39,17 +39,16 @@ Plik: `artifacts/<run_id>/state.json`
 {
   "test_cases": {
     "<case_id>": {
-      "bug": { "locked": false, "synced": false },
-      "aso": { "locked": false, "synced": false },
-      "note": { "content": "", "synced": false }
+      "bug": { "locked": false, "synced": false, "note": "" },
+      "aso": { "locked": false, "synced": false, "note": "" }
     }
   },
   "outbox": [
     {
       "event_id": "uuid",
-      "type": "BUG_SET | ASO_SET | NOTE_UPSERT",
-      "payload": { "note": "optional <=200" },
-      "status": "pending | sent | failed | superseded",
+      "type": "BUG_SET | ASO_SET",
+      "payload": { "note": "optional <=500" },
+      "status": "pending | sent | failed",
       "attempts": 0,
       "last_attempt_at": "",
       "sent_at": "",
@@ -108,7 +107,7 @@ HeroPage nie wymaga locka.
 ```
 Uzytkownik w ViewerModal:
   - klawisz 'S' lub 'C' albo klik w UI
-  - prompt potwierdzenia + opcjonalna notatka (<=200)
+  - prompt potwierdzenia + opcjonalna notatka (<=500)
   ↓
 POST /api/builds/{id}/events (BUG_SET / ASO_SET)
   - backend zapisuje domenowy stan (locked=true)
@@ -118,21 +117,7 @@ POST /api/builds/{id}/events (BUG_SET / ASO_SET)
 
 BUG/ASO po potwierdzeniu sa zablokowane (nie mozna usunac).
 
-### 3.4 Notatka (NOTE_UPSERT)
-
-```
-Uzytkownik w ViewerModal:
-  - klawisz 'N' → edytor notatki
-  - wpisuje tekst (<=200) → zapis
-  ↓
-POST /api/builds/{id}/events (NOTE_UPSERT)
-  - backend zapisuje note.content
-  - starsze pending/failed NOTE oznacza jako superseded
-```
-
-Notatka nie moze byc usunieta (tylko edycja).
-
-### 3.5 Przycisk RAPORT
+### 3.4 Przycisk RAPORT
 
 Klikniecie RAPORT:
 1) Backend robi flush pending/failed z outbox
@@ -153,7 +138,7 @@ Frontend nie pokazuje procesu flush.
 | GET | `/api/reports/{id}/results` | Wyniki testow |
 | GET | `/api/reports/{id}/image/ref` | Obraz referencyjny |
 | GET | `/api/builds/{id}/state` | state.json (test_cases + outbox) |
-| POST | `/api/builds/{id}/events` | BUG_SET / ASO_SET / NOTE_UPSERT |
+| POST | `/api/builds/{id}/events` | BUG_SET / ASO_SET |
 | POST | `/api/builds/{id}/lock/acquire` | Soft-lock builda |
 | POST | `/api/builds/{id}/lock/heartbeat` | Heartbeat locka |
 | POST | `/api/builds/{id}/lock/release` | Release locka |
@@ -166,7 +151,7 @@ Frontend nie pokazuje procesu flush.
 ```javascript
 {
   event_id: "uuid",
-  type: "BUG_SET" | "ASO_SET" | "NOTE_UPSERT",
+  type: "BUG_SET" | "ASO_SET",
   test_case_id: "scenario_id::actual_path::baseline_path::diff_path",
   payload: {
     note: "optional <= 200"
@@ -174,13 +159,13 @@ Frontend nie pokazuje procesu flush.
 }
 ```
 
-`note` z prompta BUG/ASO nie jest przechowywana w domenie. Jest wysylana tylko w payload eventu.
+`note` z prompta BUG/ASO jest przechowywana w stanie przypadku testowego (osobno dla BUG i ASO).
 
 ---
 
 ## 5. Bezpieczenstwo
 
-- wszystkie pola tekstowe <= 200 znakow
+- wszystkie pola tekstowe <= 500 znakow
 - tekst traktowany jako nieufny
 - renderowanie tylko przez escaped moustache (bez `dangerouslySetInnerHTML`)
 - brak interpolacji do komend systemowych

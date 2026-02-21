@@ -43,7 +43,7 @@ CHALLENGE_TTL_SECONDS = 300
 _RUN_ID_SAFE = re.compile(r"^[A-Za-z0-9._-]+$")
 _READY_MARKER = ".report-ready.json"
 LOCK_TTL_SECONDS = 110
-TEXT_MAX_LENGTH = 200
+TEXT_MAX_LENGTH = 500
 _TEXT_CONTROL_CHAR_REGEX = re.compile(r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]")
 
 
@@ -234,7 +234,11 @@ def _list_reports_payload(context: ReportServerContext) -> list[dict[str, Any]]:
 
         bug_count = sum(1 for tc in test_cases.values() if isinstance(tc, dict) and tc.get("bug", {}).get("locked"))
         asso_count = sum(1 for tc in test_cases.values() if isinstance(tc, dict) and tc.get("aso", {}).get("locked"))
-        note_count = sum(1 for tc in test_cases.values() if isinstance(tc, dict) and tc.get("note", {}).get("content"))
+        note_count = sum(
+            1
+            for tc in test_cases.values()
+            if isinstance(tc, dict) and (tc.get("bug", {}).get("note") or tc.get("aso", {}).get("note"))
+        )
 
         reports.append(
             {
@@ -477,9 +481,8 @@ def _state_file_path(build_dir: Path) -> Path:
 
 def _empty_case_state() -> dict[str, Any]:
     return {
-        "bug": {"locked": False, "synced": False},
-        "aso": {"locked": False, "synced": False},
-        "note": {"content": "", "synced": False},
+        "bug": {"locked": False, "synced": False, "note": ""},
+        "aso": {"locked": False, "synced": False, "note": ""},
     }
 
 
@@ -487,12 +490,11 @@ def _normalize_case_state(raw: Any) -> dict[str, Any]:
     base = raw if isinstance(raw, dict) else {}
     bug = cast(dict[str, Any], base.get("bug")) if isinstance(base.get("bug"), dict) else {}
     aso = cast(dict[str, Any], base.get("aso")) if isinstance(base.get("aso"), dict) else {}
-    note = cast(dict[str, Any], base.get("note")) if isinstance(base.get("note"), dict) else {}
-    content = _normalize_text(note.get("content"), trim=True)[:TEXT_MAX_LENGTH]
+    bug_note = _normalize_text(bug.get("note"), trim=True)[:TEXT_MAX_LENGTH]
+    aso_note = _normalize_text(aso.get("note"), trim=True)[:TEXT_MAX_LENGTH]
     return {
-        "bug": {"locked": bool(bug.get("locked", False)), "synced": bool(bug.get("synced", False))},
-        "aso": {"locked": bool(aso.get("locked", False)), "synced": bool(aso.get("synced", False))},
-        "note": {"content": content, "synced": bool(note.get("synced", False))},
+        "bug": {"locked": bool(bug.get("locked", False)), "synced": bool(bug.get("synced", False)), "note": bug_note},
+        "aso": {"locked": bool(aso.get("locked", False)), "synced": bool(aso.get("synced", False)), "note": aso_note},
     }
 
 
@@ -560,7 +562,8 @@ def _default_pdf_config() -> dict[str, Any]:
             {"label": "scenario.viewport", "path": "scenario.viewport", "required": True},
             {"label": "scenario.browser", "path": "scenario.browser", "required": True},
             {"label": "scenario.capture.selector", "path": "scenario.capture.selector", "required": False},
-            {"label": "NOTATKA", "path": "note.content", "required": False},
+            {"label": "Notatka BUG", "path": "bug.note", "required": False},
+            {"label": "Notatka ASO", "path": "aso.note", "required": False},
         ],
         "images": [
             {"label": "baseline", "path": "image.baseline"},
@@ -612,16 +615,6 @@ def _find_row_by_case_id(rows: list[dict[str, Any]], case_id: str) -> dict[str, 
     return None
 
 
-def _supersede_note_events(outbox: list[dict[str, Any]], case_id: str) -> None:
-    for event in outbox:
-        if event.get("type") != "NOTE_UPSERT":
-            continue
-        if event.get("test_case_id") != case_id:
-            continue
-        if event.get("status") in {"pending", "failed"}:
-            event["status"] = "superseded"
-
-
 def _apply_event_to_state(
     state: dict[str, Any],
     case_id: str,
@@ -632,12 +625,11 @@ def _apply_event_to_state(
     if event_type == "BUG_SET":
         case_state["bug"]["locked"] = True
         case_state["bug"]["synced"] = False
+        case_state["bug"]["note"] = note_content or ""
     elif event_type == "ASO_SET":
         case_state["aso"]["locked"] = True
         case_state["aso"]["synced"] = False
-    elif event_type == "NOTE_UPSERT":
-        case_state["note"]["content"] = note_content or ""
-        case_state["note"]["synced"] = False
+        case_state["aso"]["note"] = note_content or ""
     return case_state
 
 
@@ -646,8 +638,6 @@ def _reporting_endpoint_for_event(context: ReportServerContext, event_type: str)
         return context.reporting_bug_endpoint
     if event_type == "ASO_SET":
         return context.reporting_aso_endpoint
-    if event_type == "NOTE_UPSERT":
-        return context.reporting_note_endpoint
     return ""
 
 
@@ -672,12 +662,10 @@ def _send_outbox_event(
     if row is None:
         return False, "test case not found"
 
-    payload_note = None
-    if event_type in {"BUG_SET", "ASO_SET"}:
-        payload_note = _normalize_text(event.get("payload", {}).get("note"), trim=True)
+    payload_note = _normalize_text(event.get("payload", {}).get("note"), trim=True)
 
-    tag = "BUG" if event_type == "BUG_SET" else "ASO" if event_type == "ASO_SET" else "NOTE"
-    event_type_name = "visual_report_note" if event_type == "NOTE_UPSERT" else "visual_report"
+    tag = "BUG" if event_type == "BUG_SET" else "ASO"
+    event_type_name = "visual_report"
     req = _build_reporting_payload(
         run_id,
         tag,
@@ -711,12 +699,15 @@ def _mark_case_synced(case_state: dict[str, Any], event_type: str) -> None:
         case_state["bug"]["synced"] = True
     elif event_type == "ASO_SET":
         case_state["aso"]["synced"] = True
-    elif event_type == "NOTE_UPSERT":
-        case_state["note"]["synced"] = True
 
 
 def _flush_pending(context: ReportServerContext, run_id: str, report_dir: Path) -> dict[str, Any]:
     build_dir = report_dir.parent
+
+    events_to_send: list[dict[str, Any]] = []
+    rows_by_key: dict[str, dict[str, Any]] = {}
+    state: dict[str, Any] = {}
+
     with context._lock:
         state = _load_state(build_dir)
         rows = _read_results_rows(report_dir)
@@ -726,13 +717,21 @@ def _flush_pending(context: ReportServerContext, run_id: str, report_dir: Path) 
                 continue
             if event.get("status") == "superseded":
                 continue
-            accepted, error = _send_outbox_event(
-                context=context,
-                run_id=run_id,
-                rows_by_key=rows_by_key,
-                state=state,
-                event=event,
-            )
+            events_to_send.append(event)
+
+    send_results: list[tuple[dict[str, Any], bool, str]] = []
+    for event in events_to_send:
+        accepted, error = _send_outbox_event(
+            context=context,
+            run_id=run_id,
+            rows_by_key=rows_by_key,
+            state=state,
+            event=event,
+        )
+        send_results.append((event, accepted, error))
+
+    with context._lock:
+        for event, accepted, error in send_results:
             _record_event_attempt(event, accepted, error)
             if accepted:
                 case_state = _ensure_case_state(state, str(event.get("test_case_id", "")))
@@ -798,7 +797,12 @@ def _build_reporting_payload(
     metadata = _as_dict(row.get("test_metadata"))
     run_meta = _as_dict(metadata.get("run"))
     scenario_meta = _as_dict(metadata.get("scenario"))
-    note_text = str(_as_dict(case_state.get("note")).get("content", "") or "").strip()
+    note_source = ""
+    if tag == "BUG":
+        note_source = _as_dict(case_state.get("bug")).get("note", "")
+    elif tag == "ASO":
+        note_source = _as_dict(case_state.get("aso")).get("note", "")
+    note_text = str(note_source or "").strip()
     payload: dict[str, Any] = {
         "event_type": event_type,
         "run_id": run_id,
@@ -876,6 +880,8 @@ def _generate_bug_pdf(
         metadata = _as_dict(row.get("test_metadata"))
         run_meta = _as_dict(metadata.get("run"))
         scenario_meta = _as_dict(metadata.get("scenario"))
+        bug_state = _as_dict(case_state.get("bug"))
+        aso_state = _as_dict(case_state.get("aso"))
         source = {
             "run": {
                 "run_id": run_id,
@@ -890,8 +896,11 @@ def _generate_bug_pdf(
                 "browser": str(scenario_meta.get("browser", row.get("browser", "")) or ""),
                 "capture": _as_dict(scenario_meta.get("capture")),
             },
-            "note": {
-                "content": str(_as_dict(case_state.get("note")).get("content", "") or "").strip(),
+            "bug": {
+                "note": str(bug_state.get("note", "") or "").strip(),
+            },
+            "aso": {
+                "note": str(aso_state.get("note", "") or "").strip(),
             },
         }
 
@@ -1302,7 +1311,7 @@ def _build_handler(context: ReportServerContext):
                     if not event_id:
                         self._send_json(HTTPStatus.BAD_REQUEST, {"error": "missing event_id"})
                         return
-                    if event_type not in {"BUG_SET", "ASO_SET", "NOTE_UPSERT"}:
+                    if event_type not in {"BUG_SET", "ASO_SET"}:
                         self._send_json(HTTPStatus.BAD_REQUEST, {"error": "invalid event type"})
                         return
                     if not case_id:
@@ -1336,29 +1345,17 @@ def _build_handler(context: ReportServerContext):
 
                         prompt_note = _normalize_text(event_payload.get("note"), trim=True)
                         if len(prompt_note) > TEXT_MAX_LENGTH:
-                            self._send_json(HTTPStatus.BAD_REQUEST, {"error": "note exceeds 200 characters"})
+                            self._send_json(
+                                HTTPStatus.BAD_REQUEST, {"error": f"note exceeds {TEXT_MAX_LENGTH} characters"}
+                            )
                             return
 
-                        note_content = None
-                        if event_type == "NOTE_UPSERT":
-                            try:
-                                note_content = _validated_text(event_payload.get("note"), "note")
-                            except Exception as exc:
-                                self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
-                                return
-                            if not note_content:
-                                self._send_json(HTTPStatus.BAD_REQUEST, {"error": "note cannot be empty"})
-                                return
-
-                        if event_type == "NOTE_UPSERT":
-                            _supersede_note_events(outbox, case_id)
+                        note_content = prompt_note
 
                         case_state = _apply_event_to_state(state, case_id, event_type, note_content)
 
                         event_payload_out: dict[str, Any] = {}
-                        if event_type == "NOTE_UPSERT":
-                            event_payload_out["note"] = note_content
-                        elif prompt_note:
+                        if prompt_note:
                             event_payload_out["note"] = prompt_note
 
                         event_entry = {
@@ -1374,27 +1371,44 @@ def _build_handler(context: ReportServerContext):
                         }
                         outbox.append(event_entry)
 
-                        rows = _read_results_rows(report_dir)
-                        rows_by_key = {_row_tag_key(row): row for row in rows}
-                        accepted, error = _send_outbox_event(
-                            context=context,
-                            run_id=run_id,
-                            rows_by_key=rows_by_key,
-                            state=state,
-                            event=event_entry,
-                        )
-                        _record_event_attempt(event_entry, accepted, error)
-                        if not accepted:
-                            logger.error(
-                                "tag_sync_to_external_api_failed",
+                        reporting_enabled = context.reporting_client and context.reporting_client.enabled
+                        if not reporting_enabled:
+                            logger.debug(
+                                "reporting_api_disabled_skipping_sync",
                                 run_id=run_id,
-                                case_id=case_id,
                                 event_type=event_type,
-                                external_api="reporting",
-                                error=error or "unknown",
+                                case_id=case_id,
                             )
-                        if accepted:
-                            _mark_case_synced(case_state, event_type)
+                        else:
+                            rows = _read_results_rows(report_dir)
+                            rows_by_key = {_row_tag_key(row): row for row in rows}
+                            from concurrent.futures import ThreadPoolExecutor
+
+                            event_id = event_entry["event_id"]
+
+                            def send_async():
+                                build_dir_async = report_dir.parent
+                                state_async = _load_state(build_dir_async)
+                                outbox_async = state_async.get("outbox", [])
+                                event_async = next((e for e in outbox_async if e.get("event_id") == event_id), None)
+                                if event_async is None:
+                                    return
+                                accepted, error = _send_outbox_event(
+                                    context=context,
+                                    run_id=run_id,
+                                    rows_by_key=rows_by_key,
+                                    state=state_async,
+                                    event=event_async,
+                                )
+                                if accepted:
+                                    case_state = _ensure_case_state(
+                                        state_async, str(event_async.get("test_case_id", ""))
+                                    )
+                                    _mark_case_synced(case_state, str(event_async.get("type", "")))
+                                    _save_state(build_dir_async, state_async)
+
+                            with ThreadPoolExecutor(max_workers=1) as executor:
+                                executor.submit(send_async)
 
                         _save_state(build_dir, state)
 

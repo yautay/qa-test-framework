@@ -32,9 +32,6 @@
           <span v-if="report.aso_count" class="badge bg-warning text-dark" :title="t('tags.aso')">
             {{ report.aso_count }}
           </span>
-          <span v-if="report.note_count" class="badge bg-info text-dark" :title="t('tags.note')">
-            {{ report.note_count }}
-          </span>
         </div>
       </div>
 

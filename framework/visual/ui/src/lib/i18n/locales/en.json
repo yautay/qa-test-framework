@@ -77,11 +77,11 @@
     "run": "Run",
     "sendBaseline": "SEND BASELINE",
     "sendReport": "REPORT",
-    "confirmSend": "Are you sure you want to submit BUG/ASO/NOTATKA?"
+    "confirmSend": "Are you sure you want to submit BUG/ASO?"
   },
   "modal": {
     "exit": "Exit (K-LSHIFT)",
-    "keys": "Keys: 1-4 layout, A/D navigate, hold W super zoom, S/C/\\ tags prompt, N note, Shift = exit",
+    "keys": "Keys: 1-4 layout, A/D navigate, hold W super zoom, S/C/\\ tags prompt, Shift = exit",
     "slot": "Slot",
     "noImage": "No image for",
     "scoringLabel": "Scoring",
@@ -93,8 +93,7 @@
     "confirm": "Confirmation",
     "areYouSure": "Are you sure you want to tag this as",
     "removeTag": "Are you sure you want to remove",
-    "saveNote": "Do you want to save and send the note?",
-    "notePlaceholder": "Optional note (max 200 chars)",
+    "notePlaceholder": "Optional note (max 500 chars)",
     "yes": "Yes",
     "no": "No",
     "shiftNo": "Shift = NO",
@@ -104,19 +103,8 @@
     "bug": "BUG",
     "aso": "ASO",
     "baseline": "BASELINE",
-    "note": "NOTE",
     "bugSent": "BUG SENT",
-    "asoSent": "ASO SENT",
-    "noteSent": "NOTE SENT"
-  },
-  "note": {
-    "button": "Note",
-    "title": "Test note",
-    "placeholder": "Describe the context of this test case...",
-    "save": "Save",
-    "cancel": "Cancel",
-    "delete": "Delete",
-    "mouseOnly": "Mouse only: save/cancel/delete are available only by clicking."
+    "asoSent": "ASO SENT"
   },
   "artifacts": {
     "ref": "ref",
@@ -133,7 +121,6 @@
     "unknown": "Unknown error",
     "conflict": "Conflict with existing state",
     "buildHasErrors": "Build has sync issues",
-    "tagAlreadyExists": "Tag is already set for this test case",
-    "noteAlreadyExists": "Note already exists for this test case"
+    "tagAlreadyExists": "Tag is already set for this test case"
   }
 }

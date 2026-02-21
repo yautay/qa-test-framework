@@ -51,18 +51,6 @@
                   {{ t('tags.aso') }}
                 </span>
                 <span v-if="rowHasTag(r, 'baseline')" class="badge bg-success">{{ t('tags.baseline') }}</span>
-                <span v-if="rowHasTag(r, 'bug_reported')" class="badge bg-secondary">{{ t('tags.bugSent') }}</span>
-                <span v-if="rowHasTag(r, 'aso_reported')" class="badge bg-secondary">{{ t('tags.asoSent') }}</span>
-                <span v-if="rowHasTag(r, 'note_reported')" class="badge bg-secondary">{{ t('tags.noteSent') }}</span>
-                <button
-                  v-if="rowHasNote(r)"
-                  type="button"
-                  class="badge note-badge"
-                  :class="{ 'tag-pending': isPendingTag(r, 'note') }"
-                  @click.stop="$emit('open-note', r, index)"
-                >
-                  {{ t('tags.note') }}
-                </button>
               </div>
               <div>{{ r.message || '' }}</div>
             </td>
@@ -152,7 +140,7 @@ export default {
       default: () => ({}),
     },
   },
-  emits: ["show", "select", "open-note", "open-metadata"],
+  emits: ["show", "select", "open-metadata"],
   methods: {
     t(key) {
       return t(key);
@@ -167,15 +155,7 @@ export default {
       if (tag === "bug") return !!tags.bug?.locked;
       if (tag === "aso") return !!tags.aso?.locked;
       if (tag === "baseline") return !!tags.baseline;
-      if (tag === "bug_reported") return !!tags.bug?.synced;
-      if (tag === "aso_reported") return !!tags.aso?.synced;
-      if (tag === "note_reported") return !!tags.note?.synced;
       return false;
-    },
-    rowHasNote(row) {
-      const key = this.tagKeyForRow(row);
-      const noteText = this.tagLog?.[key]?.note?.content;
-      return typeof noteText === "string" && !!noteText.trim();
     },
     rowKey(row, index) {
       const key = this.tagKeyForRow(row);
@@ -282,17 +262,6 @@ export default {
 
 .table-active {
   background-color: var(--body-bg) !important;
-}
-
-.note-badge {
-  border: 1px solid var(--primary);
-  background: var(--filter-highlight-bg, rgba(13, 110, 253, 0.12));
-  color: var(--body-color);
-  cursor: pointer;
-}
-
-.note-badge:hover {
-  border-color: var(--filter-highlight-border, var(--primary));
 }
 
 .sync-error-icon {

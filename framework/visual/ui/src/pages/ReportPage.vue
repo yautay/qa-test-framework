@@ -22,7 +22,6 @@
       :pending-tags="store.pendingTags"
       @show="show"
       @select="store.selectRow"
-      @open-note="openNoteFromTable"
       @open-metadata="openMetadataFromTable"
     />
     <div v-if="store.selectedIndex >= 0" class="keyboard-hint text-muted small mb-2">
@@ -34,8 +33,6 @@
       :presentation-style="presentationStyle"
       :image-style="imageStyle"
       :prompt="prompt"
-      :note-editor="noteEditor"
-      :note-max-length="noteMaxLength"
       :key-held="keyHeld"
       :super-zoom-active="superZoomActive"
       :slot-image="slotImage"
@@ -46,11 +43,7 @@
       @super-zoom-up="handleSuperZoomPointerUp"
       @prompt-tag="promptTag"
       @prompt-remove-tag="promptRemoveTag"
-      @open-note="openNoteEditor"
       @open-metadata="openMetadataFromModal"
-      @note-input="updateNoteDraft"
-      @save-note="saveNoteFromEditor"
-      @cancel-note="cancelNoteEditor"
       @close-modal="closeModal"
       @reset-cursor="store.resetCursor"
       @mouse-move="handleMouseMove"
@@ -123,12 +116,6 @@ const isSendingInProgress = ref(false);
 const lockInfo = ref({ lockId: "", ownerClientId: "", expiresAt: 0 });
 const lockHeartbeatTimer = ref(null);
 const lockDenied = ref(false);
-const noteEditor = ref({
-  active: false,
-  rowKey: "",
-  text: "",
-  hasExisting: false,
-});
 const metadataPanel = ref({
   active: false,
   payload: {},
@@ -400,6 +387,19 @@ async function promptSendReport() {
   try {
     const response = await sendBuildReport(props.runId, { timeoutMs: 30000 });
     debugLog("DEBUG sendBuildReport response:", JSON.stringify(response).slice(0, 500));
+    
+    const testCases = response?.test_cases || {};
+    for (const [caseKey, caseState] of Object.entries(testCases)) {
+      if (caseState?.bug?.locked) {
+        store.clearSyncError(caseKey);
+        store.setPendingTag(caseKey, "bug");
+      }
+      if (caseState?.aso?.locked) {
+        store.clearSyncError(caseKey);
+        store.setPendingTag(caseKey, "aso");
+      }
+    }
+    
     applyStateFromResponse(response);
     const pdf = response?.pdf || {};
     if (Number(pdf.pages || 0) > 0) {
@@ -442,29 +442,6 @@ async function show(row, mode, index = null) {
     const modal = Modal.getOrCreateInstance(modalEl);
     modal.show();
   }
-}
-
-function openNoteEditor(row = store.modalRow) {
-  if (!row) return;
-  if (prompt.value.active) return;
-  const key = getRowTagKey(row);
-  const pendingNote = store.pendingTags?.[key]?.note;
-  const existingNote = store.tagLog?.[key]?.note;
-  const noteText = pendingNote !== undefined ? pendingNote : (existingNote?.content || null);
-  noteEditor.value = {
-    active: true,
-    rowKey: key,
-    text: noteText || "",
-    hasExisting: !!(noteText),
-  };
-}
-
-function openNoteFromTable(row, index) {
-  if (typeof index === "number") {
-    store.selectedIndex = index;
-  }
-  show(row, "test", index);
-  openNoteEditor(row);
 }
 
 function buildMetadataPayload(row) {
@@ -511,65 +488,12 @@ function closeMetadataPanel() {
   };
 }
 
-function updateNoteDraft(value) {
-  if (!noteEditor.value.active) return;
-  const safeText = normalizeNoteDraft(value);
-  noteEditor.value = {
-    ...noteEditor.value,
-    text: safeText,
-  };
-}
-
 function updatePromptNote(value) {
   if (!prompt.value.active) return;
   const safeText = normalizeNoteDraft(value);
   prompt.value = {
     ...prompt.value,
     note: safeText,
-  };
-}
-
-function saveNoteFromEditor() {
-  const now = Date.now();
-  if (now - lastPromptTime < PROMPT_DEBOUNCE_MS) {
-    return;
-  }
-  if (!noteEditor.value.active || !store.modalRow) return;
-  if (prompt.value.active) return;
-
-  const key = getRowTagKey(store.modalRow);
-  const pendingNote = store.pendingTags?.[key]?.note;
-  const existingNote = store.tagLog?.[key]?.note;
-  const existingText = pendingNote !== undefined ? pendingNote : (existingNote?.content || "");
-  const newText = noteEditor.value.text;
-  const hasChanged = newText !== existingText;
-
-  lastPromptTime = now;
-  if (hasChanged || !existingText) {
-    prompt.value = { active: true, type: "save-note" };
-  } else {
-    cancelNoteEditor();
-  }
-}
-
-async function confirmSaveNote() {
-  if (!noteEditor.value.active || !store.modalRow) return;
-  const safeText = sanitizeNoteText(noteEditor.value.text);
-  if (!safeText) {
-    cancelNoteEditor();
-    return;
-  }
-  await postEvent("NOTE_UPSERT", { note: safeText });
-  cancelNoteEditor();
-}
-
-function cancelNoteEditor() {
-  if (!noteEditor.value.active) return;
-  noteEditor.value = {
-    active: false,
-    rowKey: "",
-    text: "",
-    hasExisting: false,
   };
 }
 
@@ -612,10 +536,6 @@ function handleKeydown(evt) {
     return;
   }
 
-  if (noteEditor.value.active) {
-    return;
-  }
-
   if (!registerKeyPress(evt)) return;
 
   const k = evt.key;
@@ -647,8 +567,6 @@ function handleKeydown(evt) {
     if (!store.isTagLocked("baseline")) {
       promptTag("baseline");
     }
-  } else if (k.toUpperCase() === "N") {
-    openNoteEditor();
   } else if (evt.code === "ShiftLeft" || evt.code === "ShiftRight") {
     const modalEl = document.getElementById("vrtModal");
     if (modalEl) {
@@ -667,10 +585,6 @@ function handleKeydown(evt) {
 function handleKeydownNonModal(evt) {
   if (prompt.value.active) {
     handlePromptKeydown(evt);
-    return;
-  }
-
-  if (noteEditor.value.active) {
     return;
   }
 
@@ -696,9 +610,6 @@ function handleKeydownNonModal(evt) {
 
 function handleKeyup(evt) {
   releaseKeyPress(evt);
-  if (noteEditor.value.active) {
-    return;
-  }
   const k = evt.key;
   if (k.toUpperCase() === "A") keyHeld.value.a = false;
   if (k.toUpperCase() === "D") keyHeld.value.d = false;
@@ -739,7 +650,6 @@ function promptTag(type) {
     return;
   }
   if (prompt.value.active) return;
-  if (noteEditor.value.active) return;
   if (store.isTagLocked(type)) return;
   lastPromptTime = now;
   prompt.value = { active: true, type, note: "" };
@@ -768,7 +678,6 @@ function handlePromptKeydown(evt) {
 
 function promptRemoveTag(type) {
   if (prompt.value.active) return;
-  if (noteEditor.value.active) return;
   if (type !== "baseline") return;
   prompt.value = { active: true, type: `remove-${type}`, note: "" };
 }
@@ -778,22 +687,17 @@ async function postEvent(eventType, payload) {
   const lockOk = await ensureLock();
   if (!lockOk) return;
   const key = getRowTagKey(store.modalRow);
-  const tagType = eventType === "BUG_SET" ? "bug" : eventType === "ASO_SET" ? "aso" : eventType === "NOTE_UPSERT" ? "note" : null;
+  const tagType = eventType === "BUG_SET" ? "bug" : eventType === "ASO_SET" ? "aso" : null;
   
-  if (tagType === "note") {
-    const newNoteContent = payload?.note || "";
-    store.setOptimisticTag(key, "note", newNoteContent);
-  } else if (tagType) {
+  if (tagType) {
     const existingTag = store.tagLog?.[key];
     if (tagType === 'bug' && existingTag?.bug?.locked) {
-      showToast(t("sync.tagAlreadyExists"), "warning");
       return;
     }
     if (tagType === 'aso' && existingTag?.aso?.locked) {
-      showToast(t("sync.tagAlreadyExists"), "warning");
       return;
     }
-    store.setOptimisticTag(key, tagType);
+    store.setPendingTag(key, tagType);
   }
   
   try {
@@ -808,18 +712,11 @@ async function postEvent(eventType, payload) {
     if (!result?.accepted) {
       const errorMsg = result?.error || "unknown";
       store.setSyncError(key, errorMsg);
-      reportsStore.setReportSyncError(props.runId, { message: errorMsg });
-      showToast(`${t("sync.errorPrefix")}: ${t("sync." + errorMsg) || errorMsg}`, "error");
-    } else if (tagType) {
-      store.confirmTagSync(key, tagType);
-      reportsStore.clearReportSyncError(props.runId);
     }
   } catch (error) {
     console.info(`Send ${eventType} failed: ${error?.message || "unknown error"}`);
     const errorMsg = error?.isNoResponse ? "timeout" : error?.message || "unknown";
     store.setSyncError(key, errorMsg);
-    reportsStore.setReportSyncError(props.runId, { message: errorMsg });
-    showToast(`${t("sync.errorPrefix")}: ${t("sync." + errorMsg) || errorMsg}`, "error");
   }
 }
 
@@ -843,11 +740,6 @@ async function confirmPrompt() {
   const promptNote = prompt.value.note || "";
   prompt.value = { active: false, type: null, note: "" };
 
-  if (currentType === "save-note") {
-    await confirmSaveNote();
-    return;
-  }
-
   if (currentType.startsWith("remove-")) {
     const type = currentType.replace("remove-", "");
     if (type === "baseline") {
@@ -868,9 +760,6 @@ async function confirmPrompt() {
 
 function cancelPrompt() {
   if (!prompt.value.active) return;
-  if (prompt.value.type === "save-note") {
-    cancelNoteEditor();
-  }
   prompt.value = { active: false, type: null, note: "" };
 }
 
@@ -878,7 +767,6 @@ function closeModal() {
   store.closeViewer();
   deactivateSuperZoom();
   cancelPrompt();
-  cancelNoteEditor();
   closeMetadataPanel();
 }
 
