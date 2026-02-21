@@ -305,9 +305,7 @@ async function releaseLock() {
 async function loadState() {
   if (!props.runId) return;
   const payload = await fetchBuildState(props.runId);
-  const snapshot = payload?.state?.test_cases;
-  if (!snapshot || typeof snapshot !== "object") return;
-  store.updateTagLog(snapshot);
+  store.applyServerState(payload?.state || {});
 }
 
 function applyStateFromResponse(response) {

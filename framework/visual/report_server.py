@@ -63,6 +63,7 @@ class ReportServerContext:
     pinned_run_dirs: dict[str, Path] = field(default_factory=dict)
     challenges: dict[str, ChallengeEntry] = field(default_factory=dict)
     reporting_client: ReportingClient | None = None
+    reporting_enabled: bool = False
     reporting_bug_endpoint: str = ""
     reporting_aso_endpoint: str = ""
     reporting_note_endpoint: str = ""
@@ -649,6 +650,8 @@ def _send_outbox_event(
     state: dict[str, Any],
     event: dict[str, Any],
 ) -> tuple[bool, str]:
+    if not context.reporting_enabled:
+        return False, "reporting disabled"
     event_type = str(event.get("type", ""))
     endpoint = _reporting_endpoint_for_event(context, event_type)
     if not endpoint:
@@ -1371,7 +1374,9 @@ def _build_handler(context: ReportServerContext):
                         }
                         outbox.append(event_entry)
 
-                        reporting_enabled = context.reporting_client and context.reporting_client.enabled
+                        reporting_enabled = bool(
+                            context.reporting_enabled and context.reporting_client and context.reporting_client.enabled
+                        )
                         if not reporting_enabled:
                             logger.debug(
                                 "reporting_api_disabled_skipping_sync",
@@ -1590,13 +1595,23 @@ def main() -> int:
         pinned_run_dirs[selected_run_id] = selected_report_dir
 
     env = load_env()
-    reporting_client = ReportingClient(
-        enabled=bool(str(env.reporting_api_url or "").strip()),
-        base_url=env.reporting_api_url,
-        token=env.reporting_api_token,
-        timeout_seconds=env.reporting_api_timeout_seconds,
-        retries=env.reporting_api_retries,
-    )
+    reporting_enabled = bool(env.reporting_enabled)
+    reporting_api_url = str(env.reporting_api_url or "").strip()
+    reporting_client: ReportingClient | None = None
+    if reporting_enabled:
+        if not reporting_api_url:
+            logger.error(
+                "reporting_config_missing_url", message="reporting_enabled=true but REPORTING_API_URL is empty"
+            )
+            reporting_enabled = False
+        else:
+            reporting_client = ReportingClient(
+                enabled=True,
+                base_url=reporting_api_url,
+                token=env.reporting_api_token,
+                timeout_seconds=env.reporting_api_timeout_seconds,
+                retries=env.reporting_api_retries,
+            )
     context = ReportServerContext(
         repo_root=REPO_ROOT,
         ui_dist_dir=ui_dist_dir,
@@ -1604,6 +1619,7 @@ def main() -> int:
         run_dirs=run_dirs,
         pinned_run_dirs=pinned_run_dirs,
         reporting_client=reporting_client,
+        reporting_enabled=reporting_enabled,
         reporting_bug_endpoint=str(cast(Any, env).reporting_api_bug_endpoint or "").strip(),
         reporting_aso_endpoint=str(cast(Any, env).reporting_api_aso_endpoint or "").strip(),
         reporting_note_endpoint=str(cast(Any, env).reporting_api_note_endpoint or "").strip(),

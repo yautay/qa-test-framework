@@ -94,6 +94,13 @@ function buildSlots(slotCount, existingSlots, existingModes) {
   });
 }
 
+function tagTypeFromEventType(eventType) {
+  const normalized = String(eventType || "").toUpperCase();
+  if (normalized === "BUG_SET") return "bug";
+  if (normalized === "ASO_SET") return "aso";
+  return null;
+}
+
 export const useResultsStore = defineStore("results", {
   state: () => ({
     rows: [],
@@ -119,6 +126,7 @@ export const useResultsStore = defineStore("results", {
     tagLog: {},
     pendingTags: {},
     syncErrors: {},
+    retryMarkers: {},
     pollingActive: false,
     pollingIntervalId: null,
 
@@ -426,6 +434,8 @@ export const useResultsStore = defineStore("results", {
       const existing = this.pendingTags[caseKey] || {};
       this.pendingTags[caseKey] = { ...existing, [type]: true };
       delete this.syncErrors[caseKey];
+      const existingMarkers = this.retryMarkers[caseKey] || {};
+      this.retryMarkers[caseKey] = { ...existingMarkers, [type]: Date.now() };
     },
 
     setOptimisticTag(caseKey, type, noteContent = null) {
@@ -434,7 +444,9 @@ export const useResultsStore = defineStore("results", {
       
       this.pendingTags[caseKey] = { ...existing, [type]: true };
       delete this.syncErrors[caseKey];
-      
+      const existingMarkers = this.retryMarkers[caseKey] || {};
+      this.retryMarkers[caseKey] = { ...existingMarkers, [type]: Date.now() };
+       
       const currentLog = this.tagLog[caseKey] || buildEmptyTagEntry();
       if (type === "bug") {
         currentLog.bug = { ...currentLog.bug, locked: true, synced: false };
@@ -456,6 +468,15 @@ export const useResultsStore = defineStore("results", {
         }
       }
       delete this.syncErrors[caseKey];
+      const marker = this.retryMarkers[caseKey];
+      if (marker) {
+        delete marker[type];
+        if (Object.keys(marker).length === 0) {
+          delete this.retryMarkers[caseKey];
+        } else {
+          this.retryMarkers[caseKey] = marker;
+        }
+      }
     },
 
     setSyncError(caseKey, message) {
@@ -465,6 +486,7 @@ export const useResultsStore = defineStore("results", {
         timestamp: Date.now(),
       };
       delete this.pendingTags[caseKey];
+      delete this.retryMarkers[caseKey];
     },
 
     clearSyncError(caseKey) {
@@ -511,34 +533,89 @@ export const useResultsStore = defineStore("results", {
       
       try {
         const serverState = await fetchBuildState(this.runId);
-        const serverTags = serverState?.state?.test_cases || {};
-        this.syncWithServer(serverTags);
+        this.applyServerState(serverState?.state || {});
       } catch (e) {
         // Silent fail - polling should be resilient
       }
     },
 
-    syncWithServer(serverTags) {
-      for (const [caseKey, pending] of Object.entries(this.pendingTags)) {
-        const serverTag = serverTags[caseKey];
-        
-        if (pending.bug && serverTag?.bug?.locked) {
-          delete pending.bug;
+    applyServerState(serverState) {
+      if (!serverState || typeof serverState !== "object") {
+        this.pendingTags = {};
+        this.syncErrors = {};
+        this.updateTagLog({});
+        return;
+      }
+      const testCases = serverState?.test_cases || {};
+      const outboxEntries = Array.isArray(serverState?.outbox) ? serverState.outbox : [];
+      this.updateTagLog(testCases);
+      this.updateSyncIndicatorsFromOutbox(outboxEntries);
+    },
+
+    updateSyncIndicatorsFromOutbox(outboxEntries) {
+      const nextPending = {};
+      const nextErrors = {};
+      const nextMarkers = {};
+      const currentMarkers = this.retryMarkers || {};
+      const handled = new Set();
+
+      const pendingKey = (caseKey, tagType) => `${caseKey}::${tagType}`;
+
+      const ensurePending = (caseKey, tagType, markerValue) => {
+        const pendingEntry = nextPending[caseKey] || {};
+        pendingEntry[tagType] = true;
+        nextPending[caseKey] = pendingEntry;
+        if (!nextMarkers[caseKey]) nextMarkers[caseKey] = {};
+        nextMarkers[caseKey][tagType] = markerValue || nextMarkers[caseKey][tagType] || Date.now();
+      };
+
+      for (const entry of outboxEntries) {
+        if (!entry || typeof entry !== "object") continue;
+        const caseKey = String(entry.test_case_id || "").trim();
+        const tagType = tagTypeFromEventType(entry.type);
+        if (!caseKey || !tagType) continue;
+        const status = String(entry.status || "pending").toLowerCase();
+        const lastAttempt = Date.parse(entry.last_attempt_at || "") || 0;
+        const marker = currentMarkers?.[caseKey]?.[tagType] || 0;
+        const key = pendingKey(caseKey, tagType);
+
+        if (status === "pending") {
+          const markerValue = marker || Date.now();
+          ensurePending(caseKey, tagType, markerValue);
+          handled.add(key);
+          continue;
         }
-        if (pending.aso && serverTag?.aso?.locked) {
-          delete pending.aso;
+
+        if (status === "failed") {
+          if (marker && lastAttempt < marker) {
+            ensurePending(caseKey, tagType, marker);
+            handled.add(key);
+            continue;
+          }
+          const message = String(entry.last_error || "sync failed").trim() || "sync failed";
+          const timestamp = lastAttempt || Date.now();
+          nextErrors[caseKey] = { message, timestamp };
+          handled.add(key);
+          continue;
         }
-        
-        if (Object.keys(pending).length === 0) {
-          delete this.pendingTags[caseKey];
-        } else {
-          this.pendingTags[caseKey] = pending;
+
+        // status sent/superseded => success, ensure marker cleared
+        handled.add(key);
+      }
+
+      for (const [caseKey, tags] of Object.entries(currentMarkers)) {
+        for (const [tagType, markerValue] of Object.entries(tags)) {
+          const key = pendingKey(caseKey, tagType);
+          if (handled.has(key)) {
+            continue;
+          }
+          ensurePending(caseKey, tagType, markerValue);
         }
       }
-      
-      if (Object.keys(this.pendingTags).length === 0) {
-        this.updateTagLog(serverTags);
-      }
+
+      this.pendingTags = nextPending;
+      this.syncErrors = nextErrors;
+      this.retryMarkers = nextMarkers;
     },
   },
 });

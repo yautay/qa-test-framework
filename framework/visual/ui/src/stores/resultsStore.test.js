@@ -343,6 +343,77 @@ describe("resultsStore", () => {
     });
   });
 
+  describe("applyServerState", () => {
+    it("updates pending and errors based on outbox", () => {
+      const store = useResultsStore();
+      const caseKey = "s1::img.png::::";
+
+      store.applyServerState({
+        test_cases: {
+          [caseKey]: {
+            bug: { locked: true, synced: false, note: "" },
+            aso: { locked: false, synced: false, note: "" },
+          },
+        },
+        outbox: [
+          { test_case_id: caseKey, type: "BUG_SET", status: "pending" },
+          {
+            test_case_id: caseKey,
+            type: "ASO_SET",
+            status: "failed",
+            last_error: "timeout",
+            last_attempt_at: "2026-02-21T12:00:00Z",
+          },
+        ],
+      });
+
+      expect(store.pendingTags[caseKey].bug).toBe(true);
+      expect(store.syncErrors[caseKey].message).toBe("timeout");
+    });
+
+    it("keeps pending when last_attempt_at predates retry marker", () => {
+      const store = useResultsStore();
+      const caseKey = "retry::case";
+      store.setPendingTag(caseKey, "bug");
+      const marker = store.retryMarkers[caseKey].bug;
+      const older = new Date(marker - 1000).toISOString();
+
+      store.updateSyncIndicatorsFromOutbox([
+        {
+          test_case_id: caseKey,
+          type: "BUG_SET",
+          status: "failed",
+          last_error: "old failure",
+          last_attempt_at: older,
+        },
+      ]);
+
+      expect(store.pendingTags[caseKey].bug).toBe(true);
+      expect(store.syncErrors[caseKey]).toBeUndefined();
+    });
+
+    it("shows error when failure timestamp is newer than retry marker", () => {
+      const store = useResultsStore();
+      const caseKey = "retry::case2";
+      store.setPendingTag(caseKey, "bug");
+      const marker = store.retryMarkers[caseKey].bug;
+      const newer = new Date(marker + 1000).toISOString();
+
+      store.updateSyncIndicatorsFromOutbox([
+        {
+          test_case_id: caseKey,
+          type: "BUG_SET",
+          status: "failed",
+          last_error: "still bad",
+          last_attempt_at: newer,
+        },
+      ]);
+
+      expect(store.pendingTags[caseKey]).toBeUndefined();
+      expect(store.syncErrors[caseKey].message).toBe("still bad");
+    });
+  });
+
   describe("updateTagLog", () => {
     it("normalizes tag log structure", () => {
       const store = useResultsStore();
