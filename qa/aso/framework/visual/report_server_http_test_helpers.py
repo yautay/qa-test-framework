@@ -34,10 +34,16 @@ def _http_json(base_url: str, path: str, method: str = "GET", body: dict | None 
     req = Request(f"{base_url}{path}", method=method, data=data, headers=headers)
     try:
         with urlopen(req) as resp:
-            payload = json.loads(resp.read().decode("utf-8") or "{}")
+            raw = resp.read()
+            if not raw:
+                raise AssertionError(f"Empty JSON response body for {method} {path} (status={int(resp.status)})")
+            payload = json.loads(raw.decode("utf-8"))
             return int(resp.status), payload
     except HTTPError as exc:
-        payload = json.loads(exc.read().decode("utf-8") or "{}")
+        raw = exc.read()
+        if not raw:
+            raise AssertionError(f"Empty JSON error body for {method} {path} (status={int(exc.code)})")
+        payload = json.loads(raw.decode("utf-8"))
         return int(exc.code), payload
 
 

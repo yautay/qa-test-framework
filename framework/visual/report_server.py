@@ -69,7 +69,6 @@ class ReportServerContext:
     reporting_enabled: bool = False
     reporting_bug_endpoint: str = ""
     reporting_aso_endpoint: str = ""
-    reporting_note_endpoint: str = ""
     bug_pdf_config_path: Path | None = None
     sync_workers: int = 0
     sync_executor: ThreadPoolExecutor | None = field(default=None, repr=False)
@@ -311,9 +310,10 @@ def _list_reports_payload(context: ReportServerContext) -> list[dict[str, Any]]:
 
 def _cleanup_expired_challenges(context: ReportServerContext) -> None:
     now = time.time()
-    expired = [challenge_id for challenge_id, item in context.challenges.items() if item.expires_at <= now]
-    for challenge_id in expired:
-        context.challenges.pop(challenge_id, None)
+    with context._lock:
+        expired = [challenge_id for challenge_id, item in context.challenges.items() if item.expires_at <= now]
+        for challenge_id in expired:
+            context.challenges.pop(challenge_id, None)
 
 
 def _generate_phrase() -> str:
@@ -655,13 +655,6 @@ def _utc_timestamp() -> str:
     return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
 
-def _find_row_by_case_id(rows: list[dict[str, Any]], case_id: str) -> dict[str, Any] | None:
-    for row in rows:
-        if _row_tag_key(row) == case_id:
-            return row
-    return None
-
-
 def _apply_event_to_state(
     state: dict[str, Any],
     case_id: str,
@@ -900,8 +893,6 @@ def _flush_pending(
         rows_by_key = {_row_tag_key(row): row for row in rows}
         for event in state.get("outbox", []):
             if event.get("status") not in {"pending", "failed"}:
-                continue
-            if event.get("status") == "superseded":
                 continue
             event_id = str(event.get("event_id", "")).strip()
             if event_id:
@@ -1415,9 +1406,10 @@ def _build_handler(context: ReportServerContext):
                     challenge_id = token_urlsafe(12)
                     phrase = _generate_phrase()
                     expires_at = time.time() + CHALLENGE_TTL_SECONDS
-                    context.challenges[challenge_id] = ChallengeEntry(
-                        run_id=run_id, phrase=phrase, expires_at=expires_at
-                    )
+                    with context._lock:
+                        context.challenges[challenge_id] = ChallengeEntry(
+                            run_id=run_id, phrase=phrase, expires_at=expires_at
+                        )
                     self._send_json(
                         HTTPStatus.OK,
                         {
@@ -1696,18 +1688,19 @@ def _build_handler(context: ReportServerContext):
                     return
 
                 _cleanup_expired_challenges(context)
-                challenge = context.challenges.get(challenge_id)
-                if challenge is None:
-                    self._send_json(HTTPStatus.FORBIDDEN, {"error": "challenge is missing or expired"})
-                    return
-                if challenge.phrase != phrase:
-                    self._send_json(HTTPStatus.FORBIDDEN, {"error": "challenge phrase mismatch"})
-                    return
-                if challenge.run_id != run_id:
-                    self._send_json(HTTPStatus.FORBIDDEN, {"error": "challenge run mismatch"})
-                    return
+                with context._lock:
+                    challenge = context.challenges.get(challenge_id)
+                    if challenge is None:
+                        self._send_json(HTTPStatus.FORBIDDEN, {"error": "challenge is missing or expired"})
+                        return
+                    if challenge.phrase != phrase:
+                        self._send_json(HTTPStatus.FORBIDDEN, {"error": "challenge phrase mismatch"})
+                        return
+                    if challenge.run_id != run_id:
+                        self._send_json(HTTPStatus.FORBIDDEN, {"error": "challenge run mismatch"})
+                        return
 
-                context.challenges.pop(challenge_id, None)
+                    context.challenges.pop(challenge_id, None)
 
                 results: list[dict[str, Any]] = []
                 saved_count = 0
@@ -1826,7 +1819,6 @@ def main() -> int:
         reporting_enabled=reporting_enabled,
         reporting_bug_endpoint=str(cast(Any, env).reporting_api_bug_endpoint or "").strip(),
         reporting_aso_endpoint=str(cast(Any, env).reporting_api_aso_endpoint or "").strip(),
-        reporting_note_endpoint=str(cast(Any, env).reporting_api_note_endpoint or "").strip(),
         sync_workers=sync_workers,
         sync_executor=sync_executor,
         bug_pdf_config_path=(
