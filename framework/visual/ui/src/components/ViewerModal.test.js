@@ -176,6 +176,67 @@ describe("ViewerModal", () => {
       expect(warning.attributes("title")).toBe("sync.unsyncedTooltip");
     });
 
+    it("shows pending tooltip when tag is pending", () => {
+      const viewer = {
+        ...defaultViewer,
+        tags: {
+          bug: { locked: true, synced: false },
+          aso: { locked: false, synced: false },
+          baseline: false,
+        },
+        currentTagKey: "test-case",
+        syncErrors: {},
+        pendingTags: { "test-case": { bug: true } },
+      };
+      const wrapper = mount(ViewerModal, {
+        props: { ...defaultProps, viewer },
+      });
+
+      const warning = wrapper.find(".modal-header-badges .badge.bg-warning.text-dark.me-1");
+      expect(warning.exists()).toBe(true);
+      expect(warning.attributes("title")).toBe("sync.pendingTooltip");
+    });
+
+    it("prefers error tooltip over pending/unsynced states", () => {
+      const viewer = {
+        ...defaultViewer,
+        tags: {
+          bug: { locked: true, synced: false },
+          aso: { locked: true, synced: false },
+          baseline: false,
+        },
+        currentTagKey: "test-case",
+        syncErrors: { "test-case": { message: "timeout" } },
+        pendingTags: { "test-case": { bug: true, aso: true } },
+      };
+      const wrapper = mount(ViewerModal, {
+        props: { ...defaultProps, viewer },
+      });
+
+      const warning = wrapper.find(".modal-header-badges .badge.bg-warning.text-dark.me-1");
+      expect(warning.exists()).toBe(true);
+      expect(warning.attributes("title")).toBe("sync.errorPrefix: timeout");
+    });
+
+    it("hides sync warning when BUG and ASO are fully synced", () => {
+      const viewer = {
+        ...defaultViewer,
+        tags: {
+          bug: { locked: true, synced: true },
+          aso: { locked: true, synced: true },
+          baseline: false,
+        },
+        currentTagKey: "test-case",
+        syncErrors: {},
+        pendingTags: {},
+      };
+      const wrapper = mount(ViewerModal, {
+        props: { ...defaultProps, viewer },
+      });
+
+      expect(wrapper.find(".modal-header-badges .badge.bg-warning.text-dark.me-1").exists()).toBe(false);
+    });
+
   });
 
   describe("scoringText", () => {

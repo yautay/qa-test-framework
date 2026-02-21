@@ -119,4 +119,83 @@ describe("ResultsTable", () => {
     expect(warning.exists()).toBe(true);
     expect(warning.attributes("title")).toBe("sync.errorPrefix: timeout");
   });
+
+  it("prefers error tooltip over pending and unsynced states", () => {
+    const row = makeRow();
+    const key = rowKey(row);
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [row],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {
+          [key]: {
+            bug: { locked: true, synced: false },
+            aso: { locked: false, synced: false },
+            baseline: false,
+          },
+        },
+        pendingTags: {
+          [key]: { bug: true },
+        },
+        syncErrors: {
+          [key]: { message: "conflict" },
+        },
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    const warning = wrapper.find(".sync-error-icon");
+    expect(warning.exists()).toBe(true);
+    expect(warning.attributes("title")).toBe("sync.errorPrefix: conflict");
+  });
+
+  it("shows pending tooltip when no sync error exists", () => {
+    const row = makeRow();
+    const key = rowKey(row);
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [row],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {
+          [key]: {
+            bug: { locked: true, synced: false },
+            aso: { locked: false, synced: false },
+            baseline: false,
+          },
+        },
+        pendingTags: {
+          [key]: { bug: true },
+        },
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    const warning = wrapper.find(".sync-error-icon");
+    expect(warning.exists()).toBe(true);
+    expect(warning.attributes("title")).toBe("sync.pendingTooltip");
+  });
+
+  it("hides sync warning when BUG and ASO are fully synced", () => {
+    const row = makeRow();
+    const key = rowKey(row);
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [row],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {
+          [key]: {
+            bug: { locked: true, synced: true },
+            aso: { locked: true, synced: true },
+            baseline: false,
+          },
+        },
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    expect(wrapper.find(".sync-error-icon").exists()).toBe(false);
+  });
 });

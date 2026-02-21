@@ -54,4 +54,50 @@ describe("ReportCard", () => {
     expect(warning.attributes("title")).toContain("sending: 1");
     expect(warning.attributes("title")).toContain("unsynced: 4");
   });
+
+  it("does not show warning badge when report has no sync issues", () => {
+    const wrapper = mount(ReportCard, {
+      props: {
+        report: {
+          run_id: "run-ok",
+          total: 4,
+          passed: 4,
+          failed: 0,
+          has_sync_issues: false,
+          sync_failed_count: 0,
+          sync_pending_count: 0,
+          sync_sending_count: 0,
+          sync_unsynced_count: 0,
+        },
+      },
+    });
+
+    expect(wrapper.find(".badge.bg-warning.text-dark").exists()).toBe(false);
+  });
+
+  it("shows warning badge when hasSyncErrors fallback prop is true", () => {
+    const wrapper = mount(ReportCard, {
+      props: {
+        hasSyncErrors: true,
+        report: {
+          run_id: "run-fallback",
+          total: 4,
+          passed: 4,
+          failed: 0,
+          has_sync_issues: false,
+          sync_failed_count: 0,
+          sync_pending_count: 0,
+          sync_sending_count: 0,
+          sync_unsynced_count: 0,
+        },
+      },
+    });
+
+    const warning = wrapper.find(".badge.bg-warning.text-dark");
+    expect(warning.exists()).toBe(true);
+    expect(warning.attributes("title")).toContain("failed: 0");
+    expect(warning.attributes("title")).toContain("pending: 0");
+    expect(warning.attributes("title")).toContain("sending: 0");
+    expect(warning.attributes("title")).toContain("unsynced: 0");
+  });
 });

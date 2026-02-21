@@ -25,4 +25,23 @@ describe("i18n", () => {
     expect(locale.value).toBe("pl");
     expect(t("hero.title")).toBe("Dashboard Raportów");
   });
+
+  it("resolves sync and language tooltip keys in all supported locales", async () => {
+    const { setLocale, t } = await import("./index");
+
+    setLocale("en");
+    expect(t("sync.pendingTooltip")).not.toBe("sync.pendingTooltip");
+    expect(t("sync.unsyncedTooltip")).not.toBe("sync.unsyncedTooltip");
+    expect(t("language.english")).not.toBe("language.english");
+
+    setLocale("pl");
+    expect(t("sync.pendingTooltip")).not.toBe("sync.pendingTooltip");
+    expect(t("sync.unsyncedTooltip")).not.toBe("sync.unsyncedTooltip");
+    expect(t("language.polish")).not.toBe("language.polish");
+
+    setLocale("uk");
+    expect(t("sync.pendingTooltip")).not.toBe("sync.pendingTooltip");
+    expect(t("sync.unsyncedTooltip")).not.toBe("sync.unsyncedTooltip");
+    expect(t("language.ukrainian")).not.toBe("language.ukrainian");
+  });
 });

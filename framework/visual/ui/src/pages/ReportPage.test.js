@@ -493,6 +493,101 @@ describe("ReportPage", () => {
     createSpy.mockRestore();
   });
 
+  it("keeps sync warning conditions when report state still has unsynced tag", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const store = useResultsStore();
+    const row = store.rows[0];
+    const key = getRowTagKey(row);
+
+    sendBuildReport.mockResolvedValueOnce({
+      accepted: true,
+      pdf: { pages: 0 },
+      state: {
+        test_cases: {
+          [key]: {
+            bug: { locked: true, synced: true, note: "" },
+            aso: { locked: true, synced: false, note: "" },
+          },
+        },
+        outbox: [],
+      },
+      test_cases: {
+        [key]: {
+          bug: { locked: true, synced: true, note: "" },
+          aso: { locked: true, synced: false, note: "" },
+        },
+      },
+    });
+
+    const reportBtn = wrapper.find(".report-header button.btn-primary");
+    await reportBtn.trigger("click");
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(store.tagLog[key].bug.synced).toBe(true);
+    expect(store.tagLog[key].aso.synced).toBe(false);
+
+    wrapper.unmount();
+  });
+
+  it("clears sync warning conditions when report state returns both tags synced", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const store = useResultsStore();
+    const row = store.rows[0];
+    const key = getRowTagKey(row);
+
+    store.applyServerState({
+      test_cases: {
+        [key]: {
+          bug: { locked: true, synced: true, note: "" },
+          aso: { locked: true, synced: false, note: "" },
+        },
+      },
+      outbox: [],
+    });
+
+    sendBuildReport.mockResolvedValueOnce({
+      accepted: true,
+      pdf: { pages: 0 },
+      state: {
+        test_cases: {
+          [key]: {
+            bug: { locked: true, synced: true, note: "" },
+            aso: { locked: true, synced: true, note: "" },
+          },
+        },
+        outbox: [],
+      },
+      test_cases: {
+        [key]: {
+          bug: { locked: true, synced: true, note: "" },
+          aso: { locked: true, synced: true, note: "" },
+        },
+      },
+    });
+
+    const reportBtn = wrapper.find(".report-header button.btn-primary");
+    await reportBtn.trigger("click");
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(store.tagLog[key].bug.synced).toBe(true);
+    expect(store.tagLog[key].aso.synced).toBe(true);
+    expect(store.syncErrors[key]).toBeUndefined();
+
+    wrapper.unmount();
+  });
+
   it("does not display send report prompt on click", async () => {
     const wrapper = mount(ReportPage, {
       props: { runId: "run-1" },
