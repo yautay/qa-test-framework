@@ -62,7 +62,7 @@ visual_perceptual_alpha = 0.45
 visual_perceptual_lpips_net = "alex"  # vgg|alex|squeeze
 
 # Reporting API (optional)
-reporting_enabled = True
+reporting_enabled = False
 reporting_schema_version = "2.0"
 reporting_source_project = "netQArner"
 reporting_source_origin = ""
