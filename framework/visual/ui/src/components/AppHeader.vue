@@ -64,19 +64,20 @@
       </div>
       <div class="datetime-wrap text-muted small mono">
         <span class="datetime">{{ formattedDateTime }}</span>
-        <div class="app-info" tabindex="0" role="button" aria-label="Application build info">
+        <div class="app-info" tabindex="0" role="button" :aria-label="t('appInfo.ariaLabel')">
           <span class="app-info-icon">i</span>
           <div class="app-info-tooltip" role="tooltip">
-            <div class="app-info-row"><strong>Runtime</strong></div>
-            <div class="app-info-row">version: {{ runtimeInfo.version }}</div>
-            <div class="app-info-row">codename: {{ runtimeInfo.codename }}</div>
-            <div class="app-info-row">commit: {{ runtimeInfo.commit }}</div>
+            <div class="app-info-row"><strong>{{ t('appInfo.runtime') }}</strong></div>
+            <div class="app-info-row">{{ t('appInfo.version') }}: {{ runtimeInfo.version }}</div>
+            <div class="app-info-row">{{ t('appInfo.codename') }}: {{ runtimeInfo.codename }}</div>
+            <div class="app-info-row">{{ t('appInfo.commit') }}: {{ runtimeInfo.commit }}</div>
             <div class="app-info-divider"></div>
-            <div class="app-info-row"><strong>UI build</strong></div>
-            <div class="app-info-row">version: {{ buildInfo.version }}</div>
-            <div class="app-info-row">codename: {{ buildInfo.codename }}</div>
-            <div class="app-info-row">commit: {{ buildInfo.commit }}</div>
-            <div class="app-info-row">built at: {{ buildInfo.builtAt }}</div>
+            <div class="app-info-row"><strong>{{ t('appInfo.uiBuild') }}</strong></div>
+            <div class="app-info-row">{{ t('appInfo.version') }}: {{ buildInfo.version }}</div>
+            <div class="app-info-row">{{ t('appInfo.codename') }}: {{ buildInfo.codename }}</div>
+            <div class="app-info-row">{{ t('appInfo.uiSrcVersion') }}: {{ buildInfo.uiSrcVersion }}</div>
+            <div class="app-info-row">{{ t('appInfo.commit') }}: {{ buildInfo.commit }}</div>
+            <div class="app-info-row">{{ t('appInfo.builtAt') }}: {{ buildInfo.builtAt }}</div>
           </div>
         </div>
       </div>
@@ -107,6 +108,7 @@ function normalizeAppInfo(payload) {
     buildInfo: {
       version: normalizeText(uiBuild.version),
       codename: normalizeText(uiBuild.codename),
+      uiSrcVersion: normalizeText(uiBuild.ui_src_version),
       commit: normalizeText(uiBuild.commit),
       builtAt: normalizeText(uiBuild.built_at),
     },
@@ -126,6 +128,7 @@ export default {
     const buildInfo = ref({
       version: "loading...",
       codename: "loading...",
+      uiSrcVersion: "loading...",
       commit: "loading...",
       builtAt: "loading...",
     });
@@ -172,6 +175,7 @@ export default {
         buildInfo.value = {
           version: "unknown",
           codename: "unknown",
+          uiSrcVersion: "unknown",
           commit: "unknown",
           builtAt: "unknown",
         };

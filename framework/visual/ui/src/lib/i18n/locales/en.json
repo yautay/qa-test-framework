@@ -120,6 +120,16 @@
     "polish": "Polski",
     "ukrainian": "Українська"
   },
+  "appInfo": {
+    "ariaLabel": "Application build info",
+    "runtime": "Runtime",
+    "uiBuild": "UI build",
+    "version": "version",
+    "codename": "codename",
+    "uiSrcVersion": "ui src version",
+    "commit": "commit",
+    "builtAt": "built at"
+  },
   "sync": {
     "errorPrefix": "Sync failed",
     "timeout": "Server not responding",

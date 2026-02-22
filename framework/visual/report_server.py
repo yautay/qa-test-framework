@@ -176,6 +176,7 @@ def _build_app_info_payload(context: ReportServerContext) -> dict[str, Any]:
     ui_build = {
         "version": build_info.get("version", "unknown"),
         "codename": build_info.get("codename", codename),
+        "ui_src_version": build_info.get("ui_src_version", "unknown"),
         "commit": build_info.get("commit", "unknown"),
         "built_at": build_info.get("built_at", "unknown"),
     }

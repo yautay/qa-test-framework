@@ -120,6 +120,16 @@
     "polish": "Польська",
     "ukrainian": "Українська"
   },
+  "appInfo": {
+    "ariaLabel": "Інформація про збірку застосунку",
+    "runtime": "Runtime",
+    "uiBuild": "UI build",
+    "version": "версія",
+    "codename": "codename",
+    "uiSrcVersion": "версія UI src",
+    "commit": "commit",
+    "builtAt": "зібрано"
+  },
   "sync": {
     "errorPrefix": "Помилка синхронізації",
     "timeout": "Сервер не відповідає",

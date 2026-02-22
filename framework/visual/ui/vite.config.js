@@ -19,6 +19,16 @@ function readCodenameFromPyproject() {
   }
 }
 
+function readUiSrcVersion() {
+  try {
+    const packageJsonPath = resolve(uiRootDir, "package.json");
+    const raw = JSON.parse(readFileSync(packageJsonPath, "utf-8"));
+    return String(raw?.version || "").trim() || "unknown";
+  } catch (_error) {
+    return "unknown";
+  }
+}
+
 function runGit(args) {
   try {
     return execSync(`git ${args.join(" ")}`, {
@@ -44,6 +54,7 @@ function buildInfoPlugin() {
       const payload = {
         version: resolveVersionFromGit(),
         codename: readCodenameFromPyproject(),
+        ui_src_version: readUiSrcVersion(),
         commit: runGit(["rev-parse", "--short", "HEAD"]) || "unknown",
         built_at: new Date().toISOString(),
       };

@@ -7,14 +7,28 @@ import AppHeader from "./AppHeader.vue";
 vi.mock("../lib/api/appInfoApi", () => ({
   fetchAppInfo: vi.fn(async () => ({
     runtime: { version: "1.2.3", codename: "San Eskobar", commit: "abc1234" },
-    ui_build: { version: "1.2.2", codename: "San Eskobar", commit: "def5678", built_at: "2026-02-22T10:00:00Z" },
+    ui_build: {
+      version: "1.2.2",
+      codename: "San Eskobar",
+      ui_src_version: "1.0.0",
+      commit: "def5678",
+      built_at: "2026-02-22T10:00:00Z",
+    },
   })),
 }));
 
 vi.mock("../lib/i18n", () => ({
   locale: ref("en"),
   setLocale: vi.fn(),
-  t: (key) => key,
+  t: (key) => {
+    const labels = {
+      "appInfo.ariaLabel": "Application build info",
+      "appInfo.runtime": "Runtime",
+      "appInfo.uiBuild": "UI build",
+      "appInfo.uiSrcVersion": "ui src version",
+    };
+    return labels[key] || key;
+  },
 }));
 
 vi.mock("../lib/themes", () => ({
@@ -84,6 +98,7 @@ describe("AppHeader", () => {
     expect(tooltip.exists()).toBe(true);
     expect(tooltip.text()).toContain("Runtime");
     expect(tooltip.text()).toContain("UI build");
+    expect(tooltip.text()).toContain("ui src version: 1.0.0");
   });
 
   it("has correct CSS classes for styling", async () => {
