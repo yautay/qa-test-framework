@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import os
 from pathlib import Path
 
 
@@ -33,7 +34,7 @@ def resolve_artifacts_base_dir(base_dir: str, repo_root: Path) -> Path:
     return (repo_root / candidate).resolve()
 
 
-def build_run_artifacts(base_dir: str) -> RunArtifacts:
+def build_run_artifacts(base_dir: str, run_id: str | None = None) -> RunArtifacts:
     """Ensure artifact directories exist and return their paths.
 
     Parameters
@@ -47,8 +48,10 @@ def build_run_artifacts(base_dir: str) -> RunArtifacts:
         Object containing the paths to every artifact subdirectory.
     """
 
-    run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
-    root = (Path(base_dir) / run_id).resolve()
+    resolved_run_id = str(run_id or os.getenv("PYTEST_XDIST_TESTRUNUID") or "").strip()
+    if not resolved_run_id:
+        resolved_run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
+    root = (Path(base_dir) / resolved_run_id).resolve()
 
     traces = root / "traces"
     screenshots = root / "screenshots"
@@ -59,7 +62,7 @@ def build_run_artifacts(base_dir: str) -> RunArtifacts:
         path.mkdir(parents=True, exist_ok=True)
 
     return RunArtifacts(
-        run_id=run_id,
+        run_id=resolved_run_id,
         root=root,
         traces=traces,
         screenshots=screenshots,

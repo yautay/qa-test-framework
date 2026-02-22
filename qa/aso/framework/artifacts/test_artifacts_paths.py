@@ -90,7 +90,8 @@ def test_build_run_artifacts_writes_files_into_each_artifact_subdirectory(tmp_pa
         assert path.read_text(encoding="utf-8") == payload
 
 
-def test_build_run_artifacts_generates_timestamp_run_id(tmp_path: Path) -> None:
+def test_build_run_artifacts_generates_timestamp_run_id(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("PYTEST_XDIST_TESTRUNUID", raising=False)
     base_dir = tmp_path / "artifacts"
 
     run = build_run_artifacts(str(base_dir))
@@ -98,7 +99,10 @@ def test_build_run_artifacts_generates_timestamp_run_id(tmp_path: Path) -> None:
     assert re.match(r"^\d{8}_\d{6}_\d{6}$", run.run_id)
 
 
-def test_build_run_artifacts_creates_unique_run_directories_per_call(tmp_path: Path) -> None:
+def test_build_run_artifacts_creates_unique_run_directories_per_call(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("PYTEST_XDIST_TESTRUNUID", raising=False)
     base_dir = tmp_path / "artifacts"
 
     first = build_run_artifacts(str(base_dir))
@@ -107,3 +111,22 @@ def test_build_run_artifacts_creates_unique_run_directories_per_call(tmp_path: P
     assert first.run_id != second.run_id
     assert first.root != second.root
     assert first.root.parent == second.root.parent == base_dir.resolve()
+
+
+def test_build_run_artifacts_uses_explicit_run_id(tmp_path: Path) -> None:
+    base_dir = tmp_path / "artifacts"
+
+    run = build_run_artifacts(str(base_dir), run_id="shared-run-id")
+
+    assert run.run_id == "shared-run-id"
+    assert run.root == (base_dir / "shared-run-id").resolve()
+
+
+def test_build_run_artifacts_uses_xdist_testrunuid(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    base_dir = tmp_path / "artifacts"
+    monkeypatch.setenv("PYTEST_XDIST_TESTRUNUID", "xdist-shared-id")
+
+    run = build_run_artifacts(str(base_dir))
+
+    assert run.run_id == "xdist-shared-id"
+    assert run.root == (base_dir / "xdist-shared-id").resolve()

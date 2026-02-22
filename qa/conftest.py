@@ -7,6 +7,7 @@ import socket
 import time
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 import pytest
 import settings_cli
 from loguru import logger
@@ -36,6 +37,50 @@ def _get_scenario_description(item: pytest.Item) -> str | None:
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _current_worker_id() -> str:
+    return os.getenv("PYTEST_XDIST_WORKER", "master")
+
+
+def _is_xdist_worker(config: pytest.Config) -> bool:
+    return hasattr(config, "workerinput")
+
+
+def _is_xdist_controller(config: pytest.Config) -> bool:
+    return bool(config.pluginmanager.hasplugin("xdist") and not _is_xdist_worker(config))
+
+
+def _resolve_shared_run_id(config: pytest.Config) -> str | None:
+    worker_input = getattr(config, "workerinput", None)
+    if isinstance(worker_input, dict):
+        token = str(worker_input.get("run_id") or "").strip()
+        if token:
+            return token
+    token = str(os.getenv("PYTEST_XDIST_TESTRUNUID") or "").strip()
+    if token:
+        return token
+    return None
+
+
+def _load_worker_timing_files(logs_dir: Path) -> dict[str, float]:
+    merged: dict[str, float] = {}
+    for path in sorted(logs_dir.glob("test_durations_*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            continue
+        cases = payload.get("cases", {}) if isinstance(payload, dict) else {}
+        if not isinstance(cases, dict):
+            continue
+        for nodeid, seconds in cases.items():
+            if not isinstance(nodeid, str):
+                continue
+            try:
+                merged[nodeid] = float(seconds)
+            except (TypeError, ValueError):
+                continue
+    return merged
 
 
 def _normalize_run_note(raw: object, source: str) -> str:
@@ -153,8 +198,8 @@ def _base_url_resolver(config: pytest.Config):
 def pytest_configure(config: pytest.Config) -> None:
     env = replace(load_env(), ignore_https_errors=True)
     artifacts_base_dir = resolve_artifacts_base_dir(env.artifacts_dir, config.rootpath)
-    artifacts = build_run_artifacts(str(artifacts_base_dir))
-    worker_id = os.getenv("PYTEST_XDIST_WORKER", "master")
+    artifacts = build_run_artifacts(str(artifacts_base_dir), run_id=_resolve_shared_run_id(config))
+    worker_id = _current_worker_id()
     git_metadata = get_git_metadata()
     run_metadata = _resolve_run_metadata(config)
     configure_logging(
@@ -209,7 +254,15 @@ def pytest_configure(config: pytest.Config) -> None:
             "collectonly",
         )
     )
-    _write_run_metadata_file(artifacts, run_metadata)
+    if not _is_xdist_worker(config):
+        _write_run_metadata_file(artifacts, run_metadata)
+
+
+def pytest_configure_node(node) -> None:
+    artifacts = getattr(node.config, "_run_artifacts", None)
+    if artifacts is None:
+        return
+    node.workerinput["run_id"] = artifacts.run_id
 
 
 def pytest_sessionstart(session: pytest.Session) -> None:
@@ -258,8 +311,18 @@ def pytest_sessionstart(session: pytest.Session) -> None:
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     artifacts: RunArtifacts = session.config._run_artifacts
     timings: dict[str, float] = session.config._test_case_timings
-    durations_path = artifacts.logs / "test_durations.json"
-    save_run_timings(durations_path, timings)
+    worker_id = _current_worker_id()
+    if _is_xdist_worker(session.config):
+        durations_path = artifacts.logs / f"test_durations_{worker_id}.json"
+        save_run_timings(durations_path, timings)
+    elif _is_xdist_controller(session.config):
+        merged_timings = _load_worker_timing_files(artifacts.logs)
+        durations_path = artifacts.logs / "test_durations.json"
+        save_run_timings(durations_path, merged_timings)
+        timings = merged_timings
+    else:
+        durations_path = artifacts.logs / "test_durations.json"
+        save_run_timings(durations_path, timings)
 
     previous = load_previous_timings(artifacts.root)
     for regression in detect_slow_regressions(timings, previous):
