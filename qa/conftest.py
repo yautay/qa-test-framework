@@ -145,11 +145,13 @@ def _base_url_resolver(config: pytest.Config):
         return
 
     if env.base_url:
-        config._runtime_env = replace(env, base_url=env.base_url)
+        env = replace(env, base_url=env.base_url)
+
+    config._runtime_env = env
 
 
 def pytest_configure(config: pytest.Config) -> None:
-    env = load_env()
+    env = replace(load_env(), ignore_https_errors=True)
     artifacts_base_dir = resolve_artifacts_base_dir(env.artifacts_dir, config.rootpath)
     artifacts = build_run_artifacts(str(artifacts_base_dir))
     worker_id = os.getenv("PYTEST_XDIST_WORKER", "master")
@@ -167,6 +169,8 @@ def pytest_configure(config: pytest.Config) -> None:
     )
 
     config._runtime_env = env
+    _base_url_resolver(config)
+    env = config._runtime_env
     config._run_metadata = run_metadata
     config._run_artifacts = artifacts
     config._git_metadata = git_metadata

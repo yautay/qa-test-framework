@@ -14,6 +14,10 @@ resolve_pl = url_resolver(
 
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config: pytest.Config) -> None:
+    markexpr = str(getattr(config.option, "markexpr", "") or "").strip().lower()
+    if markexpr == "visual":
+        return
+
     env: RuntimeEnv | None = getattr(config, "_runtime_env", None)
     if env is None:
         return

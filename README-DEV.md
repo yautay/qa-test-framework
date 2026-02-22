@@ -19,6 +19,7 @@ For day-to-day test execution, use `README.md`.
 - `docs/FIXTURES.md`
 - `docs/SCENARIO_MODEL.md`
 - `docs/REPORTING_HTTP_INTEGRATION.md`
+- `docs/visual-timeout-postmortem.md`
 - `tools/README.md`
 - `aQuArius/README.md`
 - `aQuArius/EVENT_CONTRACT_V2.md`
