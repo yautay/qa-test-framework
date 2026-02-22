@@ -4,6 +4,13 @@ import { ref } from "vue";
 
 import AppHeader from "./AppHeader.vue";
 
+vi.mock("../lib/api/appInfoApi", () => ({
+  fetchAppInfo: vi.fn(async () => ({
+    runtime: { version: "1.2.3", codename: "San Eskobar", commit: "abc1234" },
+    ui_build: { version: "1.2.2", codename: "San Eskobar", commit: "def5678", built_at: "2026-02-22T10:00:00Z" },
+  })),
+}));
+
 vi.mock("../lib/i18n", () => ({
   locale: ref("en"),
   setLocale: vi.fn(),
@@ -63,6 +70,20 @@ describe("AppHeader", () => {
     const datetime = wrapper.find(".datetime");
     expect(datetime.exists()).toBe(true);
     expect(datetime.text()).toMatch(/\d{2}\.\d{2}\.\d{4},? \d{2}:\d{2}/);
+  });
+
+  it("renders app info icon with tooltip", async () => {
+    const wrapper = mount(AppHeader);
+    await flushPromises();
+
+    const infoIcon = wrapper.find(".app-info");
+    expect(infoIcon.exists()).toBe(true);
+    expect(infoIcon.attributes("aria-label")).toBe("Application build info");
+
+    const tooltip = wrapper.find(".app-info-tooltip");
+    expect(tooltip.exists()).toBe(true);
+    expect(tooltip.text()).toContain("Runtime");
+    expect(tooltip.text()).toContain("UI build");
   });
 
   it("has correct CSS classes for styling", async () => {

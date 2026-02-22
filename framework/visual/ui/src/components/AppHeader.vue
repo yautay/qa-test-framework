@@ -62,8 +62,23 @@
           </button>
         </div>
       </div>
-      <div class="datetime text-muted small mono">
-        {{ formattedDateTime }}
+      <div class="datetime-wrap text-muted small mono">
+        <span class="datetime">{{ formattedDateTime }}</span>
+        <div class="app-info" tabindex="0" role="button" aria-label="Application build info">
+          <span class="app-info-icon">i</span>
+          <div class="app-info-tooltip" role="tooltip">
+            <div class="app-info-row"><strong>Runtime</strong></div>
+            <div class="app-info-row">version: {{ runtimeInfo.version }}</div>
+            <div class="app-info-row">codename: {{ runtimeInfo.codename }}</div>
+            <div class="app-info-row">commit: {{ runtimeInfo.commit }}</div>
+            <div class="app-info-divider"></div>
+            <div class="app-info-row"><strong>UI build</strong></div>
+            <div class="app-info-row">version: {{ buildInfo.version }}</div>
+            <div class="app-info-row">codename: {{ buildInfo.codename }}</div>
+            <div class="app-info-row">commit: {{ buildInfo.commit }}</div>
+            <div class="app-info-row">built at: {{ buildInfo.builtAt }}</div>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -73,12 +88,47 @@
 import { ref, onMounted, onUnmounted, computed } from "vue";
 import { locale, setLocale, t } from "../lib/i18n";
 import { currentTheme, setTheme, presets } from "../lib/themes";
+import { fetchAppInfo } from "../lib/api/appInfoApi";
+
+function normalizeText(value) {
+  const text = String(value || "").trim();
+  return text || "unknown";
+}
+
+function normalizeAppInfo(payload) {
+  const runtime = payload?.runtime && typeof payload.runtime === "object" ? payload.runtime : {};
+  const uiBuild = payload?.ui_build && typeof payload.ui_build === "object" ? payload.ui_build : {};
+  return {
+    runtimeInfo: {
+      version: normalizeText(runtime.version),
+      codename: normalizeText(runtime.codename),
+      commit: normalizeText(runtime.commit),
+    },
+    buildInfo: {
+      version: normalizeText(uiBuild.version),
+      codename: normalizeText(uiBuild.codename),
+      commit: normalizeText(uiBuild.commit),
+      builtAt: normalizeText(uiBuild.built_at),
+    },
+  };
+}
 
 export default {
   name: "AppHeader",
   setup() {
     const formattedDateTime = ref("");
     const isOpen = ref(false);
+    const runtimeInfo = ref({
+      version: "loading...",
+      codename: "loading...",
+      commit: "loading...",
+    });
+    const buildInfo = ref({
+      version: "loading...",
+      codename: "loading...",
+      commit: "loading...",
+      builtAt: "loading...",
+    });
 
     const selectTheme = (key) => {
       setTheme(key);
@@ -107,10 +157,32 @@ export default {
 
     let intervalId = null;
 
+    const loadAppInfo = async () => {
+      try {
+        const payload = await fetchAppInfo();
+        const normalized = normalizeAppInfo(payload);
+        runtimeInfo.value = normalized.runtimeInfo;
+        buildInfo.value = normalized.buildInfo;
+      } catch (_error) {
+        runtimeInfo.value = {
+          version: "unknown",
+          codename: "unknown",
+          commit: "unknown",
+        };
+        buildInfo.value = {
+          version: "unknown",
+          codename: "unknown",
+          commit: "unknown",
+          builtAt: "unknown",
+        };
+      }
+    };
+
     onMounted(() => {
       updateDateTime();
       intervalId = setInterval(updateDateTime, 60000);
       document.addEventListener("click", handleClickOutside);
+      loadAppInfo();
     });
 
     onUnmounted(() => {
@@ -129,6 +201,8 @@ export default {
       setTheme,
       presets,
       formattedDateTime,
+      runtimeInfo,
+      buildInfo,
       isOpen,
       selectTheme,
     };
@@ -206,8 +280,75 @@ export default {
 }
 
 .datetime {
-  min-width: 140px;
-  text-align: right;
+  min-width: 130px;
+}
+
+.datetime-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.app-info {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--card-bg);
+  color: var(--text-muted);
+  cursor: default;
+  user-select: none;
+  outline: none;
+}
+
+.app-info-icon {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.app-info-tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 240px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+  color: var(--body-color);
+  font-size: 12px;
+  text-align: left;
+  z-index: 30;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+  pointer-events: none;
+}
+
+.app-info:hover .app-info-tooltip,
+.app-info:focus .app-info-tooltip,
+.app-info:focus-visible .app-info-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.app-info-row {
+  line-height: 1.35;
+}
+
+.app-info-divider {
+  height: 1px;
+  margin: 6px 0;
+  background: var(--border);
 }
 
 .language-selector .btn {
