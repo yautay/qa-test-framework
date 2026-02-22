@@ -77,9 +77,6 @@ scenario-report: ## Raport scenariuszy
 visual-sync: ## Synchronizacja visual baseline
 	$(PYTHON) tools/visual/sync_baseline.py
 
-visual-report-serve: ## Uruchom lokalny serwer raportu visual
-	$(PYTHON)  framework/visual/report_server.py $(if $(RUN_ID),--run-id $(RUN_ID),) $(if $(REPORT_DIR),--report-dir $(REPORT_DIR),) $(if $(PORT),--port $(PORT),)
-
 ##@ Helpers
 
 clean-artifacts: ## Usuń wszystkie artefakty
