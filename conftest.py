@@ -3,6 +3,9 @@ import pytest
 import settings
 
 
+pytest_plugins = ("framework.plugins.xdist_report_finalize",)
+
+
 def _validate_run_note(value: str) -> str:
     text = str(value or "").strip()
     if len(text) > 50:
