@@ -17,6 +17,8 @@ class CleanupResult:
     removed: int
     removed_bytes: int
 
+def _bytes_to_mib(size_bytes: int) -> float:
+    return size_bytes / (1024 ** 2)
 
 def _run_dirs() -> list[Path]:
     if not ARTIFACTS_DIR.is_dir():
@@ -52,7 +54,8 @@ def cleanup_all(dry_run: bool) -> CleanupResult:
         size = _dir_size(run_dir)
         removed_bytes += size
         removed += 1
-        print(f"remove: {run_dir} ({size} bytes)")
+        size_mib = _bytes_to_mib(size)
+        print(f"remove: {run_dir} ({size_mib:.2f} MiB)")
         if not dry_run:
             shutil.rmtree(run_dir, ignore_errors=True)
 
@@ -71,7 +74,8 @@ def cleanup_older(days: int, dry_run: bool) -> CleanupResult:
         size = _dir_size(run_dir)
         removed_bytes += size
         removed += 1
-        print(f"remove: {run_dir} ({size} bytes)")
+        size_mib = _bytes_to_mib(size)
+        print(f"remove: {run_dir} ({size_mib:.2f} MiB)")
         if not dry_run:
             shutil.rmtree(run_dir, ignore_errors=True)
 
@@ -122,9 +126,10 @@ def main() -> int:
         result = cleanup_older(days=int(args.days), dry_run=args.dry_run)
 
     mode = "dry-run" if args.dry_run else "delete"
+    size_mib = _bytes_to_mib(result.removed_bytes)
     print(
         f"cleanup complete ({mode}): scanned={result.scanned}, "
-        f"removed={result.removed}, removed_bytes={result.removed_bytes}"
+        f"removed={result.removed}, removed: {size_mib:.2f} MiB"
     )
     return 0
 
