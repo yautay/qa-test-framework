@@ -8,7 +8,6 @@ import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, cast
 import pytest
 import settings_cli
 from loguru import logger
@@ -23,8 +22,6 @@ from framework.timing_monitor import (
     load_previous_timings,
     save_run_timings,
 )
-from framework.visual.models import VisualResult, VisualThresholds
-from framework.visual.report_builder import write_visual_report
 
 
 def _get_scenario_description(item: pytest.Item) -> str | None:
@@ -60,6 +57,8 @@ def _resolve_shared_run_id(config: pytest.Config) -> str | None:
         token = str(worker_input.get("run_id") or "").strip()
         if token:
             return token
+    if _is_xdist_controller(config):
+        return None
     token = str(os.getenv("PYTEST_XDIST_TESTRUNUID") or "").strip()
     if token:
         return token
@@ -84,107 +83,6 @@ def _load_worker_timing_files(logs_dir: Path) -> dict[str, float]:
             except (TypeError, ValueError):
                 continue
     return merged
-
-
-def _result_from_dict(data: dict[str, object]) -> VisualResult | None:
-    try:
-        status_raw = str(data.get("status") or "failed")
-        compare_mode_raw = str(data.get("compare_mode") or "pixel")
-        if status_raw not in {
-            "passed",
-            "failed",
-            "skipped",
-            "new",
-            "uncertain",
-            "warn",
-            "approved",
-            "xfailed",
-            "xpassed",
-        }:
-            status_raw = "failed"
-        if compare_mode_raw not in {"pixel", "perceptual", "hybrid"}:
-            compare_mode_raw = "pixel"
-
-        thresholds_raw_obj = data.get("thresholds")
-        thresholds_raw = thresholds_raw_obj if isinstance(thresholds_raw_obj, dict) else None
-        thresholds = None
-        if thresholds_raw is not None:
-            pixel_uncertain_delta = thresholds_raw.get("pixel_uncertain_delta")
-            lpips_uncertain_delta = thresholds_raw.get("lpips_uncertain_delta")
-            dists_uncertain_delta = thresholds_raw.get("dists_uncertain_delta")
-            thresholds = VisualThresholds(
-                pixel_max=float(thresholds_raw.get("pixel_max", 0.0)),
-                lpips_max=float(thresholds_raw.get("lpips_max", 0.0)),
-                dists_max=float(thresholds_raw.get("dists_max", 0.0)),
-                pixel_uncertain_delta=float(cast(Any, pixel_uncertain_delta))
-                if pixel_uncertain_delta is not None
-                else None,
-                lpips_uncertain_delta=float(cast(Any, lpips_uncertain_delta))
-                if lpips_uncertain_delta is not None
-                else None,
-                dists_uncertain_delta=float(cast(Any, dists_uncertain_delta))
-                if dists_uncertain_delta is not None
-                else None,
-            )
-
-        pixel_changed_ratio_raw = data.get("pixel_changed_ratio")
-        lpips_raw = data.get("lpips")
-        dists_raw = data.get("dists")
-
-        test_metadata_obj = data.get("test_metadata")
-        return VisualResult(
-            scenario_id=str(data.get("scenario_id") or ""),
-            status=cast(Any, status_raw),
-            message=str(data.get("message") or ""),
-            compare_mode=cast(Any, compare_mode_raw),
-            baseline_path=str(data.get("baseline_path") or ""),
-            actual_path=str(data.get("actual_path") or ""),
-            diff_path=str(data.get("diff_path") or ""),
-            heatmap_path=str(data.get("heatmap_path") or ""),
-            suite_id=str(data.get("suite_id") or ""),
-            viewport=str(data.get("viewport") or ""),
-            browser=str(data.get("browser") or ""),
-            pixel_changed_ratio=float(cast(Any, pixel_changed_ratio_raw))
-            if pixel_changed_ratio_raw is not None
-            else None,
-            lpips=float(cast(Any, lpips_raw)) if lpips_raw is not None else None,
-            dists=float(cast(Any, dists_raw)) if dists_raw is not None else None,
-            thresholds=thresholds,
-            tester=str(data.get("tester") or ""),
-            run_note=str(data.get("run_note") or ""),
-            test_metadata=test_metadata_obj if isinstance(test_metadata_obj, dict) else None,
-        )
-    except (TypeError, ValueError):
-        return None
-
-
-def _load_merged_worker_visual_results(run_root: Path) -> tuple[list[VisualResult], int]:
-    workers_root = run_root / ".workers"
-    if not workers_root.is_dir():
-        return [], 0
-
-    worker_files = sorted(workers_root.glob("*/visual_results.json"))
-    if not worker_files:
-        return [], 0
-
-    merged: dict[tuple[str, str, str], VisualResult] = {}
-    for path in worker_files:
-        try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-            continue
-        rows = payload.get("results", []) if isinstance(payload, dict) else []
-        if not isinstance(rows, list):
-            continue
-        for row in rows:
-            if not isinstance(row, dict):
-                continue
-            result = _result_from_dict(row)
-            if result is None:
-                continue
-            key = (result.scenario_id, result.viewport, result.browser)
-            merged[key] = result
-    return list(merged.values()), len(worker_files)
 
 
 def _normalize_run_note(raw: object, source: str) -> str:
@@ -432,18 +330,6 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     previous = load_previous_timings(artifacts.root)
     for regression in detect_slow_regressions(timings, previous):
         logger.warning("test_case_slow_regression", **regression)
-
-    if _is_xdist_controller(session.config):
-        merged_visual_results, worker_visual_files = _load_merged_worker_visual_results(artifacts.root)
-        if worker_visual_files == 0:
-            if _resolve_run_profile(session.config) == "visual":
-                logger.warning(
-                    "visual_worker_results_missing",
-                    run_id=artifacts.run_id,
-                    workers_root=str(artifacts.root / ".workers"),
-                )
-        else:
-            write_visual_report(artifacts.root / "visual", merged_visual_results)
 
     run_finish_payload = {
         "schema_version": session.config._runtime_env.reporting_schema_version,
