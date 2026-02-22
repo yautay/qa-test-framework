@@ -26,6 +26,11 @@ vi.mock("../lib/i18n", () => ({
       "appInfo.runtime": "Runtime",
       "appInfo.uiBuild": "UI build",
       "appInfo.uiSrcVersion": "ui src version",
+      "appInfo.weekendCountdownPrefix": "Time until weekend starts",
+      "appInfo.days": "days",
+      "appInfo.hours": "hours",
+      "appInfo.minutes": "minutes",
+      "appInfo.seconds": "seconds",
     };
     return labels[key] || key;
   },
@@ -80,10 +85,20 @@ describe("AppHeader", () => {
   it("displays datetime", async () => {
     const wrapper = mount(AppHeader);
     await flushPromises();
-    
+
     const datetime = wrapper.find(".datetime");
     expect(datetime.exists()).toBe(true);
-    expect(datetime.text()).toMatch(/\d{2}\.\d{2}\.\d{4},? \d{2}:\d{2}/);
+    expect(datetime.text()).toMatch(/\d{2}\.\d{2}\.\d{4},? \d{2}:\d{2} (?:[A-Z]{3,5}|GMT[+-]\d{1,2})/);
+  });
+
+  it("renders weekend countdown in datetime tooltip", async () => {
+    const wrapper = mount(AppHeader);
+    await flushPromises();
+
+    const tooltip = wrapper.find(".datetime-tooltip-content");
+    expect(tooltip.exists()).toBe(true);
+    expect(tooltip.text()).toContain("Time until weekend starts");
+    expect(tooltip.text()).toMatch(/\d+ days, \d+ hours, \d+ minutes, \d+ seconds/);
   });
 
   it("renders app info icon with tooltip", async () => {

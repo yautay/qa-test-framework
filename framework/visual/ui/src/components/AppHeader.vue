@@ -63,7 +63,10 @@
         </div>
       </div>
       <div class="datetime-wrap text-muted small mono">
-        <span class="datetime">{{ formattedDateTime }}</span>
+        <div class="datetime-tooltip" tabindex="0" role="button" :aria-label="weekendCountdownText">
+          <span class="datetime">{{ formattedDateTime }}</span>
+          <div class="datetime-tooltip-content" role="tooltip">{{ weekendCountdownText }}</div>
+        </div>
         <div class="app-info" tabindex="0" role="button" :aria-label="t('appInfo.ariaLabel')">
           <span class="app-info-icon">i</span>
           <div class="app-info-tooltip" role="tooltip">
@@ -115,10 +118,171 @@ function normalizeAppInfo(payload) {
   };
 }
 
+const WARSAW_TIME_ZONE = "Europe/Warsaw";
+
+const warsawDateFormatter = new Intl.DateTimeFormat("pl-PL", {
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZone: WARSAW_TIME_ZONE,
+});
+
+const warsawTimeZoneFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: WARSAW_TIME_ZONE,
+  timeZoneName: "short",
+});
+
+const warsawPartsFormatter = new Intl.DateTimeFormat("en-US", {
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  hour12: false,
+  weekday: "short",
+  timeZone: WARSAW_TIME_ZONE,
+});
+
+const WEEKDAY_TO_INDEX = {
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
+};
+
+function getWarsawParts(date) {
+  const parts = warsawPartsFormatter.formatToParts(date);
+  const mapped = {};
+  for (const part of parts) {
+    if (part.type !== "literal") {
+      mapped[part.type] = part.value;
+    }
+  }
+  return {
+    year: Number(mapped.year),
+    month: Number(mapped.month),
+    day: Number(mapped.day),
+    hour: Number(mapped.hour),
+    minute: Number(mapped.minute),
+    second: Number(mapped.second),
+    weekday: WEEKDAY_TO_INDEX[mapped.weekday],
+  };
+}
+
+function zonedDateTimeToUtcMs({ year, month, day, hour, minute, second }, timeZone) {
+  let utcMs = Date.UTC(year, month - 1, day, hour, minute, second);
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    timeZone,
+  });
+
+  for (let i = 0; i < 4; i += 1) {
+    const parts = formatter.formatToParts(new Date(utcMs));
+    const mapped = {};
+    for (const part of parts) {
+      if (part.type !== "literal") {
+        mapped[part.type] = part.value;
+      }
+    }
+
+    const observed = Date.UTC(
+      Number(mapped.year),
+      Number(mapped.month) - 1,
+      Number(mapped.day),
+      Number(mapped.hour),
+      Number(mapped.minute),
+      Number(mapped.second),
+    );
+    const target = Date.UTC(year, month - 1, day, hour, minute, second);
+    const delta = target - observed;
+    if (delta === 0) {
+      break;
+    }
+    utcMs += delta;
+  }
+
+  return utcMs;
+}
+
+function getSecondsToWeekend(now) {
+  const warsawNow = getWarsawParts(now);
+  let daysUntilFriday = (5 - warsawNow.weekday + 7) % 7;
+  const isAfterFridayStart =
+    warsawNow.weekday === 5 && (warsawNow.hour > 17 || (warsawNow.hour === 17 && (warsawNow.minute > 0 || warsawNow.second > 0)));
+
+  if (daysUntilFriday === 0 && isAfterFridayStart) {
+    daysUntilFriday = 7;
+  }
+
+  const targetUtcMs = zonedDateTimeToUtcMs(
+    {
+      year: warsawNow.year,
+      month: warsawNow.month,
+      day: warsawNow.day + daysUntilFriday,
+      hour: 17,
+      minute: 0,
+      second: 0,
+    },
+    WARSAW_TIME_ZONE,
+  );
+
+  return Math.max(0, Math.floor((targetUtcMs - now.getTime()) / 1000));
+}
+
+function formatCountdown(secondsLeft) {
+  const days = Math.floor(secondsLeft / 86400);
+  const hours = Math.floor((secondsLeft % 86400) / 3600);
+  const minutes = Math.floor((secondsLeft % 3600) / 60);
+  const seconds = secondsLeft % 60;
+  return { days, hours, minutes, seconds };
+}
+
+function getPolishPluralLabel(value, one, few, many) {
+  const abs = Math.abs(value);
+  const mod10 = abs % 10;
+  const mod100 = abs % 100;
+
+  if (abs === 1) {
+    return one;
+  }
+  if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) {
+    return few;
+  }
+  return many;
+}
+
+function getUkrainianPluralLabel(value, one, few, many) {
+  const abs = Math.abs(value);
+  const mod10 = abs % 10;
+  const mod100 = abs % 100;
+
+  if (mod10 === 1 && mod100 !== 11) {
+    return one;
+  }
+  if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) {
+    return few;
+  }
+  return many;
+}
+
 export default {
   name: "AppHeader",
   setup() {
     const formattedDateTime = ref("");
+    const weekendCountdownText = ref("");
     const isOpen = ref(false);
     const runtimeInfo = ref({
       version: "loading...",
@@ -146,16 +310,65 @@ export default {
 
     const updateDateTime = () => {
       const now = new Date();
-      const options = {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: false,
-        timeZone: "Europe/Warsaw",
-      };
-      formattedDateTime.value = now.toLocaleString("pl-PL", options);
+      const zonePart = warsawTimeZoneFormatter
+        .formatToParts(now)
+        .find((part) => part.type === "timeZoneName")?.value;
+
+      formattedDateTime.value = `${warsawDateFormatter.format(now)} ${zonePart || "CET"}`;
+
+      const secondsToWeekend = getSecondsToWeekend(now);
+      const countdown = formatCountdown(secondsToWeekend);
+
+      let unitLabels;
+      if (locale.value === "pl") {
+        unitLabels = {
+          days: getPolishPluralLabel(countdown.days, t("appInfo.daysOne"), t("appInfo.daysFew"), t("appInfo.daysMany")),
+          hours: getPolishPluralLabel(countdown.hours, t("appInfo.hoursOne"), t("appInfo.hoursFew"), t("appInfo.hoursMany")),
+          minutes: getPolishPluralLabel(
+            countdown.minutes,
+            t("appInfo.minutesOne"),
+            t("appInfo.minutesFew"),
+            t("appInfo.minutesMany"),
+          ),
+          seconds: getPolishPluralLabel(
+            countdown.seconds,
+            t("appInfo.secondsOne"),
+            t("appInfo.secondsFew"),
+            t("appInfo.secondsMany"),
+          ),
+        };
+      } else if (locale.value === "uk") {
+        unitLabels = {
+          days: getUkrainianPluralLabel(countdown.days, t("appInfo.daysOne"), t("appInfo.daysFew"), t("appInfo.daysMany")),
+          hours: getUkrainianPluralLabel(countdown.hours, t("appInfo.hoursOne"), t("appInfo.hoursFew"), t("appInfo.hoursMany")),
+          minutes: getUkrainianPluralLabel(
+            countdown.minutes,
+            t("appInfo.minutesOne"),
+            t("appInfo.minutesFew"),
+            t("appInfo.minutesMany"),
+          ),
+          seconds: getUkrainianPluralLabel(
+            countdown.seconds,
+            t("appInfo.secondsOne"),
+            t("appInfo.secondsFew"),
+            t("appInfo.secondsMany"),
+          ),
+        };
+      } else {
+        unitLabels = {
+          days: t("appInfo.days"),
+          hours: t("appInfo.hours"),
+          minutes: t("appInfo.minutes"),
+          seconds: t("appInfo.seconds"),
+        };
+      }
+
+      weekendCountdownText.value =
+        `${t("appInfo.weekendCountdownPrefix")} ` +
+        `${countdown.days} ${unitLabels.days}, ` +
+        `${countdown.hours} ${unitLabels.hours}, ` +
+        `${countdown.minutes} ${unitLabels.minutes}, ` +
+        `${countdown.seconds} ${unitLabels.seconds}`;
     };
 
     let intervalId = null;
@@ -184,7 +397,7 @@ export default {
 
     onMounted(() => {
       updateDateTime();
-      intervalId = setInterval(updateDateTime, 60000);
+      intervalId = setInterval(updateDateTime, 1000);
       document.addEventListener("click", handleClickOutside);
       loadAppInfo();
     });
@@ -205,6 +418,7 @@ export default {
       setTheme,
       presets,
       formattedDateTime,
+      weekendCountdownText,
       runtimeInfo,
       buildInfo,
       isOpen,
@@ -284,7 +498,45 @@ export default {
 }
 
 .datetime {
-  min-width: 130px;
+  min-width: 170px;
+}
+
+.datetime-tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: default;
+  outline: none;
+}
+
+.datetime-tooltip-content {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: max-content;
+  max-width: 320px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+  color: var(--body-color);
+  font-size: 12px;
+  line-height: 1.35;
+  z-index: 30;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+  pointer-events: none;
+}
+
+.datetime-tooltip:hover .datetime-tooltip-content,
+.datetime-tooltip:focus .datetime-tooltip-content,
+.datetime-tooltip:focus-visible .datetime-tooltip-content {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 
 .datetime-wrap {

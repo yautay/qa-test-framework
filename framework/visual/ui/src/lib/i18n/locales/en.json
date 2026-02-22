@@ -128,7 +128,12 @@
     "codename": "codename",
     "uiSrcVersion": "ui src version",
     "commit": "commit",
-    "builtAt": "built at"
+    "builtAt": "built at",
+    "weekendCountdownPrefix": "Time until weekend starts",
+    "days": "days",
+    "hours": "hours",
+    "minutes": "minutes",
+    "seconds": "seconds"
   },
   "sync": {
     "errorPrefix": "Sync failed",
