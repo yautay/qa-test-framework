@@ -120,6 +120,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=None,
         help="Server name for test env",
     )
+    parser.addoption(
+        "--reference-host",
+        action="store",
+        default=None,
+        help="Visual dual-pass reference selector (demo/prod/local or test DNS host)",
+    )
     if not _has_option("--base-url"):
         try:
             parser.addoption(

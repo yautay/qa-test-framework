@@ -6,13 +6,20 @@ is_session_headless = True
 # Supported: chromium, firefox, webkit, chrome
 browser = "chromium"
 
+# Legacy URL routing split: server_type + server_name.
 # Supported: test, demo, prod, local
-# Suite URL mapping uses this value directly (no env override).
+# Kept for backward compatibility; short aliases in server_name/reference_host
+# can also select demo/prod/local without explicitly changing server_type.
 server_type = "test"
 
 # Example legacy-compatible server name: "koncerz.test"
 # Suite URL mapping uses this value directly (no env override).
 server_name = "inpostizi.test"
+
+# Optional reference environment selector for visual dual-pass.
+# - demo|prod|local: selects fixed environment URL
+# - any other non-empty token: treated as test DNS hostname (server_name)
+reference_host = ""
 server_ssh_port = "56855"
 
 # Legacy compatibility contacts

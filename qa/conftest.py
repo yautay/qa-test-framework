@@ -95,6 +95,37 @@ def _normalize_run_note(raw: object, source: str) -> str:
     return text
 
 
+_ENV_ALIAS_TOKENS = {"demo", "prod", "local"}
+
+
+def _normalize_target_selector(server_type: str, server_name: str) -> tuple[str, str, str]:
+    """Resolve effective target selector while preserving legacy compatibility.
+
+    Returns: (resolved_server_type, resolved_server_name, source_kind)
+    source_kind is either "legacy_server_type" or "server_name_alias".
+    """
+
+    env_type = str(server_type or "").strip().lower()
+    host_token = str(server_name or "").strip().lower()
+
+    if host_token in _ENV_ALIAS_TOKENS:
+        return host_token, "", "server_name_alias"
+    return env_type, host_token, "legacy_server_type"
+
+
+def _normalize_reference_selector(reference_host: str) -> tuple[str, str, str]:
+    """Resolve reference selector from a token used by visual dual-pass.
+
+    Returns: (resolved_server_type, resolved_server_name, source_kind)
+    source_kind is either "reference_alias" or "reference_host".
+    """
+
+    token = str(reference_host or "").strip().lower()
+    if token in _ENV_ALIAS_TOKENS:
+        return token, "", "reference_alias"
+    return "test", token, "reference_host"
+
+
 def _resolve_run_metadata(config: pytest.Config) -> dict[str, str]:
     cli_tester = str(config.getoption("--tester") or "").strip()
     cli_run_note_raw = config.getoption("--run_note")
@@ -180,11 +211,44 @@ def _base_url_resolver(config: pytest.Config):
     cli_server_type = (config.getoption("--server-type") or "").strip()
     cli_server_name = (config.getoption("--server-name") or "").strip()
     cli_base_url = (config.getoption("--base-url") or "").strip()
+    cli_reference_host = (config.getoption("--reference-host") or "").strip()
 
     if cli_server_type:
         env = replace(env, server_type=cli_server_type)
     if cli_server_name:
         env = replace(env, server_name=cli_server_name)
+    if cli_reference_host:
+        env = replace(env, reference_host=cli_reference_host)
+
+    normalized_server_type, normalized_server_name, target_source = _normalize_target_selector(
+        env.server_type,
+        env.server_name,
+    )
+    if normalized_server_type != env.server_type or normalized_server_name != env.server_name:
+        logger.info(
+            "runtime_target_resolved",
+            source=target_source,
+            requested_server_type=env.server_type,
+            requested_server_name=env.server_name,
+            resolved_server_type=normalized_server_type,
+            resolved_server_name=normalized_server_name,
+        )
+        env = replace(
+            env,
+            server_type=normalized_server_type,
+            server_name=normalized_server_name,
+        )
+
+    reference_host = str(getattr(env, "reference_host", "") or "").strip()
+    if reference_host:
+        ref_server_type, ref_server_name, ref_source = _normalize_reference_selector(reference_host)
+        logger.info(
+            "runtime_reference_resolved",
+            source=ref_source,
+            reference_host=reference_host,
+            resolved_server_type=ref_server_type,
+            resolved_server_name=ref_server_name,
+        )
 
     if cli_base_url:
         config._runtime_env = replace(env, base_url=cli_base_url)
@@ -414,6 +478,8 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
         "visual_actual": "visual_actual",
         "visual_diff": "visual_diff",
         "visual_heatmap": "visual_heatmap",
+        "visual_reference_actual": "visual_reference_actual",
+        "visual_reference_baseline": "visual_reference_baseline",
     }
     for key, path in artifacts_payload.items():
         if not isinstance(path, str):

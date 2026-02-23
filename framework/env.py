@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
-from pathlib import Path
 from dotenv import dotenv_values
 
 import settings_cli
@@ -50,6 +49,7 @@ class RuntimeEnv:
     base_url: str
     server_type: str
     server_name: str
+    reference_host: str
     record_video: bool
     video_min_seconds: int
     reporting_enabled: bool
@@ -152,8 +152,11 @@ def load_env() -> RuntimeEnv:
     if not reporting_source_origin:
         reporting_source_origin = "ci" if os.getenv("CI") else "local"
 
+    # Legacy compatibility split used by URL resolvers.
+    # New flows may derive environment selection from server_name/reference_host aliases.
     server_type = settings_cli.server_type
     server_name = settings_cli.server_name
+    reference_host = env_str("REFERENCE_HOST", str(getattr(settings_cli, "reference_host", "")))
 
     base_url = env_value("BASE_URL") or env_value("BASE_URL_OVERRIDE") or settings_cli.base_url_override or ""
 
@@ -173,6 +176,7 @@ def load_env() -> RuntimeEnv:
         base_url=base_url,
         server_type=server_type,
         server_name=server_name,
+        reference_host=reference_host,
         record_video=env_bool("RECORD_VIDEO", True),
         video_min_seconds=env_int("VIDEO_MIN_SECONDS", 30),
         reporting_enabled=env_bool("REPORTING_ENABLED", settings.reporting_enabled),

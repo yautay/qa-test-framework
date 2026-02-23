@@ -877,6 +877,38 @@ describe("ReportPage", () => {
     wrapper.unmount();
   });
 
+  it("includes reference_host in metadata when present", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const row = {
+      scenario_id: "s1",
+      status: "passed",
+      message: "ok",
+      viewport: "fhd",
+      browser: "chromium",
+      test_metadata: {
+        execution: {
+          reference_host: "demo",
+        },
+      },
+    };
+
+    const table = wrapper.findComponent({ name: "ResultsTable" });
+    table.vm.$emit("open-metadata", row, 0);
+    await nextTick();
+
+    const metadataPanel = wrapper.findComponent({ name: "TestMetadataPanel" });
+    expect(metadataPanel.props("metadata").run.reference_host).toBe("demo");
+    expect(metadataPanel.props("metadata").execution.reference_host).toBe("demo");
+
+    wrapper.unmount();
+  });
+
   it("opens add baseline prompt from modal event when baseline is not set", async () => {
     const teleportHost = document.createElement("div");
     teleportHost.id = "vrtModal";

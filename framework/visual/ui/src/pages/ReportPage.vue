@@ -457,10 +457,23 @@ function buildMetadataPayload(row) {
   const source = row && typeof row === "object" ? row : {};
   const candidate = source.test_metadata;
   const metadata = candidate && typeof candidate === "object" ? { ...candidate } : {};
+  const executionSection =
+    metadata.execution && typeof metadata.execution === "object"
+      ? { ...metadata.execution }
+      : {};
+  metadata.execution = executionSection;
   const runSection = metadata.run && typeof metadata.run === "object" ? { ...metadata.run } : {};
   runSection.run_id = runSection.run_id || props.runId || "";
   runSection.tester = runSection.tester || source.tester || "";
   runSection.run_note = runSection.run_note || source.run_note || "";
+  const referenceHost =
+    runSection.reference_host ||
+    executionSection.reference_host ||
+    (source.reference_host || "");
+  if (referenceHost) {
+    runSection.reference_host = referenceHost;
+    executionSection.reference_host = executionSection.reference_host || referenceHost;
+  }
   metadata.run = runSection;
 
   const resultSection = metadata.result && typeof metadata.result === "object" ? { ...metadata.result } : {};

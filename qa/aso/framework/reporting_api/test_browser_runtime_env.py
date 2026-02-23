@@ -34,3 +34,11 @@ def test_load_env_reads_grid_runtime_from_environment(monkeypatch):
     assert env.is_grid_available is True
     assert env.grid_ws_endpoint == "ws://127.0.0.1:9323/"
     assert env.grid_connect_timeout_ms == 45000
+
+
+def test_load_env_reads_reference_host_from_environment(monkeypatch):
+    monkeypatch.setenv("REFERENCE_HOST", "demo")
+
+    env = load_env()
+
+    assert env.reference_host == "demo"
