@@ -107,7 +107,15 @@ class BaselineStore:
         self._cache_dir = (repo_root / env.visual_cache_dir).resolve()
         self._minio_client = None  # lazy init
 
-    def baseline_key(self, suite_id: str, scenario_id: str, viewport: str, browser: str) -> str:
+    def baseline_key(
+        self,
+        suite_id: str,
+        scenario_id: str,
+        viewport: str,
+        browser: str,
+        *,
+        version_override: str | None = None,
+    ) -> str:
         """
         Build a deterministic object key for a baseline image.
 
@@ -127,6 +135,9 @@ class BaselineStore:
             Viewport label (e.g. "1366x768", "iphone-13").
         browser:
             Browser label (e.g. "chromium", "firefox").
+        version_override:
+            Optional baseline version used only for this key generation.
+            When omitted, `env.visual_baseline_version` is used.
 
         Returns
         -------
@@ -136,7 +147,8 @@ class BaselineStore:
         file_name = f"{_safe_segment(scenario_id)}__{_safe_segment(viewport)}__{_safe_segment(browser)}.png"
         suite = _safe_segment(suite_id)
         profile = _safe_segment(self._env.visual_baseline_profile)
-        version = _safe_segment(self._env.visual_baseline_version)
+        version_raw = version_override if version_override is not None else self._env.visual_baseline_version
+        version = _safe_segment(version_raw)
         return f"{suite}/{profile}/{version}/{file_name}"
 
     def local_cache_path(self, object_key: str) -> Path:
@@ -267,14 +279,36 @@ class BaselineStore:
 
         return target
 
-    def store_local_baseline(self, suite_id: str, scenario_id: str, viewport: str, browser: str, source: Path) -> Path:
+    def store_local_baseline(
+        self,
+        suite_id: str,
+        scenario_id: str,
+        viewport: str,
+        browser: str,
+        source: Path,
+        *,
+        version_override: str | None = None,
+    ) -> Path:
         """Store baseline in repo local provider and cache.
 
         This method is intended for explicit baseline approval flows where the
         selected TEST image should become a new local REF candidate.
+
+        Parameters
+        ----------
+        version_override:
+            Optional baseline version override for write-only flows.
+            Useful when approval should write to a separate lane (e.g. "candidates")
+            while normal REF resolution still uses the default configured version.
         """
 
-        object_key = self.baseline_key(suite_id, scenario_id, viewport, browser)
+        object_key = self.baseline_key(
+            suite_id,
+            scenario_id,
+            viewport,
+            browser,
+            version_override=version_override,
+        )
         local_target = self.local_provider_path(object_key)
         cache_target = self.local_cache_path(object_key)
 

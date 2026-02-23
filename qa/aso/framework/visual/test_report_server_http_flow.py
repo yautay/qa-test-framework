@@ -129,6 +129,7 @@ def test_report_server_endpoints_handle_listing_results_ref_tags_and_baseline_fl
         )
         assert status == 200
         assert payload["saved_count"] == 1
+        assert "/candidates/" in str(payload["results"][0]["target_path"])
 
         status, body = _http_bytes(base_url, "/")
         assert status == 200
@@ -141,5 +142,102 @@ def test_report_server_endpoints_handle_listing_results_ref_tags_and_baseline_fl
         status, body = _http_bytes(base_url, f"/reports/{run_id}/actual/scenario-1.png")
         assert status == 200
         assert body == b"actual-bytes"
+    finally:
+        _stop_server(server, thread)
+
+
+def test_baseline_send_handles_mixed_success_and_failure_and_keeps_candidates_target(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    run_id = "20260218_120000_000002"
+    report_dir = repo_root / "artifacts" / run_id / "visual"
+    report_dir.mkdir(parents=True)
+    (report_dir / ".report-ready.json").write_text('{"ready": true}\n', encoding="utf-8")
+    (report_dir / "results.json").write_text(
+        json.dumps(
+            {
+                "results": [
+                    {
+                        "scenario_id": "scenario-1",
+                        "status": "failed",
+                        "suite_id": "suite-1",
+                        "viewport": "fhd",
+                        "browser": "chromium",
+                        "actual_path": "actual/scenario-1.png",
+                    },
+                    {
+                        "scenario_id": "scenario-2",
+                        "status": "failed",
+                        "suite_id": "suite-1",
+                        "viewport": "fhd",
+                        "browser": "chromium",
+                        "actual_path": "actual/scenario-2.png",
+                    },
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    actual_ok = report_dir / "actual" / "scenario-1.png"
+    actual_ok.parent.mkdir(parents=True)
+    actual_ok.write_bytes(b"actual-bytes-1")
+
+    ui_dist = tmp_path / "ui-dist"
+    ui_dist.mkdir(parents=True)
+    (ui_dist / "index.html").write_text("<html><body>ui-shell</body></html>", encoding="utf-8")
+
+    context = ReportServerContext(
+        repo_root=repo_root,
+        ui_dist_dir=ui_dist,
+        baseline_store=BaselineStore(cast(Any, _env()), repo_root),
+        run_dirs={run_id: report_dir},
+    )
+
+    server, base_url, thread = _start_server(context)
+    try:
+        status, payload = _http_json(base_url, f"/api/reports/{run_id}/baseline/challenge", method="POST", body={})
+        assert status == 200
+        challenge_id = payload["challenge_id"]
+        phrase = payload["phrase"]
+
+        status, payload = _http_json(
+            base_url,
+            f"/api/reports/{run_id}/baseline/send",
+            method="POST",
+            body={
+                "challenge_id": challenge_id,
+                "phrase": phrase,
+                "items": [
+                    {
+                        "scenario_id": "scenario-1",
+                        "suite_id": "suite-1",
+                        "viewport": "fhd",
+                        "browser": "chromium",
+                        "actual_path": "actual/scenario-1.png",
+                    },
+                    {
+                        "scenario_id": "scenario-2",
+                        "suite_id": "suite-1",
+                        "viewport": "fhd",
+                        "browser": "chromium",
+                        "actual_path": "actual/missing.png",
+                    },
+                ],
+            },
+        )
+
+        assert status == 200
+        assert payload["accepted"] is False
+        assert payload["saved_count"] == 1
+        assert payload["failed_count"] == 1
+
+        saved = [result for result in payload["results"] if result["status"] == "saved"]
+        failed = [result for result in payload["results"] if result["status"] == "failed"]
+        assert len(saved) == 1
+        assert len(failed) == 1
+        assert "/candidates/" in str(saved[0]["target_path"])
+        assert Path(saved[0]["target_path"]).is_file()
+        assert failed[0]["scenario_id"] == "scenario-2"
     finally:
         _stop_server(server, thread)

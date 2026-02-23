@@ -18,13 +18,16 @@ This document describes the local baseline approval workflow driven by the visua
 5. UI asks backend for challenge phrase and requires manual rewrite.
 6. Backend validates challenge and copies selected `actual_path` PNG files to local baseline.
 
-Local baseline destination uses `BaselineStore.baseline_key(...)`:
+Local baseline destination for `SEND BASELINE` uses a dedicated candidates lane:
 
-`qa/visual/baselines/<suite>/<profile>/<version>/<scenario>__<viewport>__<browser>.png`
+`qa/visual/baselines/<suite>/<profile>/candidates/<scenario>__<viewport>__<browser>.png`
+
+Regular baseline resolution for visual compare stays on configured version
+(`VISUAL_BASELINE_VERSION`, typically `latest`).
 
 At the same time cache is mirrored into:
 
-`<repo_root>/<VISUAL_CACHE_DIR>/<suite>/<profile>/<version>/...`
+`<repo_root>/<VISUAL_CACHE_DIR>/<suite>/<profile>/candidates/...`
 
 ## Runbook
 

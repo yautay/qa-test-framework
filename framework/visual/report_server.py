@@ -1803,6 +1803,7 @@ def _build_handler(context: ReportServerContext):
                             viewport,
                             browser,
                             source,
+                            version_override="candidates",
                         )
                         results.append(
                             {
