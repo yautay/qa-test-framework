@@ -352,11 +352,18 @@ export const useResultsStore = defineStore("results", {
       this.tagLog[key] = existing;
     },
 
+    setBaselineForKey(caseKey, value) {
+      if (!caseKey) return;
+      const existing = this.tagLog[caseKey] ? { ...this.tagLog[caseKey] } : buildEmptyTagEntry();
+      existing.baseline = !!value;
+      this.tagLog[caseKey] = existing;
+    },
+
     isTagLocked(type) {
       const tags = this.currentTags;
       if (type === "bug") return !!tags.bug?.locked;
       if (type === "aso") return !!tags.aso?.locked;
-      if (type === "baseline") return !!tags.baseline;
+      if (type === "baseline") return false;
       return false;
     },
 

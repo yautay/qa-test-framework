@@ -1,7 +1,7 @@
 <template>
   <teleport v-if="active && isModalPrompt" to="#vrtModal .modal-content">
     <div class="global-prompt-overlay in-modal">
-      <div v-if="type === 'bug' || type === 'aso'" class="global-prompt-card">
+      <div v-if="isModalTagPrompt" class="global-prompt-card">
         <div class="global-prompt-title">{{ t('prompt.confirm') }}</div>
         <div class="global-prompt-text">{{ t('prompt.areYouSure') }} {{ t('tags.' + type) }}?</div>
         <div v-if="isTagPrompt" class="prompt-note">
@@ -79,12 +79,16 @@ const isTagPrompt = computed(() => {
   return props.type === "bug" || props.type === "aso";
 });
 
+const isModalTagPrompt = computed(() => {
+  return props.type === "bug" || props.type === "aso" || props.type === "baseline";
+});
+
 const noteLength = computed(() => {
   return (props.note || "").length;
 });
 
 const isModalPrompt = computed(() => {
-  return props.type === "bug" || props.type === "aso" || isRemoveType.value;
+  return isModalTagPrompt.value || isRemoveType.value;
 });
 
 const noteInput = ref(null);

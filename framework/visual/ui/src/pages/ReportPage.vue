@@ -330,14 +330,14 @@ async function sendBaseline() {
   try {
     challenge = await requestBaselineChallengeForRun(props.runId);
   } catch (_error) {
-    console.info("SEND BASELINE requires report server (run make visual-report-serve)");
+    console.error("ERROR SEND BASELINE requires report server (run make visual-report-serve)");
     return;
   }
 
   const phrase = String(challenge?.phrase || "").trim();
   const challengeId = String(challenge?.challenge_id || "").trim();
   if (!phrase || !challengeId) {
-    console.info("Unable to start baseline confirmation challenge");
+    console.error("ERROR Unable to start baseline confirmation challenge");
     return;
   }
 
@@ -363,9 +363,17 @@ async function sendBaseline() {
     });
     const saved = Number(response?.saved_count || 0);
     const failed = Number(response?.failed_count || 0);
+    if (failed > 0) {
+      console.error(`ERROR Baseline sync finished with failures: saved=${saved}, failed=${failed}`);
+      return;
+    }
+    for (const row of candidates) {
+      const key = getRowTagKey(row);
+      store.setBaselineForKey(key, false);
+    }
     console.info(`Baseline sync done: saved=${saved}, failed=${failed}`);
   } catch (error) {
-    console.info(`SEND BASELINE failed: ${error?.message || "unknown error"}`);
+    console.error(`ERROR SEND BASELINE failed: ${error?.message || "unknown error"}`);
   }
 }
 
@@ -569,9 +577,9 @@ function handleKeydown(evt) {
       promptTag("aso");
     }
   } else if (k === "\\") {
-    if (!store.isTagLocked("baseline")) {
-      promptTag("baseline");
-    }
+    evt.preventDefault();
+    evt.stopPropagation();
+    promptTag("baseline");
   } else if (evt.code === "ShiftLeft" || evt.code === "ShiftRight") {
     const modalEl = document.getElementById("vrtModal");
     if (modalEl) {
@@ -655,8 +663,13 @@ function promptTag(type) {
     return;
   }
   if (prompt.value.active) return;
-  if (store.isTagLocked(type)) return;
+  if (type !== "baseline" && store.isTagLocked(type)) return;
   lastPromptTime = now;
+  if (type === "baseline") {
+    const hasBaseline = !!store.currentTags?.baseline;
+    prompt.value = { active: true, type: hasBaseline ? "remove-baseline" : "baseline", note: "" };
+    return;
+  }
   prompt.value = { active: true, type, note: "" };
 }
 

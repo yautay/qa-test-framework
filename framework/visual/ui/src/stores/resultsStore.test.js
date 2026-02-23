@@ -334,12 +334,14 @@ describe("resultsStore", () => {
         { scenario_id: "s1", actual_path: "a.png", baseline_path: "", diff_path: "" },
       ]);
       store.openViewer(store.rows[0], "test", 0);
+      store.setBaseline(true);
       store.updateTagLog({
         "s1::a.png::::": { bug: { locked: true, synced: false } },
       });
 
       expect(store.isTagLocked("bug")).toBe(true);
       expect(store.isTagLocked("aso")).toBe(false);
+      expect(store.isTagLocked("baseline")).toBe(false);
     });
   });
 

@@ -1454,7 +1454,7 @@ def _build_handler(context: ReportServerContext):
                     return
 
                 self.send_error(HTTPStatus.NOT_FOUND, "not found")
-            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError):
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
                 return
             except Exception:
                 logger.opt(exception=True).warning("report server GET failed", path=self.path)
@@ -1832,7 +1832,7 @@ def _build_handler(context: ReportServerContext):
                         "results": results,
                     },
                 )
-            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError):
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
                 return
             except Exception:
                 logger.opt(exception=True).warning("report server POST failed", path=self.path)
