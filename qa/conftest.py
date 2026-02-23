@@ -44,6 +44,9 @@ def _current_worker_id() -> str:
 
 
 def _is_xdist_worker(config: pytest.Config) -> bool:
+    worker_id = str(os.getenv("PYTEST_XDIST_WORKER") or "").strip()
+    if worker_id and worker_id != "master":
+        return True
     return hasattr(config, "workerinput")
 
 
@@ -57,11 +60,11 @@ def _resolve_shared_run_id(config: pytest.Config) -> str | None:
         token = str(worker_input.get("run_id") or "").strip()
         if token:
             return token
-    if _is_xdist_controller(config):
-        return None
-    token = str(os.getenv("PYTEST_XDIST_TESTRUNUID") or "").strip()
-    if token:
-        return token
+    shared_run_id = str(getattr(config, "_shared_run_id", "") or "").strip()
+    if shared_run_id:
+        return shared_run_id
+    if _is_xdist_worker(config):
+        raise pytest.UsageError("xdist worker missing shared run_id in workerinput")
     return None
 
 

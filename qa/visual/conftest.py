@@ -14,11 +14,14 @@ VIEWPORT_PRESETS: dict[str, tuple[int, int]] = settings.visual_viewport_presets
 
 
 def _is_xdist_worker(config: pytest.Config) -> bool:
+    worker_id = str(os.getenv("PYTEST_XDIST_WORKER") or "").strip()
+    if worker_id and worker_id != "master":
+        return True
     return hasattr(config, "workerinput")
 
 
 def _worker_results_path(run_artifacts: RunArtifacts, worker_id: str) -> Path:
-    return run_artifacts.root / ".workers" / worker_id / "visual_results.json"
+    return run_artifacts.root / "workers" / worker_id / "visual_results.json"
 
 
 def _dump_worker_visual_results(run_artifacts: RunArtifacts, worker_id: str, results: list[VisualResult]) -> None:

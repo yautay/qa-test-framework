@@ -46,9 +46,16 @@ def _copy_report_assets(report_dir: Path) -> None:
         raise FileNotFoundError("UI build missing; run `npm run build` inside framework/visual/ui")
 
     assets_dst = report_dir / "assets"
-    if assets_dst.exists():
-        shutil.rmtree(assets_dst)
-    shutil.copytree(assets_src, assets_dst)
+    assets_dst.mkdir(parents=True, exist_ok=True)
+
+    for source in assets_src.rglob("*"):
+        relative = source.relative_to(assets_src)
+        target = assets_dst / relative
+        if source.is_dir():
+            target.mkdir(parents=True, exist_ok=True)
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, target)
 
 
 def _build_rows(report_dir: Path, results: list[VisualResult]) -> list[dict[str, Any]]:

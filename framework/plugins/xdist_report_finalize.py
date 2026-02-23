@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, cast
 
@@ -16,7 +17,38 @@ from framework.visual.report_builder import write_visual_report
 
 
 def _is_xdist_controller(config: pytest.Config) -> bool:
-    return bool(config.pluginmanager.hasplugin("xdist") and not hasattr(config, "workerinput"))
+    worker_id = str(os.getenv("PYTEST_XDIST_WORKER") or "").strip()
+    if worker_id and worker_id != "master":
+        return False
+    if hasattr(config, "workerinput"):
+        return False
+    return bool(config.pluginmanager.hasplugin("xdist"))
+
+
+def _ensure_shared_run_id(config: pytest.Config) -> str:
+    token = str(getattr(config, "_shared_run_id", "") or "").strip()
+    if token:
+        return token
+
+    run_artifacts = getattr(config, "_run_artifacts", None)
+    token = str(getattr(run_artifacts, "run_id", "") or "").strip()
+    if token:
+        config._shared_run_id = token
+        return token
+
+    token = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
+    config._shared_run_id = token
+    return token
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    if not _is_xdist_controller(config):
+        return
+    _ensure_shared_run_id(config)
+
+
+def pytest_configure_node(node) -> None:
+    node.workerinput["run_id"] = _ensure_shared_run_id(node.config)
 
 
 def _resolve_run_root(config: pytest.Config) -> Path | None:
@@ -26,7 +58,11 @@ def _resolve_run_root(config: pytest.Config) -> Path | None:
         if isinstance(root, Path):
             return root
 
-    run_id = str(os.getenv("PYTEST_XDIST_TESTRUNUID") or "").strip()
+    run_id = str(getattr(config, "_shared_run_id", "") or "").strip()
+    if not run_id:
+        worker_input = getattr(config, "workerinput", None)
+        if isinstance(worker_input, dict):
+            run_id = str(worker_input.get("run_id") or "").strip()
     if not run_id:
         return None
 
@@ -156,7 +192,7 @@ def _result_from_dict(data: dict[str, object]) -> VisualResult | None:
 
 
 def _load_merged_worker_visual_results(run_root: Path) -> tuple[list[VisualResult], int]:
-    workers_root = run_root / ".workers"
+    workers_root = run_root / "workers"
     worker_files = sorted(workers_root.glob("*/visual_results.json"))
     if not worker_files:
         return [], 0
@@ -205,7 +241,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
             logger.warning(
                 "visual_worker_results_missing",
                 run_root=str(run_root),
-                workers_root=str(run_root / ".workers"),
+                workers_root=str(run_root / "workers"),
             )
         return
 
