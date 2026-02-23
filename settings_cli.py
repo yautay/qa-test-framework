@@ -12,7 +12,7 @@ server_type = "test"
 
 # Example legacy-compatible server name: "koncerz.test"
 # Suite URL mapping uses this value directly (no env override).
-server_name = "koncerz.test"
+server_name = "inpostizi.test"
 server_ssh_port = "56855"
 
 # Legacy compatibility contacts
@@ -24,5 +24,5 @@ base_url_override = ""
 
 # Optional run metadata defaults (CLI has priority).
 tester = "Michal"
-run_note = "Notatka-sratka"
+run_note = "wątki"
 nn_ticket = "54654"
