@@ -95,7 +95,7 @@ Baseline approval from report UI:
 - open hero page (`http://127.0.0.1:4173/`) and pick report run,
 - tag rows with `BASELINE`,
 - click `SEND BASELINE` and rewrite challenge phrase,
-- selected `TEST` images are copied to local baseline (`qa/visual/baselines`).
+- selected `TEST` images are copied to local baseline candidates (`qa/visual/baselines/<suite>/<profile>/candidates`).
 
 Details: `docs/VISUAL_BASELINE_APPROVAL_FLOW.md`
 

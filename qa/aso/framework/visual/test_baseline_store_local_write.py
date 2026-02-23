@@ -86,4 +86,37 @@ def test_resolve_baseline_prefers_cache_over_local_fallback(tmp_path: Path) -> N
     resolved = store.resolve_baseline("suite-1", "scenario-1", "fhd", "chromium")
 
     assert resolved == cache_path
+    assert resolved is not None
     assert resolved.read_bytes() == b"from-cache"
+
+
+def test_store_local_baseline_allows_version_override_for_candidates(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    source = tmp_path / "actual.png"
+    source.write_bytes(b"png-bytes")
+
+    store = BaselineStore(_env(provider="local"), repo_root)
+
+    target = store.store_local_baseline(
+        "suite-1",
+        "scenario-1",
+        "fhd",
+        "chromium",
+        source,
+        version_override="candidates",
+    )
+    object_key = store.baseline_key(
+        "suite-1",
+        "scenario-1",
+        "fhd",
+        "chromium",
+        version_override="candidates",
+    )
+    cache_path = store.local_cache_path(object_key)
+
+    assert target == (repo_root / "qa" / "visual" / "baselines" / object_key).resolve()
+    assert "/candidates/" in target.as_posix()
+    assert target.is_file()
+    assert cache_path.is_file()
+    assert cache_path.read_bytes() == b"png-bytes"
