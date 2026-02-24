@@ -48,6 +48,7 @@ DEFAULT_PORT = 4173
 CHALLENGE_TTL_SECONDS = 300
 _RUN_ID_SAFE = re.compile(r"^[A-Za-z0-9._-]+$")
 _READY_MARKER = ".report-ready.json"
+_PERCEPTUAL_STATUS = "perceptual-status.json"
 LOCK_TTL_SECONDS = 110
 TEXT_MAX_LENGTH = 500
 _TEXT_CONTROL_CHAR_REGEX = re.compile(r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]")
@@ -275,6 +276,54 @@ def _read_run_metadata(report_dir: Path) -> dict[str, str]:
     }
 
 
+def _summarize_perceptual_from_rows(rows: list[dict[str, Any]]) -> dict[str, int]:
+    total = 0
+    pending = 0
+    done = 0
+    error = 0
+    for row in rows:
+        perceptual = row.get("perceptual") if isinstance(row, dict) else None
+        if not isinstance(perceptual, dict):
+            continue
+        status = str(perceptual.get("status", "")).strip().lower()
+        if not status or status == "skipped":
+            continue
+        total += 1
+        if status in {"queued", "running"}:
+            pending += 1
+        elif status == "done":
+            done += 1
+        elif status in {"error", "timeout"}:
+            error += 1
+    return {
+        "total_count": total,
+        "pending_count": pending,
+        "done_count": done,
+        "error_count": error,
+        "in_progress": 1 if pending > 0 else 0,
+    }
+
+
+def _read_perceptual_status(report_dir: Path, rows: list[dict[str, Any]]) -> dict[str, int]:
+    fallback = _summarize_perceptual_from_rows(rows)
+    status_path = report_dir / _PERCEPTUAL_STATUS
+    if not status_path.is_file():
+        return fallback
+    try:
+        payload = json.loads(status_path.read_text(encoding="utf-8"))
+    except Exception:
+        return fallback
+    if not isinstance(payload, dict):
+        return fallback
+    return {
+        "total_count": int(payload.get("total_count", fallback["total_count"]) or 0),
+        "pending_count": int(payload.get("pending_count", fallback["pending_count"]) or 0),
+        "done_count": int(payload.get("done_count", fallback["done_count"]) or 0),
+        "error_count": int(payload.get("error_count", fallback["error_count"]) or 0),
+        "in_progress": 1 if bool(payload.get("in_progress", False)) else 0,
+    }
+
+
 def _report_summary(rows: list[dict[str, Any]]) -> dict[str, int]:
     failed = 0
     passed = 0
@@ -310,6 +359,7 @@ def _list_reports_payload(context: ReportServerContext) -> list[dict[str, Any]]:
         rows = _read_results_rows(report_dir)
         run_metadata = _read_run_metadata(report_dir)
         stats = _report_summary(rows)
+        pms_stats = _read_perceptual_status(report_dir, rows)
         try:
             updated_at = int(report_dir.stat().st_mtime)
         except Exception:
@@ -385,6 +435,12 @@ def _list_reports_payload(context: ReportServerContext) -> list[dict[str, Any]]:
                 "sync_failed_count": sync_failed_count,
                 "sync_pending_count": sync_pending_count,
                 "sync_sending_count": sync_sending_count,
+                "pms_total_count": pms_stats["total_count"],
+                "pms_pending_count": pms_stats["pending_count"],
+                "pms_done_count": pms_stats["done_count"],
+                "pms_success_count": pms_stats["done_count"],
+                "pms_error_count": pms_stats["error_count"],
+                "pms_in_progress": bool(pms_stats["in_progress"]),
             }
         )
     return reports

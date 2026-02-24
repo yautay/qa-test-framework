@@ -65,5 +65,9 @@ def test_report_server_reports_sync_issue_counters_on_reports_list(tmp_path: Pat
         assert report["sync_pending_count"] == 1
         assert report["sync_sending_count"] == 1
         assert report["sync_unsynced_count"] == 2
+        assert report["pms_total_count"] == 0
+        assert report["pms_pending_count"] == 0
+        assert report["pms_success_count"] == 0
+        assert report["pms_error_count"] == 0
     finally:
         _stop_server(server, thread)

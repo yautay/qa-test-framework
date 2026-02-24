@@ -4,7 +4,10 @@
       <div class="d-flex justify-content-between align-items-center gap-2">
         <div class="mono fw-semibold">{{ report.run_id }}</div>
         <div class="d-flex gap-1">
-          <span v-if="showSyncWarning" class="badge bg-warning text-dark" :title="syncWarningTitle">⚠</span>
+          <span v-if="showPmsPending" class="badge bg-secondary pms-signal" :title="pmsPendingTitle">⏳</span>
+          <span v-if="showPmsError" class="badge bg-warning text-dark pms-signal" :title="pmsErrorTitle">⚠</span>
+          <span v-if="showPmsSuccess" class="badge bg-success pms-signal" :title="pmsSuccessTitle">✅</span>
+          <span v-if="showSyncWarning" class="badge bg-warning text-dark sync-warning-icon" :title="syncWarningTitle">⚠</span>
           <span class="badge text-bg-secondary">{{ report.total || 0 }} {{ t('card.tests') }}</span>
         </div>
       </div>
@@ -63,6 +66,33 @@ export default {
     showSyncWarning() {
       return !!(this.hasSyncErrors || this.report?.has_sync_issues);
     },
+    pmsPendingCount() {
+      return Number(this.report?.pms_pending_count || 0);
+    },
+    pmsErrorCount() {
+      return Number(this.report?.pms_error_count || 0);
+    },
+    pmsSuccessCount() {
+      return Number(this.report?.pms_success_count || this.report?.pms_done_count || 0);
+    },
+    showPmsPending() {
+      return this.pmsPendingCount > 0;
+    },
+    showPmsError() {
+      return this.pmsErrorCount > 0;
+    },
+    showPmsSuccess() {
+      return this.pmsSuccessCount > 0;
+    },
+    pmsPendingTitle() {
+      return `${t("pms.pendingBuild")}: ${this.pmsPendingCount}`;
+    },
+    pmsErrorTitle() {
+      return `${t("pms.errorBuild")}: ${this.pmsErrorCount}`;
+    },
+    pmsSuccessTitle() {
+      return `${t("pms.successBuild")}: ${this.pmsSuccessCount}`;
+    },
     syncWarningTitle() {
       const base = t("sync.buildHasErrors");
       const failed = Number(this.report?.sync_failed_count || 0);
@@ -110,5 +140,11 @@ export default {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.pms-signal,
+.sync-warning-icon {
+  min-width: 1.5rem;
+  text-align: center;
 }
 </style>

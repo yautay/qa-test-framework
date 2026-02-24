@@ -9,9 +9,15 @@
                 <div class="text-muted small mono">{{ viewer.modalSubtitle }}</div>
               </div>
               <div class="modal-header-meta">
-                <div v-if="headerBadges.length" class="modal-header-badges">
+                <div
+                  v-if="headerBadges.length || viewerHasPmsPending || viewerHasPmsError || viewerHasPmsSuccess || viewerHasSyncIssue"
+                  class="modal-header-badges"
+                >
+                  <span v-if="viewerHasPmsPending" class="badge bg-secondary me-1 pms-pending-icon" :title="viewerPmsPendingTitle">⏳</span>
+                  <span v-if="viewerHasPmsError" class="badge bg-warning text-dark me-1 pms-error-icon" :title="viewerPmsErrorTitle">⚠</span>
+                  <span v-if="viewerHasPmsSuccess" class="badge bg-success me-1 pms-success-icon" :title="viewerPmsSuccessTitle">✅</span>
                   <span v-if="viewerHasSyncIssue" 
-                        class="badge bg-warning text-dark me-1" 
+                        class="badge bg-warning text-dark me-1 sync-warning-icon" 
                         :title="viewerSyncIssueTitle">
                     ⚠
                   </span>
@@ -211,6 +217,32 @@ export default {
       if (!key) return {};
       return this.viewer.pendingTags?.[key] || {};
     },
+    viewerPerceptualStatus() {
+      const status = this.viewer?.modalRow?.perceptual?.status;
+      return String(status || "").trim().toLowerCase();
+    },
+    viewerHasPmsPending() {
+      const status = this.viewerPerceptualStatus;
+      return status === "queued" || status === "running";
+    },
+    viewerHasPmsError() {
+      const status = this.viewerPerceptualStatus;
+      return status === "error" || status === "timeout";
+    },
+    viewerHasPmsSuccess() {
+      return this.viewerPerceptualStatus === "done";
+    },
+    viewerPmsPendingTitle() {
+      return this.t("pms.pendingTest");
+    },
+    viewerPmsErrorTitle() {
+      const message = String(this.viewer?.modalRow?.perceptual?.error_message || "").trim();
+      if (message) return `${this.t("pms.errorTest")}: ${message}`;
+      return this.t("pms.errorTestUnknown");
+    },
+    viewerPmsSuccessTitle() {
+      return this.t("pms.successTest");
+    },
     viewerHasSyncIssue() {
       const tags = this.viewer.tags || {};
       const pending = this.viewerPendingTags || {};
@@ -292,6 +324,15 @@ export default {
   flex-wrap: wrap;
   gap: 0.35rem;
 }
+
+.pms-pending-icon,
+.pms-error-icon,
+.pms-success-icon,
+.sync-warning-icon {
+  min-width: 1.5rem;
+  text-align: center;
+}
+
 .modal-scoring-text {
   font-size: 0.85rem;
   color: var(--text-muted);

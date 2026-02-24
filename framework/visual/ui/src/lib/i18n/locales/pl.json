@@ -27,6 +27,7 @@
   "listing": {
     "scenario": "Scenariusz",
     "status": "Status",
+    "signals": "Sygnały",
     "pixel": "Pixel",
     "lpips": "LPIPS",
     "dists": "DISTS",
@@ -160,5 +161,14 @@
     "pendingCount": "oczekujące",
     "sendingCount": "w toku",
     "unsyncedCount": "niezsynchronizowane"
+  },
+  "pms": {
+    "pendingBuild": "Oczekujące joby PMS",
+    "errorBuild": "Błędne joby PMS",
+    "successBuild": "Zakończone joby PMS",
+    "pendingTest": "PMS przetwarza test",
+    "errorTest": "Błąd PMS",
+    "errorTestUnknown": "Błąd PMS: nieznany",
+    "successTest": "PMS zakończony poprawnie"
   }
 }

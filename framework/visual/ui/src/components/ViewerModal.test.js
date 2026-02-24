@@ -171,7 +171,7 @@ describe("ViewerModal", () => {
         props: { ...defaultProps, viewer },
       });
 
-      const warning = wrapper.find(".modal-header-badges .badge.bg-warning.text-dark.me-1");
+      const warning = wrapper.find(".modal-header-badges .sync-warning-icon");
       expect(warning.exists()).toBe(true);
       expect(warning.attributes("title")).toBe("sync.unsyncedTooltip");
     });
@@ -192,7 +192,7 @@ describe("ViewerModal", () => {
         props: { ...defaultProps, viewer },
       });
 
-      const warning = wrapper.find(".modal-header-badges .badge.bg-warning.text-dark.me-1");
+      const warning = wrapper.find(".modal-header-badges .sync-warning-icon");
       expect(warning.exists()).toBe(true);
       expect(warning.attributes("title")).toBe("sync.pendingTooltip");
     });
@@ -213,7 +213,7 @@ describe("ViewerModal", () => {
         props: { ...defaultProps, viewer },
       });
 
-      const warning = wrapper.find(".modal-header-badges .badge.bg-warning.text-dark.me-1");
+      const warning = wrapper.find(".modal-header-badges .sync-warning-icon");
       expect(warning.exists()).toBe(true);
       expect(warning.attributes("title")).toBe("sync.errorPrefix: timeout");
     });
@@ -234,7 +234,58 @@ describe("ViewerModal", () => {
         props: { ...defaultProps, viewer },
       });
 
-      expect(wrapper.find(".modal-header-badges .badge.bg-warning.text-dark.me-1").exists()).toBe(false);
+      expect(wrapper.find(".modal-header-badges .sync-warning-icon").exists()).toBe(false);
+    });
+
+    it("shows PMS pending icon for queued perceptual status", () => {
+      const viewer = {
+        ...defaultViewer,
+        modalRow: {
+          ...defaultViewer.modalRow,
+          perceptual: { status: "queued" },
+        },
+      };
+      const wrapper = mount(ViewerModal, {
+        props: { ...defaultProps, viewer },
+      });
+
+      const pending = wrapper.find(".modal-header-badges .pms-pending-icon");
+      expect(pending.exists()).toBe(true);
+      expect(pending.attributes("title")).toBe("pms.pendingTest");
+    });
+
+    it("shows PMS error icon with details", () => {
+      const viewer = {
+        ...defaultViewer,
+        modalRow: {
+          ...defaultViewer.modalRow,
+          perceptual: { status: "error", error_message: "model unavailable" },
+        },
+      };
+      const wrapper = mount(ViewerModal, {
+        props: { ...defaultProps, viewer },
+      });
+
+      const error = wrapper.find(".modal-header-badges .pms-error-icon");
+      expect(error.exists()).toBe(true);
+      expect(error.attributes("title")).toBe("pms.errorTest: model unavailable");
+    });
+
+    it("shows PMS success icon for done perceptual status", () => {
+      const viewer = {
+        ...defaultViewer,
+        modalRow: {
+          ...defaultViewer.modalRow,
+          perceptual: { status: "done" },
+        },
+      };
+      const wrapper = mount(ViewerModal, {
+        props: { ...defaultProps, viewer },
+      });
+
+      const success = wrapper.find(".modal-header-badges .pms-success-icon");
+      expect(success.exists()).toBe(true);
+      expect(success.attributes("title")).toBe("pms.successTest");
     });
 
   });

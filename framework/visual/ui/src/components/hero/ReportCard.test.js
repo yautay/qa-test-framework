@@ -47,7 +47,7 @@ describe("ReportCard", () => {
       },
     });
 
-    const warning = wrapper.find(".badge.bg-warning.text-dark");
+    const warning = wrapper.find(".sync-warning-icon");
     expect(warning.exists()).toBe(true);
     expect(warning.attributes("title")).toContain("failed: 2");
     expect(warning.attributes("title")).toContain("pending: 3");
@@ -72,7 +72,7 @@ describe("ReportCard", () => {
       },
     });
 
-    expect(wrapper.find(".badge.bg-warning.text-dark").exists()).toBe(false);
+    expect(wrapper.find(".sync-warning-icon").exists()).toBe(false);
   });
 
   it("shows warning badge when hasSyncErrors fallback prop is true", () => {
@@ -93,11 +93,29 @@ describe("ReportCard", () => {
       },
     });
 
-    const warning = wrapper.find(".badge.bg-warning.text-dark");
+    const warning = wrapper.find(".sync-warning-icon");
     expect(warning.exists()).toBe(true);
     expect(warning.attributes("title")).toContain("failed: 0");
     expect(warning.attributes("title")).toContain("pending: 0");
     expect(warning.attributes("title")).toContain("sending: 0");
     expect(warning.attributes("title")).toContain("unsynced: 0");
+  });
+
+  it("shows PMS pending, error and success signals with counters", () => {
+    const wrapper = mount(ReportCard, {
+      props: {
+        report: {
+          run_id: "run-pms",
+          total: 10,
+          pms_pending_count: 2,
+          pms_error_count: 1,
+          pms_success_count: 7,
+        },
+      },
+    });
+
+    expect(wrapper.find(".pms-signal.bg-secondary").attributes("title")).toContain("2");
+    expect(wrapper.find(".pms-signal.bg-warning").attributes("title")).toContain("1");
+    expect(wrapper.find(".pms-signal.bg-success").attributes("title")).toContain("7");
   });
 });

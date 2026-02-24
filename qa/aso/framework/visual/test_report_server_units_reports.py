@@ -144,3 +144,41 @@ def test_list_reports_payload_clears_sync_issue_counts_when_reporting_disabled(t
     assert report["sync_failed_count"] == 0
     assert report["sync_pending_count"] == 0
     assert report["sync_sending_count"] == 0
+
+
+def test_list_reports_payload_includes_perceptual_status_from_file(tmp_path: Path) -> None:
+    run_dir = tmp_path / "artifacts" / "20260221" / "visual"
+    ui_dist = tmp_path / "ui"
+    ui_dist.mkdir()
+    run_dir.mkdir(parents=True)
+    (run_dir / ".report-ready.json").write_text('{"ready": true}\n', encoding="utf-8")
+    (run_dir / "results.json").write_text(json.dumps({"results": []}), encoding="utf-8")
+    (run_dir / "perceptual-status.json").write_text(
+        json.dumps(
+            {
+                "total_count": 10,
+                "pending_count": 3,
+                "done_count": 6,
+                "error_count": 1,
+                "in_progress": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    context = ReportServerContext(
+        repo_root=tmp_path,
+        ui_dist_dir=ui_dist,
+        baseline_store=cast(Any, _DummyBaselineStore()),
+        run_dirs={"20260221": run_dir},
+    )
+
+    payload = _list_reports_payload(context)
+
+    assert len(payload) == 1
+    report = payload[0]
+    assert report["pms_total_count"] == 10
+    assert report["pms_pending_count"] == 3
+    assert report["pms_success_count"] == 6
+    assert report["pms_error_count"] == 1
+    assert report["pms_in_progress"] is True

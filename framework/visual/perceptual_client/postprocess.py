@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 import time
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +14,9 @@ from framework.visual.models import VisualResult
 
 from .ids import build_job_id, build_pair_id, build_test_id
 from .pms_client import PMSClient, PMSClientError
+
+
+PERCEPTUAL_STATUS_FILENAME = "perceptual-status.json"
 
 
 @dataclass
@@ -66,6 +71,98 @@ def _upsert_perceptual(result: VisualResult, payload: dict[str, Any]) -> None:
     result.test_metadata["perceptual"] = payload
 
 
+def _write_perceptual_status(
+    report_dir: Path,
+    *,
+    total_count: int,
+    pending_count: int,
+    done_count: int,
+    error_count: int,
+    in_progress: bool,
+) -> None:
+    report_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "total_count": max(0, int(total_count)),
+        "pending_count": max(0, int(pending_count)),
+        "done_count": max(0, int(done_count)),
+        "error_count": max(0, int(error_count)),
+        "in_progress": bool(in_progress),
+    }
+    target = report_dir / PERCEPTUAL_STATUS_FILENAME
+    temp = report_dir / f"{PERCEPTUAL_STATUS_FILENAME}.tmp"
+    temp.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temp.replace(target)
+
+
+def _prepare_pending_jobs(env: RuntimeEnv, run_id: str, results: list[VisualResult]) -> list[_PairJob]:
+    pending: list[_PairJob] = []
+    for result in results:
+        baseline = Path(str(result.baseline_path or "").strip())
+        actual = Path(str(result.actual_path or "").strip())
+        if not baseline.is_file() or not actual.is_file():
+            _upsert_perceptual(
+                result,
+                {
+                    "status": "skipped",
+                    "lpips": None,
+                    "dists": None,
+                    "heatmap": None,
+                    "job_id": None,
+                    "timing_ms": 0,
+                    "error_message": "missing baseline/actual pair",
+                },
+            )
+            continue
+
+        test_id = build_test_id(
+            suite_id=result.suite_id,
+            scenario_id=result.scenario_id,
+            viewport=result.viewport,
+            browser=result.browser,
+        )
+        pair_id = build_pair_id(test_id=test_id, baseline_path=str(baseline), actual_path=str(actual))
+        job_id = build_job_id(
+            run_id=run_id,
+            pair_id=pair_id,
+            metric=env.pms_metric,
+            model=env.pms_model,
+            normalize=env.pms_normalize,
+        )
+        pending.append(_PairJob(result=result, pair_id=pair_id, job_id=job_id, submitted_at=0.0, status="pending"))
+        _upsert_perceptual(
+            result,
+            {
+                "status": "queued",
+                "lpips": None,
+                "dists": None,
+                "heatmap": None,
+                "job_id": job_id,
+                "timing_ms": 0,
+                "error_message": None,
+            },
+        )
+        logger.debug("perceptual_pair_queued", run_id=run_id, pair_id=pair_id, job_id=job_id)
+    return pending
+
+
+def prepare_perceptual_placeholders(
+    *, env: RuntimeEnv, run_id: str, report_dir: Path, results: list[VisualResult]
+) -> None:
+    if not env.pms_enabled:
+        return
+    pending = _prepare_pending_jobs(env, run_id, results)
+    total_count = len(pending)
+    _write_perceptual_status(
+        report_dir,
+        total_count=total_count,
+        pending_count=total_count,
+        done_count=0,
+        error_count=0,
+        in_progress=total_count > 0,
+    )
+
+
 def run_perceptual_postprocess(
     *,
     env: RuntimeEnv,
@@ -115,60 +212,22 @@ def run_perceptual_postprocess(
     error_count = 0
 
     started_at = time.monotonic()
-    for result in results:
-        baseline = Path(str(result.baseline_path or "").strip())
-        actual = Path(str(result.actual_path or "").strip())
-        if not baseline.is_file() or not actual.is_file():
-            _upsert_perceptual(
-                result,
-                {
-                    "status": "skipped",
-                    "lpips": None,
-                    "dists": None,
-                    "heatmap": None,
-                    "job_id": None,
-                    "timing_ms": 0,
-                    "error_message": "missing baseline/actual pair",
-                },
-            )
-            continue
-
-        test_id = build_test_id(
-            suite_id=result.suite_id,
-            scenario_id=result.scenario_id,
-            viewport=result.viewport,
-            browser=result.browser,
-        )
-        pair_id = build_pair_id(test_id=test_id, baseline_path=str(baseline), actual_path=str(actual))
-        job_id = build_job_id(
-            run_id=run_id,
-            pair_id=pair_id,
-            metric=env.pms_metric,
-            model=env.pms_model,
-            normalize=env.pms_normalize,
-        )
-        pending.append(
-            result_job := _PairJob(result=result, pair_id=pair_id, job_id=job_id, submitted_at=0.0, status="pending")
-        )
-        _upsert_perceptual(
-            result,
-            {
-                "status": "queued",
-                "lpips": None,
-                "dists": None,
-                "heatmap": None,
-                "job_id": job_id,
-                "timing_ms": 0,
-                "error_message": None,
-            },
-        )
-        logger.debug("perceptual_pair_queued", run_id=run_id, pair_id=pair_id, job_id=job_id)
+    pending = _prepare_pending_jobs(env, run_id, results)
+    total_jobs = len(pending)
+    _write_perceptual_status(
+        report_dir,
+        total_count=total_jobs,
+        pending_count=total_jobs,
+        done_count=done_count,
+        error_count=error_count,
+        in_progress=total_jobs > 0,
+    )
 
     logger.info(
         "perceptual_postprocess_started",
         run_id=run_id,
         total_results=len(results),
-        queued_pairs=len(pending),
+        queued_pairs=total_jobs,
         metric=env.pms_metric,
         model=env.pms_model,
         normalize=env.pms_normalize,
@@ -238,6 +297,14 @@ def run_perceptual_postprocess(
                         job_id=next_job.job_id,
                         error=str(exc),
                     )
+                    _write_perceptual_status(
+                        report_dir,
+                        total_count=total_jobs,
+                        pending_count=len(pending) + len(inflight),
+                        done_count=done_count,
+                        error_count=error_count,
+                        in_progress=(len(pending) + len(inflight)) > 0,
+                    )
 
         for job_id, item in list(inflight.items()):
             poll_limit.wait()
@@ -258,6 +325,14 @@ def run_perceptual_postprocess(
                     },
                 )
                 logger.error("perceptual_job_timeout", run_id=run_id, pair_id=item.pair_id, job_id=item.job_id)
+                _write_perceptual_status(
+                    report_dir,
+                    total_count=total_jobs,
+                    pending_count=len(pending) + len(inflight),
+                    done_count=done_count,
+                    error_count=error_count,
+                    in_progress=(len(pending) + len(inflight)) > 0,
+                )
                 continue
 
             try:
@@ -319,10 +394,53 @@ def run_perceptual_postprocess(
                     heatmap=heatmap_rel,
                     timing_ms=timing_ms,
                 )
+                _write_perceptual_status(
+                    report_dir,
+                    total_count=total_jobs,
+                    pending_count=len(pending) + len(inflight),
+                    done_count=done_count,
+                    error_count=error_count,
+                    in_progress=(len(pending) + len(inflight)) > 0,
+                )
                 continue
 
             error_count += 1
-            err_message = str(payload.get("error") or payload.get("message") or f"status={status}")
+            err_message = str(
+                payload.get("error_message") or payload.get("error") or payload.get("message") or ""
+            ).strip()
+            if status == "error":
+                logger.info(
+                    "perceptual_job_error_details_requested",
+                    run_id=run_id,
+                    pair_id=item.pair_id,
+                    job_id=item.job_id,
+                    endpoint="/v1/compare/jobs/{job_id}/error",
+                )
+                try:
+                    error_payload = client.get_job_error(item.job_id)
+                    endpoint_message = str(
+                        error_payload.get("error_message") or error_payload.get("detail") or ""
+                    ).strip()
+                    if endpoint_message:
+                        err_message = endpoint_message
+                    logger.info(
+                        "perceptual_job_error_details_loaded",
+                        run_id=run_id,
+                        pair_id=item.pair_id,
+                        job_id=item.job_id,
+                        endpoint="/v1/compare/jobs/{job_id}/error",
+                    )
+                except PMSClientError as exc:
+                    logger.warning(
+                        "perceptual_job_error_details_failed",
+                        run_id=run_id,
+                        pair_id=item.pair_id,
+                        job_id=item.job_id,
+                        endpoint="/v1/compare/jobs/{job_id}/error",
+                        error=str(exc),
+                    )
+            if not err_message:
+                err_message = f"status={status}"
             _upsert_perceptual(
                 item.result,
                 {
@@ -343,6 +461,14 @@ def run_perceptual_postprocess(
                 status=status,
                 error=err_message,
             )
+            _write_perceptual_status(
+                report_dir,
+                total_count=total_jobs,
+                pending_count=len(pending) + len(inflight),
+                done_count=done_count,
+                error_count=error_count,
+                in_progress=(len(pending) + len(inflight)) > 0,
+            )
 
         if inflight:
             interval = max(100, int(env.pms_poll_interval_ms)) / 1000.0
@@ -356,4 +482,12 @@ def run_perceptual_postprocess(
         done=done_count,
         errors=error_count,
         took_ms=took_ms,
+    )
+    _write_perceptual_status(
+        report_dir,
+        total_count=total_jobs,
+        pending_count=0,
+        done_count=done_count,
+        error_count=error_count,
+        in_progress=False,
     )
