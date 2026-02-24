@@ -83,19 +83,20 @@ class RuntimeEnv:
     visual_minio_secret_key: str
     visual_minio_bucket: str
     visual_minio_secure: bool
-    visual_perceptual_enabled: bool
-    visual_perceptual_required: bool
-    visual_perceptual_api_url: str
-    visual_perceptual_timeout_seconds: int
-    visual_perceptual_health_timeout_seconds: int
-    visual_perceptual_retries: int
-    visual_perceptual_fail_fast_errors: int
-    visual_perceptual_fallback_mode: str
-    visual_perceptual_force_device: str
-    visual_perceptual_max_side: int
-    visual_perceptual_overlay_on: str
-    visual_perceptual_alpha: float
-    visual_perceptual_lpips_net: str
+    pms_enabled: bool
+    pms_required: bool
+    pms_base_url: str
+    pms_metric: str
+    pms_model: str
+    pms_normalize: bool
+    pms_submit_rps: float
+    pms_poll_rps: float
+    pms_max_inflight: int
+    pms_server_active_limit: int
+    pms_timeout_sec: int
+    pms_retry_max: int
+    pms_health_timeout_seconds: int
+    pms_poll_interval_ms: int
     visual_uncertain_enabled: bool
     visual_uncertain_pixel_delta: float
     visual_uncertain_lpips_delta: float
@@ -286,66 +287,66 @@ def load_env() -> RuntimeEnv:
             "VISUAL_MINIO_SECURE",
             bool(settings.visual_minio_secure),
         ),
-        visual_perceptual_enabled=env_bool(
-            "VISUAL_PERCEPTUAL_ENABLED",
-            bool(settings.visual_perceptual_enabled),
+        pms_enabled=env_bool(
+            "PMS_ENABLED",
+            bool(settings.pms_enabled),
         ),
-        visual_perceptual_required=env_bool(
-            "VISUAL_PERCEPTUAL_REQUIRED",
-            bool(settings.visual_perceptual_required),
+        pms_required=env_bool(
+            "PMS_REQUIRED",
+            bool(settings.pms_required),
         ),
-        visual_perceptual_api_url=env_str(
-            "VISUAL_PERCEPTUAL_API_URL",
-            str(settings.visual_perceptual_api_url),
+        pms_base_url=env_str(
+            "PMS_BASE_URL",
+            str(settings.pms_base_url),
         ),
-        visual_perceptual_timeout_seconds=env_int(
-            "VISUAL_PERCEPTUAL_TIMEOUT_SECONDS",
-            int(settings.visual_perceptual_timeout_seconds),
-        ),
-        visual_perceptual_health_timeout_seconds=env_int(
-            "VISUAL_PERCEPTUAL_HEALTH_TIMEOUT_SECONDS",
-            int(settings.visual_perceptual_health_timeout_seconds),
-        ),
-        visual_perceptual_retries=env_int(
-            "VISUAL_PERCEPTUAL_RETRIES",
-            int(settings.visual_perceptual_retries),
-        ),
-        visual_perceptual_fail_fast_errors=env_int(
-            "VISUAL_PERCEPTUAL_FAIL_FAST_ERRORS",
-            int(settings.visual_perceptual_fail_fast_errors),
-        ),
-        visual_perceptual_fallback_mode=env_str(
-            "VISUAL_PERCEPTUAL_FALLBACK_MODE",
-            str(settings.visual_perceptual_fallback_mode),
+        pms_metric=env_str(
+            "PMS_METRIC",
+            str(settings.pms_metric),
         )
         .strip()
         .lower(),
-        visual_perceptual_force_device=env_str(
-            "VISUAL_PERCEPTUAL_FORCE_DEVICE",
-            str(settings.visual_perceptual_force_device),
+        pms_model=env_str(
+            "PMS_MODEL",
+            str(settings.pms_model),
         )
         .strip()
         .lower(),
-        visual_perceptual_max_side=env_int(
-            "VISUAL_PERCEPTUAL_MAX_SIDE",
-            int(settings.visual_perceptual_max_side),
+        pms_normalize=env_bool(
+            "PMS_NORMALIZE",
+            bool(settings.pms_normalize),
         ),
-        visual_perceptual_overlay_on=env_str(
-            "VISUAL_PERCEPTUAL_OVERLAY_ON",
-            str(settings.visual_perceptual_overlay_on),
-        )
-        .strip()
-        .lower(),
-        visual_perceptual_alpha=env_float(
-            "VISUAL_PERCEPTUAL_ALPHA",
-            float(settings.visual_perceptual_alpha),
+        pms_submit_rps=env_float(
+            "PMS_SUBMIT_RPS",
+            float(settings.pms_submit_rps),
         ),
-        visual_perceptual_lpips_net=env_str(
-            "VISUAL_PERCEPTUAL_LPIPS_NET",
-            str(settings.visual_perceptual_lpips_net),
-        )
-        .strip()
-        .lower(),
+        pms_poll_rps=env_float(
+            "PMS_POLL_RPS",
+            float(settings.pms_poll_rps),
+        ),
+        pms_max_inflight=env_int(
+            "PMS_MAX_INFLIGHT",
+            int(settings.pms_max_inflight),
+        ),
+        pms_server_active_limit=env_int(
+            "PMS_SERVER_ACTIVE_LIMIT",
+            int(settings.pms_server_active_limit),
+        ),
+        pms_timeout_sec=env_int(
+            "PMS_TIMEOUT_SEC",
+            int(settings.pms_timeout_sec),
+        ),
+        pms_retry_max=env_int(
+            "PMS_RETRY_MAX",
+            int(settings.pms_retry_max),
+        ),
+        pms_health_timeout_seconds=env_int(
+            "PMS_HEALTH_TIMEOUT_SECONDS",
+            int(settings.pms_health_timeout_seconds),
+        ),
+        pms_poll_interval_ms=env_int(
+            "PMS_POLL_INTERVAL_MS",
+            int(settings.pms_poll_interval_ms),
+        ),
         visual_uncertain_enabled=env_bool(
             "VISUAL_UNCERTAIN_ENABLED",
             bool(settings.visual_uncertain_enabled),

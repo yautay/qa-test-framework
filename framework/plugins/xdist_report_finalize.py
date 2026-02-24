@@ -13,6 +13,7 @@ import settings_cli
 from framework.artifacts import resolve_artifacts_base_dir
 from framework.env import load_env
 from framework.visual.models import VisualResult, VisualThresholds
+from framework.visual.perceptual_client import run_perceptual_postprocess
 from framework.visual.report_builder import write_visual_report
 
 
@@ -164,6 +165,12 @@ def _result_from_dict(data: dict[str, object]) -> VisualResult | None:
         lpips_raw = data.get("lpips")
         dists_raw = data.get("dists")
         test_metadata_obj = data.get("test_metadata")
+        perceptual_obj = data.get("perceptual")
+        test_metadata = test_metadata_obj if isinstance(test_metadata_obj, dict) else None
+        if isinstance(perceptual_obj, dict):
+            if test_metadata is None:
+                test_metadata = {}
+            test_metadata["perceptual"] = perceptual_obj
 
         return VisualResult(
             scenario_id=str(data.get("scenario_id") or ""),
@@ -185,7 +192,8 @@ def _result_from_dict(data: dict[str, object]) -> VisualResult | None:
             thresholds=thresholds,
             tester=str(data.get("tester") or ""),
             run_note=str(data.get("run_note") or ""),
-            test_metadata=test_metadata_obj if isinstance(test_metadata_obj, dict) else None,
+            test_metadata=test_metadata,
+            perceptual=perceptual_obj if isinstance(perceptual_obj, dict) else None,
         )
     except (TypeError, ValueError):
         return None
@@ -244,6 +252,19 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
                 workers_root=str(run_root / "workers"),
             )
         return
+
+    env = load_env()
+    try:
+        run_perceptual_postprocess(
+            env=env,
+            run_id=str(run_root.name),
+            report_dir=run_root / "visual",
+            results=merged_results,
+        )
+    except Exception as exc:
+        logger.warning("perceptual_postprocess_failed", run_root=str(run_root), error=str(exc))
+        if env.pms_required:
+            raise
 
     try:
         write_visual_report(run_root / "visual", merged_results)

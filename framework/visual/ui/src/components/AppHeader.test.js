@@ -17,6 +17,18 @@ vi.mock("../lib/api/appInfoApi", () => ({
   })),
 }));
 
+vi.mock("../lib/api/perceptualApi", () => ({
+  fetchPerceptualQueue: vi.fn(async () => ({
+    enabled: true,
+    server_active: 3,
+    queued: 1,
+    running: 2,
+    done: 10,
+    error: 0,
+    error_message: null,
+  })),
+}));
+
 vi.mock("../lib/i18n", () => ({
   locale: ref("en"),
   setLocale: vi.fn(),
@@ -125,5 +137,15 @@ describe("AppHeader", () => {
     expect(header.classes()).toContain("mb-3");
     expect(header.classes()).toContain("p-3");
     expect(header.classes()).toContain("rounded-4");
+  });
+
+  it("renders perceptual queue badge", async () => {
+    const wrapper = mount(AppHeader);
+    await flushPromises();
+
+    const queue = wrapper.find(".perceptual-queue");
+    expect(queue.exists()).toBe(true);
+    expect(queue.text()).toContain("PMS");
+    expect(queue.text()).toContain("3");
   });
 });

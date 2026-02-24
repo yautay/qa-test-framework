@@ -46,20 +46,21 @@ visual_minio_secret_key = ""
 visual_minio_bucket = "visual-baselines"
 visual_minio_secure = True
 
-# Perceptual API (LPIPS + DISTS).
-visual_perceptual_enabled = False
-visual_perceptual_required = False
-visual_perceptual_api_url = ""
-visual_perceptual_timeout_seconds = 15
-visual_perceptual_health_timeout_seconds = 2
-visual_perceptual_retries = 2
-visual_perceptual_fail_fast_errors = 3
-visual_perceptual_fallback_mode = "pixel"  # pixel|abort
-visual_perceptual_force_device = ""  # cpu|cuda|""
-visual_perceptual_max_side = 1024
-visual_perceptual_overlay_on = "test"  # test|ref
-visual_perceptual_alpha = 0.45
-visual_perceptual_lpips_net = "alex"  # vgg|alex|squeeze
+# Perceptual Metrics Service (PMS) post-process.
+pms_enabled = False
+pms_required = False
+pms_base_url = ""
+pms_metric = "both"  # lpips|dists|both
+pms_model = "alex"
+pms_normalize = False
+pms_submit_rps = 2.0
+pms_poll_rps = 4.0
+pms_max_inflight = 10
+pms_server_active_limit = 100
+pms_timeout_sec = 60
+pms_retry_max = 3
+pms_health_timeout_seconds = 2
+pms_poll_interval_ms = 500
 
 # Reporting API (optional)
 reporting_enabled = False

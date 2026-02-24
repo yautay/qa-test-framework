@@ -68,6 +68,29 @@ def _build_rows(report_dir: Path, results: list[VisualResult]) -> list[dict[str,
         diff = _maybe_relpath(_as_str_path(getattr(result, "diff_path", None)), report_dir)
         heatmap = _maybe_relpath(_as_str_path(getattr(result, "heatmap_path", None)), report_dir)
 
+        metadata = getattr(result, "test_metadata", None)
+        perceptual = getattr(result, "perceptual", None)
+        if not isinstance(perceptual, dict) and isinstance(metadata, dict):
+            nested = metadata.get("perceptual")
+            if isinstance(nested, dict):
+                perceptual = nested
+
+        lpips = result.lpips
+        dists = result.dists
+        if isinstance(perceptual, dict):
+            if lpips is None:
+                try:
+                    lpips = float(perceptual.get("lpips")) if perceptual.get("lpips") is not None else None
+                except (TypeError, ValueError):
+                    lpips = None
+            if dists is None:
+                try:
+                    dists = float(perceptual.get("dists")) if perceptual.get("dists") is not None else None
+                except (TypeError, ValueError):
+                    dists = None
+            if not heatmap:
+                heatmap = _maybe_relpath(_as_str_path(perceptual.get("heatmap")), report_dir)
+
         rows.append(
             {
                 "scenario_id": result.scenario_id,
@@ -78,8 +101,8 @@ def _build_rows(report_dir: Path, results: list[VisualResult]) -> list[dict[str,
                 "viewport": getattr(result, "viewport", ""),
                 "browser": getattr(result, "browser", ""),
                 "pixel_changed_ratio": result.pixel_changed_ratio,
-                "lpips": result.lpips,
-                "dists": result.dists,
+                "lpips": lpips,
+                "dists": dists,
                 "baseline_path": baseline,
                 "actual_path": actual,
                 "diff_path": diff,
@@ -91,7 +114,8 @@ def _build_rows(report_dir: Path, results: list[VisualResult]) -> list[dict[str,
                 },
                 "tester": str(getattr(result, "tester", "") or ""),
                 "run_note": str(getattr(result, "run_note", "") or ""),
-                "test_metadata": getattr(result, "test_metadata", None),
+                "test_metadata": metadata,
+                "perceptual": perceptual,
             }
         )
     return rows

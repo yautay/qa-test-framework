@@ -79,7 +79,7 @@ With xdist:
 - `visual/vrt-tags.json` - tags snapshot file,
 - `visual/.report-ready.json` - readiness marker for report discovery.
 
-`actual/`, `diff/`, and `heatmap/` are produced by visual runner execution and referenced from `results.json`.
+`actual/` and `diff/` are produced by visual runner execution. PMS post-process writes LPIPS heatmaps into `visual/heatmaps/` and updates `results.json` (`perceptual.*` + compatibility `lpips/dists/heatmap_path`).
 
 ## Asset copy behavior
 

@@ -135,4 +135,4 @@ Important env groups:
 - Runtime/browser/grid: `BROWSER`, `HEADLESS`, `IS_GRID_AVAILABLE`, `GRID_*`
 - Target routing: `BASE_URL`, `BASE_URL_OVERRIDE`, `server_type`, `server_name`
 - Reporting v2: `REPORTING_*`, `FRAMEWORK_VERSION`
-- Visual baseline and perceptual: `VISUAL_*`, `VISUAL_MINIO_*`, `VISUAL_PERCEPTUAL_*`
+- Visual baseline and perceptual post-process: `VISUAL_*`, `VISUAL_MINIO_*`, `PMS_*`

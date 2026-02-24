@@ -41,6 +41,7 @@ from framework.env import load_env
 from framework.reporting_client import ReportingClient
 from framework.visual.baseline_store import BaselineStore
 from framework.visual.config.server import REPORT_SYNC_WORKERS
+from framework.visual.perceptual_client import PMSClient, PMSClientError
 
 
 DEFAULT_PORT = 4173
@@ -74,6 +75,11 @@ class ReportServerContext:
     bug_pdf_config_path: Path | None = None
     sync_workers: int = 0
     sync_executor: ThreadPoolExecutor | None = field(default=None, repr=False)
+    pms_enabled: bool = False
+    pms_base_url: str = ""
+    pms_timeout_sec: int = 15
+    pms_health_timeout_seconds: int = 2
+    pms_retry_max: int = 2
     _lock: Any = field(default_factory=Lock)
 
     def resolve_run_dir(self, run_id: str) -> Path | None:
@@ -382,6 +388,72 @@ def _list_reports_payload(context: ReportServerContext) -> list[dict[str, Any]]:
             }
         )
     return reports
+
+
+def _perceptual_queue_payload(context: ReportServerContext) -> dict[str, Any]:
+    if not context.pms_enabled or not str(context.pms_base_url).strip():
+        return {
+            "enabled": False,
+            "base_url": "",
+            "server_active": 0,
+            "queued": 0,
+            "running": 0,
+            "done": 0,
+            "error": 0,
+            "total": 0,
+            "updated_at_epoch": int(time.time()),
+            "error_message": "pms disabled",
+        }
+
+    client = PMSClient(
+        base_url=context.pms_base_url,
+        timeout_seconds=context.pms_timeout_sec,
+        health_timeout_seconds=context.pms_health_timeout_seconds,
+        retry_max=context.pms_retry_max,
+    )
+
+    try:
+        jobs = client.list_jobs()
+    except PMSClientError as exc:
+        return {
+            "enabled": True,
+            "base_url": context.pms_base_url,
+            "server_active": 0,
+            "queued": 0,
+            "running": 0,
+            "done": 0,
+            "error": 0,
+            "total": 0,
+            "updated_at_epoch": int(time.time()),
+            "error_message": str(exc),
+        }
+
+    queued = 0
+    running = 0
+    done = 0
+    error = 0
+    for job in jobs:
+        status = str(job.get("status", "")).strip().lower()
+        if status == "queued":
+            queued += 1
+        elif status == "running":
+            running += 1
+        elif status == "done":
+            done += 1
+        elif status == "error":
+            error += 1
+    return {
+        "enabled": True,
+        "base_url": context.pms_base_url,
+        "server_active": queued + running,
+        "queued": queued,
+        "running": running,
+        "done": done,
+        "error": error,
+        "total": len(jobs),
+        "updated_at_epoch": int(time.time()),
+        "error_message": None,
+    }
 
 
 def _cleanup_expired_challenges(context: ReportServerContext) -> None:
@@ -1323,6 +1395,10 @@ def _build_handler(context: ReportServerContext):
                 self._send_json(HTTPStatus.OK, _build_app_info_payload(context))
                 return True
 
+            if path == "/api/perceptual/queue":
+                self._send_json(HTTPStatus.OK, _perceptual_queue_payload(context))
+                return True
+
             m_state = re.match(r"^/api/builds/([^/]+)/state$", path)
             if m_state:
                 try:
@@ -1902,6 +1978,11 @@ def main() -> int:
         reporting_aso_endpoint=str(cast(Any, env).reporting_api_aso_endpoint or "").strip(),
         sync_workers=sync_workers,
         sync_executor=sync_executor,
+        pms_enabled=bool(env.pms_enabled),
+        pms_base_url=str(env.pms_base_url or "").strip(),
+        pms_timeout_sec=int(env.pms_timeout_sec),
+        pms_health_timeout_seconds=int(env.pms_health_timeout_seconds),
+        pms_retry_max=int(env.pms_retry_max),
         bug_pdf_config_path=(
             REPO_ROOT / "framework" / "visual" / "ui" / "src" / "config" / "bug_report_pdf_config.json"
         ),
@@ -1917,7 +1998,7 @@ def main() -> int:
         print(f"server listening: http://{args.host}:{args.port}/")
     print(f"report sync workers: {sync_workers}")
     print(
-        "endpoints: GET /api/app-info, GET /api/reports, "
+        "endpoints: GET /api/app-info, GET /api/perceptual/queue, GET /api/reports, "
         "GET /api/reports/<run_id>/results, GET /api/reports/<run_id>/image/ref"
     )
     print(

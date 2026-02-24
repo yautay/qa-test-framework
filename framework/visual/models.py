@@ -426,6 +426,7 @@ class VisualResult:
     tester: str = ""
     run_note: str = ""
     test_metadata: dict[str, Any] | None = None
+    perceptual: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -456,6 +457,7 @@ class VisualResult:
             "tester": self.tester,
             "run_note": self.run_note,
             "test_metadata": self.test_metadata,
+            "perceptual": self.perceptual,
         }
 
 

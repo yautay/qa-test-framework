@@ -63,6 +63,15 @@
         </div>
       </div>
       <div class="datetime-wrap text-muted small mono">
+        <div
+          class="perceptual-queue"
+          :class="{ 'perceptual-queue--error': !!queueInfo.errorMessage }"
+          :title="queueTooltip"
+          aria-label="Perceptual queue stats"
+        >
+          <span class="perceptual-queue-label">PMS</span>
+          <span class="perceptual-queue-value">{{ queueInfo.serverActive }}</span>
+        </div>
         <div class="datetime-tooltip" tabindex="0" role="button" :aria-label="weekendCountdownText">
           <span class="datetime">{{ formattedDateTime }}</span>
           <div class="datetime-tooltip-content" role="tooltip">{{ weekendCountdownText }}</div>
@@ -93,6 +102,7 @@ import { ref, onMounted, onUnmounted, computed } from "vue";
 import { locale, setLocale, t } from "../lib/i18n";
 import { currentTheme, setTheme, presets } from "../lib/themes";
 import { fetchAppInfo } from "../lib/api/appInfoApi";
+import { fetchPerceptualQueue } from "../lib/api/perceptualApi";
 
 function normalizeText(value) {
   const text = String(value || "").trim();
@@ -296,6 +306,25 @@ export default {
       commit: "loading...",
       builtAt: "loading...",
     });
+    const queueInfo = ref({
+      serverActive: 0,
+      queued: 0,
+      running: 0,
+      done: 0,
+      error: 0,
+      errorMessage: "",
+      enabled: false,
+    });
+
+    const queueTooltip = computed(() => {
+      if (!queueInfo.value.enabled) {
+        return "PMS disabled";
+      }
+      if (queueInfo.value.errorMessage) {
+        return `PMS error: ${queueInfo.value.errorMessage}`;
+      }
+      return `queued=${queueInfo.value.queued} running=${queueInfo.value.running} done=${queueInfo.value.done} error=${queueInfo.value.error}`;
+    });
 
     const selectTheme = (key) => {
       setTheme(key);
@@ -372,6 +401,7 @@ export default {
     };
 
     let intervalId = null;
+    let queueIntervalId = null;
 
     const loadAppInfo = async () => {
       try {
@@ -395,16 +425,38 @@ export default {
       }
     };
 
+    const loadPerceptualQueue = async () => {
+      try {
+        const payload = await fetchPerceptualQueue();
+        queueInfo.value = {
+          serverActive: Number(payload?.server_active || 0),
+          queued: Number(payload?.queued || 0),
+          running: Number(payload?.running || 0),
+          done: Number(payload?.done || 0),
+          error: Number(payload?.error || 0),
+          errorMessage: String(payload?.error_message || ""),
+          enabled: Boolean(payload?.enabled),
+        };
+      } catch (error) {
+        queueInfo.value.errorMessage = error?.message || "unknown";
+      }
+    };
+
     onMounted(() => {
       updateDateTime();
       intervalId = setInterval(updateDateTime, 1000);
       document.addEventListener("click", handleClickOutside);
       loadAppInfo();
+      loadPerceptualQueue();
+      queueIntervalId = setInterval(loadPerceptualQueue, 5000);
     });
 
     onUnmounted(() => {
       if (intervalId) {
         clearInterval(intervalId);
+      }
+      if (queueIntervalId) {
+        clearInterval(queueIntervalId);
       }
       document.removeEventListener("click", handleClickOutside);
     });
@@ -421,6 +473,8 @@ export default {
       weekendCountdownText,
       runtimeInfo,
       buildInfo,
+      queueInfo,
+      queueTooltip,
       isOpen,
       selectTheme,
     };
@@ -544,6 +598,32 @@ export default {
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.perceptual-queue {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--body-color);
+  font-size: 11px;
+}
+
+.perceptual-queue--error {
+  border-color: #b42318;
+  color: #b42318;
+}
+
+.perceptual-queue-label {
+  font-weight: 700;
+}
+
+.perceptual-queue-value {
+  min-width: 1.2rem;
+  text-align: right;
 }
 
 .app-info {

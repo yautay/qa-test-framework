@@ -3,11 +3,13 @@ import json
 import os
 from pathlib import Path
 import pytest
+from loguru import logger
 import settings
 from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_playwright
 from framework.artifacts import RunArtifacts
-from framework.env import RuntimeEnv
+from framework.env import RuntimeEnv, load_env
 from framework.visual.models import VisualResult
+from framework.visual.perceptual_client import run_perceptual_postprocess
 from framework.visual.report_builder import write_visual_report
 
 VIEWPORT_PRESETS: dict[str, tuple[int, int]] = settings.visual_viewport_presets
@@ -62,6 +64,19 @@ def visual_results(pytestconfig: pytest.Config) -> list:
         _dump_worker_visual_results(run_artifacts, os.getenv("PYTEST_XDIST_WORKER", "master"), results)
         return
     report_dir = run_artifacts.root / "visual"
+    runtime_env = getattr(pytestconfig, "_runtime_env", None)
+    env = runtime_env if isinstance(runtime_env, RuntimeEnv) else load_env()
+    try:
+        run_perceptual_postprocess(
+            env=env,
+            run_id=str(run_artifacts.run_id),
+            report_dir=report_dir,
+            results=results,
+        )
+    except Exception as exc:
+        logger.error("perceptual_postprocess_failed", run_id=str(run_artifacts.run_id), error=str(exc))
+        if env.pms_required:
+            raise
     write_visual_report(report_dir, results)
 
 
