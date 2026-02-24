@@ -67,7 +67,7 @@
           <span class="datetime">{{ formattedDateTime }}</span>
           <div class="datetime-tooltip-content" role="tooltip">{{ weekendCountdownText }}</div>
         </div>
-        <div class="app-info" tabindex="0" role="button" :aria-label="t('appInfo.ariaLabel')">
+        <div class="app-info" :class="{ 'app-info-error': pmsHealthFailed }" tabindex="0" role="button" :aria-label="t('appInfo.ariaLabel')">
           <span class="app-info-icon">i</span>
           <div class="app-info-tooltip" role="tooltip">
             <div class="app-info-row"><strong>{{ t('appInfo.runtime') }}</strong></div>
@@ -81,6 +81,16 @@
             <div class="app-info-row">{{ t('appInfo.uiSrcVersion') }}: {{ buildInfo.uiSrcVersion }}</div>
             <div class="app-info-row">{{ t('appInfo.commit') }}: {{ buildInfo.commit }}</div>
             <div class="app-info-row">{{ t('appInfo.builtAt') }}: {{ buildInfo.builtAt }}</div>
+            <div class="app-info-divider"></div>
+            <div class="app-info-row"><strong>PMS health</strong></div>
+            <div class="app-info-row">status: {{ pmsHealth.status }}</div>
+            <div class="app-info-row">http: {{ pmsHealth.statusCode }}</div>
+            <div class="app-info-row">device: {{ pmsHealth.device }}</div>
+            <div class="app-info-row">metrics: {{ pmsHealth.metrics }}</div>
+            <div class="app-info-row">job store: {{ pmsHealth.jobStore }}</div>
+            <div class="app-info-row">git: {{ pmsHealth.gitTag }}</div>
+            <div class="app-info-row">last check: {{ pmsHealth.checkedAt }}</div>
+            <div v-if="pmsHealth.error" class="app-info-row">error: {{ pmsHealth.error }}</div>
           </div>
         </div>
       </div>
@@ -93,6 +103,7 @@ import { ref, onMounted, onUnmounted, computed } from "vue";
 import { locale, setLocale, t } from "../lib/i18n";
 import { currentTheme, setTheme, presets } from "../lib/themes";
 import { fetchAppInfo } from "../lib/api/appInfoApi";
+import { fetchPerceptualHealth } from "../lib/api/perceptualApi";
 
 function normalizeText(value) {
   const text = String(value || "").trim();
@@ -296,6 +307,18 @@ export default {
       commit: "loading...",
       builtAt: "loading...",
     });
+    const pmsHealth = ref({
+      status: "loading...",
+      device: "unknown",
+      metrics: "unknown",
+      jobStore: "unknown",
+      gitTag: "unknown",
+      statusCode: "-",
+      checkedAt: "never",
+      error: "",
+      ok: null,
+    });
+    const pmsHealthFailed = computed(() => pmsHealth.value.ok === false);
 
     const selectTheme = (key) => {
       setTheme(key);
@@ -372,6 +395,7 @@ export default {
     };
 
     let intervalId = null;
+    let pmsHealthIntervalId = null;
 
     const loadAppInfo = async () => {
       try {
@@ -395,16 +419,61 @@ export default {
       }
     };
 
+    const loadPerceptualHealth = async () => {
+      try {
+        const response = await fetchPerceptualHealth();
+        const healthPayload = response?.payload && typeof response.payload === "object" ? response.payload : {};
+        const status = String(healthPayload?.status || (response?.ok ? "ok" : "error")).trim() || "unknown";
+        const metrics = Array.isArray(healthPayload?.metrics)
+          ? healthPayload.metrics.map((item) => String(item)).join(", ")
+          : "unknown";
+        const backend = String(healthPayload?.job_store?.backend || "unknown").trim() || "unknown";
+        const available = healthPayload?.job_store?.available === true ? "available" : "unavailable";
+        const gitTag = String(healthPayload?.git?.tag || healthPayload?.git?.last_commit || "unknown").trim() || "unknown";
+        const checkedAt = Number(response?.checked_at_epoch)
+          ? new Date(Number(response.checked_at_epoch) * 1000).toLocaleString()
+          : new Date().toLocaleString();
+        pmsHealth.value = {
+          status,
+          device: normalizeText(healthPayload?.device),
+          metrics: metrics || "unknown",
+          jobStore: `${backend} (${available})`,
+          gitTag,
+          statusCode: String(response?.status_code || "-"),
+          checkedAt,
+          error: String(response?.error_message || "").trim(),
+          ok: response?.ok === true,
+        };
+      } catch (error) {
+        pmsHealth.value = {
+          status: "error",
+          device: "unknown",
+          metrics: "unknown",
+          jobStore: "unknown",
+          gitTag: "unknown",
+          statusCode: "-",
+          checkedAt: new Date().toLocaleString(),
+          error: String(error?.message || "healthcheck failed"),
+          ok: false,
+        };
+      }
+    };
+
     onMounted(() => {
       updateDateTime();
       intervalId = setInterval(updateDateTime, 1000);
       document.addEventListener("click", handleClickOutside);
       loadAppInfo();
+      loadPerceptualHealth();
+      pmsHealthIntervalId = setInterval(loadPerceptualHealth, 60000);
     });
 
     onUnmounted(() => {
       if (intervalId) {
         clearInterval(intervalId);
+      }
+      if (pmsHealthIntervalId) {
+        clearInterval(pmsHealthIntervalId);
       }
       document.removeEventListener("click", handleClickOutside);
     });
@@ -421,6 +490,8 @@ export default {
       weekendCountdownText,
       runtimeInfo,
       buildInfo,
+      pmsHealth,
+      pmsHealthFailed,
       isOpen,
       selectTheme,
     };
@@ -560,6 +631,12 @@ export default {
   cursor: default;
   user-select: none;
   outline: none;
+}
+
+.app-info.app-info-error {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: rgba(220, 53, 69, 0.12);
 }
 
 .app-info-icon {

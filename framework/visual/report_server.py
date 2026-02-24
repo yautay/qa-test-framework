@@ -512,6 +512,54 @@ def _perceptual_queue_payload(context: ReportServerContext) -> dict[str, Any]:
     }
 
 
+def _perceptual_health_payload(context: ReportServerContext) -> dict[str, Any]:
+    checked_at_epoch = int(time.time())
+    if not context.pms_enabled or not str(context.pms_base_url).strip():
+        return {
+            "enabled": False,
+            "base_url": "",
+            "ok": False,
+            "status_code": 0,
+            "payload": {},
+            "error_message": "pms disabled",
+            "checked_at_epoch": checked_at_epoch,
+        }
+
+    client = PMSClient(
+        base_url=context.pms_base_url,
+        timeout_seconds=context.pms_timeout_sec,
+        health_timeout_seconds=context.pms_health_timeout_seconds,
+        retry_max=context.pms_retry_max,
+    )
+
+    try:
+        details = client.get_health()
+    except PMSClientError as exc:
+        return {
+            "enabled": True,
+            "base_url": context.pms_base_url,
+            "ok": False,
+            "status_code": 0,
+            "payload": {},
+            "error_message": str(exc),
+            "checked_at_epoch": checked_at_epoch,
+        }
+
+    payload = details.get("payload") if isinstance(details, dict) else {}
+    if not isinstance(payload, dict):
+        payload = {}
+
+    return {
+        "enabled": True,
+        "base_url": context.pms_base_url,
+        "ok": bool(details.get("ok")),
+        "status_code": int(details.get("status_code", 0) or 0),
+        "payload": payload,
+        "error_message": str(details.get("error_message") or "").strip() or None,
+        "checked_at_epoch": checked_at_epoch,
+    }
+
+
 def _cleanup_expired_challenges(context: ReportServerContext) -> None:
     now = time.time()
     with context._lock:
@@ -1455,6 +1503,10 @@ def _build_handler(context: ReportServerContext):
                 self._send_json(HTTPStatus.OK, _perceptual_queue_payload(context))
                 return True
 
+            if path == "/api/perceptual/health":
+                self._send_json(HTTPStatus.OK, _perceptual_health_payload(context))
+                return True
+
             m_state = re.match(r"^/api/builds/([^/]+)/state$", path)
             if m_state:
                 try:
@@ -2054,7 +2106,7 @@ def main() -> int:
         print(f"server listening: http://{args.host}:{args.port}/")
     print(f"report sync workers: {sync_workers}")
     print(
-        "endpoints: GET /api/app-info, GET /api/perceptual/queue, GET /api/reports, "
+        "endpoints: GET /api/app-info, GET /api/perceptual/queue, GET /api/perceptual/health, GET /api/reports, "
         "GET /api/reports/<run_id>/results, GET /api/reports/<run_id>/image/ref"
     )
     print(

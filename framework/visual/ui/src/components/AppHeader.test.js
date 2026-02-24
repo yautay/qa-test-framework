@@ -3,6 +3,7 @@ import { mount } from "@vue/test-utils";
 import { ref } from "vue";
 
 import AppHeader from "./AppHeader.vue";
+import { fetchPerceptualHealth } from "../lib/api/perceptualApi";
 
 vi.mock("../lib/api/appInfoApi", () => ({
   fetchAppInfo: vi.fn(async () => ({
@@ -13,6 +14,22 @@ vi.mock("../lib/api/appInfoApi", () => ({
       ui_src_version: "1.0.0",
       commit: "def5678",
       built_at: "2026-02-22T10:00:00Z",
+    },
+  })),
+}));
+
+vi.mock("../lib/api/perceptualApi", () => ({
+  fetchPerceptualHealth: vi.fn(async () => ({
+    ok: true,
+    status_code: 200,
+    checked_at_epoch: 1766600000,
+    error_message: null,
+    payload: {
+      status: "ok",
+      device: "cpu",
+      metrics: ["dists", "lpips"],
+      job_store: { backend: "redis", available: true },
+      git: { tag: "v1.3-1-g951d06b" },
     },
   })),
 }));
@@ -52,6 +69,10 @@ vi.mock("../lib/themes", () => ({
 }));
 
 describe("AppHeader", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   function flushPromises() {
     return new Promise((resolve) => {
       setTimeout(resolve, 0);
@@ -114,6 +135,22 @@ describe("AppHeader", () => {
     expect(tooltip.text()).toContain("Runtime");
     expect(tooltip.text()).toContain("UI build");
     expect(tooltip.text()).toContain("ui src version: 1.0.0");
+    expect(tooltip.text()).toContain("PMS health");
+    expect(tooltip.text()).toContain("status: ok");
+    expect(tooltip.text()).toContain("http: 200");
+    expect(tooltip.text()).toContain("device: cpu");
+    expect(tooltip.text()).toContain("job store: redis (available)");
+    expect(tooltip.text()).toContain("git: v1.3-1-g951d06b");
+  });
+
+  it("marks app info icon red when PMS health fails", async () => {
+    fetchPerceptualHealth.mockRejectedValueOnce(new Error("timeout"));
+    const wrapper = mount(AppHeader);
+    await flushPromises();
+
+    const infoIcon = wrapper.find(".app-info");
+    expect(infoIcon.classes()).toContain("app-info-error");
+    expect(wrapper.find(".app-info-tooltip").text()).toContain("error: timeout");
   });
 
   it("has correct CSS classes for styling", async () => {

@@ -49,6 +49,36 @@ class PMSClient:
             logger.warning("pms_healthcheck_failed", url=url, error=str(exc))
             return False
 
+    def get_health(self) -> dict[str, Any]:
+        if not self.enabled:
+            raise PMSClientError("pms base url is empty")
+        url = f"{self._base_url}/health"
+        try:
+            response = self._session.get(url, timeout=self._health_timeout_seconds)
+        except requests.RequestException as exc:
+            raise PMSClientError(f"health request failed: GET {url} ({exc})") from exc
+
+        payload: dict[str, Any] = {}
+        try:
+            raw = response.json()
+            if isinstance(raw, dict):
+                payload = raw
+        except ValueError:
+            payload = {}
+
+        error_message = ""
+        if not response.ok:
+            error_message = str(payload.get("detail") or payload.get("error") or response.text[:500] or "").strip()
+            if not error_message:
+                error_message = f"status={response.status_code}"
+
+        return {
+            "ok": bool(response.ok),
+            "status_code": int(response.status_code),
+            "payload": payload,
+            "error_message": error_message,
+        }
+
     def list_jobs(self) -> list[dict[str, Any]]:
         payload = self._request_json("GET", "/v1/compare/jobs")
         jobs = payload.get("jobs") if isinstance(payload, dict) else []
