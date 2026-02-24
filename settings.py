@@ -3,7 +3,7 @@
 # - Dozwolone: TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL
 # - Przyklad: "DEBUG" da wiecej szczegolow podczas diagnozy.
 # Skutek: nizszy poziom (np. TRACE) = wiecej logow i latwiejszy debug, ale wiekszy szum.
-console_log_level = "WARNING"
+console_log_level = "DEBUG"
 
 # ignore_https_errors:
 # - True: ignoruje bledy certyfikatow TLS/HTTPS (np. self-signed lokalnie).
@@ -36,7 +36,7 @@ video_min_seconds = 30
 # - True: podkresla elementy/obszary przy failu (jesli wspierane).
 # - False: standardowy output bez podswietlen.
 # Skutek: True ulatwia szybkie wskazanie miejsca problemu w raporcie.
-highlight_on_fail = True
+highlight_on_fail = False
 
 # min_expected_tests:
 # - Minimalna liczba testow, ktora ma sie uruchomic.
@@ -71,7 +71,7 @@ visual_enabled = True
 # - "perceptual": metryki percepcyjne (bardziej odporne na drobny noise).
 # - "hybrid": laczy oba podejscia.
 # Skutek: tryb wpływa na czulosc, szybkosc i liczbe false positive.
-visual_compare_mode = "pixel"  # pixel|perceptual|hybrid
+visual_compare_mode = "hybrid"  # pixel|perceptual|hybrid
 
 # visual_baseline_provider:
 # - "local": baseline na dysku lokalnym.
@@ -181,7 +181,7 @@ visual_minio_secure = True
 # - True: wlacza integracje z PMS.
 # - False: brak zapytan do PMS.
 # Skutek: True daje dodatkowe metryki percepcyjne kosztem czasu i zaleznosci sieciowej.
-pms_enabled = False
+pms_enabled = True
 
 # pms_required:
 # - True: PMS jest wymagany (brak odpowiedzi = fail).
@@ -193,7 +193,7 @@ pms_required = False
 # - Bazowy URL uslugi PMS.
 # - Przyklad: "http://pms:8080".
 # Skutek: pusty URL przy wlaczonym PMS spowoduje bledy polaczenia.
-pms_base_url = ""
+pms_base_url = "http://192.168.2.111:8080"
 
 # pms_metric:
 # - "lpips", "dists" albo "both".
@@ -210,7 +210,7 @@ pms_model = "alex"
 # - True: normalizuje dane wejsciowe pod metryki.
 # - False: bez normalizacji.
 # Skutek: moze poprawic porownywalnosc wynikow miedzy roznymi obrazami.
-pms_normalize = False
+pms_normalize = True
 
 # pms_submit_rps:
 # - Limit request/sec dla wysylania zadan do PMS.
@@ -235,7 +235,7 @@ pms_server_active_limit = 100
 # pms_timeout_sec:
 # - Timeout pojedynczego zadania PMS (sekundy).
 # Skutek: za niski timeout powoduje przedwczesne fail'e przy duzych obrazach.
-pms_timeout_sec = 60
+pms_timeout_sec = 120
 
 # pms_retry_max:
 # - Maksymalna liczba ponowien po bledzie.
@@ -250,7 +250,7 @@ pms_health_timeout_seconds = 2
 # pms_poll_interval_ms:
 # - Odstep miedzy kolejnymi pollami statusu (ms).
 # Skutek: nizszy interval = szybsza reakcja, ale wiecej zapytan.
-pms_poll_interval_ms = 500
+pms_poll_interval_ms = 5000
 
 # Reporting API (optional).
 
