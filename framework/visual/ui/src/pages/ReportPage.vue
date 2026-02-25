@@ -85,7 +85,7 @@ import { getRowTagKey } from "../lib/viewer";
 import { requestBaselineChallengeForRun, sendBaselineSelectionForRun } from "../lib/baselineApi";
 import {
   fetchReportResults,
-  fetchBuildState,
+  fetchBuildTags,
   postBuildEvent,
   acquireBuildLock,
   heartbeatBuildLock,
@@ -350,14 +350,14 @@ async function releaseLock() {
 
 async function loadState() {
   if (!props.runId) return;
-  const payload = await fetchBuildState(props.runId);
-  store.applyServerState(payload?.state || {});
+  const payload = await fetchBuildTags(props.runId);
+  store.applyBuildTags(payload?.tags || {});
 }
 
 function applyStateFromResponse(response) {
-  const fullState = response?.state;
-  if (fullState && typeof fullState === "object") {
-    store.applyServerState(fullState);
+  const fullTags = response?.tags;
+  if (fullTags && typeof fullTags === "object") {
+    store.applyBuildTags(fullTags);
     return;
   }
   const snapshot = response?.test_cases;

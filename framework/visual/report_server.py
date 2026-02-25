@@ -1513,10 +1513,10 @@ def _build_handler(context: ReportServerContext):
                 self._send_json(HTTPStatus.OK, _perceptual_health_payload(context))
                 return True
 
-            m_state = re.match(r"^/api/builds/([^/]+)/state$", path)
-            if m_state:
+            m_tags = re.match(r"^/api/builds/([^/]+)/tags$", path)
+            if m_tags:
                 try:
-                    run_id = _safe_run_id_or_error(m_state.group(1))
+                    run_id = _safe_run_id_or_error(m_tags.group(1))
                 except ValueError as exc:
                     self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
                     return True
@@ -1531,7 +1531,7 @@ def _build_handler(context: ReportServerContext):
                         synced_cases, sent_events = _treat_reporting_disabled_as_success(state)
                         if synced_cases > 0 or sent_events > 0:
                             _save_state(build_dir, state)
-                self._send_json(HTTPStatus.OK, {"run_id": run_id, "state": state})
+                self._send_json(HTTPStatus.OK, {"run_id": run_id, "tags": state})
                 return True
 
             if path == "/api/reports":
@@ -2118,7 +2118,7 @@ def main() -> int:
         "GET /api/reports/<run_id>/results, GET /api/reports/<run_id>/image/ref"
     )
     print(
-        "endpoints: GET /api/builds/<run_id>/state, "
+        "endpoints: GET /api/builds/<run_id>/tags, "
         "POST /api/builds/<run_id>/events, "
         "POST /api/builds/<run_id>/lock/acquire, "
         "POST /api/builds/<run_id>/lock/heartbeat, "

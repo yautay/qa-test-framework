@@ -3,7 +3,7 @@ import { summaryFor } from "../lib/format";
 import { normalizeCaseStateSnapshot } from "../lib/notes";
 import { getRowTagKey } from "../lib/viewer";
 import { SYNC_POLL_INTERVAL_MS } from "../config/syncConfig";
-import { fetchBuildState, fetchReportResults } from "../lib/api/reportsApi";
+import { fetchBuildTags, fetchReportResults } from "../lib/api/reportsApi";
 
 const NUMERIC_SORT_KEYS = ["pixel_changed_ratio", "lpips", "dists"];
 
@@ -317,6 +317,13 @@ export const useResultsStore = defineStore("results", {
             return { ...row, status };
           })
         : [];
+      
+      const perceptualStatuses = normalized.slice(0, 5).map(r => ({
+        scenario_id: r.scenario_id,
+        perceptual: r.perceptual?.status,
+      }));
+      console.log("[DEBUG setRows] first 5 rows perceptual status:", perceptualStatuses);
+      
       this.rows = normalized;
       this.summary = summaryFor(normalized);
 
@@ -666,15 +673,15 @@ export const useResultsStore = defineStore("results", {
       if (!this.runId) return;
       
       try {
-        const serverState = await fetchBuildState(this.runId);
-        this.applyServerState(serverState?.state || {});
+        const serverTags = await fetchBuildTags(this.runId);
+        this.applyBuildTags(serverTags?.tags || {});
       } catch (e) {
         // Silent fail - polling should be resilient
       }
     },
 
-    applyServerState(serverState) {
-      if (!serverState || typeof serverState !== "object") {
+    applyBuildTags(serverTags) {
+      if (!serverTags || typeof serverTags !== "object") {
         this.pendingTags = {};
         this.syncErrors = {};
         this.updateTagLog({});

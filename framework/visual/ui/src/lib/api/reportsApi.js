@@ -48,12 +48,12 @@ export async function fetchReportResults(runId) {
   return Array.isArray(payload?.results) ? payload.results : [];
 }
 
-export async function fetchBuildState(runId) {
+export async function fetchBuildTags(runId) {
   const id = encodeURIComponent(String(runId || "").trim());
-  const response = await fetch(`/api/builds/${id}/state`, { cache: "no-store" });
+  const response = await fetch(`/api/builds/${id}/tags`, { cache: "no-store" });
   const payload = await parseJsonResponse(response);
   if (!response.ok) {
-    throw new Error(payload?.error || "unable to fetch build state");
+    throw new Error(payload?.error || "unable to fetch build tags");
   }
   return payload && typeof payload === "object" ? payload : {};
 }
