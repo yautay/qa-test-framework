@@ -148,5 +148,22 @@
     "pendingCount": "pending",
     "sendingCount": "sending",
     "unsyncedCount": "unsynced"
+  },
+  "perceptual": {
+    "pendingTooltip": "Perceptual comparison in progress",
+    "issueTooltip": "Perceptual comparison issue",
+    "missingTooltip": "Perceptual score missing for this test",
+    "status": {
+      "queued": "queued",
+      "pending": "pending",
+      "submitted": "submitted",
+      "running": "running",
+      "done": "done",
+      "error": "error",
+      "timeout": "timeout",
+      "skipped": "skipped",
+      "failed": "failed",
+      "unknown": "unknown"
+    }
   }
 }

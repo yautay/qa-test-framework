@@ -19,13 +19,26 @@ vi.mock("../lib/api/appInfoApi", () => ({
 
 vi.mock("../lib/api/perceptualApi", () => ({
   fetchPerceptualQueue: vi.fn(async () => ({
-    enabled: true,
-    server_active: 3,
-    queued: 1,
-    running: 2,
-    done: 10,
-    error: 0,
-    error_message: null,
+    status: "ok",
+    device: "cpu",
+    metrics: ["dists", "lpips"],
+    job_store: {
+      backend: "redis",
+      available: true,
+    },
+    git: {
+      branch: "master",
+      tag: "20681e1",
+      last_commit: "20681e17f1512e8f448df24f99990cf3b43276cc",
+      committer: "Michal Pielaszkiewicz",
+      date: "2026-02-25T14:46:12+01:00",
+    },
+    gpu: {
+      enabled: true,
+      mode: "gpu",
+      available: true,
+      fallback_to_cpu: false,
+    },
   })),
 }));
 
@@ -146,6 +159,10 @@ describe("AppHeader", () => {
     const queue = wrapper.find(".perceptual-queue");
     expect(queue.exists()).toBe(true);
     expect(queue.text()).toContain("PMS");
-    expect(queue.text()).toContain("3");
+    expect(queue.text()).toContain("OK");
+    expect(queue.attributes("title")).toContain("status=ok");
+    expect(queue.attributes("title")).toContain("metrics=dists,lpips");
+    expect(queue.attributes("title")).toContain("job_store=redis available=true");
+    expect(queue.attributes("title")).toContain("gpu=enabled:true mode:gpu available:true fallback_to_cpu:false");
   });
 });

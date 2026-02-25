@@ -66,6 +66,63 @@ def _upsert_perceptual(result: VisualResult, payload: dict[str, Any]) -> None:
     result.test_metadata["perceptual"] = payload
 
 
+def _expects_perceptual(result: VisualResult) -> bool:
+    return str(getattr(result, "compare_mode", "") or "").strip().lower() in {"perceptual", "hybrid"}
+
+
+def _mark_global_skip(results: list[VisualResult], reason: str) -> int:
+    affected = 0
+    for result in results:
+        if not _expects_perceptual(result):
+            continue
+        affected += 1
+        _upsert_perceptual(
+            result,
+            {
+                "status": "skipped",
+                "lpips": None,
+                "dists": None,
+                "heatmap": None,
+                "job_id": None,
+                "timing_ms": 0,
+                "error_message": reason,
+            },
+        )
+    return affected
+
+
+def _log_perceptual_coverage(*, run_id: str, results: list[VisualResult]) -> None:
+    eligible = 0
+    with_status = 0
+    missing_scores = 0
+    status_counts: dict[str, int] = {}
+
+    for result in results:
+        if not _expects_perceptual(result):
+            continue
+        eligible += 1
+        payload = result.perceptual if isinstance(result.perceptual, dict) else None
+        if payload is None and isinstance(result.test_metadata, dict):
+            nested = result.test_metadata.get("perceptual")
+            if isinstance(nested, dict):
+                payload = nested
+        if payload is not None:
+            with_status += 1
+            status = str(payload.get("status") or "unknown").strip().lower() or "unknown"
+            status_counts[status] = status_counts.get(status, 0) + 1
+        if result.lpips is None and result.dists is None:
+            missing_scores += 1
+
+    logger.info(
+        "perceptual_postprocess_coverage",
+        run_id=run_id,
+        eligible=eligible,
+        with_status=with_status,
+        missing_scores=missing_scores,
+        status_counts=status_counts,
+    )
+
+
 def run_perceptual_postprocess(
     *,
     env: RuntimeEnv,
@@ -92,14 +149,30 @@ def run_perceptual_postprocess(
         msg = "PMS is enabled but PMS_BASE_URL is empty"
         if env.pms_required:
             raise PMSClientError(msg)
-        logger.warning("perceptual_postprocess_unavailable", run_id=run_id, reason=msg)
+        affected = _mark_global_skip(results, msg)
+        logger.error(
+            "perceptual_postprocess_unavailable",
+            run_id=run_id,
+            reason=msg,
+            action="skip_perceptual_postprocess",
+            affected_pairs=affected,
+        )
+        _log_perceptual_coverage(run_id=run_id, results=results)
         return
 
     if not client.health():
-        msg = "PMS healthcheck failed"
+        msg = "PMS healthcheck failed; skipping perceptual postprocess"
         if env.pms_required:
             raise PMSClientError(msg)
-        logger.warning("perceptual_postprocess_unavailable", run_id=run_id, reason=msg)
+        affected = _mark_global_skip(results, msg)
+        logger.error(
+            "perceptual_postprocess_unavailable",
+            run_id=run_id,
+            reason=msg,
+            action="skip_perceptual_postprocess",
+            affected_pairs=affected,
+        )
+        _log_perceptual_coverage(run_id=run_id, results=results)
         return
 
     submit_limit = _RateLimiter(rps=max(0.0, float(env.pms_submit_rps)))
@@ -357,3 +430,4 @@ def run_perceptual_postprocess(
         errors=error_count,
         took_ms=took_ms,
     )
+    _log_perceptual_coverage(run_id=run_id, results=results)

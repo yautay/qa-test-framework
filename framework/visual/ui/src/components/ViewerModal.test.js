@@ -237,6 +237,48 @@ describe("ViewerModal", () => {
       expect(wrapper.find(".modal-header-badges .badge.bg-warning.text-dark.me-1").exists()).toBe(false);
     });
 
+    it("shows perceptual pending icon in modal header", () => {
+      const viewer = {
+        ...defaultViewer,
+        modalRow: {
+          ...defaultViewer.modalRow,
+          compare_mode: "hybrid",
+          lpips: null,
+          dists: null,
+          perceptual: { status: "running" },
+        },
+      };
+      const wrapper = mount(ViewerModal, {
+        props: { ...defaultProps, viewer },
+      });
+
+      const badges = wrapper.findAll(".modal-header-badges .badge");
+      const icon = badges.find((node) => node.text().includes("⏳"));
+      expect(icon).toBeTruthy();
+      expect(icon.attributes("title")).toBe("perceptual.pendingTooltip: running");
+    });
+
+    it("shows perceptual warning icon when perceptual score is missing", () => {
+      const viewer = {
+        ...defaultViewer,
+        modalRow: {
+          ...defaultViewer.modalRow,
+          compare_mode: "hybrid",
+          lpips: null,
+          dists: null,
+          perceptual: null,
+        },
+      };
+      const wrapper = mount(ViewerModal, {
+        props: { ...defaultProps, viewer },
+      });
+
+      const badges = wrapper.findAll(".modal-header-badges .badge");
+      const icon = badges.find((node) => node.text().includes("⚠"));
+      expect(icon).toBeTruthy();
+      expect(icon.attributes("title")).toBe("perceptual.missingTooltip");
+    });
+
   });
 
   describe("scoringText", () => {

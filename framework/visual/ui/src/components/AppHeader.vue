@@ -109,9 +109,82 @@ function normalizeText(value) {
   return text || "unknown";
 }
 
+function isDebugPollingEnabled() {
+  if (typeof document === "undefined") return false;
+  return document.cookie.split(";").some((entry) => entry.trim().startsWith("debug=1"));
+}
+
+function debugPollingLog(...args) {
+  if (!isDebugPollingEnabled()) return;
+  console.debug("[PMS-POLL]", ...args);
+}
+
+function normalizeHealthPayload(payload) {
+  const isObjectPayload = payload && typeof payload === "object";
+  const hasNewContractFields = Boolean(payload?.job_store || payload?.gpu || Array.isArray(payload?.metrics));
+
+  if (!isObjectPayload) {
+    return {
+      serverActive: "N/A",
+      tooltip: "PMS unavailable",
+      errorMessage: "",
+      hasPendingJobs: false,
+      pendingJobsKnown: false,
+    };
+  }
+
+  if (!hasNewContractFields) {
+    return {
+      serverActive: "N/A",
+      tooltip: "PMS unavailable",
+      errorMessage: "invalid health payload",
+      hasPendingJobs: false,
+      pendingJobsKnown: false,
+    };
+  }
+
+  const status = normalizeText(payload?.status).toLowerCase();
+  const metrics = Array.isArray(payload?.metrics) ? payload.metrics.map((metric) => normalizeText(metric)) : [];
+  const metricsText = metrics.length ? metrics.join(",") : "none";
+  const jobStoreBackend = normalizeText(payload?.job_store?.backend);
+  const jobStoreAvailable = Boolean(payload?.job_store?.available);
+  const gpuEnabled = Boolean(payload?.gpu?.enabled);
+  const gpuMode = normalizeText(payload?.gpu?.mode).toLowerCase();
+  const gpuAvailable = Boolean(payload?.gpu?.available);
+  const gpuFallbackToCpu = Boolean(payload?.gpu?.fallback_to_cpu);
+  const gitBranch = normalizeText(payload?.git?.branch);
+  const gitTag = normalizeText(payload?.git?.tag);
+  const gitCommitter = normalizeText(payload?.git?.committer);
+  const gitDate = normalizeText(payload?.git?.date);
+  const device = payload?.device ? normalizeText(payload.device).toLowerCase() : "";
+
+  const tooltipParts = [
+    `status=${status}`,
+    `metrics=${metricsText}`,
+    `job_store=${jobStoreBackend} available=${jobStoreAvailable}`,
+    `gpu=enabled:${gpuEnabled} mode:${gpuMode} available:${gpuAvailable} fallback_to_cpu:${gpuFallbackToCpu}`,
+    `git=${gitBranch}@${gitTag} by ${gitCommitter} (${gitDate})`,
+  ];
+
+  if (device) {
+    tooltipParts.splice(1, 0, `device=${device}`);
+  }
+
+  return {
+    serverActive: status === "ok" ? "OK" : status.toUpperCase(),
+    tooltip: tooltipParts.join(" | "),
+    errorMessage: status === "ok" ? "" : `status=${status}`,
+    hasPendingJobs: false,
+    pendingJobsKnown: false,
+  };
+}
+
 function normalizeAppInfo(payload) {
   const runtime = payload?.runtime && typeof payload.runtime === "object" ? payload.runtime : {};
   const uiBuild = payload?.ui_build && typeof payload.ui_build === "object" ? payload.ui_build : {};
+  const uiConfig = payload?.ui_config && typeof payload.ui_config === "object" ? payload.ui_config : {};
+  const pmsPollIntervalMs = Math.max(100, Number(uiConfig?.pms_poll_interval_ms || 5000));
+  const pmsPollIdleMultiplier = Math.max(1, Number(uiConfig?.pms_poll_idle_multiplier || 1));
   return {
     runtimeInfo: {
       version: normalizeText(runtime.version),
@@ -124,6 +197,10 @@ function normalizeAppInfo(payload) {
       uiSrcVersion: normalizeText(uiBuild.ui_src_version),
       commit: normalizeText(uiBuild.commit),
       builtAt: normalizeText(uiBuild.built_at),
+    },
+    polling: {
+      pmsPollIntervalMs,
+      pmsPollIdleMultiplier,
     },
   };
 }
@@ -307,23 +384,21 @@ export default {
       builtAt: "loading...",
     });
     const queueInfo = ref({
-      serverActive: 0,
-      queued: 0,
-      running: 0,
-      done: 0,
-      error: 0,
+      serverActive: "N/A",
+      tooltip: "PMS unavailable",
       errorMessage: "",
-      enabled: false,
+      hasPendingJobs: false,
+      pendingJobsKnown: false,
     });
+    const pmsPollIntervalMs = ref(5000);
+    const pmsPollIdleMultiplier = ref(1);
+    const queuePollMode = ref("active");
 
     const queueTooltip = computed(() => {
-      if (!queueInfo.value.enabled) {
-        return "PMS disabled";
-      }
       if (queueInfo.value.errorMessage) {
         return `PMS error: ${queueInfo.value.errorMessage}`;
       }
-      return `queued=${queueInfo.value.queued} running=${queueInfo.value.running} done=${queueInfo.value.done} error=${queueInfo.value.error}`;
+      return queueInfo.value.tooltip;
     });
 
     const selectTheme = (key) => {
@@ -401,7 +476,7 @@ export default {
     };
 
     let intervalId = null;
-    let queueIntervalId = null;
+    let queuePollTimeoutId = null;
 
     const loadAppInfo = async () => {
       try {
@@ -409,6 +484,11 @@ export default {
         const normalized = normalizeAppInfo(payload);
         runtimeInfo.value = normalized.runtimeInfo;
         buildInfo.value = normalized.buildInfo;
+        pmsPollIntervalMs.value = normalized.polling.pmsPollIntervalMs;
+        pmsPollIdleMultiplier.value = normalized.polling.pmsPollIdleMultiplier;
+        debugPollingLog(
+          `config loaded base_ms=${pmsPollIntervalMs.value} idle_multiplier=${pmsPollIdleMultiplier.value}`,
+        );
       } catch (_error) {
         runtimeInfo.value = {
           version: "unknown",
@@ -425,20 +505,42 @@ export default {
       }
     };
 
+    const nextQueuePollDelayMs = () => {
+      const base = Math.max(100, Number(pmsPollIntervalMs.value || 5000));
+      const multiplier = Math.max(1, Number(pmsPollIdleMultiplier.value || 1));
+      if (!queueInfo.value.pendingJobsKnown) {
+        return base;
+      }
+      return queueInfo.value.hasPendingJobs ? base : Math.round(base * multiplier);
+    };
+
+    const scheduleNextQueuePoll = () => {
+      if (queuePollTimeoutId) {
+        clearTimeout(queuePollTimeoutId);
+      }
+      queuePollTimeoutId = setTimeout(async () => {
+        await loadPerceptualQueue();
+        const nextMode = queueInfo.value.pendingJobsKnown && !queueInfo.value.hasPendingJobs ? "idle" : "active";
+        if (queuePollMode.value !== nextMode) {
+          queuePollMode.value = nextMode;
+          debugPollingLog(`mode=${nextMode} next_ms=${nextQueuePollDelayMs()}`);
+        }
+        scheduleNextQueuePoll();
+      }, nextQueuePollDelayMs());
+    };
+
     const loadPerceptualQueue = async () => {
       try {
         const payload = await fetchPerceptualQueue();
-        queueInfo.value = {
-          serverActive: Number(payload?.server_active || 0),
-          queued: Number(payload?.queued || 0),
-          running: Number(payload?.running || 0),
-          done: Number(payload?.done || 0),
-          error: Number(payload?.error || 0),
-          errorMessage: String(payload?.error_message || ""),
-          enabled: Boolean(payload?.enabled),
-        };
+        queueInfo.value = normalizeHealthPayload(payload);
       } catch (error) {
-        queueInfo.value.errorMessage = error?.message || "unknown";
+        queueInfo.value = {
+          serverActive: "N/A",
+          tooltip: "PMS unavailable",
+          errorMessage: error?.message || "unknown",
+          hasPendingJobs: false,
+          pendingJobsKnown: false,
+        };
       }
     };
 
@@ -448,15 +550,15 @@ export default {
       document.addEventListener("click", handleClickOutside);
       loadAppInfo();
       loadPerceptualQueue();
-      queueIntervalId = setInterval(loadPerceptualQueue, 5000);
+      scheduleNextQueuePoll();
     });
 
     onUnmounted(() => {
       if (intervalId) {
         clearInterval(intervalId);
       }
-      if (queueIntervalId) {
-        clearInterval(queueIntervalId);
+      if (queuePollTimeoutId) {
+        clearTimeout(queuePollTimeoutId);
       }
       document.removeEventListener("click", handleClickOutside);
     });

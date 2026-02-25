@@ -97,6 +97,7 @@ class RuntimeEnv:
     pms_retry_max: int
     pms_health_timeout_seconds: int
     pms_poll_interval_ms: int
+    pms_poll_idle_multiplier: float
     visual_uncertain_enabled: bool
     visual_uncertain_pixel_delta: float
     visual_uncertain_lpips_delta: float
@@ -346,6 +347,10 @@ def load_env() -> RuntimeEnv:
         pms_poll_interval_ms=env_int(
             "PMS_POLL_INTERVAL_MS",
             int(settings.pms_poll_interval_ms),
+        ),
+        pms_poll_idle_multiplier=env_float(
+            "PMS_POLL_IDLE_MULTIPLIER",
+            float(settings.pms_poll_idle_multiplier),
         ),
         visual_uncertain_enabled=env_bool(
             "VISUAL_UNCERTAIN_ENABLED",

@@ -198,4 +198,50 @@ describe("ResultsTable", () => {
 
     expect(wrapper.find(".sync-error-icon").exists()).toBe(false);
   });
+
+  it("shows perceptual pending icon with tooltip for queued perceptual status", () => {
+    const row = makeRow({
+      compare_mode: "hybrid",
+      lpips: null,
+      dists: null,
+      perceptual: { status: "queued" },
+    });
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [row],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {},
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    const icon = wrapper.find(".perceptual-status-icon");
+    expect(icon.exists()).toBe(true);
+    expect(icon.text()).toContain("⏳");
+    expect(icon.attributes("title")).toBe("perceptual.pendingTooltip: queued");
+  });
+
+  it("shows perceptual warning icon when score is missing", () => {
+    const row = makeRow({
+      compare_mode: "hybrid",
+      lpips: null,
+      dists: null,
+      perceptual: null,
+    });
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [row],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {},
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    const icon = wrapper.find(".perceptual-status-icon");
+    expect(icon.exists()).toBe(true);
+    expect(icon.text()).toContain("⚠");
+    expect(icon.attributes("title")).toBe("perceptual.missingTooltip");
+  });
 });

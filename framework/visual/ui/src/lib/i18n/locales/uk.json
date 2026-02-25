@@ -160,5 +160,22 @@
     "pendingCount": "очікує",
     "sendingCount": "надсилається",
     "unsyncedCount": "не синхронізовано"
+  },
+  "perceptual": {
+    "pendingTooltip": "Перцептивне порівняння виконується",
+    "issueTooltip": "Проблема перцептивного порівняння",
+    "missingTooltip": "Для цього тесту відсутній перцептивний score",
+    "status": {
+      "queued": "у черзі",
+      "pending": "очікує",
+      "submitted": "надіслано",
+      "running": "виконується",
+      "done": "завершено",
+      "error": "помилка",
+      "timeout": "таймаут",
+      "skipped": "пропущено",
+      "failed": "невдача",
+      "unknown": "невідомо"
+    }
   }
 }

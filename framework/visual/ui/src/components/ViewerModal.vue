@@ -10,6 +10,12 @@
               </div>
               <div class="modal-header-meta">
                 <div v-if="headerBadges.length" class="modal-header-badges">
+                  <span v-if="viewerPerceptualIssue.hasIssue"
+                        class="badge me-1"
+                        :class="viewerPerceptualIssue.className"
+                        :title="viewerPerceptualIssue.title">
+                    {{ viewerPerceptualIssue.icon }}
+                  </span>
                   <span v-if="viewerHasSyncIssue" 
                         class="badge bg-warning text-dark me-1" 
                         :title="viewerSyncIssueTitle">
@@ -232,6 +238,51 @@ export default {
       }
       return this.t("sync.unsyncedTooltip");
     },
+    viewerPerceptualIssue() {
+      const row = this.viewer.modalRow || {};
+      const mode = String(row.compare_mode || "").toLowerCase();
+      if (!(mode === "perceptual" || mode === "hybrid")) {
+        return { hasIssue: false, icon: "", className: "", title: "" };
+      }
+
+      const payload = this._perceptualPayload(row);
+      const status = String(payload?.status || "").toLowerCase();
+      const errorMessage = String(payload?.error_message || "").trim();
+      const hasScores = row.lpips != null || row.dists != null;
+
+      const pendingStatuses = new Set(["queued", "pending", "submitted", "running"]);
+      const warningStatuses = new Set(["error", "timeout", "skipped", "failed"]);
+
+      if (pendingStatuses.has(status)) {
+        return {
+          hasIssue: true,
+          icon: "⏳",
+          className: "bg-info text-dark",
+          title: `${this.t("perceptual.pendingTooltip")}: ${this._perceptualStatusLabel(status)}`,
+        };
+      }
+
+      if (warningStatuses.has(status)) {
+        const suffix = errorMessage ? ` - ${errorMessage}` : "";
+        return {
+          hasIssue: true,
+          icon: "⚠",
+          className: "bg-warning text-dark",
+          title: `${this.t("perceptual.issueTooltip")}: ${this._perceptualStatusLabel(status)}${suffix}`,
+        };
+      }
+
+      if (!payload && !hasScores) {
+        return {
+          hasIssue: true,
+          icon: "⚠",
+          className: "bg-warning text-dark",
+          title: this.t("perceptual.missingTooltip"),
+        };
+      }
+
+      return { hasIssue: false, icon: "", className: "", title: "" };
+    },
   },
   methods: {
     t(key) {
@@ -265,6 +316,28 @@ export default {
       if (tagType === "aso") return t('tags.aso');
       if (tagType === "baseline") return t('tags.baseline');
       return "";
+    },
+    _perceptualPayload(row) {
+      if (row?.perceptual && typeof row.perceptual === "object") {
+        return row.perceptual;
+      }
+      const nested = row?.test_metadata?.perceptual;
+      if (nested && typeof nested === "object") {
+        return nested;
+      }
+      return null;
+    },
+    _perceptualStatusLabel(status) {
+      const normalized = String(status || "").toLowerCase();
+      if (!normalized) {
+        return this.t("perceptual.status.unknown");
+      }
+      const key = `perceptual.status.${normalized}`;
+      const translated = this.t(key);
+      if (translated && translated !== key) {
+        return translated;
+      }
+      return normalized;
     },
   },
 };

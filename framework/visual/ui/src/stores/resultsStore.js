@@ -3,7 +3,7 @@ import { summaryFor } from "../lib/format";
 import { normalizeCaseStateSnapshot } from "../lib/notes";
 import { getRowTagKey } from "../lib/viewer";
 import { SYNC_POLL_INTERVAL_MS } from "../config/syncConfig";
-import { fetchBuildState } from "../lib/api/reportsApi";
+import { fetchBuildState, fetchReportResults } from "../lib/api/reportsApi";
 
 const NUMERIC_SORT_KEYS = ["pixel_changed_ratio", "lpips", "dists"];
 
@@ -33,6 +33,18 @@ const EMPTY_TAG_ENTRY = {
   aso: { locked: false, synced: false, note: "" },
   baseline: false,
 };
+
+const PERCEPTUAL_PENDING_STATUSES = new Set(["queued", "running", "pending", "processing", "submitted"]);
+
+function isDebugPollingEnabled() {
+  if (typeof document === "undefined") return false;
+  return document.cookie.split(";").some((entry) => entry.trim().startsWith("debug=1"));
+}
+
+function debugPollingLog(...args) {
+  if (!isDebugPollingEnabled()) return;
+  console.debug("[POLLING]", ...args);
+}
 
 function buildEmptyTagEntry() {
   return {
@@ -101,6 +113,32 @@ function tagTypeFromEventType(eventType) {
   return null;
 }
 
+function getPerceptualPayload(row) {
+  if (row?.perceptual && typeof row.perceptual === "object") {
+    return row.perceptual;
+  }
+  const nested = row?.test_metadata?.perceptual;
+  return nested && typeof nested === "object" ? nested : null;
+}
+
+function isPerceptualMode(compareMode) {
+  const mode = String(compareMode || "").toLowerCase();
+  return mode === "perceptual" || mode === "hybrid";
+}
+
+function hasPendingPerceptualJobs(rows) {
+  if (!Array.isArray(rows) || !rows.length) return false;
+  for (const row of rows) {
+    if (!isPerceptualMode(row?.compare_mode)) continue;
+    const payload = getPerceptualPayload(row);
+    const status = String(payload?.status || "").trim().toLowerCase();
+    if (PERCEPTUAL_PENDING_STATUSES.has(status)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export const useResultsStore = defineStore("results", {
   state: () => ({
     rows: [],
@@ -129,6 +167,11 @@ export const useResultsStore = defineStore("results", {
     retryMarkers: {},
     pollingActive: false,
     pollingIntervalId: null,
+    resultsPollingActive: false,
+    resultsPollTimeoutId: null,
+    resultsPollIntervalMs: SYNC_POLL_INTERVAL_MS,
+    pmsPollIdleMultiplier: 1,
+    resultsPollMode: "active",
 
     selectedIndex: -1,
     loadError: "",
@@ -269,7 +312,15 @@ export const useResultsStore = defineStore("results", {
   },
 
   actions: {
-    setRows(rows) {
+    setRows(rows, options = {}) {
+      const reconcileSelection = options?.reconcileSelection !== false;
+      const previouslySelectedRow =
+        this.selectedIndex >= 0 && this.selectedIndex < this.filteredSorted.length
+          ? this.filteredSorted[this.selectedIndex]
+          : null;
+      const previousSelectedKey = previouslySelectedRow ? getRowTagKey(previouslySelectedRow) : "";
+      const previousModalKey = this.modalRow ? getRowTagKey(this.modalRow) : "";
+
       const normalized = Array.isArray(rows)
         ? rows.map((row) => {
             if (!row || typeof row !== "object") return row;
@@ -279,6 +330,33 @@ export const useResultsStore = defineStore("results", {
         : [];
       this.rows = normalized;
       this.summary = summaryFor(normalized);
+
+      if (!reconcileSelection) {
+        return;
+      }
+
+      if (previousModalKey) {
+        const nextModalRow = this.rows.find((row) => getRowTagKey(row) === previousModalKey) || null;
+        this.modalRow = nextModalRow;
+        if (!nextModalRow) {
+          this.modalOpen = false;
+          this.currentIndex = null;
+        }
+      }
+
+      if (previousSelectedKey) {
+        const nextSelectedIndex = this.filteredSorted.findIndex((row) => getRowTagKey(row) === previousSelectedKey);
+        this.selectedIndex = nextSelectedIndex;
+      }
+
+      if (this.currentIndex != null && this.currentIndex >= 0) {
+        if (this.modalRow) {
+          const nextCurrentIndex = this.filteredSorted.findIndex((row) => getRowTagKey(row) === getRowTagKey(this.modalRow));
+          this.currentIndex = nextCurrentIndex >= 0 ? nextCurrentIndex : null;
+        } else {
+          this.currentIndex = null;
+        }
+      }
     },
 
     setFilter(key, value) {
@@ -519,14 +597,22 @@ export const useResultsStore = defineStore("results", {
       return !!this.pendingTags[caseKey]?.[type];
     },
 
-    startPolling(runId, intervalMs = SYNC_POLL_INTERVAL_MS) {
+    startPolling(runId, intervalMs = SYNC_POLL_INTERVAL_MS, options = {}) {
       if (this.pollingActive) return;
       if (!runId) return;
       
       this.pollingActive = true;
       this.runId = runId;
+      this.resultsPollIntervalMs = Math.max(100, Number(options?.pmsPollIntervalMs || intervalMs || SYNC_POLL_INTERVAL_MS));
+      this.pmsPollIdleMultiplier = Math.max(1, Number(options?.pmsPollIdleMultiplier || 1));
+      this.resultsPollMode = "active";
+
+      debugPollingLog(
+        `results polling started run_id=${this.runId} base_ms=${this.resultsPollIntervalMs} idle_multiplier=${this.pmsPollIdleMultiplier}`,
+      );
       
       this.pollSyncState();
+      this.startResultsPolling();
       
       this.pollingIntervalId = setInterval(() => {
         this.pollSyncState();
@@ -538,7 +624,53 @@ export const useResultsStore = defineStore("results", {
         clearInterval(this.pollingIntervalId);
         this.pollingIntervalId = null;
       }
+      this.stopResultsPolling();
       this.pollingActive = false;
+      debugPollingLog(`results polling stopped run_id=${this.runId}`);
+    },
+
+    startResultsPolling() {
+      if (this.resultsPollingActive) return;
+      this.resultsPollingActive = true;
+      this.scheduleNextResultsPoll(this.resultsPollIntervalMs);
+    },
+
+    stopResultsPolling() {
+      if (this.resultsPollTimeoutId) {
+        clearTimeout(this.resultsPollTimeoutId);
+        this.resultsPollTimeoutId = null;
+      }
+      this.resultsPollingActive = false;
+    },
+
+    scheduleNextResultsPoll(delayMs) {
+      if (!this.resultsPollingActive) return;
+      if (this.resultsPollTimeoutId) {
+        clearTimeout(this.resultsPollTimeoutId);
+      }
+      this.resultsPollTimeoutId = setTimeout(async () => {
+        const hasPendingJobs = await this.pollResultsState();
+        const base = Math.max(100, Number(this.resultsPollIntervalMs || SYNC_POLL_INTERVAL_MS));
+        const multiplier = Math.max(1, Number(this.pmsPollIdleMultiplier || 1));
+        const nextMode = hasPendingJobs ? "active" : "idle";
+        const nextDelay = hasPendingJobs ? base : Math.round(base * multiplier);
+        if (this.resultsPollMode !== nextMode) {
+          this.resultsPollMode = nextMode;
+          debugPollingLog(`results polling mode=${nextMode} next_ms=${nextDelay} run_id=${this.runId}`);
+        }
+        this.scheduleNextResultsPoll(nextDelay);
+      }, Math.max(100, Number(delayMs || this.resultsPollIntervalMs || SYNC_POLL_INTERVAL_MS)));
+    },
+
+    async pollResultsState() {
+      if (!this.runId) return false;
+      try {
+        const rows = await fetchReportResults(this.runId);
+        this.setRows(rows, { reconcileSelection: true });
+        return hasPendingPerceptualJobs(this.rows);
+      } catch (_error) {
+        return false;
+      }
     },
 
     async pollSyncState() {

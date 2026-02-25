@@ -160,5 +160,22 @@
     "pendingCount": "oczekujące",
     "sendingCount": "w toku",
     "unsyncedCount": "niezsynchronizowane"
+  },
+  "perceptual": {
+    "pendingTooltip": "Porównanie percepcyjne w toku",
+    "issueTooltip": "Problem z porównaniem percepcyjnym",
+    "missingTooltip": "Brak wyniku percepcyjnego dla tego testu",
+    "status": {
+      "queued": "w kolejce",
+      "pending": "oczekuje",
+      "submitted": "wysłano",
+      "running": "przetwarzanie",
+      "done": "zakończono",
+      "error": "błąd",
+      "timeout": "timeout",
+      "skipped": "pominięto",
+      "failed": "niepowodzenie",
+      "unknown": "nieznany"
+    }
   }
 }
