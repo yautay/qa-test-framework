@@ -10,10 +10,7 @@ const pinia = createPinia();
 
 initTheme();
 const app = createApp(App);
+app.config.devtools = true;
 app.use(pinia);
-
-import("@vue/devtools").then((vueDevtools) => {
-  app.use(vueDevtools.default);
-});
 
 app.mount("#app");

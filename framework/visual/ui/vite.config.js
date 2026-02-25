@@ -67,6 +67,9 @@ function buildInfoPlugin() {
 export default defineConfig({
   base: "./",
   plugins: [vue(), buildInfoPlugin()],
+  vue: {
+    devtools: true,
+  },
   build: {
     outDir: "dist",
     assetsDir: "assets",

@@ -687,8 +687,8 @@ export const useResultsStore = defineStore("results", {
         this.updateTagLog({});
         return;
       }
-      const testCases = serverState?.test_cases || {};
-      const outboxEntries = Array.isArray(serverState?.outbox) ? serverState.outbox : [];
+      const testCases = serverTags?.test_cases || {};
+      const outboxEntries = Array.isArray(serverTags?.outbox) ? serverTags.outbox : [];
       this.updateTagLog(testCases);
       this.updateSyncIndicatorsFromOutbox(outboxEntries);
     },
