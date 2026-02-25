@@ -10,7 +10,7 @@ from framework.artifacts import RunArtifacts
 from framework.env import RuntimeEnv, load_env
 from framework.visual.models import VisualResult
 from framework.visual.perceptual_client import prepare_perceptual_placeholders, run_perceptual_postprocess
-from framework.visual.report_builder import write_visual_report
+from framework.visual.report_builder import write_visual_report, write_visual_results_json
 
 VIEWPORT_PRESETS: dict[str, tuple[int, int]] = settings.visual_viewport_presets
 
@@ -80,6 +80,7 @@ def visual_results(pytestconfig: pytest.Config) -> list:
                 run_id=str(run_artifacts.run_id),
                 report_dir=report_dir,
                 results=results,
+                on_results_updated=lambda: write_visual_results_json(report_dir, results),
             )
         except Exception as exc:
             logger.error("perceptual_postprocess_failed", run_id=str(run_artifacts.run_id), error=str(exc))

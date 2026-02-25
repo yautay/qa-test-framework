@@ -5,7 +5,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from loguru import logger
 
@@ -226,7 +226,16 @@ def run_perceptual_postprocess(
     run_id: str,
     report_dir: Path,
     results: list[VisualResult],
+    on_results_updated: Callable[[], None] | None = None,
 ) -> None:
+    def _flush_results_incremental() -> None:
+        if on_results_updated is None:
+            return
+        try:
+            on_results_updated()
+        except Exception as exc:
+            logger.warning("perceptual_incremental_results_flush_failed", run_id=run_id, error=str(exc))
+
     if not results:
         logger.info("perceptual_postprocess_skipped", run_id=run_id, reason="empty_results")
         return
@@ -254,6 +263,7 @@ def run_perceptual_postprocess(
             action="skip_perceptual_postprocess",
             affected_pairs=affected,
         )
+        _flush_results_incremental()
         _log_perceptual_coverage(run_id=run_id, results=results)
         return
 
@@ -269,6 +279,7 @@ def run_perceptual_postprocess(
             action="skip_perceptual_postprocess",
             affected_pairs=affected,
         )
+        _flush_results_incremental()
         _log_perceptual_coverage(run_id=run_id, results=results)
         return
 
@@ -370,6 +381,7 @@ def run_perceptual_postprocess(
                         job_id=next_job.job_id,
                         error=str(exc),
                     )
+                    _flush_results_incremental()
                     _write_perceptual_status(
                         report_dir,
                         total_count=total_jobs,
@@ -398,6 +410,7 @@ def run_perceptual_postprocess(
                     },
                 )
                 logger.error("perceptual_job_timeout", run_id=run_id, pair_id=item.pair_id, job_id=item.job_id)
+                _flush_results_incremental()
                 _write_perceptual_status(
                     report_dir,
                     total_count=total_jobs,
@@ -467,6 +480,7 @@ def run_perceptual_postprocess(
                     heatmap=heatmap_rel,
                     timing_ms=timing_ms,
                 )
+                _flush_results_incremental()
                 _write_perceptual_status(
                     report_dir,
                     total_count=total_jobs,
@@ -534,6 +548,7 @@ def run_perceptual_postprocess(
                 status=status,
                 error=err_message,
             )
+            _flush_results_incremental()
             _write_perceptual_status(
                 report_dir,
                 total_count=total_jobs,

@@ -14,7 +14,7 @@ from framework.artifacts import resolve_artifacts_base_dir
 from framework.env import load_env
 from framework.visual.models import VisualResult, VisualThresholds
 from framework.visual.perceptual_client import prepare_perceptual_placeholders, run_perceptual_postprocess
-from framework.visual.report_builder import write_visual_report
+from framework.visual.report_builder import write_visual_report, write_visual_results_json
 
 
 def _is_xdist_controller(config: pytest.Config) -> bool:
@@ -274,6 +274,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
                 run_id=str(run_root.name),
                 report_dir=report_dir,
                 results=merged_results,
+                on_results_updated=lambda: write_visual_results_json(report_dir, merged_results),
             )
         except Exception as exc:
             logger.warning("perceptual_postprocess_failed", run_root=str(run_root), error=str(exc))

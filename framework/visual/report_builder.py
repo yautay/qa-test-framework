@@ -122,10 +122,17 @@ def _build_rows(report_dir: Path, results: list[VisualResult]) -> list[dict[str,
 
 
 def _write_results_json(report_dir: Path, rows: list[dict[str, Any]]) -> None:
-    (report_dir / "results.json").write_text(
-        json.dumps({"results": rows}, indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
+    target = report_dir / "results.json"
+    temp = report_dir / "results.json.tmp"
+    temp.write_text(json.dumps({"results": rows}, indent=2, ensure_ascii=False), encoding="utf-8")
+    temp.replace(target)
+
+
+def write_visual_results_json(report_dir: Path, results: list[VisualResult]) -> None:
+    """Persist only machine-readable results.json without rebuilding HTML/assets."""
+    report_dir.mkdir(parents=True, exist_ok=True)
+    rows = _build_rows(report_dir, results)
+    _write_results_json(report_dir, rows)
 
 
 def _write_offline_index_html(report_dir: Path, rows: list[dict[str, Any]]) -> None:
