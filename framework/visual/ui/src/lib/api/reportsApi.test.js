@@ -3,9 +3,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   fetchReportResults,
   fetchReportsList,
-  fetchBuildState,
+  fetchBuildTags,
   postBuildEvent,
   acquireBuildLock,
+  heartbeatBuildLock,
+  releaseBuildLock,
   sendBuildReport,
 } from "./reportsApi";
 
@@ -82,13 +84,19 @@ describe("reportsApi", () => {
     expect(results).toEqual([]);
   });
 
-  it("fetches build state", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => response({ run_id: "run-1", state: { test_cases: {} } })));
+  it("fetches build tags", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => response({ tags: { test_cases: {} } })));
 
-    const payload = await fetchBuildState("run-1");
+    const payload = await fetchBuildTags("run-1");
 
-    expect(payload.state).toBeDefined();
-    expect(fetch).toHaveBeenCalledWith("/api/builds/run-1/state", { cache: "no-store" });
+    expect(payload.tags).toBeDefined();
+    expect(fetch).toHaveBeenCalledWith("/api/builds/run-1/tags", { cache: "no-store" });
+  });
+
+  it("throws fallback error for invalid failed build tags payload", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => responseText("not-json", false, 500)));
+
+    await expect(fetchBuildTags("run-1")).rejects.toThrow("unable to fetch build tags");
   });
 
   it("posts build event", async () => {
@@ -121,6 +129,36 @@ describe("reportsApi", () => {
     });
   });
 
+  it("sends lock heartbeat", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => response({ accepted: true })));
+    const SignalCtor = globalThis.AbortSignal || Object;
+
+    const payload = await heartbeatBuildLock("run 1", "client-1", "lock-1");
+
+    expect(payload.accepted).toBe(true);
+    expect(fetch).toHaveBeenCalledWith("/api/builds/run%201/lock/heartbeat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client_id: "client-1", lock_id: "lock-1" }),
+      signal: expect.any(SignalCtor),
+    });
+  });
+
+  it("releases build lock", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => response({ accepted: true })));
+    const SignalCtor = globalThis.AbortSignal || Object;
+
+    const payload = await releaseBuildLock("run 1", "client-1", "lock-1");
+
+    expect(payload.accepted).toBe(true);
+    expect(fetch).toHaveBeenCalledWith("/api/builds/run%201/lock/release", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client_id: "client-1", lock_id: "lock-1" }),
+      signal: expect.any(SignalCtor),
+    });
+  });
+
   it("sends build report", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => response({ accepted: true, pdf: { pages: 0 } })));
     const SignalCtor = globalThis.AbortSignal || Object;
@@ -133,6 +171,18 @@ describe("reportsApi", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({}),
       signal: expect.any(SignalCtor),
+    });
+  });
+
+  it("maps network TypeError to no response error", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      throw new TypeError("network down");
+    }));
+
+    await expect(postBuildEvent("run-1", { event_id: "e1" })).rejects.toMatchObject({
+      message: "no response from server",
+      code: "NO_RESPONSE",
+      isNoResponse: true,
     });
   });
 });

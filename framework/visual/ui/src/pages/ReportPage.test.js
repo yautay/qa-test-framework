@@ -8,7 +8,7 @@ vi.mock("../lib/api/reportsApi", () => ({
     { scenario_id: "s1", status: "failed", actual_path: "a.png", suite_id: "suite1", viewport: "1920x1080", browser: "chrome" },
     { scenario_id: "s2", status: "passed", actual_path: "b.png", suite_id: "suite2", viewport: "1920x1080", browser: "chrome" },
   ]),
-  fetchBuildState: vi.fn(async () => ({ state: { test_cases: {} } })),
+  fetchBuildTags: vi.fn(async () => ({ tags: { test_cases: {} } })),
   postBuildEvent: vi.fn(async () => ({ accepted: true, test_cases: {} })),
   acquireBuildLock: vi.fn(async () => ({ accepted: true, lock: { lock_id: "lock-1" } })),
   heartbeatBuildLock: vi.fn(async () => ({ accepted: true, lock: { lock_id: "lock-1" } })),
@@ -43,7 +43,7 @@ vi.mock("bootstrap", () => ({
 }));
 
 import ReportPage from "./ReportPage.vue";
-import { fetchBuildState, fetchReportResults, sendBuildReport } from "../lib/api/reportsApi";
+import { acquireBuildLock, fetchBuildTags, fetchReportResults, sendBuildReport } from "../lib/api/reportsApi";
 import { requestBaselineChallengeForRun, sendBaselineSelectionForRun } from "../lib/baselineApi";
 import { useResultsStore } from "../stores/resultsStore";
 import { getRowTagKey } from "../lib/viewer";
@@ -353,7 +353,7 @@ describe("ReportPage", () => {
     wrapper.unmount();
   });
 
-  it("calls fetchBuildState on mount", async () => {
+  it("calls fetchBuildTags on mount", async () => {
     const wrapper = mount(ReportPage, {
       props: { runId: "run-1" },
       global: { plugins: [pinia] },
@@ -361,7 +361,50 @@ describe("ReportPage", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 10));
 
-    expect(fetchBuildState).toHaveBeenCalledWith("run-1");
+    expect(fetchBuildTags).toHaveBeenCalledWith("run-1");
+
+    wrapper.unmount();
+  });
+
+  it("shows lock denied state when lock acquire is rejected", async () => {
+    acquireBuildLock.mockResolvedValueOnce({ accepted: false, lock: { owner_client_id: "other-client" } });
+
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(wrapper.text()).toContain("Build is locked by another client.");
+    expect(fetchReportResults).not.toHaveBeenCalled();
+
+    wrapper.unmount();
+  });
+
+  it("applies initial tag snapshot from fetchBuildTags payload", async () => {
+    fetchBuildTags.mockResolvedValue({
+      tags: {
+        test_cases: {
+          "s1::a.png::::": {
+            bug: { locked: true, synced: false, note: "" },
+            aso: { locked: false, synced: false, note: "" },
+          },
+        },
+        outbox: [],
+      },
+    });
+
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const store = useResultsStore();
+    const hasLockedBug = Object.values(store.tagLog).some((entry) => entry?.bug?.locked);
+    expect(hasLockedBug).toBe(true);
 
     wrapper.unmount();
   });
@@ -546,6 +589,47 @@ describe("ReportPage", () => {
     wrapper.unmount();
   });
 
+  it("applies full tags payload returned from sendBuildReport", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const store = useResultsStore();
+    const row = store.rows[0];
+    const key = getRowTagKey(row);
+    store.updateTagLog({
+      [key]: {
+        bug: { locked: true, synced: false, note: "" },
+        aso: { locked: false, synced: false, note: "" },
+      },
+    });
+
+    sendBuildReport.mockResolvedValueOnce({
+      accepted: true,
+      pdf: { pages: 0 },
+      tags: {
+        test_cases: {
+          [key]: {
+            bug: { locked: true, synced: true, note: "" },
+            aso: { locked: false, synced: false, note: "" },
+          },
+        },
+        outbox: [],
+      },
+    });
+
+    const reportBtn = wrapper.find(".report-header button.btn-primary");
+    await reportBtn.trigger("click");
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(store.tagLog[key].bug.synced).toBe(true);
+
+    wrapper.unmount();
+  });
+
   it("clears sync warning conditions when report state returns both tags synced", async () => {
     const wrapper = mount(ReportPage, {
       props: { runId: "run-1" },
@@ -558,7 +642,7 @@ describe("ReportPage", () => {
     const row = store.rows[0];
     const key = getRowTagKey(row);
 
-    store.applyServerState({
+    store.applyBuildTags({
       test_cases: {
         [key]: {
           bug: { locked: true, synced: true, note: "" },

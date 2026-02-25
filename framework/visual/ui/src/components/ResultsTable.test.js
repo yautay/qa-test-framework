@@ -305,4 +305,94 @@ describe("ResultsTable", () => {
     expect(icon.exists()).toBe(true);
     expect(icon.attributes("title")).toBe("pms.errorTest: nested");
   });
+
+  it("emits select and show for row click interactions", async () => {
+    const row = makeRow();
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [row],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {},
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    const rowNode = wrapper.find("tbody tr");
+    await rowNode.trigger("click");
+    await rowNode.trigger("dblclick");
+
+    expect(wrapper.emitted("select")).toBeTruthy();
+    expect(wrapper.emitted("show")).toBeTruthy();
+    expect(wrapper.emitted("show")[0][1]).toBe("test");
+  });
+
+  it("uses fallback row key when tag key is empty", () => {
+    const row = makeRow({ scenario_id: "fallback", viewport: "mobile", browser: "webkit" });
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [row],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {},
+        tagKeyForRow: () => "",
+        selectedIndex: -1,
+      },
+    });
+
+    expect(wrapper.vm.rowKey(row, 7)).toBe("fallback::mobile::webkit::7");
+  });
+
+  it("uses unknown sync message fallback when error has no message", () => {
+    const row = makeRow();
+    const key = rowKey(row);
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [row],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {},
+        syncErrors: {
+          [key]: {},
+        },
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    const warning = wrapper.find(".sync-error-icon");
+    expect(warning.exists()).toBe(true);
+    expect(warning.attributes("title")).toBe("sync.errorPrefix: sync.unknown");
+  });
+
+  it("returns missing perceptual issue when expected mode has no payload", () => {
+    const row = makeRow({ compare_mode: "perceptual", lpips: null, dists: null, perceptual: null });
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [row],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {},
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    expect(wrapper.vm.rowHasPerceptualIssue(row)).toBe(true);
+    expect(wrapper.vm.getPerceptualIssueMessage(row)).toBe("pms.missingTooltip");
+    expect(wrapper.vm.getPerceptualIssueIcon(row)).toBe("⚠");
+  });
+
+  it("returns no perceptual issue when compare mode is pixel", () => {
+    const row = makeRow({ compare_mode: "pixel", perceptual: null });
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [row],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {},
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    expect(wrapper.vm.rowHasPerceptualIssue(row)).toBe(false);
+    expect(wrapper.vm.getPerceptualIssueMessage(row)).toBe("");
+  });
 });

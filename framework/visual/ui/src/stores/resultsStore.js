@@ -126,17 +126,32 @@ function isPerceptualMode(compareMode) {
   return mode === "perceptual" || mode === "hybrid";
 }
 
-function hasPendingPerceptualJobs(rows) {
-  if (!Array.isArray(rows) || !rows.length) return false;
+function getPerceptualPollingStats(rows) {
+  if (!Array.isArray(rows) || !rows.length) {
+    return {
+      hasPendingJobs: false,
+      pendingJobs: 0,
+      perceptualRows: 0,
+      rowsCount: 0,
+    };
+  }
+  let pendingJobs = 0;
+  let perceptualRows = 0;
   for (const row of rows) {
     if (!isPerceptualMode(row?.compare_mode)) continue;
+    perceptualRows += 1;
     const payload = getPerceptualPayload(row);
     const status = String(payload?.status || "").trim().toLowerCase();
     if (PERCEPTUAL_PENDING_STATUSES.has(status)) {
-      return true;
+      pendingJobs += 1;
     }
   }
-  return false;
+  return {
+    hasPendingJobs: pendingJobs > 0,
+    pendingJobs,
+    perceptualRows,
+    rowsCount: rows.length,
+  };
 }
 
 export const useResultsStore = defineStore("results", {
@@ -317,13 +332,7 @@ export const useResultsStore = defineStore("results", {
             return { ...row, status };
           })
         : [];
-      
-      const perceptualStatuses = normalized.slice(0, 5).map(r => ({
-        scenario_id: r.scenario_id,
-        perceptual: r.perceptual?.status,
-      }));
-      console.log("[DEBUG setRows] first 5 rows perceptual status:", perceptualStatuses);
-      
+
       this.rows = normalized;
       this.summary = summaryFor(normalized);
 
@@ -645,11 +654,24 @@ export const useResultsStore = defineStore("results", {
         clearTimeout(this.resultsPollTimeoutId);
       }
       this.resultsPollTimeoutId = setTimeout(async () => {
-        const hasPendingJobs = await this.pollResultsState();
+        const pollStats = await this.pollResultsState();
+        const hasPendingJobs = !!pollStats.hasPendingJobs;
         const base = Math.max(100, Number(this.resultsPollIntervalMs || SYNC_POLL_INTERVAL_MS));
         const multiplier = Math.max(1, Number(this.pmsPollIdleMultiplier || 1));
         const nextMode = hasPendingJobs ? "active" : "idle";
         const nextDelay = hasPendingJobs ? base : Math.round(base * multiplier);
+        debugPollingLog("results polling tick", {
+          runId: this.runId,
+          mode: nextMode,
+          previousMode: this.resultsPollMode,
+          hasPendingJobs,
+          pendingJobs: pollStats.pendingJobs,
+          perceptualRows: pollStats.perceptualRows,
+          rowsCount: pollStats.rowsCount,
+          baseMs: base,
+          idleMultiplier: multiplier,
+          nextMs: nextDelay,
+        });
         if (this.resultsPollMode !== nextMode) {
           this.resultsPollMode = nextMode;
           debugPollingLog(`results polling mode=${nextMode} next_ms=${nextDelay} run_id=${this.runId}`);
@@ -659,13 +681,25 @@ export const useResultsStore = defineStore("results", {
     },
 
     async pollResultsState() {
-      if (!this.runId) return false;
+      if (!this.runId) {
+        return {
+          hasPendingJobs: false,
+          pendingJobs: 0,
+          perceptualRows: 0,
+          rowsCount: 0,
+        };
+      }
       try {
         const rows = await fetchReportResults(this.runId);
         this.setRows(rows, { reconcileSelection: true });
-        return hasPendingPerceptualJobs(this.rows);
+        return getPerceptualPollingStats(this.rows);
       } catch (_error) {
-        return false;
+        return {
+          hasPendingJobs: false,
+          pendingJobs: 0,
+          perceptualRows: 0,
+          rowsCount: 0,
+        };
       }
     },
 

@@ -130,6 +130,22 @@ describe("ViewerModal", () => {
       expect(badges.some(b => b.key === "bug")).toBe(true);
     });
 
+    it("marks bug badge as pending when pending tag exists", () => {
+      const viewer = {
+        ...defaultViewer,
+        tags: { ...defaultViewer.tags, bug: { locked: true, synced: false } },
+        currentTagKey: "test-case",
+        pendingTags: { "test-case": { bug: true } },
+      };
+      const wrapper = mount(ViewerModal, {
+        props: { ...defaultProps, viewer },
+      });
+
+      const badges = wrapper.vm.headerBadges;
+      const bugBadge = badges.find((badge) => badge.key === "bug");
+      expect(bugBadge?.isPending).toBe(true);
+    });
+
     it("includes asotag badge when present", () => {
       const viewer = {
         ...defaultViewer,
@@ -269,6 +285,23 @@ describe("ViewerModal", () => {
       const error = wrapper.find(".modal-header-badges .pms-error-icon");
       expect(error.exists()).toBe(true);
       expect(error.attributes("title")).toBe("pms.errorTest: model unavailable");
+    });
+
+    it("shows PMS unknown error title when message is missing", () => {
+      const viewer = {
+        ...defaultViewer,
+        modalRow: {
+          ...defaultViewer.modalRow,
+          perceptual: { status: "error" },
+        },
+      };
+      const wrapper = mount(ViewerModal, {
+        props: { ...defaultProps, viewer },
+      });
+
+      const error = wrapper.find(".modal-header-badges .pms-error-icon");
+      expect(error.exists()).toBe(true);
+      expect(error.attributes("title")).toBe("pms.errorTestUnknown");
     });
 
     it("shows PMS success icon for done perceptual status", () => {
@@ -540,6 +573,42 @@ describe("ViewerModal", () => {
       }
 
       expect(wrapper.emitted("set-columns")).toBeTruthy();
+    });
+
+    it("emits mouse-move with bounds payload", async () => {
+      const wrapper = mount(ViewerModal, {
+        props: defaultProps,
+      });
+
+      const body = wrapper.find(".modal-body");
+      body.element.getBoundingClientRect = () => ({ left: 0, top: 0, width: 100, height: 80 });
+      await body.trigger("mousemove", { clientX: 10, clientY: 20 });
+
+      const emitted = wrapper.emitted("mouse-move");
+      expect(emitted).toBeTruthy();
+      expect(emitted[0][0].bounds.width).toBe(100);
+      expect(emitted[0][0].evt.clientX).toBe(10);
+    });
+
+    it("emits reset-cursor on modal mouseleave", async () => {
+      const wrapper = mount(ViewerModal, {
+        props: defaultProps,
+      });
+
+      await wrapper.find(".modal-body").trigger("mouseleave");
+
+      expect(wrapper.emitted("reset-cursor")).toBeTruthy();
+    });
+
+    it("renders no-image placeholder when slot has no image", () => {
+      const wrapper = mount(ViewerModal, {
+        props: {
+          ...defaultProps,
+          slotImage: () => "",
+        },
+      });
+
+      expect(wrapper.text()).toContain("modal.noImage");
     });
 
   });

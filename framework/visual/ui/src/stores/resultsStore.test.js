@@ -3,7 +3,7 @@ import { setActivePinia, createPinia } from "pinia";
 import { useResultsStore } from "./resultsStore";
 
 vi.mock("../lib/api/reportsApi", () => ({
-  fetchBuildState: vi.fn(async () => ({ state: { test_cases: {}, outbox: [] } })),
+  fetchBuildTags: vi.fn(async () => ({ tags: { test_cases: {}, outbox: [] } })),
   fetchReportResults: vi.fn(async () => []),
 }));
 
@@ -20,6 +20,9 @@ describe("resultsStore", () => {
   afterEach(() => {
     vi.useRealTimers();
     vi.clearAllMocks();
+    if (typeof document !== "undefined") {
+      document.cookie = "debug=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+    }
   });
 
   describe("setRows", () => {
@@ -357,12 +360,12 @@ describe("resultsStore", () => {
     });
   });
 
-  describe("applyServerState", () => {
+  describe("applyBuildTags", () => {
     it("updates pending and errors based on outbox", () => {
       const store = useResultsStore();
       const caseKey = "s1::img.png::::";
 
-      store.applyServerState({
+      store.applyBuildTags({
         test_cases: {
           [caseKey]: {
             bug: { locked: true, synced: false, note: "" },
@@ -1096,6 +1099,51 @@ describe("resultsStore", () => {
       await vi.advanceTimersByTimeAsync(250);
 
       expect(store.resultsPollMode).toBe("active");
+
+      store.stopPolling();
+    });
+
+    it("does not emit polling debug logs when debug cookie is disabled", async () => {
+      vi.useFakeTimers();
+      const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "perceptual", perceptual: { status: "done" } }]);
+
+      const store = useResultsStore();
+      store.startPolling("run-1", 200, { pmsPollIntervalMs: 200, pmsPollIdleMultiplier: 3 });
+
+      await vi.advanceTimersByTimeAsync(250);
+
+      expect(debugSpy).not.toHaveBeenCalled();
+
+      store.stopPolling();
+    });
+
+    it("emits polling debug snapshot when debug cookie is enabled", async () => {
+      vi.useFakeTimers();
+      document.cookie = "debug=1; path=/";
+      const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "perceptual", perceptual: { status: "done" } }]);
+
+      const store = useResultsStore();
+      store.startPolling("run-1", 200, { pmsPollIntervalMs: 200, pmsPollIdleMultiplier: 3 });
+
+      await vi.advanceTimersByTimeAsync(250);
+
+      expect(debugSpy).toHaveBeenCalledWith(
+        "[POLLING]",
+        "results polling tick",
+        expect.objectContaining({
+          runId: "run-1",
+          mode: "idle",
+          hasPendingJobs: false,
+          pendingJobs: 0,
+          perceptualRows: 1,
+          rowsCount: 1,
+          baseMs: 200,
+          idleMultiplier: 3,
+          nextMs: 600,
+        }),
+      );
 
       store.stopPolling();
     });
