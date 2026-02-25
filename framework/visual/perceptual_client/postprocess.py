@@ -5,7 +5,7 @@ import time
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 from loguru import logger
 
@@ -75,12 +75,78 @@ def _expects_perceptual(result: VisualResult) -> bool:
     return str(getattr(result, "compare_mode", "") or "").strip().lower() == "hybrid"
 
 
-def _mark_global_skip(results: list[VisualResult], reason: str) -> int:
+def _in_uncertain_zone(value: float | None, threshold: float, delta: float) -> bool:
+    if value is None or delta <= 0:
+        return False
+    return threshold < value <= threshold + delta
+
+
+def _evaluate_pixel_fallback(result: VisualResult, env: RuntimeEnv) -> tuple[str, str]:
+    thresholds = result.thresholds
+    pixel_max = float(getattr(thresholds, "pixel_max", 0.0) or 0.0)
+    pixel_uncertain_delta = float(
+        getattr(thresholds, "pixel_uncertain_delta", None) or getattr(env, "visual_uncertain_pixel_delta", 0.0) or 0.0
+    )
+    pixel_value = _to_float(result.pixel_changed_ratio)
+    if pixel_value is not None and pixel_value <= pixel_max:
+        return "passed", "Pixel threshold passed"
+    if bool(getattr(env, "visual_uncertain_enabled", False)) and _in_uncertain_zone(
+        pixel_value, pixel_max, pixel_uncertain_delta
+    ):
+        return "uncertain", "Pixel within uncertainty zone"
+    return "failed", "Pixel threshold exceeded"
+
+
+def _evaluate_hybrid_result(result: VisualResult, env: RuntimeEnv) -> tuple[str, str]:
+    thresholds = result.thresholds
+    pixel_max = float(getattr(thresholds, "pixel_max", 0.0) or 0.0)
+    lpips_max = float(getattr(thresholds, "lpips_max", 0.0) or 0.0)
+    dists_max = float(getattr(thresholds, "dists_max", 0.0) or 0.0)
+    pixel_uncertain_delta = float(
+        getattr(thresholds, "pixel_uncertain_delta", None) or getattr(env, "visual_uncertain_pixel_delta", 0.0) or 0.0
+    )
+    lpips_uncertain_delta = float(
+        getattr(thresholds, "lpips_uncertain_delta", None) or getattr(env, "visual_uncertain_lpips_delta", 0.0) or 0.0
+    )
+    dists_uncertain_delta = float(
+        getattr(thresholds, "dists_uncertain_delta", None) or getattr(env, "visual_uncertain_dists_delta", 0.0) or 0.0
+    )
+
+    pixel_value = _to_float(result.pixel_changed_ratio)
+    lpips_value = _to_float(result.lpips)
+    dists_value = _to_float(result.dists)
+
+    pixel_ok = pixel_value is not None and pixel_value <= pixel_max
+    lpips_ok = lpips_value is not None and lpips_value <= lpips_max
+    dists_ok = dists_value is not None and dists_value <= dists_max
+    perceptual_ok = lpips_ok and dists_ok
+
+    if perceptual_ok and pixel_ok:
+        return "passed", "Pixel and perceptual thresholds passed"
+    if perceptual_ok and not pixel_ok:
+        if bool(getattr(env, "visual_uncertain_enabled", False)) and _in_uncertain_zone(
+            pixel_value, pixel_max, pixel_uncertain_delta
+        ):
+            return "uncertain", "Pixel within uncertainty zone"
+        return "uncertain", "Pixel exceeded, perceptual passed"
+    if bool(getattr(env, "visual_uncertain_enabled", False)):
+        in_uncertain = _in_uncertain_zone(lpips_value, lpips_max, lpips_uncertain_delta) or _in_uncertain_zone(
+            dists_value, dists_max, dists_uncertain_delta
+        )
+        if in_uncertain:
+            return "uncertain", "Perceptual within uncertainty zone"
+    return "failed", "Perceptual thresholds exceeded"
+
+
+def _fallback_hybrid_to_pixel(results: list[VisualResult], env: RuntimeEnv, reason: str) -> int:
     affected = 0
     for result in results:
         if not _expects_perceptual(result):
             continue
         affected += 1
+        status, message = _evaluate_pixel_fallback(result, env)
+        result.status = cast(Any, status)
+        result.message = message
         _upsert_perceptual(
             result,
             {
@@ -257,7 +323,7 @@ def run_perceptual_postprocess(
         msg = "PMS is enabled but PMS_BASE_URL is empty"
         if env.pms_required:
             raise PMSClientError(msg)
-        affected = _mark_global_skip(results, msg)
+        affected = _fallback_hybrid_to_pixel(results, env, msg)
         logger.error(
             "perceptual_postprocess_unavailable",
             run_id=run_id,
@@ -273,7 +339,7 @@ def run_perceptual_postprocess(
         msg = "PMS healthcheck failed; skipping perceptual postprocess"
         if env.pms_required:
             raise PMSClientError(msg)
-        affected = _mark_global_skip(results, msg)
+        affected = _fallback_hybrid_to_pixel(results, env, msg)
         logger.error(
             "perceptual_postprocess_unavailable",
             run_id=run_id,
@@ -376,6 +442,9 @@ def run_perceptual_postprocess(
                             "error_message": str(exc),
                         },
                     )
+                    fallback_status, fallback_message = _evaluate_pixel_fallback(next_job.result, env)
+                    next_job.result.status = cast(Any, fallback_status)
+                    next_job.result.message = fallback_message
                     logger.error(
                         "perceptual_job_submit_failed",
                         run_id=run_id,
@@ -411,6 +480,9 @@ def run_perceptual_postprocess(
                         "error_message": f"timeout after {timeout_sec}s",
                     },
                 )
+                fallback_status, fallback_message = _evaluate_pixel_fallback(item.result, env)
+                item.result.status = cast(Any, fallback_status)
+                item.result.message = fallback_message
                 logger.error("perceptual_job_timeout", run_id=run_id, pair_id=item.pair_id, job_id=item.job_id)
                 _flush_results_incremental()
                 _write_perceptual_status(
@@ -460,6 +532,9 @@ def run_perceptual_postprocess(
                 item.result.lpips = lpips
                 item.result.dists = dists
                 item.result.heatmap_path = heatmap_rel or ""
+                final_status, final_message = _evaluate_hybrid_result(item.result, env)
+                item.result.status = cast(Any, final_status)
+                item.result.message = final_message
                 _upsert_perceptual(
                     item.result,
                     {
@@ -530,6 +605,9 @@ def run_perceptual_postprocess(
                     )
             if not err_message:
                 err_message = f"status={status}"
+            fallback_status, fallback_message = _evaluate_pixel_fallback(item.result, env)
+            item.result.status = cast(Any, fallback_status)
+            item.result.message = fallback_message
             _upsert_perceptual(
                 item.result,
                 {

@@ -520,14 +520,27 @@ def _perceptual_queue_payload(context: ReportServerContext) -> dict[str, Any]:
 
 def _perceptual_health_payload(context: ReportServerContext) -> dict[str, Any]:
     checked_at_epoch = int(time.time())
-    if not context.pms_enabled or not str(context.pms_base_url).strip():
+    if not context.pms_enabled:
         return {
             "enabled": False,
             "base_url": "",
             "ok": False,
             "status_code": 0,
             "payload": {},
-            "error_message": "pms disabled",
+            "error_message": "PMS disabled in settings.py",
+            "reason_code": "pms_disabled",
+            "checked_at_epoch": checked_at_epoch,
+        }
+
+    if not str(context.pms_base_url).strip():
+        return {
+            "enabled": True,
+            "base_url": "",
+            "ok": False,
+            "status_code": 0,
+            "payload": {},
+            "error_message": "PMS_BASE_URL is empty",
+            "reason_code": "pms_base_url_missing",
             "checked_at_epoch": checked_at_epoch,
         }
 
@@ -548,6 +561,7 @@ def _perceptual_health_payload(context: ReportServerContext) -> dict[str, Any]:
             "status_code": 0,
             "payload": {},
             "error_message": str(exc),
+            "reason_code": "pms_unreachable",
             "checked_at_epoch": checked_at_epoch,
         }
 
@@ -562,6 +576,7 @@ def _perceptual_health_payload(context: ReportServerContext) -> dict[str, Any]:
         "status_code": int(details.get("status_code", 0) or 0),
         "payload": payload,
         "error_message": str(details.get("error_message") or "").strip() or None,
+        "reason_code": None,
         "checked_at_epoch": checked_at_epoch,
     }
 

@@ -130,6 +130,7 @@ def _result_from_dict(data: dict[str, object]) -> VisualResult | None:
             "skipped",
             "new",
             "uncertain",
+            "analysis",
             "warn",
             "approved",
             "xfailed",

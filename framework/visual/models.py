@@ -15,7 +15,7 @@ from typing import Any, Literal
 
 CaptureType = Literal["page", "viewport", "element"]
 CompareMode = Literal["pixel", "hybrid"]
-ResultStatus = Literal["passed", "failed", "skipped", "new", "uncertain"]
+ResultStatus = Literal["passed", "failed", "skipped", "new", "uncertain", "analysis"]
 
 
 def _require_str(d: dict[str, Any], key: str) -> str:

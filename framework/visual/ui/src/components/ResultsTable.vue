@@ -195,6 +195,7 @@ export default {
         "pixel threshold passed": "message.pixelThresholdPassed",
         "pixel within uncertainty zone": "message.pixelWithinUncertaintyZone",
         "baseline missing": "message.baselineMissing",
+        "perceptual analysis in progress": "message.perceptualAnalysisInProgress",
       };
       const key = mapping[normalized];
       if (!key) return String(message || "");

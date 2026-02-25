@@ -63,7 +63,8 @@
     "failed": "niepowodzenie",
     "uncertain": "niepewny",
     "skipped": "pominięty",
-    "new": "nowy"
+    "new": "nowy",
+    "analysis": "analiza"
   },
   "sort": {
     "scenario_id": "scenario_id",
@@ -146,6 +147,10 @@
     "jobStore": "magazyn zadań",
     "git": "git",
     "lastCheck": "ostatnie sprawdzenie",
+    "healthDetail": "szczegóły stanu",
+    "pmsDisabled": "PMS jest wyłączony w settings.py",
+    "pmsBaseUrlMissing": "Brak PMS_BASE_URL",
+    "pmsUnreachable": "API PMS jest nieosiągalne",
     "error": "błąd",
     "weekendCountdownPrefix": "Do rozpoczęcia weekendu zostało",
     "days": "dni",
@@ -169,7 +174,8 @@
     "pixelThresholdExceeded": "Przekroczono próg pikseli",
     "pixelThresholdPassed": "Próg pikseli zaliczony",
     "pixelWithinUncertaintyZone": "Piksele w strefie niepewności",
-    "baselineMissing": "Brak baseline"
+    "baselineMissing": "Brak baseline",
+    "perceptualAnalysisInProgress": "Analiza percepcyjna w toku"
   },
   "sync": {
     "errorPrefix": "Błąd synchronizacji",

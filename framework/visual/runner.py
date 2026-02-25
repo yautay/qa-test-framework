@@ -101,19 +101,22 @@ class VisualRunner:
         if mode_effective not in {"pixel", "hybrid"}:
             mode_effective = "pixel"
 
-        status, message = _evaluate(
-            mode_effective,
-            pixel_changed_ratio,
-            lpips_score,
-            dists_score,
-            scenario.thresholds.pixel_max,
-            scenario.thresholds.lpips_max,
-            scenario.thresholds.dists_max,
-            self._env.visual_uncertain_enabled,
-            scenario.thresholds.pixel_uncertain_delta or self._env.visual_uncertain_pixel_delta,
-            scenario.thresholds.lpips_uncertain_delta or self._env.visual_uncertain_lpips_delta,
-            scenario.thresholds.dists_uncertain_delta or self._env.visual_uncertain_dists_delta,
-        )
+        if mode_effective == "hybrid" and self._env.pms_enabled and str(self._env.pms_base_url or "").strip():
+            status, message = "analysis", "Perceptual analysis in progress"
+        else:
+            status, message = _evaluate(
+                "pixel" if mode_effective == "hybrid" else mode_effective,
+                pixel_changed_ratio,
+                lpips_score,
+                dists_score,
+                scenario.thresholds.pixel_max,
+                scenario.thresholds.lpips_max,
+                scenario.thresholds.dists_max,
+                self._env.visual_uncertain_enabled,
+                scenario.thresholds.pixel_uncertain_delta or self._env.visual_uncertain_pixel_delta,
+                scenario.thresholds.lpips_uncertain_delta or self._env.visual_uncertain_lpips_delta,
+                scenario.thresholds.dists_uncertain_delta or self._env.visual_uncertain_dists_delta,
+            )
 
         return VisualResult(
             scenario_id=scenario.scenario_id,

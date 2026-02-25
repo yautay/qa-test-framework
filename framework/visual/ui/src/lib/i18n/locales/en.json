@@ -63,7 +63,8 @@
     "failed": "failed",
     "uncertain": "uncertain",
     "skipped": "skipped",
-    "new": "new"
+    "new": "new",
+    "analysis": "analysis"
   },
   "sort": {
     "scenario_id": "scenario_id",
@@ -146,6 +147,10 @@
     "jobStore": "job store",
     "git": "git",
     "lastCheck": "last check",
+    "healthDetail": "health detail",
+    "pmsDisabled": "PMS is disabled in settings.py",
+    "pmsBaseUrlMissing": "PMS base URL is missing",
+    "pmsUnreachable": "PMS API is unreachable",
     "error": "error",
     "weekendCountdownPrefix": "Time until weekend starts",
     "days": "days",
@@ -157,7 +162,8 @@
     "pixelThresholdExceeded": "Pixel threshold exceeded",
     "pixelThresholdPassed": "Pixel threshold passed",
     "pixelWithinUncertaintyZone": "Pixel within uncertainty zone",
-    "baselineMissing": "Baseline missing"
+    "baselineMissing": "Baseline missing",
+    "perceptualAnalysisInProgress": "Perceptual analysis in progress"
   },
   "sync": {
     "errorPrefix": "Sync failed",

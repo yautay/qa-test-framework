@@ -90,6 +90,7 @@
             <div class="app-info-row">{{ t('appInfo.jobStore') }}: {{ pmsHealth.jobStore }}</div>
             <div class="app-info-row">{{ t('appInfo.git') }}: {{ pmsHealth.gitTag }}</div>
             <div class="app-info-row">{{ t('appInfo.lastCheck') }}: {{ pmsHealth.checkedAt }}</div>
+            <div v-if="pmsHealth.reasonText" class="app-info-row">{{ t('appInfo.healthDetail') }}: {{ pmsHealth.reasonText }}</div>
             <div v-if="pmsHealth.error" class="app-info-row">{{ t('appInfo.error') }}: {{ pmsHealth.error }}</div>
           </div>
         </div>
@@ -315,6 +316,7 @@ export default {
       gitTag: "unknown",
       statusCode: "-",
       checkedAt: "never",
+      reasonText: "",
       error: "",
       ok: null,
     });
@@ -423,6 +425,15 @@ export default {
       try {
         const response = await fetchPerceptualHealth();
         const healthPayload = response?.payload && typeof response.payload === "object" ? response.payload : {};
+        const reasonCode = String(response?.reason_code || "").trim();
+        let reasonText = "";
+        if (reasonCode === "pms_disabled") {
+          reasonText = t("appInfo.pmsDisabled");
+        } else if (reasonCode === "pms_base_url_missing") {
+          reasonText = t("appInfo.pmsBaseUrlMissing");
+        } else if (reasonCode === "pms_unreachable") {
+          reasonText = t("appInfo.pmsUnreachable");
+        }
         const status = String(healthPayload?.status || (response?.ok ? "ok" : "error")).trim() || "unknown";
         const metrics = Array.isArray(healthPayload?.metrics)
           ? healthPayload.metrics.map((item) => String(item)).join(", ")
@@ -441,6 +452,7 @@ export default {
           gitTag,
           statusCode: String(response?.status_code || "-"),
           checkedAt,
+          reasonText,
           error: String(response?.error_message || "").trim(),
           ok: response?.ok === true,
         };
@@ -453,6 +465,7 @@ export default {
           gitTag: "unknown",
             statusCode: "-",
             checkedAt: new Date().toLocaleString(),
+            reasonText: t("appInfo.pmsUnreachable"),
             error: String(error?.message || "healthcheck failed"),
             ok: false,
         };

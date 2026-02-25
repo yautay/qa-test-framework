@@ -52,6 +52,10 @@ vi.mock("../lib/i18n", () => ({
       "appInfo.jobStore": "job store",
       "appInfo.git": "git",
       "appInfo.lastCheck": "last check",
+      "appInfo.healthDetail": "health detail",
+      "appInfo.pmsDisabled": "PMS is disabled in settings.py",
+      "appInfo.pmsBaseUrlMissing": "PMS base URL is missing",
+      "appInfo.pmsUnreachable": "PMS API is unreachable",
       "appInfo.error": "error",
       "appInfo.days": "days",
       "appInfo.hours": "hours",
@@ -160,6 +164,24 @@ describe("AppHeader", () => {
     const infoIcon = wrapper.find(".app-info");
     expect(infoIcon.classes()).toContain("app-info-error");
     expect(wrapper.find(".app-info-tooltip").text()).toContain("error: timeout");
+  });
+
+  it("shows explicit disabled reason when PMS is disabled", async () => {
+    fetchPerceptualHealth.mockResolvedValueOnce({
+      ok: false,
+      status_code: 0,
+      checked_at_epoch: 1766600000,
+      reason_code: "pms_disabled",
+      error_message: "PMS disabled in settings.py",
+      payload: {},
+    });
+
+    const wrapper = mount(AppHeader);
+    await flushPromises();
+
+    const tooltip = wrapper.find(".app-info-tooltip").text();
+    expect(tooltip).toContain("health detail: PMS is disabled in settings.py");
+    expect(tooltip).toContain("error: PMS disabled in settings.py");
   });
 
   it("has correct CSS classes for styling", async () => {

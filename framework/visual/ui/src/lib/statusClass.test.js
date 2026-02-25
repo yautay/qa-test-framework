@@ -15,6 +15,10 @@ describe("statusBadgeClass", () => {
     expect(statusBadgeClass("uncertain")).toBe("text-bg-warning");
   });
 
+  it("returns info class for analysis status", () => {
+    expect(statusBadgeClass("analysis")).toBe("text-bg-info");
+  });
+
   it("returns warning class for skipped status", () => {
     expect(statusBadgeClass("skipped")).toBe("text-bg-warning");
   });

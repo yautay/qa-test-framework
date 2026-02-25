@@ -19,6 +19,7 @@
             <option value="passed">{{ t('status.passed') }}</option>
             <option value="failed">{{ t('status.failed') }}</option>
             <option value="uncertain">{{ t('status.uncertain') }}</option>
+            <option value="analysis">{{ t('status.analysis') }}</option>
             <option value="skipped">{{ t('status.skipped') }}</option>
             <option value="with_note">{{ t('filtersPanel.statusWithNote') }}</option>
           </select>

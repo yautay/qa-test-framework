@@ -63,7 +63,8 @@
     "failed": "помилка",
     "uncertain": "невизначено",
     "skipped": "пропущено",
-    "new": "новий"
+    "new": "новий",
+    "analysis": "аналіз"
   },
   "sort": {
     "scenario_id": "scenario_id",
@@ -146,6 +147,10 @@
     "jobStore": "сховище job-ів",
     "git": "git",
     "lastCheck": "остання перевірка",
+    "healthDetail": "деталі стану",
+    "pmsDisabled": "PMS вимкнено в settings.py",
+    "pmsBaseUrlMissing": "Відсутній PMS_BASE_URL",
+    "pmsUnreachable": "API PMS недоступне",
     "error": "помилка",
     "weekendCountdownPrefix": "До початку вихідних залишилося",
     "days": "днів",
@@ -169,7 +174,8 @@
     "pixelThresholdExceeded": "Поріг пікселів перевищено",
     "pixelThresholdPassed": "Поріг пікселів пройдено",
     "pixelWithinUncertaintyZone": "Пікселі в зоні невизначеності",
-    "baselineMissing": "Бракує baseline"
+    "baselineMissing": "Бракує baseline",
+    "perceptualAnalysisInProgress": "Перцептивний аналіз триває"
   },
   "sync": {
     "errorPrefix": "Помилка синхронізації",
