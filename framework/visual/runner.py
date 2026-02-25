@@ -97,7 +97,9 @@ class VisualRunner:
         lpips_score: float | None = None
         dists_score: float | None = None
         heatmap_path_str = ""
-        mode_effective = "pixel"
+        mode_effective = str(getattr(scenario, "compare_mode", "pixel") or "pixel").strip().lower()
+        if mode_effective not in {"pixel", "hybrid"}:
+            mode_effective = "pixel"
 
         status, message = _evaluate(
             mode_effective,
@@ -117,7 +119,7 @@ class VisualRunner:
             scenario_id=scenario.scenario_id,
             status=cast(Any, status),
             message=message,
-            compare_mode=mode_effective,
+            compare_mode=cast(Any, mode_effective),
             suite_id=scenario.suite_id,
             viewport=viewport_token,
             browser=browser_family,
