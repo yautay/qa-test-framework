@@ -127,17 +127,13 @@ function isPerceptualMode(compareMode) {
 }
 
 function shouldTrackPerceptualRow(row) {
-  const mode = String(row?.compare_mode || "").trim().toLowerCase();
-  if (isPerceptualMode(mode)) return true;
-  if (mode === "pixel") return false;
   const payload = getPerceptualPayload(row);
-  if (!payload || typeof payload !== "object") return false;
+  if (!payload || typeof payload !== "object") {
+    return isPerceptualMode(row?.compare_mode);
+  }
   const status = String(payload?.status || "").trim().toLowerCase();
-  const hasStatus = !!status;
-  const hasJobId = String(payload?.job_id || "").trim().length > 0;
-  const hasScores = row?.lpips != null || row?.dists != null;
-  const hasHeatmap = String(row?.heatmap_path || "").trim().length > 0;
-  return hasStatus || hasJobId || hasScores || hasHeatmap;
+  if (PERCEPTUAL_PENDING_STATUSES.has(status)) return true;
+  return isPerceptualMode(row?.compare_mode);
 }
 
 function getPerceptualPollingStats(rows) {

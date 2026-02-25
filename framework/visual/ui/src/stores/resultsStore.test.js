@@ -1117,7 +1117,7 @@ describe("resultsStore", () => {
       store.stopPolling();
     });
 
-    it("switches to idle mode when compare_mode is pixel even if perceptual payload exists", async () => {
+    it("stays active mode when compare_mode is pixel and perceptual is pending", async () => {
       vi.useFakeTimers();
       fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "pixel", perceptual: { status: "running" } }]);
 
@@ -1126,12 +1126,12 @@ describe("resultsStore", () => {
 
       await vi.advanceTimersByTimeAsync(250);
 
-      expect(store.resultsPollMode).toBe("idle");
+      expect(store.resultsPollMode).toBe("active");
 
       store.stopPolling();
     });
 
-    it("logs polling snapshot with perceptualRows=0 for pixel compare_mode even when perceptual payload exists", async () => {
+    it("logs active polling snapshot for pixel compare_mode when perceptual is pending", async () => {
       vi.useFakeTimers();
       document.cookie = "debug=1; path=/";
       const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
@@ -1147,14 +1147,14 @@ describe("resultsStore", () => {
         "results polling tick",
         expect.objectContaining({
           runId: "run-1",
-          mode: "idle",
-          hasPendingJobs: false,
-          pendingJobs: 0,
-          perceptualRows: 0,
+          mode: "active",
+          hasPendingJobs: true,
+          pendingJobs: 1,
+          perceptualRows: 1,
           rowsCount: 1,
           baseMs: 200,
           idleMultiplier: 3,
-          nextMs: 600,
+          nextMs: 200,
         }),
       );
 
