@@ -5,7 +5,7 @@
           <div class="modal-header justify-content-between align-items-start">
             <div class="modal-header-content">
               <div class="modal-header-main">
-                <div class="mono fw-semibold">{{ viewer.modalTitle }}</div>
+                <div class="mono fw-semibold run-id">{{ viewer.modalTitle }}</div>
                 <div class="text-muted small mono">{{ viewer.modalSubtitle }}</div>
               </div>
               <div class="modal-header-meta">
@@ -406,6 +406,10 @@ export default {
   font-size: 0.85rem;
   color: var(--text-muted);
   letter-spacing: 0.02em;
+}
+
+.run-id {
+  color: var(--run-id-color, var(--body-color));
 }
 
 .slot-grid {

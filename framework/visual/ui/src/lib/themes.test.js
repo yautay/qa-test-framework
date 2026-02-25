@@ -14,7 +14,7 @@ describe("themes presets", () => {
   });
 
   it("each preset has all required properties", () => {
-    const required = ["name", "primary", "secondary", "success", "danger", "warning", "bodyBg", "bodyColor", "cardBg", "border", "textMuted", "heroGradient"];
+    const required = ["name", "primary", "secondary", "success", "danger", "warning", "bodyBg", "bodyColor", "cardBg", "border", "textMuted", "runIdColor", "heroGradient"];
 
     for (const [name, preset] of Object.entries(presets)) {
       for (const prop of required) {
@@ -125,6 +125,7 @@ describe("theme application", () => {
     expect(callArgs).toContain("--card-bg");
     expect(callArgs).toContain("--border");
     expect(callArgs).toContain("--text-muted");
+    expect(callArgs).toContain("--run-id-color");
     expect(callArgs).toContain("--hero-gradient");
   });
 });

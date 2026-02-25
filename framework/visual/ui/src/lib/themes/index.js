@@ -29,6 +29,7 @@ function applyTheme(name) {
   root.style.setProperty("--card-bg", preset.cardBg);
   root.style.setProperty("--border", preset.border);
   root.style.setProperty("--text-muted", preset.textMuted);
+  root.style.setProperty("--run-id-color", preset.runIdColor || preset.primary);
   root.style.setProperty("--hero-gradient", preset.heroGradient);
   root.style.setProperty(
     "--dropdown-gradient",
