@@ -33,6 +33,33 @@ function rowKey(row) {
 }
 
 describe("ResultsTable", () => {
+  it("renders columns in expected order with metadata at end", () => {
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [makeRow()],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {},
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    const headers = wrapper.findAll("thead th").map((cell) => cell.text());
+    expect(headers).toEqual([
+      "listing.scenario",
+      "listing.browser",
+      "listing.viewport",
+      "listing.signals",
+      "listing.status",
+      "listing.pixel",
+      "listing.lpips",
+      "listing.dists",
+      "listing.message",
+      "listing.artifacts",
+      "listing.metadata",
+    ]);
+  });
+
   it("updates rendered row correctly when duplicate scenario ids exist", async () => {
     const passedRow = makeRow({ status: "passed", actual_path: "actual-pass.png", diff_path: "diff-pass.png" });
     const failedRow = makeRow({ status: "failed", actual_path: "actual-fail.png", diff_path: "diff-fail.png" });

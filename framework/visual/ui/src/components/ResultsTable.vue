@@ -5,16 +5,16 @@
         <thead class="table-light">
           <tr>
             <th>{{ t('listing.scenario') }}</th>
-            <th class="small-col">{{ t('listing.status') }}</th>
+            <th class="small-col">{{ t('listing.browser') }}</th>
+            <th class="small-col">{{ t('listing.viewport') }}</th>
             <th class="small-col">{{ t('listing.signals') }}</th>
+            <th class="small-col">{{ t('listing.status') }}</th>
             <th class="small-col">{{ t('listing.pixel') }}</th>
             <th class="small-col">{{ t('listing.lpips') }}</th>
             <th class="small-col">{{ t('listing.dists') }}</th>
             <th>{{ t('listing.message') }}</th>
-            <th class="small-col">{{ t('listing.viewport') }}</th>
-            <th class="small-col">{{ t('listing.browser') }}</th>
-            <th class="small-col text-end">{{ t('listing.metadata') }}</th>
             <th>{{ t('listing.artifacts') }}</th>
+            <th class="small-col text-end">{{ t('listing.metadata') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -27,8 +27,21 @@
             </td>
 
             <td class="small-col">
-              <span class="badge"
-                :class="statusClass(r.status)">{{ r.status }}</span>
+              <span v-if="r.browser"
+                class="badge badge-browser"
+                :style="badgeStyle('browser', r.browser)"
+              >
+                {{ r.browser }}
+              </span>
+            </td>
+
+            <td class="small-col">
+              <span v-if="r.viewport"
+                class="badge badge-viewport"
+                :style="badgeStyle('viewport', r.viewport)"
+              >
+                {{ r.viewport }}
+              </span>
             </td>
 
             <td class="small-col">
@@ -64,6 +77,11 @@
               </div>
             </td>
 
+            <td class="small-col">
+              <span class="badge"
+                :class="statusClass(r.status)">{{ r.status }}</span>
+            </td>
+
             <td class="small-col mono">{{ fmt(r.pixel_changed_ratio) }}</td>
             <td class="small-col mono">{{ fmt(r.lpips) }}</td>
             <td class="small-col mono">{{ fmt(r.dists) }}</td>
@@ -84,22 +102,13 @@
               <div>{{ r.message || '' }}</div>
             </td>
 
-            <td class="small-col">
-              <span v-if="r.viewport"
-                class="badge badge-viewport"
-                :style="badgeStyle('viewport', r.viewport)"
-              >
-                {{ r.viewport }}
-              </span>
-            </td>
-
-            <td class="small-col">
-              <span v-if="r.browser"
-                class="badge badge-browser"
-                :style="badgeStyle('browser', r.browser)"
-              >
-                {{ r.browser }}
-              </span>
+            <td style="min-width: 430px;">
+              <div class="d-flex flex-wrap gap-2 artifact-icons">
+                <span v-if="r.baseline_path" class="artifact-badge artifact-ref">{{ t('artifacts.ref') }}</span>
+                <span v-if="r.actual_path" class="artifact-badge artifact-test">{{ t('artifacts.test') }}</span>
+                <span v-if="r.diff_path" class="artifact-badge artifact-diff">{{ t('artifacts.diff') }}</span>
+                <span v-if="r.heatmap_path" class="artifact-badge artifact-perc">{{ t('artifacts.lpips') }}</span>
+              </div>
             </td>
 
             <td class="small-col text-end">
@@ -111,15 +120,6 @@
               >
                 i
               </button>
-            </td>
-
-            <td style="min-width: 430px;">
-              <div class="d-flex flex-wrap gap-2 artifact-icons">
-                <span v-if="r.baseline_path" class="artifact-badge artifact-ref">{{ t('artifacts.ref') }}</span>
-                <span v-if="r.actual_path" class="artifact-badge artifact-test">{{ t('artifacts.test') }}</span>
-                <span v-if="r.diff_path" class="artifact-badge artifact-diff">{{ t('artifacts.diff') }}</span>
-                <span v-if="r.heatmap_path" class="artifact-badge artifact-perc">{{ t('artifacts.lpips') }}</span>
-              </div>
             </td>
           </tr>
 
