@@ -2,7 +2,7 @@
   <header class="hero-header mb-3 p-4 rounded-4">
     <div class="d-flex flex-wrap justify-content-between align-items-end gap-3">
       <div>
-        <div class="eyebrow">Visual Reports</div>
+        <div class="eyebrow">{{ t('hero.eyebrow') }}</div>
         <h1 class="mb-1">{{ t('hero.title') }}</h1>
         <p class="mb-0 text-muted">{{ t('hero.subtitle') }}</p>
       </div>

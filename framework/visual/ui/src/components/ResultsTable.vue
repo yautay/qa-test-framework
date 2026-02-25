@@ -78,8 +78,8 @@
             </td>
 
             <td class="small-col">
-              <span class="badge"
-                :class="statusClass(r.status)">{{ r.status }}</span>
+                <span class="badge"
+                :class="statusClass(r.status)">{{ statusLabel(r.status) }}</span>
             </td>
 
             <td class="small-col mono">{{ fmt(r.pixel_changed_ratio) }}</td>
@@ -99,7 +99,7 @@
                 </span>
                 <span v-if="rowHasTag(r, 'baseline')" class="badge bg-success">{{ t('tags.baseline') }}</span>
               </div>
-              <div>{{ r.message || '' }}</div>
+              <div>{{ messageLabel(r.message) }}</div>
             </td>
 
             <td style="min-width: 430px;">
@@ -176,6 +176,33 @@ export default {
     },
     statusClass(status) {
       return statusBadgeClass(status);
+    },
+    statusLabel(status) {
+      if (!status) return "";
+      const normalized = String(status).toLowerCase();
+      const key = `status.${normalized}`;
+      const translation = this.t(key);
+      if (translation && translation !== key) {
+        return translation;
+      }
+      return status;
+    },
+    messageLabel(message) {
+      const normalized = String(message || "").trim().toLowerCase();
+      if (!normalized) return "";
+      const mapping = {
+        "pixel threshold exceeded": "message.pixelThresholdExceeded",
+        "pixel threshold passed": "message.pixelThresholdPassed",
+        "pixel within uncertainty zone": "message.pixelWithinUncertaintyZone",
+        "baseline missing": "message.baselineMissing",
+      };
+      const key = mapping[normalized];
+      if (!key) return String(message || "");
+      const translation = this.t(key);
+      if (translation && translation !== key) {
+        return translation;
+      }
+      return String(message || "");
     },
     rowHasTag(row, tag) {
       const key = this.tagKeyForRow(row);

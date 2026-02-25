@@ -14,16 +14,17 @@
             {{ t('report.sendReport') }}
           </button>
         </div>
-        <div class="text-muted small mono">{{ store.summaryText }}</div>
+        <div class="text-muted small mono">{{ summaryText }}</div>
       </div>
     </div>
   </section>
 </template>
 
 <script setup>
+import { computed } from "vue";
 import { t } from "../lib/i18n";
 
-defineProps({
+const props = defineProps({
   runId: {
     type: String,
     default: "",
@@ -39,6 +40,25 @@ defineProps({
 });
 
 defineEmits(["send-baseline", "send-report"]);
+
+const summaryText = computed(() => {
+  const summary = props.store?.summary || {};
+  const total = Number(summary.total || 0);
+  const passed = Number(summary.passed || 0);
+  const failed = Number(summary.failed || 0);
+  const skipped = Number(summary.skipped || 0);
+  const uncertain = Number(summary.uncertain || 0);
+  const parts = [
+    `${t("report.summary.total")}: ${total}`,
+    `${t("report.summary.passed")}: ${passed}`,
+    `${t("report.summary.failed")}: ${failed}`,
+    `${t("report.summary.skipped")}: ${skipped}`,
+  ];
+  if (uncertain > 0) {
+    parts.push(`${t("report.summary.uncertain")}: ${uncertain}`);
+  }
+  return parts.join(" | ");
+});
 </script>
 
 <style scoped>

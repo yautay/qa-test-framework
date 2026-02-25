@@ -82,15 +82,15 @@
             <div class="app-info-row">{{ t('appInfo.commit') }}: {{ buildInfo.commit }}</div>
             <div class="app-info-row">{{ t('appInfo.builtAt') }}: {{ buildInfo.builtAt }}</div>
             <div class="app-info-divider"></div>
-            <div class="app-info-row"><strong>PMS health</strong></div>
-            <div class="app-info-row">status: {{ pmsHealth.status }}</div>
-            <div class="app-info-row">http: {{ pmsHealth.statusCode }}</div>
-            <div class="app-info-row">device: {{ pmsHealth.device }}</div>
-            <div class="app-info-row">metrics: {{ pmsHealth.metrics }}</div>
-            <div class="app-info-row">job store: {{ pmsHealth.jobStore }}</div>
-            <div class="app-info-row">git: {{ pmsHealth.gitTag }}</div>
-            <div class="app-info-row">last check: {{ pmsHealth.checkedAt }}</div>
-            <div v-if="pmsHealth.error" class="app-info-row">error: {{ pmsHealth.error }}</div>
+            <div class="app-info-row"><strong>{{ t('appInfo.pmsHealth') }}</strong></div>
+            <div class="app-info-row">{{ t('appInfo.status') }}: {{ pmsHealth.status }}</div>
+            <div class="app-info-row">{{ t('appInfo.http') }}: {{ pmsHealth.statusCode }}</div>
+            <div class="app-info-row">{{ t('appInfo.device') }}: {{ pmsHealth.device }}</div>
+            <div class="app-info-row">{{ t('appInfo.metrics') }}: {{ pmsHealth.metrics }}</div>
+            <div class="app-info-row">{{ t('appInfo.jobStore') }}: {{ pmsHealth.jobStore }}</div>
+            <div class="app-info-row">{{ t('appInfo.git') }}: {{ pmsHealth.gitTag }}</div>
+            <div class="app-info-row">{{ t('appInfo.lastCheck') }}: {{ pmsHealth.checkedAt }}</div>
+            <div v-if="pmsHealth.error" class="app-info-row">{{ t('appInfo.error') }}: {{ pmsHealth.error }}</div>
           </div>
         </div>
       </div>

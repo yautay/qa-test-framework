@@ -1,5 +1,6 @@
 {
   "hero": {
+    "eyebrow": "Visual звіти",
     "title": "Панель артефактів",
     "subtitle": "Виберіть візуальний звіт, щоб переглянути результати тестів.",
     "availableRuns": "Доступні запуски"
@@ -32,8 +33,8 @@
     "lpips": "LPIPS",
     "dists": "DISTS",
     "message": "Повідомлення",
-    "viewport": "Viewport",
-    "browser": "Browser",
+    "viewport": "В'юпорт",
+    "browser": "Браузер",
     "artifacts": "Артефакти",
     "metadata": "Мета",
     "noResults": "Немає результатів для поточних фільтрів."
@@ -51,7 +52,7 @@
     "searchPlaceholder": "наприклад, 20260218",
     "status": "Статус",
     "statusWithNote": "з приміткою",
-    "viewport": "Viewport",
+    "viewport": "В'юпорт",
     "browser": "Браузер",
     "sort": "Сортування",
     "reset": "Скинути",
@@ -78,7 +79,14 @@
     "run": "Запуск",
     "sendBaseline": "НАДІСЛАТИ BASELINE",
     "sendReport": "ЗВІТ",
-    "confirmSend": "Ви впевнені, що хочете надіслати BUG/ASO?"
+    "confirmSend": "Ви впевнені, що хочете надіслати BUG/ASO?",
+    "summary": {
+      "total": "усього",
+      "passed": "пройдено",
+      "failed": "помилки",
+      "skipped": "пропущено",
+      "uncertain": "невизначено"
+    }
   },
   "modal": {
     "exit": "Вихід (K-LSHIFT)",
@@ -130,6 +138,15 @@
     "uiSrcVersion": "версія UI src",
     "commit": "commit",
     "builtAt": "зібрано",
+    "pmsHealth": "Стан PMS",
+    "status": "status",
+    "http": "http",
+    "device": "пристрій",
+    "metrics": "метрики",
+    "jobStore": "сховище job-ів",
+    "git": "git",
+    "lastCheck": "остання перевірка",
+    "error": "помилка",
     "weekendCountdownPrefix": "До початку вихідних залишилося",
     "days": "днів",
     "daysOne": "день",
@@ -147,6 +164,12 @@
     "secondsOne": "секунда",
     "secondsFew": "секунди",
     "secondsMany": "секунд"
+  },
+  "message": {
+    "pixelThresholdExceeded": "Поріг пікселів перевищено",
+    "pixelThresholdPassed": "Поріг пікселів пройдено",
+    "pixelWithinUncertaintyZone": "Пікселі в зоні невизначеності",
+    "baselineMissing": "Бракує baseline"
   },
   "sync": {
     "errorPrefix": "Помилка синхронізації",

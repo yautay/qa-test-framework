@@ -78,9 +78,9 @@ describe("ReportPage", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 10));
 
-    expect(wrapper.text()).toContain("total=");
-    expect(wrapper.text()).toContain("passed=");
-    expect(wrapper.text()).toContain("failed=");
+    expect(wrapper.text()).toContain("total:");
+    expect(wrapper.text()).toContain("passed:");
+    expect(wrapper.text()).toContain("failed:");
 
     wrapper.unmount();
   });
@@ -186,7 +186,7 @@ describe("ReportPage", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 10));
 
-    expect(wrapper.text()).toContain("total=0");
+    expect(wrapper.text()).toContain("total: 0");
 
     wrapper.unmount();
   });
@@ -848,9 +848,9 @@ describe("ReportPage", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 50));
 
-    expect(wrapper.text()).toContain("total=");
-    expect(wrapper.text()).toContain("passed=");
-    expect(wrapper.text()).toContain("failed=");
+    expect(wrapper.text()).toContain("total:");
+    expect(wrapper.text()).toContain("passed:");
+    expect(wrapper.text()).toContain("failed:");
 
     wrapper.unmount();
   });

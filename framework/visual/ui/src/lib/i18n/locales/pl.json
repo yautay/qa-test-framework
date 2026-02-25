@@ -1,5 +1,6 @@
 {
   "hero": {
+    "eyebrow": "Raporty Visual",
     "title": "Dashboard Raportów",
     "subtitle": "Wybierz raport visual i przejdź do listy testów.",
     "availableRuns": "Dostępne uruchomienia"
@@ -32,8 +33,8 @@
     "lpips": "LPIPS",
     "dists": "DISTS",
     "message": "Wiadomość",
-    "viewport": "Viewport",
-    "browser": "Browser",
+    "viewport": "Rozdzielczość",
+    "browser": "Przeglądarka",
     "artifacts": "Artefakty",
     "metadata": "Meta",
     "noResults": "Brak wyników dla filtrów."
@@ -51,7 +52,7 @@
     "searchPlaceholder": "np. 20260218",
     "status": "Status",
     "statusWithNote": "z notatką",
-    "viewport": "Viewport",
+    "viewport": "Rozdzielczość",
     "browser": "Przeglądarka",
     "sort": "Sortuj",
     "reset": "Resetuj",
@@ -78,7 +79,14 @@
     "run": "Uruchomienie",
     "sendBaseline": "WYŚLIJ BASELINE",
     "sendReport": "RAPORT",
-    "confirmSend": "Czy jesteś pewien i chcesz zgłosić BUG/ASO?"
+    "confirmSend": "Czy jesteś pewien i chcesz zgłosić BUG/ASO?",
+    "summary": {
+      "total": "razem",
+      "passed": "zaliczone",
+      "failed": "niezaliczone",
+      "skipped": "pominięte",
+      "uncertain": "niepewne"
+    }
   },
   "modal": {
     "exit": "Wyjście (K-LSHIFT)",
@@ -130,6 +138,15 @@
     "uiSrcVersion": "wersja UI src",
     "commit": "commit",
     "builtAt": "zbudowano",
+    "pmsHealth": "Stan PMS",
+    "status": "status",
+    "http": "http",
+    "device": "urządzenie",
+    "metrics": "metryki",
+    "jobStore": "magazyn zadań",
+    "git": "git",
+    "lastCheck": "ostatnie sprawdzenie",
+    "error": "błąd",
     "weekendCountdownPrefix": "Do rozpoczęcia weekendu zostało",
     "days": "dni",
     "daysOne": "dzień",
@@ -147,6 +164,12 @@
     "secondsOne": "sekunda",
     "secondsFew": "sekundy",
     "secondsMany": "sekund"
+  },
+  "message": {
+    "pixelThresholdExceeded": "Przekroczono próg pikseli",
+    "pixelThresholdPassed": "Próg pikseli zaliczony",
+    "pixelWithinUncertaintyZone": "Piksele w strefie niepewności",
+    "baselineMissing": "Brak baseline"
   },
   "sync": {
     "errorPrefix": "Błąd synchronizacji",

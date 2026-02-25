@@ -227,17 +227,6 @@ export const useResultsStore = defineStore("results", {
       return out;
     },
 
-    summaryText: (state) => {
-      const summary = state.summary || {};
-      const total = Number(summary.total || 0);
-      const passed = Number(summary.passed || 0);
-      const failed = Number(summary.failed || 0);
-      const skipped = Number(summary.skipped || 0);
-      const uncertain = Number(summary.uncertain || 0);
-      const base = `total=${total} passed=${passed} failed=${failed} skipped=${skipped}`;
-      return uncertain ? `${base} uncertain=${uncertain}` : base;
-    },
-
     gridStyle: (state) => {
       const requested = Math.max(1, state.columns || 1);
       const columns = requested === 4 ? 2 : requested;

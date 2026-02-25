@@ -1,5 +1,6 @@
 {
   "hero": {
+    "eyebrow": "Visual Reports",
     "title": "Artifacts Dashboard",
     "subtitle": "Select a visual report to view test results.",
     "availableRuns": "Available runs"
@@ -78,7 +79,14 @@
     "run": "Run",
     "sendBaseline": "SEND BASELINE",
     "sendReport": "REPORT",
-    "confirmSend": "Are you sure you want to submit BUG/ASO?"
+    "confirmSend": "Are you sure you want to submit BUG/ASO?",
+    "summary": {
+      "total": "total",
+      "passed": "passed",
+      "failed": "failed",
+      "skipped": "skipped",
+      "uncertain": "uncertain"
+    }
   },
   "modal": {
     "exit": "Exit (K-LSHIFT)",
@@ -130,11 +138,26 @@
     "uiSrcVersion": "ui src version",
     "commit": "commit",
     "builtAt": "built at",
+    "pmsHealth": "PMS health",
+    "status": "status",
+    "http": "http",
+    "device": "device",
+    "metrics": "metrics",
+    "jobStore": "job store",
+    "git": "git",
+    "lastCheck": "last check",
+    "error": "error",
     "weekendCountdownPrefix": "Time until weekend starts",
     "days": "days",
     "hours": "hours",
     "minutes": "minutes",
     "seconds": "seconds"
+  },
+  "message": {
+    "pixelThresholdExceeded": "Pixel threshold exceeded",
+    "pixelThresholdPassed": "Pixel threshold passed",
+    "pixelWithinUncertaintyZone": "Pixel within uncertainty zone",
+    "baselineMissing": "Baseline missing"
   },
   "sync": {
     "errorPrefix": "Sync failed",

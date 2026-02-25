@@ -836,19 +836,16 @@ describe("resultsStore", () => {
     });
   });
 
-  describe("summaryText", () => {
-    it("generates summary with all fields", () => {
+  describe("summary", () => {
+    it("stores summary fields in state", () => {
       const store = useResultsStore();
       store.summary = { total: 10, passed: 5, failed: 3, skipped: 1, uncertain: 1 };
 
-      expect(store.summaryText).toBe("total=10 passed=5 failed=3 skipped=1 uncertain=1");
-    });
-
-    it("generates summary without uncertain when zero", () => {
-      const store = useResultsStore();
-      store.summary = { total: 10, passed: 5, failed: 3, skipped: 2, uncertain: 0 };
-
-      expect(store.summaryText).toBe("total=10 passed=5 failed=3 skipped=2");
+      expect(store.summary.total).toBe(10);
+      expect(store.summary.passed).toBe(5);
+      expect(store.summary.failed).toBe(3);
+      expect(store.summary.skipped).toBe(1);
+      expect(store.summary.uncertain).toBe(1);
     });
   });
 

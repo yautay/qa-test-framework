@@ -1,8 +1,8 @@
 <template>
-  <div class="card shadow-sm">
-    <div class="card-body py-5 text-center text-muted">
-      <div class="mb-2">{{ t('empty.noReports') }}</div>
-      <div class="small">{{ t('empty.runCommand') }}</div>
+  <div class="card shadow-sm empty-state-card">
+    <div class="card-body py-5 text-center empty-state-body">
+      <div class="mb-2 empty-state-text">{{ t('empty.noReports') }}</div>
+      <div class="small empty-state-text">{{ t('empty.runCommand') }}</div>
     </div>
   </div>
 </template>
@@ -17,3 +17,19 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.empty-state-card {
+  background-color: var(--card-bg);
+  border-color: var(--border);
+}
+
+.empty-state-body {
+  background-color: var(--card-bg);
+  color: var(--body-color);
+}
+
+.empty-state-text {
+  color: var(--text-muted);
+}
+</style>
