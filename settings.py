@@ -235,7 +235,7 @@ pms_server_active_limit = 100
 # pms_timeout_sec:
 # - Timeout pojedynczego zadania PMS (sekundy).
 # Skutek: za niski timeout powoduje przedwczesne fail'e przy duzych obrazach.
-pms_timeout_sec = 120
+pms_timeout_sec = 360
 
 # pms_retry_max:
 # - Maksymalna liczba ponowien po bledzie.

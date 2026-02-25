@@ -27,6 +27,7 @@
   "listing": {
     "scenario": "Scenario",
     "status": "Status",
+    "signals": "Signals",
     "pixel": "Pixel",
     "lpips": "LPIPS",
     "dists": "DISTS",
@@ -149,7 +150,14 @@
     "sendingCount": "sending",
     "unsyncedCount": "unsynced"
   },
-  "perceptual": {
+  "pms": {
+    "pendingBuild": "PMS pending jobs",
+    "errorBuild": "PMS failed jobs",
+    "successBuild": "PMS done jobs",
+    "pendingTest": "PMS processing in progress",
+    "errorTest": "PMS error",
+    "errorTestUnknown": "PMS error: unknown",
+    "successTest": "PMS processed successfully",
     "pendingTooltip": "Perceptual comparison in progress",
     "issueTooltip": "Perceptual comparison issue",
     "missingTooltip": "Perceptual score missing for this test",

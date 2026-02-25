@@ -63,20 +63,11 @@
         </div>
       </div>
       <div class="datetime-wrap text-muted small mono">
-        <div
-          class="perceptual-queue"
-          :class="{ 'perceptual-queue--error': !!queueInfo.errorMessage }"
-          :title="queueTooltip"
-          aria-label="Perceptual queue stats"
-        >
-          <span class="perceptual-queue-label">PMS</span>
-          <span class="perceptual-queue-value">{{ queueInfo.serverActive }}</span>
-        </div>
         <div class="datetime-tooltip" tabindex="0" role="button" :aria-label="weekendCountdownText">
           <span class="datetime">{{ formattedDateTime }}</span>
           <div class="datetime-tooltip-content" role="tooltip">{{ weekendCountdownText }}</div>
         </div>
-        <div class="app-info" tabindex="0" role="button" :aria-label="t('appInfo.ariaLabel')">
+        <div class="app-info" :class="{ 'app-info-error': pmsHealthFailed }" tabindex="0" role="button" :aria-label="t('appInfo.ariaLabel')">
           <span class="app-info-icon">i</span>
           <div class="app-info-tooltip" role="tooltip">
             <div class="app-info-row"><strong>{{ t('appInfo.runtime') }}</strong></div>
@@ -90,6 +81,16 @@
             <div class="app-info-row">{{ t('appInfo.uiSrcVersion') }}: {{ buildInfo.uiSrcVersion }}</div>
             <div class="app-info-row">{{ t('appInfo.commit') }}: {{ buildInfo.commit }}</div>
             <div class="app-info-row">{{ t('appInfo.builtAt') }}: {{ buildInfo.builtAt }}</div>
+            <div class="app-info-divider"></div>
+            <div class="app-info-row"><strong>PMS health</strong></div>
+            <div class="app-info-row">status: {{ pmsHealth.status }}</div>
+            <div class="app-info-row">http: {{ pmsHealth.statusCode }}</div>
+            <div class="app-info-row">device: {{ pmsHealth.device }}</div>
+            <div class="app-info-row">metrics: {{ pmsHealth.metrics }}</div>
+            <div class="app-info-row">job store: {{ pmsHealth.jobStore }}</div>
+            <div class="app-info-row">git: {{ pmsHealth.gitTag }}</div>
+            <div class="app-info-row">last check: {{ pmsHealth.checkedAt }}</div>
+            <div v-if="pmsHealth.error" class="app-info-row">error: {{ pmsHealth.error }}</div>
           </div>
         </div>
       </div>
@@ -102,89 +103,16 @@ import { ref, onMounted, onUnmounted, computed } from "vue";
 import { locale, setLocale, t } from "../lib/i18n";
 import { currentTheme, setTheme, presets } from "../lib/themes";
 import { fetchAppInfo } from "../lib/api/appInfoApi";
-import { fetchPerceptualQueue } from "../lib/api/perceptualApi";
+import { fetchPerceptualHealth } from "../lib/api/perceptualApi";
 
 function normalizeText(value) {
   const text = String(value || "").trim();
   return text || "unknown";
 }
 
-function isDebugPollingEnabled() {
-  if (typeof document === "undefined") return false;
-  return document.cookie.split(";").some((entry) => entry.trim().startsWith("debug=1"));
-}
-
-function debugPollingLog(...args) {
-  if (!isDebugPollingEnabled()) return;
-  console.debug("[PMS-POLL]", ...args);
-}
-
-function normalizeHealthPayload(payload) {
-  const isObjectPayload = payload && typeof payload === "object";
-  const hasNewContractFields = Boolean(payload?.job_store || payload?.gpu || Array.isArray(payload?.metrics));
-
-  if (!isObjectPayload) {
-    return {
-      serverActive: "N/A",
-      tooltip: "PMS unavailable",
-      errorMessage: "",
-      hasPendingJobs: false,
-      pendingJobsKnown: false,
-    };
-  }
-
-  if (!hasNewContractFields) {
-    return {
-      serverActive: "N/A",
-      tooltip: "PMS unavailable",
-      errorMessage: "invalid health payload",
-      hasPendingJobs: false,
-      pendingJobsKnown: false,
-    };
-  }
-
-  const status = normalizeText(payload?.status).toLowerCase();
-  const metrics = Array.isArray(payload?.metrics) ? payload.metrics.map((metric) => normalizeText(metric)) : [];
-  const metricsText = metrics.length ? metrics.join(",") : "none";
-  const jobStoreBackend = normalizeText(payload?.job_store?.backend);
-  const jobStoreAvailable = Boolean(payload?.job_store?.available);
-  const gpuEnabled = Boolean(payload?.gpu?.enabled);
-  const gpuMode = normalizeText(payload?.gpu?.mode).toLowerCase();
-  const gpuAvailable = Boolean(payload?.gpu?.available);
-  const gpuFallbackToCpu = Boolean(payload?.gpu?.fallback_to_cpu);
-  const gitBranch = normalizeText(payload?.git?.branch);
-  const gitTag = normalizeText(payload?.git?.tag);
-  const gitCommitter = normalizeText(payload?.git?.committer);
-  const gitDate = normalizeText(payload?.git?.date);
-  const device = payload?.device ? normalizeText(payload.device).toLowerCase() : "";
-
-  const tooltipParts = [
-    `status=${status}`,
-    `metrics=${metricsText}`,
-    `job_store=${jobStoreBackend} available=${jobStoreAvailable}`,
-    `gpu=enabled:${gpuEnabled} mode:${gpuMode} available:${gpuAvailable} fallback_to_cpu:${gpuFallbackToCpu}`,
-    `git=${gitBranch}@${gitTag} by ${gitCommitter} (${gitDate})`,
-  ];
-
-  if (device) {
-    tooltipParts.splice(1, 0, `device=${device}`);
-  }
-
-  return {
-    serverActive: status === "ok" ? "OK" : status.toUpperCase(),
-    tooltip: tooltipParts.join(" | "),
-    errorMessage: status === "ok" ? "" : `status=${status}`,
-    hasPendingJobs: false,
-    pendingJobsKnown: false,
-  };
-}
-
 function normalizeAppInfo(payload) {
   const runtime = payload?.runtime && typeof payload.runtime === "object" ? payload.runtime : {};
   const uiBuild = payload?.ui_build && typeof payload.ui_build === "object" ? payload.ui_build : {};
-  const uiConfig = payload?.ui_config && typeof payload.ui_config === "object" ? payload.ui_config : {};
-  const pmsPollIntervalMs = Math.max(100, Number(uiConfig?.pms_poll_interval_ms || 5000));
-  const pmsPollIdleMultiplier = Math.max(1, Number(uiConfig?.pms_poll_idle_multiplier || 1));
   return {
     runtimeInfo: {
       version: normalizeText(runtime.version),
@@ -197,10 +125,6 @@ function normalizeAppInfo(payload) {
       uiSrcVersion: normalizeText(uiBuild.ui_src_version),
       commit: normalizeText(uiBuild.commit),
       builtAt: normalizeText(uiBuild.built_at),
-    },
-    polling: {
-      pmsPollIntervalMs,
-      pmsPollIdleMultiplier,
     },
   };
 }
@@ -383,23 +307,18 @@ export default {
       commit: "loading...",
       builtAt: "loading...",
     });
-    const queueInfo = ref({
-      serverActive: "N/A",
-      tooltip: "PMS unavailable",
-      errorMessage: "",
-      hasPendingJobs: false,
-      pendingJobsKnown: false,
+    const pmsHealth = ref({
+      status: "loading...",
+      device: "unknown",
+      metrics: "unknown",
+      jobStore: "unknown",
+      gitTag: "unknown",
+      statusCode: "-",
+      checkedAt: "never",
+      error: "",
+      ok: null,
     });
-    const pmsPollIntervalMs = ref(5000);
-    const pmsPollIdleMultiplier = ref(1);
-    const queuePollMode = ref("active");
-
-    const queueTooltip = computed(() => {
-      if (queueInfo.value.errorMessage) {
-        return `PMS error: ${queueInfo.value.errorMessage}`;
-      }
-      return queueInfo.value.tooltip;
-    });
+    const pmsHealthFailed = computed(() => pmsHealth.value.ok === false);
 
     const selectTheme = (key) => {
       setTheme(key);
@@ -476,7 +395,7 @@ export default {
     };
 
     let intervalId = null;
-    let queuePollTimeoutId = null;
+    let pmsHealthIntervalId = null;
 
     const loadAppInfo = async () => {
       try {
@@ -484,11 +403,6 @@ export default {
         const normalized = normalizeAppInfo(payload);
         runtimeInfo.value = normalized.runtimeInfo;
         buildInfo.value = normalized.buildInfo;
-        pmsPollIntervalMs.value = normalized.polling.pmsPollIntervalMs;
-        pmsPollIdleMultiplier.value = normalized.polling.pmsPollIdleMultiplier;
-        debugPollingLog(
-          `config loaded base_ms=${pmsPollIntervalMs.value} idle_multiplier=${pmsPollIdleMultiplier.value}`,
-        );
       } catch (_error) {
         runtimeInfo.value = {
           version: "unknown",
@@ -505,41 +419,42 @@ export default {
       }
     };
 
-    const nextQueuePollDelayMs = () => {
-      const base = Math.max(100, Number(pmsPollIntervalMs.value || 5000));
-      const multiplier = Math.max(1, Number(pmsPollIdleMultiplier.value || 1));
-      if (!queueInfo.value.pendingJobsKnown) {
-        return base;
-      }
-      return queueInfo.value.hasPendingJobs ? base : Math.round(base * multiplier);
-    };
-
-    const scheduleNextQueuePoll = () => {
-      if (queuePollTimeoutId) {
-        clearTimeout(queuePollTimeoutId);
-      }
-      queuePollTimeoutId = setTimeout(async () => {
-        await loadPerceptualQueue();
-        const nextMode = queueInfo.value.pendingJobsKnown && !queueInfo.value.hasPendingJobs ? "idle" : "active";
-        if (queuePollMode.value !== nextMode) {
-          queuePollMode.value = nextMode;
-          debugPollingLog(`mode=${nextMode} next_ms=${nextQueuePollDelayMs()}`);
-        }
-        scheduleNextQueuePoll();
-      }, nextQueuePollDelayMs());
-    };
-
-    const loadPerceptualQueue = async () => {
+    const loadPerceptualHealth = async () => {
       try {
-        const payload = await fetchPerceptualQueue();
-        queueInfo.value = normalizeHealthPayload(payload);
+        const response = await fetchPerceptualHealth();
+        const healthPayload = response?.payload && typeof response.payload === "object" ? response.payload : {};
+        const status = String(healthPayload?.status || (response?.ok ? "ok" : "error")).trim() || "unknown";
+        const metrics = Array.isArray(healthPayload?.metrics)
+          ? healthPayload.metrics.map((item) => String(item)).join(", ")
+          : "unknown";
+        const backend = String(healthPayload?.job_store?.backend || "unknown").trim() || "unknown";
+        const available = healthPayload?.job_store?.available === true ? "available" : "unavailable";
+        const gitTag = String(healthPayload?.git?.tag || healthPayload?.git?.last_commit || "unknown").trim() || "unknown";
+        const checkedAt = Number(response?.checked_at_epoch)
+          ? new Date(Number(response.checked_at_epoch) * 1000).toLocaleString()
+          : new Date().toLocaleString();
+        pmsHealth.value = {
+          status,
+          device: normalizeText(healthPayload?.device),
+          metrics: metrics || "unknown",
+          jobStore: `${backend} (${available})`,
+          gitTag,
+          statusCode: String(response?.status_code || "-"),
+          checkedAt,
+          error: String(response?.error_message || "").trim(),
+          ok: response?.ok === true,
+        };
       } catch (error) {
-        queueInfo.value = {
-          serverActive: "N/A",
-          tooltip: "PMS unavailable",
-          errorMessage: error?.message || "unknown",
-          hasPendingJobs: false,
-          pendingJobsKnown: false,
+        pmsHealth.value = {
+          status: "error",
+          device: "unknown",
+          metrics: "unknown",
+          jobStore: "unknown",
+          gitTag: "unknown",
+            statusCode: "-",
+            checkedAt: new Date().toLocaleString(),
+            error: String(error?.message || "healthcheck failed"),
+            ok: false,
         };
       }
     };
@@ -549,16 +464,16 @@ export default {
       intervalId = setInterval(updateDateTime, 1000);
       document.addEventListener("click", handleClickOutside);
       loadAppInfo();
-      loadPerceptualQueue();
-      scheduleNextQueuePoll();
+      loadPerceptualHealth();
+      pmsHealthIntervalId = setInterval(loadPerceptualHealth, 60000);
     });
 
     onUnmounted(() => {
       if (intervalId) {
         clearInterval(intervalId);
       }
-      if (queuePollTimeoutId) {
-        clearTimeout(queuePollTimeoutId);
+      if (pmsHealthIntervalId) {
+        clearInterval(pmsHealthIntervalId);
       }
       document.removeEventListener("click", handleClickOutside);
     });
@@ -575,8 +490,8 @@ export default {
       weekendCountdownText,
       runtimeInfo,
       buildInfo,
-      queueInfo,
-      queueTooltip,
+      pmsHealth,
+      pmsHealthFailed,
       isOpen,
       selectTheme,
     };
@@ -702,32 +617,6 @@ export default {
   gap: 8px;
 }
 
-.perceptual-queue {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--card-bg);
-  color: var(--body-color);
-  font-size: 11px;
-}
-
-.perceptual-queue--error {
-  border-color: #b42318;
-  color: #b42318;
-}
-
-.perceptual-queue-label {
-  font-weight: 700;
-}
-
-.perceptual-queue-value {
-  min-width: 1.2rem;
-  text-align: right;
-}
-
 .app-info {
   position: relative;
   display: inline-flex;
@@ -742,6 +631,12 @@ export default {
   cursor: default;
   user-select: none;
   outline: none;
+}
+
+.app-info.app-info-error {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: rgba(220, 53, 69, 0.12);
 }
 
 .app-info-icon {

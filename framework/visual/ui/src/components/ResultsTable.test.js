@@ -199,16 +199,10 @@ describe("ResultsTable", () => {
     expect(wrapper.find(".sync-error-icon").exists()).toBe(false);
   });
 
-  it("shows perceptual pending icon with tooltip for queued perceptual status", () => {
-    const row = makeRow({
-      compare_mode: "hybrid",
-      lpips: null,
-      dists: null,
-      perceptual: { status: "queued" },
-    });
+  it("shows PMS pending icon for queued/running test", () => {
     const wrapper = mount(ResultsTable, {
       props: {
-        rows: [row],
+        rows: [makeRow({ perceptual: { status: "queued" } })],
         fmt: (value) => String(value ?? ""),
         tagLog: {},
         tagKeyForRow: rowKey,
@@ -216,22 +210,15 @@ describe("ResultsTable", () => {
       },
     });
 
-    const icon = wrapper.find(".perceptual-status-icon");
+    const icon = wrapper.find(".pms-pending-icon");
     expect(icon.exists()).toBe(true);
-    expect(icon.text()).toContain("⏳");
-    expect(icon.attributes("title")).toBe("perceptual.pendingTooltip: queued");
+    expect(icon.attributes("title")).toBe("pms.pendingTest");
   });
 
-  it("shows perceptual warning icon when score is missing", () => {
-    const row = makeRow({
-      compare_mode: "hybrid",
-      lpips: null,
-      dists: null,
-      perceptual: null,
-    });
+  it("shows PMS error icon with detailed tooltip", () => {
     const wrapper = mount(ResultsTable, {
       props: {
-        rows: [row],
+        rows: [makeRow({ perceptual: { status: "error", error_message: "gpu oom" } })],
         fmt: (value) => String(value ?? ""),
         tagLog: {},
         tagKeyForRow: rowKey,
@@ -239,9 +226,24 @@ describe("ResultsTable", () => {
       },
     });
 
-    const icon = wrapper.find(".perceptual-status-icon");
+    const icon = wrapper.find(".pms-error-icon");
     expect(icon.exists()).toBe(true);
-    expect(icon.text()).toContain("⚠");
-    expect(icon.attributes("title")).toBe("perceptual.missingTooltip");
+    expect(icon.attributes("title")).toBe("pms.errorTest: gpu oom");
+  });
+
+  it("shows PMS success icon for done test", () => {
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [makeRow({ perceptual: { status: "done" } })],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {},
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    const icon = wrapper.find(".pms-success-icon");
+    expect(icon.exists()).toBe(true);
+    expect(icon.attributes("title")).toBe("pms.successTest");
   });
 });

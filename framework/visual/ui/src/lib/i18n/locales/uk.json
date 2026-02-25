@@ -27,6 +27,7 @@
   "listing": {
     "scenario": "Сценарій",
     "status": "Статус",
+    "signals": "Сигнали",
     "pixel": "Pixel",
     "lpips": "LPIPS",
     "dists": "DISTS",
@@ -161,7 +162,14 @@
     "sendingCount": "надсилається",
     "unsyncedCount": "не синхронізовано"
   },
-  "perceptual": {
+  "pms": {
+    "pendingBuild": "Очікують job-и PMS",
+    "errorBuild": "Помилкові job-и PMS",
+    "successBuild": "Завершені job-и PMS",
+    "pendingTest": "PMS обробляє тест",
+    "errorTest": "Помилка PMS",
+    "errorTestUnknown": "Помилка PMS: невідома",
+    "successTest": "PMS успішно завершено",
     "pendingTooltip": "Перцептивне порівняння виконується",
     "issueTooltip": "Проблема перцептивного порівняння",
     "missingTooltip": "Для цього тесту відсутній перцептивний score",

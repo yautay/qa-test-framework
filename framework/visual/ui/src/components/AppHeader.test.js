@@ -3,6 +3,7 @@ import { mount } from "@vue/test-utils";
 import { ref } from "vue";
 
 import AppHeader from "./AppHeader.vue";
+import { fetchPerceptualHealth } from "../lib/api/perceptualApi";
 
 vi.mock("../lib/api/appInfoApi", () => ({
   fetchAppInfo: vi.fn(async () => ({
@@ -18,26 +19,17 @@ vi.mock("../lib/api/appInfoApi", () => ({
 }));
 
 vi.mock("../lib/api/perceptualApi", () => ({
-  fetchPerceptualQueue: vi.fn(async () => ({
-    status: "ok",
-    device: "cpu",
-    metrics: ["dists", "lpips"],
-    job_store: {
-      backend: "redis",
-      available: true,
-    },
-    git: {
-      branch: "master",
-      tag: "20681e1",
-      last_commit: "20681e17f1512e8f448df24f99990cf3b43276cc",
-      committer: "Michal Pielaszkiewicz",
-      date: "2026-02-25T14:46:12+01:00",
-    },
-    gpu: {
-      enabled: true,
-      mode: "gpu",
-      available: true,
-      fallback_to_cpu: false,
+  fetchPerceptualHealth: vi.fn(async () => ({
+    ok: true,
+    status_code: 200,
+    checked_at_epoch: 1766600000,
+    error_message: null,
+    payload: {
+      status: "ok",
+      device: "cpu",
+      metrics: ["dists", "lpips"],
+      job_store: { backend: "redis", available: true },
+      git: { tag: "v1.3-1-g951d06b" },
     },
   })),
 }));
@@ -77,6 +69,10 @@ vi.mock("../lib/themes", () => ({
 }));
 
 describe("AppHeader", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   function flushPromises() {
     return new Promise((resolve) => {
       setTimeout(resolve, 0);
@@ -139,6 +135,22 @@ describe("AppHeader", () => {
     expect(tooltip.text()).toContain("Runtime");
     expect(tooltip.text()).toContain("UI build");
     expect(tooltip.text()).toContain("ui src version: 1.0.0");
+    expect(tooltip.text()).toContain("PMS health");
+    expect(tooltip.text()).toContain("status: ok");
+    expect(tooltip.text()).toContain("http: 200");
+    expect(tooltip.text()).toContain("device: cpu");
+    expect(tooltip.text()).toContain("job store: redis (available)");
+    expect(tooltip.text()).toContain("git: v1.3-1-g951d06b");
+  });
+
+  it("marks app info icon red when PMS health fails", async () => {
+    fetchPerceptualHealth.mockRejectedValueOnce(new Error("timeout"));
+    const wrapper = mount(AppHeader);
+    await flushPromises();
+
+    const infoIcon = wrapper.find(".app-info");
+    expect(infoIcon.classes()).toContain("app-info-error");
+    expect(wrapper.find(".app-info-tooltip").text()).toContain("error: timeout");
   });
 
   it("has correct CSS classes for styling", async () => {
@@ -152,17 +164,4 @@ describe("AppHeader", () => {
     expect(header.classes()).toContain("rounded-4");
   });
 
-  it("renders perceptual queue badge", async () => {
-    const wrapper = mount(AppHeader);
-    await flushPromises();
-
-    const queue = wrapper.find(".perceptual-queue");
-    expect(queue.exists()).toBe(true);
-    expect(queue.text()).toContain("PMS");
-    expect(queue.text()).toContain("OK");
-    expect(queue.attributes("title")).toContain("status=ok");
-    expect(queue.attributes("title")).toContain("metrics=dists,lpips");
-    expect(queue.attributes("title")).toContain("job_store=redis available=true");
-    expect(queue.attributes("title")).toContain("gpu=enabled:true mode:gpu available:true fallback_to_cpu:false");
-  });
 });

@@ -122,9 +122,20 @@ const metadataPanel = ref({
   payload: {},
 });
 const noteMaxLength = NOTE_MAX_LENGTH;
+const resultsRefreshTimer = ref(null);
 
 const baseZoom = ref(100);
 const HEARTBEAT_MS = 15000;
+const RESULTS_REFRESH_INTERVAL_MS = 5000;
+
+function rowKey(row) {
+  if (!row || typeof row !== "object") return "";
+  return [
+    String(row.scenario_id || ""),
+    String(row.viewport || ""),
+    String(row.browser || ""),
+  ].join("::");
+}
 
 function resolvePmsPollingConfig(payload) {
   const uiConfig = payload?.ui_config && typeof payload.ui_config === "object" ? payload.ui_config : {};
@@ -239,13 +250,27 @@ async function loadResults() {
     return;
   }
   store.setRunId(props.runId);
+  const selectedRow =
+    store.selectedIndex >= 0 && store.selectedIndex < store.filteredSorted.length
+      ? store.filteredSorted[store.selectedIndex]
+      : null;
+  const selectedKey = rowKey(selectedRow);
   try {
     const rows = await fetchReportResults(props.runId);
     store.setRows(rows);
-    if (store.filteredSorted.length > 0) {
-      store.selectedIndex = 0;
-    } else {
+    if (store.filteredSorted.length === 0) {
       store.selectedIndex = -1;
+      return;
+    }
+    if (!selectedKey) {
+      if (store.selectedIndex < 0) {
+        store.selectedIndex = 0;
+      }
+      return;
+    }
+    const nextIndex = store.filteredSorted.findIndex((row) => rowKey(row) === selectedKey);
+    if (nextIndex >= 0) {
+      store.selectedIndex = nextIndex;
     }
   } catch (error) {
     store.setRows([]);
@@ -286,6 +311,22 @@ function stopLockHeartbeat() {
   if (lockHeartbeatTimer.value) {
     window.clearInterval(lockHeartbeatTimer.value);
     lockHeartbeatTimer.value = null;
+  }
+}
+
+function startResultsRefresh() {
+  if (resultsRefreshTimer.value) {
+    window.clearInterval(resultsRefreshTimer.value);
+  }
+  resultsRefreshTimer.value = window.setInterval(() => {
+    void loadResults();
+  }, RESULTS_REFRESH_INTERVAL_MS);
+}
+
+function stopResultsRefresh() {
+  if (resultsRefreshTimer.value) {
+    window.clearInterval(resultsRefreshTimer.value);
+    resultsRefreshTimer.value = null;
   }
 }
 
@@ -839,6 +880,7 @@ onMounted(async () => {
   if (!lockDenied.value) {
     const pmsPollingConfig = await loadPmsPollingConfig();
     await loadResults();
+    startResultsRefresh();
     await loadState();
     store.startPolling(props.runId, SYNC_POLL_INTERVAL_MS, {
       pmsPollIntervalMs: pmsPollingConfig.intervalMs,
@@ -862,6 +904,7 @@ onBeforeUnmount(() => {
     modalEl.removeEventListener("hidden.bs.modal", closeModal);
   }
   store.stopPolling();
+  stopResultsRefresh();
   stopLockHeartbeat();
   releaseLock();
 });

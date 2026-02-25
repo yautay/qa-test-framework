@@ -13,7 +13,7 @@ import settings_cli
 from framework.artifacts import resolve_artifacts_base_dir
 from framework.env import load_env
 from framework.visual.models import VisualResult, VisualThresholds
-from framework.visual.perceptual_client import run_perceptual_postprocess
+from framework.visual.perceptual_client import prepare_perceptual_placeholders, run_perceptual_postprocess
 from framework.visual.report_builder import write_visual_report
 
 
@@ -254,19 +254,33 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         return
 
     env = load_env()
-    try:
-        run_perceptual_postprocess(
-            env=env,
-            run_id=str(run_root.name),
-            report_dir=run_root / "visual",
-            results=merged_results,
-        )
-    except Exception as exc:
-        logger.warning("perceptual_postprocess_failed", run_root=str(run_root), error=str(exc))
-        if env.pms_required:
-            raise
+    report_dir = run_root / "visual"
+    prepare_perceptual_placeholders(
+        env=env,
+        run_id=str(run_root.name),
+        report_dir=report_dir,
+        results=merged_results,
+    )
 
     try:
-        write_visual_report(run_root / "visual", merged_results)
+        write_visual_report(report_dir, merged_results)
     except Exception as exc:
         logger.warning("visual_report_finalize_failed", run_root=str(run_root), error=str(exc))
+
+    if env.pms_enabled:
+        try:
+            run_perceptual_postprocess(
+                env=env,
+                run_id=str(run_root.name),
+                report_dir=report_dir,
+                results=merged_results,
+            )
+        except Exception as exc:
+            logger.warning("perceptual_postprocess_failed", run_root=str(run_root), error=str(exc))
+            if env.pms_required:
+                raise
+
+        try:
+            write_visual_report(report_dir, merged_results)
+        except Exception as exc:
+            logger.warning("visual_report_finalize_failed", run_root=str(run_root), error=str(exc))

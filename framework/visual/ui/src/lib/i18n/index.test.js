@@ -32,16 +32,19 @@ describe("i18n", () => {
     setLocale("en");
     expect(t("sync.pendingTooltip")).not.toBe("sync.pendingTooltip");
     expect(t("sync.unsyncedTooltip")).not.toBe("sync.unsyncedTooltip");
+    expect(t("pms.pendingTest")).not.toBe("pms.pendingTest");
     expect(t("language.english")).not.toBe("language.english");
 
     setLocale("pl");
     expect(t("sync.pendingTooltip")).not.toBe("sync.pendingTooltip");
     expect(t("sync.unsyncedTooltip")).not.toBe("sync.unsyncedTooltip");
+    expect(t("pms.pendingTest")).not.toBe("pms.pendingTest");
     expect(t("language.polish")).not.toBe("language.polish");
 
     setLocale("uk");
     expect(t("sync.pendingTooltip")).not.toBe("sync.pendingTooltip");
     expect(t("sync.unsyncedTooltip")).not.toBe("sync.unsyncedTooltip");
+    expect(t("pms.pendingTest")).not.toBe("pms.pendingTest");
     expect(t("language.ukrainian")).not.toBe("language.ukrainian");
   });
 });

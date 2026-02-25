@@ -8,3 +8,12 @@ export async function fetchPerceptualQueue() {
   }
   return payload && typeof payload === "object" ? payload : {};
 }
+
+export async function fetchPerceptualHealth() {
+  const response = await fetch("/api/perceptual/health", { cache: "no-store" });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) {
+    throw new Error(payload?.error || payload?.error_message || "unable to fetch perceptual health");
+  }
+  return payload && typeof payload === "object" ? payload : {};
+}

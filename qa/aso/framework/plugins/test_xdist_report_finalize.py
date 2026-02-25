@@ -160,11 +160,12 @@ def test_pytest_sessionfinish_writes_visual_report_for_controller(
         encoding="utf-8",
     )
 
-    captured: dict[str, object] = {}
+    captured: dict[str, object] = {"write_calls": 0}
 
     def _fake_write_visual_report(report_dir: Path, results: list[object]) -> None:
         captured["report_dir"] = report_dir
         captured["results_len"] = len(results)
+        captured["write_calls"] = int(captured.get("write_calls", 0)) + 1
 
     monkeypatch.setattr(plugin, "write_visual_report", _fake_write_visual_report)
     monkeypatch.setattr(plugin, "_ensure_run_metadata", lambda _root, _config: None)
@@ -179,3 +180,4 @@ def test_pytest_sessionfinish_writes_visual_report_for_controller(
 
     assert captured["report_dir"] == run_root / "visual"
     assert captured["results_len"] == 1
+    assert captured["write_calls"] == 2

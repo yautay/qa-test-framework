@@ -6,6 +6,7 @@
           <tr>
             <th>{{ t('listing.scenario') }}</th>
             <th class="small-col">{{ t('listing.status') }}</th>
+            <th class="small-col">{{ t('listing.signals') }}</th>
             <th class="small-col">{{ t('listing.pixel') }}</th>
             <th class="small-col">{{ t('listing.lpips') }}</th>
             <th class="small-col">{{ t('listing.dists') }}</th>
@@ -30,22 +31,44 @@
                 :class="statusClass(r.status)">{{ r.status }}</span>
             </td>
 
+            <td class="small-col">
+              <div class="d-flex gap-1 align-items-center">
+                <span
+                  v-if="rowHasPmsPending(r)"
+                  class="badge bg-secondary pms-pending-icon"
+                  :title="getPmsPendingTitle(r)"
+                >
+                  ⏳
+                </span>
+                <span
+                  v-if="rowHasPmsError(r)"
+                  class="badge bg-warning text-dark pms-error-icon"
+                  :title="getPmsErrorTitle(r)"
+                >
+                  ⚠
+                </span>
+                <span
+                  v-if="rowHasPmsSuccess(r)"
+                  class="badge bg-success pms-success-icon"
+                  :title="getPmsSuccessTitle(r)"
+                >
+                  ✅
+                </span>
+                <span
+                  v-if="rowHasSyncIssue(r)"
+                  class="badge bg-warning text-dark sync-error-icon"
+                  :title="getSyncIssueMessage(r)"
+                >
+                  ⚠
+                </span>
+              </div>
+            </td>
+
             <td class="small-col mono">{{ fmt(r.pixel_changed_ratio) }}</td>
             <td class="small-col mono">{{ fmt(r.lpips) }}</td>
             <td class="small-col mono">{{ fmt(r.dists) }}</td>
             <td style="max-width: 420px;">
               <div class="d-flex flex-wrap gap-1 mb-1">
-                <span v-if="rowHasPerceptualIssue(r)"
-                      class="badge perceptual-status-icon"
-                      :class="perceptualIssueClass(r)"
-                      :title="getPerceptualIssueMessage(r)">
-                  {{ getPerceptualIssueIcon(r) }}
-                </span>
-                <span v-if="rowHasSyncIssue(r)" 
-                      class="badge bg-warning text-dark sync-error-icon" 
-                      :title="getSyncIssueMessage(r)">
-                  ⚠
-                </span>
                 <span v-if="rowHasTag(r, 'bug')" 
                       class="badge bg-danger"
                       :class="{ 'tag-pending': isPendingTag(r, 'bug') }">
@@ -101,7 +124,7 @@
           </tr>
 
           <tr v-if="rows.length===0">
-            <td colspan="10" class="text-center text-muted py-4">{{ t('listing.noResults') }}</td>
+            <td colspan="11" class="text-center text-muted py-4">{{ t('listing.noResults') }}</td>
           </tr>
         </tbody>
       </table>
@@ -170,6 +193,33 @@ export default {
     },
     badgeStyle(type, value) {
       return computeBadgeStyle(type, value);
+    },
+    getPerceptualStatus(row) {
+      const perceptual = row?.perceptual;
+      if (!perceptual || typeof perceptual !== "object") return "";
+      return String(perceptual.status || "").trim().toLowerCase();
+    },
+    rowHasPmsPending(row) {
+      const status = this.getPerceptualStatus(row);
+      return status === "queued" || status === "running";
+    },
+    rowHasPmsError(row) {
+      const status = this.getPerceptualStatus(row);
+      return status === "error" || status === "timeout";
+    },
+    rowHasPmsSuccess(row) {
+      return this.getPerceptualStatus(row) === "done";
+    },
+    getPmsPendingTitle(_row) {
+      return t("pms.pendingTest");
+    },
+    getPmsErrorTitle(row) {
+      const message = String(row?.perceptual?.error_message || "").trim();
+      if (message) return `${t("pms.errorTest")}: ${message}`;
+      return t("pms.errorTestUnknown");
+    },
+    getPmsSuccessTitle(_row) {
+      return t("pms.successTest");
     },
     getSyncIssue(row) {
       const key = this.tagKeyForRow(row);
@@ -248,7 +298,7 @@ export default {
           hasIssue: true,
           icon: "⏳",
           className: "bg-info text-dark",
-          title: `${this.t("perceptual.pendingTooltip")}: ${detail}`,
+          title: `${this.t("pms.pendingTooltip")}: ${detail}`,
         };
       }
 
@@ -259,7 +309,7 @@ export default {
           hasIssue: true,
           icon: "⚠",
           className: "bg-warning text-dark",
-          title: `${this.t("perceptual.issueTooltip")}: ${detail}${suffix}`,
+          title: `${this.t("pms.issueTooltip")}: ${detail}${suffix}`,
         };
       }
 
@@ -268,7 +318,7 @@ export default {
           hasIssue: true,
           icon: "⚠",
           className: "bg-warning text-dark",
-          title: this.t("perceptual.missingTooltip"),
+          title: this.t("pms.missingTooltip"),
         };
       }
 
@@ -277,9 +327,9 @@ export default {
     _perceptualStatusLabel(status) {
       const normalized = String(status || "").toLowerCase();
       if (!normalized) {
-        return this.t("perceptual.status.unknown");
+        return this.t("pms.status.unknown");
       }
-      const key = `perceptual.status.${normalized}`;
+      const key = `pms.status.${normalized}`;
       const translated = this.t(key);
       if (translated && translated !== key) {
         return translated;
@@ -384,12 +434,12 @@ export default {
   background-color: var(--body-bg) !important;
 }
 
+.pms-pending-icon,
+.pms-error-icon,
+.pms-success-icon,
 .sync-error-icon {
-  cursor: help;
-}
-
-.perceptual-status-icon {
-  cursor: help;
+  min-width: 1.5rem;
+  text-align: center;
 }
 
 .metadata-icon {
