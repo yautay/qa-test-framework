@@ -1077,7 +1077,7 @@ describe("resultsStore", () => {
   describe("dynamic results polling", () => {
     it("switches to idle mode when PMS jobs are not pending", async () => {
       vi.useFakeTimers();
-      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "perceptual", perceptual: { status: "done" } }]);
+      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "hybrid", perceptual: { status: "done" } }]);
 
       const store = useResultsStore();
       store.startPolling("run-1", 200, { pmsPollIntervalMs: 200, pmsPollIdleMultiplier: 3 });
@@ -1091,7 +1091,7 @@ describe("resultsStore", () => {
 
     it("stays active mode when PMS jobs are pending", async () => {
       vi.useFakeTimers();
-      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "perceptual", perceptual: { status: "running" } }]);
+      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "hybrid", perceptual: { status: "running" } }]);
 
       const store = useResultsStore();
       store.startPolling("run-1", 200, { pmsPollIntervalMs: 200, pmsPollIdleMultiplier: 4 });
@@ -1164,7 +1164,7 @@ describe("resultsStore", () => {
     it("does not emit polling debug logs when debug cookie is disabled", async () => {
       vi.useFakeTimers();
       const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
-      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "perceptual", perceptual: { status: "done" } }]);
+      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "hybrid", perceptual: { status: "done" } }]);
 
       const store = useResultsStore();
       store.startPolling("run-1", 200, { pmsPollIntervalMs: 200, pmsPollIdleMultiplier: 3 });
@@ -1180,7 +1180,7 @@ describe("resultsStore", () => {
       vi.useFakeTimers();
       document.cookie = "debug=1; path=/";
       const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
-      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "perceptual", perceptual: { status: "done" } }]);
+      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "hybrid", perceptual: { status: "done" } }]);
 
       const store = useResultsStore();
       store.startPolling("run-1", 200, { pmsPollIntervalMs: 200, pmsPollIdleMultiplier: 3 });

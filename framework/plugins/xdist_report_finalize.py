@@ -136,7 +136,7 @@ def _result_from_dict(data: dict[str, object]) -> VisualResult | None:
             "xpassed",
         }:
             status_raw = "failed"
-        if compare_mode_raw not in {"pixel", "perceptual", "hybrid"}:
+        if compare_mode_raw not in {"pixel", "hybrid"}:
             compare_mode_raw = "pixel"
 
         thresholds_raw_obj = data.get("thresholds")

@@ -123,7 +123,7 @@ function getPerceptualPayload(row) {
 
 function isPerceptualMode(compareMode) {
   const mode = String(compareMode || "").toLowerCase();
-  return mode === "perceptual" || mode === "hybrid";
+  return mode === "hybrid";
 }
 
 function shouldTrackPerceptualRow(row) {

@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 CaptureType = Literal["page", "viewport", "element"]
-CompareMode = Literal["pixel", "perceptual", "hybrid"]
+CompareMode = Literal["pixel", "hybrid"]
 ResultStatus = Literal["passed", "failed", "skipped", "new", "uncertain"]
 
 
@@ -378,7 +378,7 @@ class VisualScenario:
         scenario_id = _opt_str(d, "id", "").strip() or _require_str(d, "scenario_id")
 
         compare_mode = _require_str(d, "compare_mode").strip().lower()
-        if compare_mode not in ("pixel", "perceptual", "hybrid"):
+        if compare_mode not in ("pixel", "hybrid"):
             raise ValueError(f"Invalid compare_mode: {compare_mode!r}")
 
         steps_raw = _as_tuple_dict(d.get("steps"), "steps")

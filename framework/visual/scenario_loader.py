@@ -130,8 +130,8 @@ def _scenario_from_payload(payload: dict[str, Any], file_path: Path, idx: int) -
         raise _err(file_path, f"{pfx}target_url must be non-empty")
 
     compare_mode = _as_str(payload.get("compare_mode", "hybrid")).strip().lower()
-    if compare_mode not in {"pixel", "perceptual", "hybrid"}:
-        raise _err(file_path, f"{pfx}compare_mode must be pixel|perceptual|hybrid (got {compare_mode!r})")
+    if compare_mode not in {"pixel", "hybrid"}:
+        raise _err(file_path, f"{pfx}compare_mode must be pixel|hybrid (got {compare_mode!r})")
 
     capture_raw = payload.get("capture") or {}
     if not isinstance(capture_raw, dict):

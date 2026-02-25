@@ -269,7 +269,7 @@ export default {
     viewerPerceptualIssue() {
       const row = this.viewer.modalRow || {};
       const mode = String(row.compare_mode || "").toLowerCase();
-      if (!(mode === "perceptual" || mode === "hybrid")) {
+      if (mode !== "hybrid") {
         return { hasIssue: false, icon: "", className: "", title: "" };
       }
 

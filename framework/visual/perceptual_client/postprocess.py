@@ -72,7 +72,7 @@ def _upsert_perceptual(result: VisualResult, payload: dict[str, Any]) -> None:
 
 
 def _expects_perceptual(result: VisualResult) -> bool:
-    return str(getattr(result, "compare_mode", "") or "").strip().lower() in {"perceptual", "hybrid"}
+    return str(getattr(result, "compare_mode", "") or "").strip().lower() == "hybrid"
 
 
 def _mark_global_skip(results: list[VisualResult], reason: str) -> int:
@@ -155,6 +155,8 @@ def _write_perceptual_status(
 def _prepare_pending_jobs(env: RuntimeEnv, run_id: str, results: list[VisualResult]) -> list[_PairJob]:
     pending: list[_PairJob] = []
     for result in results:
+        if not _expects_perceptual(result):
+            continue
         baseline = Path(str(result.baseline_path or "").strip())
         actual = Path(str(result.actual_path or "").strip())
         if not baseline.is_file() or not actual.is_file():

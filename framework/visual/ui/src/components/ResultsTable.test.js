@@ -364,7 +364,7 @@ describe("ResultsTable", () => {
   });
 
   it("returns missing perceptual issue when expected mode has no payload", () => {
-    const row = makeRow({ compare_mode: "perceptual", lpips: null, dists: null, perceptual: null });
+    const row = makeRow({ compare_mode: "hybrid", lpips: null, dists: null, perceptual: null });
     const wrapper = mount(ResultsTable, {
       props: {
         rows: [row],

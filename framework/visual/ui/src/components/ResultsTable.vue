@@ -306,7 +306,7 @@ export default {
     },
     _expectsPerceptual(row) {
       const mode = String(row?.compare_mode || "").toLowerCase();
-      return mode === "perceptual" || mode === "hybrid";
+      return mode === "hybrid";
     },
     _perceptualIssue(row) {
       if (!this._expectsPerceptual(row)) {
