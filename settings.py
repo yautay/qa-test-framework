@@ -193,7 +193,7 @@ pms_required = False
 # - Bazowy URL uslugi PMS.
 # - Przyklad: "http://pms:8080".
 # Skutek: pusty URL przy wlaczonym PMS spowoduje bledy polaczenia.
-pms_base_url = "http://192.168.2.111:8080"
+pms_base_url = "http://192.168.2.108:8080"
 
 # pms_metric:
 # - "lpips", "dists" albo "both".

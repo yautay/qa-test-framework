@@ -13,8 +13,9 @@ browser = "chromium"
 server_type = "test"
 
 # Example legacy-compatible server name: "koncerz.test"
+# Supported: test, demo, prod, local
 # Suite URL mapping uses this value directly (no env override).
-server_name = "inpostizi.test"
+server_name = "selenium.alfa"
 
 # Optional reference environment selector for visual dual-pass.
 # - demo|prod|local: selects fixed environment URL
@@ -30,6 +31,6 @@ phone_for_production_tests = "123123123"
 base_url_override = ""
 
 # Optional run metadata defaults (CLI has priority).
-tester = "Michal"
-run_note = "wątki"
+tester = "Michal Pielaszkiewicz"
+run_note = "testy pms"
 nn_ticket = "54654"
