@@ -1,6 +1,13 @@
-import { describe, expect, it, beforeEach } from "vitest";
+import { describe, expect, it, beforeEach, afterEach, vi } from "vitest";
 import { setActivePinia, createPinia } from "pinia";
 import { useResultsStore } from "./resultsStore";
+
+vi.mock("../lib/api/reportsApi", () => ({
+  fetchBuildState: vi.fn(async () => ({ state: { test_cases: {}, outbox: [] } })),
+  fetchReportResults: vi.fn(async () => []),
+}));
+
+import { fetchReportResults } from "../lib/api/reportsApi";
 
 describe("resultsStore", () => {
   let pinia;
@@ -8,6 +15,11 @@ describe("resultsStore", () => {
   beforeEach(() => {
     pinia = createPinia();
     setActivePinia(pinia);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.clearAllMocks();
   });
 
   describe("setRows", () => {
@@ -1056,6 +1068,36 @@ describe("resultsStore", () => {
       const store = useResultsStore();
 
       expect(store.getSyncError("s1::a.png::::")).toBeNull();
+    });
+  });
+
+  describe("dynamic results polling", () => {
+    it("switches to idle mode when PMS jobs are not pending", async () => {
+      vi.useFakeTimers();
+      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "perceptual", perceptual: { status: "done" } }]);
+
+      const store = useResultsStore();
+      store.startPolling("run-1", 200, { pmsPollIntervalMs: 200, pmsPollIdleMultiplier: 3 });
+
+      await vi.advanceTimersByTimeAsync(250);
+
+      expect(store.resultsPollMode).toBe("idle");
+
+      store.stopPolling();
+    });
+
+    it("stays active mode when PMS jobs are pending", async () => {
+      vi.useFakeTimers();
+      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "perceptual", perceptual: { status: "running" } }]);
+
+      const store = useResultsStore();
+      store.startPolling("run-1", 200, { pmsPollIntervalMs: 200, pmsPollIdleMultiplier: 4 });
+
+      await vi.advanceTimersByTimeAsync(250);
+
+      expect(store.resultsPollMode).toBe("active");
+
+      store.stopPolling();
     });
   });
 });

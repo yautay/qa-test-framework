@@ -273,4 +273,36 @@ describe("ResultsTable", () => {
     expect(icon.exists()).toBe(true);
     expect(icon.attributes("title")).toBe("pms.successTest");
   });
+
+  it("shows PMS pending icon for processing status", () => {
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [makeRow({ perceptual: { status: "processing" } })],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {},
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    const icon = wrapper.find(".pms-pending-icon");
+    expect(icon.exists()).toBe(true);
+    expect(icon.attributes("title")).toBe("pms.pendingTest");
+  });
+
+  it("reads PMS status from test_metadata.perceptual", () => {
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [makeRow({ perceptual: null, test_metadata: { perceptual: { status: "error", error_message: "nested" } } })],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {},
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    const icon = wrapper.find(".pms-error-icon");
+    expect(icon.exists()).toBe(true);
+    expect(icon.attributes("title")).toBe("pms.errorTest: nested");
+  });
 });

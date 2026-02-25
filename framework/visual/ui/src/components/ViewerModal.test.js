@@ -288,6 +288,43 @@ describe("ViewerModal", () => {
       expect(success.attributes("title")).toBe("pms.successTest");
     });
 
+    it("shows PMS pending icon for processing perceptual status", () => {
+      const viewer = {
+        ...defaultViewer,
+        modalRow: {
+          ...defaultViewer.modalRow,
+          perceptual: { status: "processing" },
+        },
+      };
+      const wrapper = mount(ViewerModal, {
+        props: { ...defaultProps, viewer },
+      });
+
+      const pending = wrapper.find(".modal-header-badges .pms-pending-icon");
+      expect(pending.exists()).toBe(true);
+      expect(pending.attributes("title")).toBe("pms.pendingTest");
+    });
+
+    it("reads PMS status from test_metadata.perceptual", () => {
+      const viewer = {
+        ...defaultViewer,
+        modalRow: {
+          ...defaultViewer.modalRow,
+          perceptual: null,
+          test_metadata: {
+            perceptual: { status: "error", error_message: "nested modal" },
+          },
+        },
+      };
+      const wrapper = mount(ViewerModal, {
+        props: { ...defaultProps, viewer },
+      });
+
+      const error = wrapper.find(".modal-header-badges .pms-error-icon");
+      expect(error.exists()).toBe(true);
+      expect(error.attributes("title")).toBe("pms.errorTest: nested modal");
+    });
+
     it("shows PMS pending icon in modal header", () => {
       const viewer = {
         ...defaultViewer,

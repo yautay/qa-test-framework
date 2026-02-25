@@ -218,12 +218,13 @@ export default {
       return this.viewer.pendingTags?.[key] || {};
     },
     viewerPerceptualStatus() {
-      const status = this.viewer?.modalRow?.perceptual?.status;
+      const payload = this._perceptualPayload(this.viewer?.modalRow || {});
+      const status = payload?.status;
       return String(status || "").trim().toLowerCase();
     },
     viewerHasPmsPending() {
       const status = this.viewerPerceptualStatus;
-      return status === "queued" || status === "running";
+      return status === "queued" || status === "running" || status === "pending" || status === "submitted" || status === "processing";
     },
     viewerHasPmsError() {
       const status = this.viewerPerceptualStatus;
@@ -236,7 +237,8 @@ export default {
       return this.t("pms.pendingTest");
     },
     viewerPmsErrorTitle() {
-      const message = String(this.viewer?.modalRow?.perceptual?.error_message || "").trim();
+      const payload = this._perceptualPayload(this.viewer?.modalRow || {});
+      const message = String(payload?.error_message || "").trim();
       if (message) return `${this.t("pms.errorTest")}: ${message}`;
       return this.t("pms.errorTestUnknown");
     },
@@ -276,7 +278,7 @@ export default {
       const errorMessage = String(payload?.error_message || "").trim();
       const hasScores = row.lpips != null || row.dists != null;
 
-      const pendingStatuses = new Set(["queued", "pending", "submitted", "running"]);
+      const pendingStatuses = new Set(["queued", "pending", "submitted", "running", "processing"]);
       const warningStatuses = new Set(["error", "timeout", "skipped", "failed"]);
 
       if (pendingStatuses.has(status)) {

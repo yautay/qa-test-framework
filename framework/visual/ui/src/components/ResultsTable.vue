@@ -222,13 +222,13 @@ export default {
       return computeBadgeStyle(type, value);
     },
     getPerceptualStatus(row) {
-      const perceptual = row?.perceptual;
+      const perceptual = this._perceptualPayload(row);
       if (!perceptual || typeof perceptual !== "object") return "";
       return String(perceptual.status || "").trim().toLowerCase();
     },
     rowHasPmsPending(row) {
       const status = this.getPerceptualStatus(row);
-      return status === "queued" || status === "running";
+      return status === "queued" || status === "running" || status === "pending" || status === "submitted" || status === "processing";
     },
     rowHasPmsError(row) {
       const status = this.getPerceptualStatus(row);
@@ -241,7 +241,8 @@ export default {
       return t("pms.pendingTest");
     },
     getPmsErrorTitle(row) {
-      const message = String(row?.perceptual?.error_message || "").trim();
+      const payload = this._perceptualPayload(row);
+      const message = String(payload?.error_message || "").trim();
       if (message) return `${t("pms.errorTest")}: ${message}`;
       return t("pms.errorTestUnknown");
     },
@@ -316,7 +317,7 @@ export default {
       const errorMessage = String(payload?.error_message || "").trim();
       const hasScores = row?.lpips != null || row?.dists != null;
 
-      const pendingStatuses = new Set(["queued", "pending", "submitted", "running"]);
+      const pendingStatuses = new Set(["queued", "pending", "submitted", "running", "processing"]);
       const warningStatuses = new Set(["error", "timeout", "skipped", "failed"]);
 
       if (pendingStatuses.has(status)) {
