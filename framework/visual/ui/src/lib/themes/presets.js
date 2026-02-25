@@ -49,7 +49,7 @@ export const presets = {
     bodyColor: "#f8f9fa",
     cardBg: "#343a40",
     border: "rgba(255,255,255,0.08)",
-    textMuted: "#adb5bd",
+    textMuted: "#rgba(103, 125, 147, 0.91)",
     heroGradient: "linear-gradient(135deg, #2d3748 0%, #1a202c 100%)",
     dropdownGradient: "linear-gradient(135deg, #3a3f47 0%, #2d3238 100%)",
     successSubtle: "#1f3a2e",
