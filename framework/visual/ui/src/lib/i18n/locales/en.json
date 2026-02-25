@@ -157,6 +157,21 @@
     "pendingTest": "PMS processing in progress",
     "errorTest": "PMS error",
     "errorTestUnknown": "PMS error: unknown",
-    "successTest": "PMS processed successfully"
+    "successTest": "PMS processed successfully",
+    "pendingTooltip": "Perceptual comparison in progress",
+    "issueTooltip": "Perceptual comparison issue",
+    "missingTooltip": "Perceptual score missing for this test",
+    "status": {
+      "queued": "queued",
+      "pending": "pending",
+      "submitted": "submitted",
+      "running": "running",
+      "done": "done",
+      "error": "error",
+      "timeout": "timeout",
+      "skipped": "skipped",
+      "failed": "failed",
+      "unknown": "unknown"
+    }
   }
 }

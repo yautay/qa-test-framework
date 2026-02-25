@@ -288,6 +288,47 @@ describe("ViewerModal", () => {
       expect(success.attributes("title")).toBe("pms.successTest");
     });
 
+    it("shows PMS pending icon in modal header", () => {
+      const viewer = {
+        ...defaultViewer,
+        modalRow: {
+          ...defaultViewer.modalRow,
+          compare_mode: "hybrid",
+          lpips: null,
+          dists: null,
+          perceptual: { status: "running" },
+        },
+      };
+      const wrapper = mount(ViewerModal, {
+        props: { ...defaultProps, viewer },
+      });
+
+      const badges = wrapper.findAll(".modal-header-badges .badge");
+      const icon = badges.find((node) => node.text().includes("⏳"));
+      expect(icon).toBeTruthy();
+      expect(icon.attributes("title")).toBe("pms.pendingTest");
+    });
+
+    it("does not show warning icon when perceptual score is missing", () => {
+      const viewer = {
+        ...defaultViewer,
+        modalRow: {
+          ...defaultViewer.modalRow,
+          compare_mode: "hybrid",
+          lpips: null,
+          dists: null,
+          perceptual: null,
+        },
+      };
+      const wrapper = mount(ViewerModal, {
+        props: { ...defaultProps, viewer },
+      });
+
+      const badges = wrapper.findAll(".modal-header-badges .badge");
+      const icon = badges.find((node) => node.text().includes("⚠"));
+      expect(icon).toBeFalsy();
+    });
+
   });
 
   describe("scoringText", () => {

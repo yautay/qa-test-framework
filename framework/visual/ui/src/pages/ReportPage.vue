@@ -95,6 +95,7 @@ import {
 import { NOTE_MAX_LENGTH, normalizeNoteDraft, sanitizeNoteText } from "../lib/notes";
 import { buildReportAssetSrc, buildRefApiSrc } from "../composables/useUrlUtils";
 import { useSyncAlerts } from "../composables/useSyncAlerts";
+import { fetchAppInfo } from "../lib/api/appInfoApi";
 import { SYNC_POLL_INTERVAL_MS } from "../config/syncConfig";
 
 const props = defineProps({
@@ -134,6 +135,28 @@ function rowKey(row) {
     String(row.viewport || ""),
     String(row.browser || ""),
   ].join("::");
+}
+
+function resolvePmsPollingConfig(payload) {
+  const uiConfig = payload?.ui_config && typeof payload.ui_config === "object" ? payload.ui_config : {};
+  const intervalMs = Math.max(100, Number(uiConfig?.pms_poll_interval_ms || SYNC_POLL_INTERVAL_MS));
+  const idleMultiplier = Math.max(1, Number(uiConfig?.pms_poll_idle_multiplier || 1));
+  return {
+    intervalMs,
+    idleMultiplier,
+  };
+}
+
+async function loadPmsPollingConfig() {
+  try {
+    const payload = await fetchAppInfo();
+    return resolvePmsPollingConfig(payload);
+  } catch (_error) {
+    return {
+      intervalMs: SYNC_POLL_INTERVAL_MS,
+      idleMultiplier: 1,
+    };
+  }
 }
 
 function getClientId() {
@@ -855,10 +878,14 @@ function handleMouseMove(payload) {
 onMounted(async () => {
   await ensureLock();
   if (!lockDenied.value) {
+    const pmsPollingConfig = await loadPmsPollingConfig();
     await loadResults();
     startResultsRefresh();
     await loadState();
-    store.startPolling(props.runId, SYNC_POLL_INTERVAL_MS);
+    store.startPolling(props.runId, SYNC_POLL_INTERVAL_MS, {
+      pmsPollIntervalMs: pmsPollingConfig.intervalMs,
+      pmsPollIdleMultiplier: pmsPollingConfig.idleMultiplier,
+    });
   }
   window.addEventListener("keydown", handleKeydown);
   window.addEventListener("keyup", handleKeyup);

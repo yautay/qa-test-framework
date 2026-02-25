@@ -252,6 +252,12 @@ pms_health_timeout_seconds = 2
 # Skutek: nizszy interval = szybsza reakcja, ale wiecej zapytan.
 pms_poll_interval_ms = 5000
 
+# pms_poll_idle_multiplier:
+# - Mnoznik interwalu pollingu PMS, gdy brak aktywnych zadan.
+# - Przyklad: 3.0 => polling idle co 3x dluzej niz bazowy interwal.
+# Skutek: zmniejsza obciazenie przy bezczynnosci kosztem wolniejszej reakcji po starcie nowych zadan.
+pms_poll_idle_multiplier = 3.0
+
 # Reporting API (optional).
 
 # reporting_enabled:

@@ -169,6 +169,21 @@
     "pendingTest": "PMS обробляє тест",
     "errorTest": "Помилка PMS",
     "errorTestUnknown": "Помилка PMS: невідома",
-    "successTest": "PMS успішно завершено"
+    "successTest": "PMS успішно завершено",
+    "pendingTooltip": "Перцептивне порівняння виконується",
+    "issueTooltip": "Проблема перцептивного порівняння",
+    "missingTooltip": "Для цього тесту відсутній перцептивний score",
+    "status": {
+      "queued": "у черзі",
+      "pending": "очікує",
+      "submitted": "надіслано",
+      "running": "виконується",
+      "done": "завершено",
+      "error": "помилка",
+      "timeout": "таймаут",
+      "skipped": "пропущено",
+      "failed": "невдача",
+      "unknown": "невідомо"
+    }
   }
 }

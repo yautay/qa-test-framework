@@ -16,6 +16,15 @@ vi.mock("../lib/api/reportsApi", () => ({
   sendBuildReport: vi.fn(async () => ({ accepted: true, pdf: { pages: 0 }, test_cases: {} })),
 }));
 
+vi.mock("../lib/api/appInfoApi", () => ({
+  fetchAppInfo: vi.fn(async () => ({
+    ui_config: {
+      pms_poll_interval_ms: 5000,
+      pms_poll_idle_multiplier: 3,
+    },
+  })),
+}));
+
 vi.mock("../lib/baselineApi", () => ({
   requestBaselineChallengeForRun: vi.fn(),
   sendBaselineSelectionForRun: vi.fn(),

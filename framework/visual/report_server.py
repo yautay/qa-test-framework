@@ -81,6 +81,8 @@ class ReportServerContext:
     pms_timeout_sec: int = 15
     pms_health_timeout_seconds: int = 2
     pms_retry_max: int = 2
+    pms_poll_interval_ms: int = 5000
+    pms_poll_idle_multiplier: float = 1.0
     _lock: Any = field(default_factory=Lock)
 
     def resolve_run_dir(self, run_id: str) -> Path | None:
@@ -190,6 +192,10 @@ def _build_app_info_payload(context: ReportServerContext) -> dict[str, Any]:
     return {
         "runtime": runtime,
         "ui_build": ui_build,
+        "ui_config": {
+            "pms_poll_interval_ms": max(100, int(context.pms_poll_interval_ms or 5000)),
+            "pms_poll_idle_multiplier": max(1.0, float(context.pms_poll_idle_multiplier or 1.0)),
+        },
     }
 
 
@@ -2091,6 +2097,8 @@ def main() -> int:
         pms_timeout_sec=int(env.pms_timeout_sec),
         pms_health_timeout_seconds=int(env.pms_health_timeout_seconds),
         pms_retry_max=int(env.pms_retry_max),
+        pms_poll_interval_ms=int(env.pms_poll_interval_ms),
+        pms_poll_idle_multiplier=float(env.pms_poll_idle_multiplier),
         bug_pdf_config_path=(
             REPO_ROOT / "framework" / "visual" / "ui" / "src" / "config" / "bug_report_pdf_config.json"
         ),

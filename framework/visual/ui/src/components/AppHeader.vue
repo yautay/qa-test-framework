@@ -451,10 +451,10 @@ export default {
           metrics: "unknown",
           jobStore: "unknown",
           gitTag: "unknown",
-          statusCode: "-",
-          checkedAt: new Date().toLocaleString(),
-          error: String(error?.message || "healthcheck failed"),
-          ok: false,
+            statusCode: "-",
+            checkedAt: new Date().toLocaleString(),
+            error: String(error?.message || "healthcheck failed"),
+            ok: false,
         };
       }
     };

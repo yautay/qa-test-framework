@@ -266,6 +266,88 @@ export default {
       const key = this.tagKeyForRow(row);
       return !!this.pendingTags?.[key]?.[tagType];
     },
+    _perceptualPayload(row) {
+      if (row?.perceptual && typeof row.perceptual === "object") {
+        return row.perceptual;
+      }
+      const nested = row?.test_metadata?.perceptual;
+      if (nested && typeof nested === "object") {
+        return nested;
+      }
+      return null;
+    },
+    _expectsPerceptual(row) {
+      const mode = String(row?.compare_mode || "").toLowerCase();
+      return mode === "perceptual" || mode === "hybrid";
+    },
+    _perceptualIssue(row) {
+      if (!this._expectsPerceptual(row)) {
+        return { hasIssue: false, icon: "", className: "", title: "" };
+      }
+      const payload = this._perceptualPayload(row);
+      const status = String(payload?.status || "").toLowerCase();
+      const errorMessage = String(payload?.error_message || "").trim();
+      const hasScores = row?.lpips != null || row?.dists != null;
+
+      const pendingStatuses = new Set(["queued", "pending", "submitted", "running"]);
+      const warningStatuses = new Set(["error", "timeout", "skipped", "failed"]);
+
+      if (pendingStatuses.has(status)) {
+        const detail = this._perceptualStatusLabel(status);
+        return {
+          hasIssue: true,
+          icon: "⏳",
+          className: "bg-info text-dark",
+          title: `${this.t("pms.pendingTooltip")}: ${detail}`,
+        };
+      }
+
+      if (warningStatuses.has(status)) {
+        const detail = this._perceptualStatusLabel(status);
+        const suffix = errorMessage ? ` - ${errorMessage}` : "";
+        return {
+          hasIssue: true,
+          icon: "⚠",
+          className: "bg-warning text-dark",
+          title: `${this.t("pms.issueTooltip")}: ${detail}${suffix}`,
+        };
+      }
+
+      if (!payload && !hasScores) {
+        return {
+          hasIssue: true,
+          icon: "⚠",
+          className: "bg-warning text-dark",
+          title: this.t("pms.missingTooltip"),
+        };
+      }
+
+      return { hasIssue: false, icon: "", className: "", title: "" };
+    },
+    _perceptualStatusLabel(status) {
+      const normalized = String(status || "").toLowerCase();
+      if (!normalized) {
+        return this.t("pms.status.unknown");
+      }
+      const key = `pms.status.${normalized}`;
+      const translated = this.t(key);
+      if (translated && translated !== key) {
+        return translated;
+      }
+      return normalized;
+    },
+    rowHasPerceptualIssue(row) {
+      return this._perceptualIssue(row).hasIssue;
+    },
+    getPerceptualIssueMessage(row) {
+      return this._perceptualIssue(row).title;
+    },
+    getPerceptualIssueIcon(row) {
+      return this._perceptualIssue(row).icon;
+    },
+    perceptualIssueClass(row) {
+      return this._perceptualIssue(row).className;
+    },
   },
 };
 </script>
@@ -350,10 +432,6 @@ export default {
 
 .table-active {
   background-color: var(--body-bg) !important;
-}
-
-.sync-error-icon {
-  cursor: help;
 }
 
 .pms-pending-icon,
