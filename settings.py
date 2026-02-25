@@ -103,12 +103,6 @@ visual_cache_dir = ".visual_cache"
 # Skutek: True wymusza dyscypline danych referencyjnych.
 visual_fail_on_missing_baseline = False
 
-# visual_warn_as_fail:
-# - True: warning visual traktowany jak fail.
-# - False: warning zostaje warningiem.
-# Skutek: True podnosi rygor, ale moze zwiekszyc liczbe zatrzymanych pipeline'ow.
-visual_warn_as_fail = False
-
 # Uncertain zone - strefa niepewnosci (score blisko progu).
 
 # visual_uncertain_enabled:
@@ -182,12 +176,6 @@ visual_minio_secure = True
 # - False: brak zapytan do PMS.
 # Skutek: True daje dodatkowe metryki percepcyjne kosztem czasu i zaleznosci sieciowej.
 pms_enabled = True
-
-# pms_required:
-# - True: PMS jest wymagany (brak odpowiedzi = fail).
-# - False: PMS opcjonalny.
-# Skutek: True podnosi rygor, ale zwieksza wrazliwosc pipeline'u na awarie PMS.
-pms_required = False
 
 # pms_base_url:
 # - Bazowy URL uslugi PMS.

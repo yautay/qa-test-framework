@@ -175,7 +175,12 @@
     "pixelThresholdPassed": "Поріг пікселів пройдено",
     "pixelWithinUncertaintyZone": "Пікселі в зоні невизначеності",
     "baselineMissing": "Бракує baseline",
-    "perceptualAnalysisInProgress": "Перцептивний аналіз триває"
+    "perceptualAnalysisInProgress": "Перцептивний аналіз триває",
+    "perceptualThresholdsExceeded": "Перцептивні пороги перевищено",
+    "perceptualThresholdsPassed": "Перцептивні пороги пройдено",
+    "perceptualWithinUncertaintyZone": "Перцептивний результат у зоні невизначеності",
+    "pixelAndPerceptualThresholdsPassed": "Піксельні та перцептивні пороги пройдено",
+    "pixelExceededPerceptualPassed": "Піксель перевищено, перцептивний поріг пройдено"
   },
   "sync": {
     "errorPrefix": "Помилка синхронізації",

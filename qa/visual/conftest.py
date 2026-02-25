@@ -84,8 +84,6 @@ def visual_results(pytestconfig: pytest.Config) -> list:
             )
         except Exception as exc:
             logger.error("perceptual_postprocess_failed", run_id=str(run_artifacts.run_id), error=str(exc))
-            if env.pms_required:
-                raise
         write_visual_report(report_dir, results)
 
 

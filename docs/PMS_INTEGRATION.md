@@ -23,7 +23,6 @@ Compatibility fields (`lpips`, `dists`, `heatmap_path`) are also populated for e
 ### Environment variables
 
 - `PMS_ENABLED`
-- `PMS_REQUIRED`
 - `PMS_BASE_URL`
 - `PMS_METRIC` (`lpips|dists|both`)
 - `PMS_MODEL` (default `alex`)

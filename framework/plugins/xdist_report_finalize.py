@@ -131,10 +131,6 @@ def _result_from_dict(data: dict[str, object]) -> VisualResult | None:
             "new",
             "uncertain",
             "analysis",
-            "warn",
-            "approved",
-            "xfailed",
-            "xpassed",
         }:
             status_raw = "failed"
         if compare_mode_raw not in {"pixel", "hybrid"}:
@@ -279,8 +275,6 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
             )
         except Exception as exc:
             logger.warning("perceptual_postprocess_failed", run_root=str(run_root), error=str(exc))
-            if env.pms_required:
-                raise
 
         try:
             write_visual_report(report_dir, merged_results)

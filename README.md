@@ -69,7 +69,7 @@ Key values for regular execution:
 - `server_type`, `server_name` (in `settings_cli.py`)
 - `BROWSER`, `HEADLESS`
 - `VISUAL_ENABLED`
-- `PMS_ENABLED`, `PMS_REQUIRED`, `PMS_BASE_URL` (+ throttling knobs in `.env.example`)
+- `PMS_ENABLED`, `PMS_BASE_URL` (+ throttling knobs in `.env.example`)
 
 ## Visual regression
 

@@ -395,4 +395,30 @@ describe("ResultsTable", () => {
     expect(wrapper.vm.rowHasPerceptualIssue(row)).toBe(false);
     expect(wrapper.vm.getPerceptualIssueMessage(row)).toBe("");
   });
+
+  it("maps backend perceptual messages to i18n keys", () => {
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [makeRow()],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {},
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    vi.spyOn(wrapper.vm, "t").mockImplementation((key) => `tr:${key}`);
+
+    expect(wrapper.vm.messageLabel("Perceptual thresholds exceeded")).toBe("tr:message.perceptualThresholdsExceeded");
+    expect(wrapper.vm.messageLabel("Perceptual thresholds passed")).toBe("tr:message.perceptualThresholdsPassed");
+    expect(wrapper.vm.messageLabel("Perceptual within uncertainty zone")).toBe(
+      "tr:message.perceptualWithinUncertaintyZone",
+    );
+    expect(wrapper.vm.messageLabel("Pixel and perceptual thresholds passed")).toBe(
+      "tr:message.pixelAndPerceptualThresholdsPassed",
+    );
+    expect(wrapper.vm.messageLabel("Pixel exceeded, perceptual passed")).toBe(
+      "tr:message.pixelExceededPerceptualPassed",
+    );
+  });
 });

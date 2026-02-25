@@ -175,7 +175,12 @@
     "pixelThresholdPassed": "Próg pikseli zaliczony",
     "pixelWithinUncertaintyZone": "Piksele w strefie niepewności",
     "baselineMissing": "Brak baseline",
-    "perceptualAnalysisInProgress": "Analiza percepcyjna w toku"
+    "perceptualAnalysisInProgress": "Analiza percepcyjna w toku",
+    "perceptualThresholdsExceeded": "Przekroczono progi percepcyjne",
+    "perceptualThresholdsPassed": "Progi percepcyjne zaliczone",
+    "perceptualWithinUncertaintyZone": "Wynik percepcyjny w strefie niepewności",
+    "pixelAndPerceptualThresholdsPassed": "Progi pikselowe i percepcyjne zaliczone",
+    "pixelExceededPerceptualPassed": "Przekroczono piksele, percepcja zaliczona"
   },
   "sync": {
     "errorPrefix": "Błąd synchronizacji",

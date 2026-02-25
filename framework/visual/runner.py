@@ -302,17 +302,6 @@ def _evaluate(
     dists_ok = dists is not None and dists <= dists_max
     perceptual_ok = lpips_ok and dists_ok
 
-    if mode == "perceptual":
-        if perceptual_ok:
-            return "passed", "Perceptual thresholds passed"
-        if uncertain_enabled:
-            in_uncertain = _in_uncertain_zone(lpips, lpips_max, lpips_uncertain_delta) or _in_uncertain_zone(
-                dists, dists_max, dists_uncertain_delta
-            )
-            if in_uncertain:
-                return "uncertain", "Perceptual within uncertainty zone"
-        return "failed", "Perceptual thresholds exceeded"
-
     # hybrid
     pixel_ok = pixel_changed_ratio <= pixel_max
     if perceptual_ok and pixel_ok:

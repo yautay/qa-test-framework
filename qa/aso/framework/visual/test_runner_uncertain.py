@@ -124,38 +124,3 @@ class TestUncertainHybrid:
             dists_uncertain_delta=0.01,
         )
         assert status == "passed"
-
-
-class TestUncertainPerceptual:
-    def test_uncertain_when_lpips_in_zone(self):
-        status, msg = _evaluate(
-            mode="perceptual",
-            pixel_changed_ratio=0.001,
-            lpips=0.085,
-            dists=0.05,
-            pixel_max=0.005,
-            lpips_max=0.08,
-            dists_max=0.08,
-            uncertain_enabled=True,
-            pixel_uncertain_delta=0.001,
-            lpips_uncertain_delta=0.01,
-            dists_uncertain_delta=0.01,
-        )
-        assert status == "uncertain"
-        assert "uncertainty" in msg.lower()
-
-    def test_failed_when_perceptual_exceeded(self):
-        status, msg = _evaluate(
-            mode="perceptual",
-            pixel_changed_ratio=0.001,
-            lpips=0.10,
-            dists=0.10,
-            pixel_max=0.005,
-            lpips_max=0.08,
-            dists_max=0.08,
-            uncertain_enabled=True,
-            pixel_uncertain_delta=0.001,
-            lpips_uncertain_delta=0.01,
-            dists_uncertain_delta=0.01,
-        )
-        assert status == "failed"

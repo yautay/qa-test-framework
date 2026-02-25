@@ -321,8 +321,6 @@ def run_perceptual_postprocess(
 
     if not client.enabled:
         msg = "PMS is enabled but PMS_BASE_URL is empty"
-        if env.pms_required:
-            raise PMSClientError(msg)
         affected = _fallback_hybrid_to_pixel(results, env, msg)
         logger.error(
             "perceptual_postprocess_unavailable",
@@ -337,8 +335,6 @@ def run_perceptual_postprocess(
 
     if not client.health():
         msg = "PMS healthcheck failed; skipping perceptual postprocess"
-        if env.pms_required:
-            raise PMSClientError(msg)
         affected = _fallback_hybrid_to_pixel(results, env, msg)
         logger.error(
             "perceptual_postprocess_unavailable",

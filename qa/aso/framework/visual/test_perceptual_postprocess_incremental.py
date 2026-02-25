@@ -16,7 +16,6 @@ def _runtime_env():
     return replace(
         load_env(),
         pms_enabled=True,
-        pms_required=False,
         pms_base_url="http://pms.local",
         pms_metric="lpips",
         pms_model="default",

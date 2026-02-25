@@ -196,6 +196,11 @@ export default {
         "pixel within uncertainty zone": "message.pixelWithinUncertaintyZone",
         "baseline missing": "message.baselineMissing",
         "perceptual analysis in progress": "message.perceptualAnalysisInProgress",
+        "perceptual thresholds exceeded": "message.perceptualThresholdsExceeded",
+        "perceptual thresholds passed": "message.perceptualThresholdsPassed",
+        "perceptual within uncertainty zone": "message.perceptualWithinUncertaintyZone",
+        "pixel and perceptual thresholds passed": "message.pixelAndPerceptualThresholdsPassed",
+        "pixel exceeded, perceptual passed": "message.pixelExceededPerceptualPassed",
       };
       const key = mapping[normalized];
       if (!key) return String(message || "");

@@ -77,14 +77,12 @@ class RuntimeEnv:
     visual_baseline_version: str
     visual_cache_dir: str
     visual_fail_on_missing_baseline: bool
-    visual_warn_as_fail: bool
     visual_minio_endpoint: str
     visual_minio_access_key: str
     visual_minio_secret_key: str
     visual_minio_bucket: str
     visual_minio_secure: bool
     pms_enabled: bool
-    pms_required: bool
     pms_base_url: str
     pms_metric: str
     pms_model: str
@@ -264,10 +262,6 @@ def load_env() -> RuntimeEnv:
             "VISUAL_FAIL_ON_MISSING_BASELINE",
             bool(settings.visual_fail_on_missing_baseline),
         ),
-        visual_warn_as_fail=env_bool(
-            "VISUAL_WARN_AS_FAIL",
-            bool(settings.visual_warn_as_fail),
-        ),
         visual_minio_endpoint=env_str(
             "VISUAL_MINIO_ENDPOINT",
             str(settings.visual_minio_endpoint),
@@ -291,10 +285,6 @@ def load_env() -> RuntimeEnv:
         pms_enabled=env_bool(
             "PMS_ENABLED",
             bool(settings.pms_enabled),
-        ),
-        pms_required=env_bool(
-            "PMS_REQUIRED",
-            bool(settings.pms_required),
         ),
         pms_base_url=env_str(
             "PMS_BASE_URL",
