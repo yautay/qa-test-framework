@@ -1103,6 +1103,64 @@ describe("resultsStore", () => {
       store.stopPolling();
     });
 
+    it("stays active mode when compare_mode is missing but perceptual is pending", async () => {
+      vi.useFakeTimers();
+      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", perceptual: { status: "running" } }]);
+
+      const store = useResultsStore();
+      store.startPolling("run-1", 200, { pmsPollIntervalMs: 200, pmsPollIdleMultiplier: 4 });
+
+      await vi.advanceTimersByTimeAsync(250);
+
+      expect(store.resultsPollMode).toBe("active");
+
+      store.stopPolling();
+    });
+
+    it("switches to idle mode when compare_mode is pixel even if perceptual payload exists", async () => {
+      vi.useFakeTimers();
+      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "pixel", perceptual: { status: "running" } }]);
+
+      const store = useResultsStore();
+      store.startPolling("run-1", 200, { pmsPollIntervalMs: 200, pmsPollIdleMultiplier: 4 });
+
+      await vi.advanceTimersByTimeAsync(250);
+
+      expect(store.resultsPollMode).toBe("idle");
+
+      store.stopPolling();
+    });
+
+    it("logs polling snapshot with perceptualRows=0 for pixel compare_mode even when perceptual payload exists", async () => {
+      vi.useFakeTimers();
+      document.cookie = "debug=1; path=/";
+      const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
+      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "pixel", perceptual: { status: "running" } }]);
+
+      const store = useResultsStore();
+      store.startPolling("run-1", 200, { pmsPollIntervalMs: 200, pmsPollIdleMultiplier: 3 });
+
+      await vi.advanceTimersByTimeAsync(250);
+
+      expect(debugSpy).toHaveBeenCalledWith(
+        "[POLLING]",
+        "results polling tick",
+        expect.objectContaining({
+          runId: "run-1",
+          mode: "idle",
+          hasPendingJobs: false,
+          pendingJobs: 0,
+          perceptualRows: 0,
+          rowsCount: 1,
+          baseMs: 200,
+          idleMultiplier: 3,
+          nextMs: 600,
+        }),
+      );
+
+      store.stopPolling();
+    });
+
     it("does not emit polling debug logs when debug cookie is disabled", async () => {
       vi.useFakeTimers();
       const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});

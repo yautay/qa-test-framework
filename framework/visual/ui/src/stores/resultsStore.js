@@ -126,6 +126,20 @@ function isPerceptualMode(compareMode) {
   return mode === "perceptual" || mode === "hybrid";
 }
 
+function shouldTrackPerceptualRow(row) {
+  const mode = String(row?.compare_mode || "").trim().toLowerCase();
+  if (isPerceptualMode(mode)) return true;
+  if (mode === "pixel") return false;
+  const payload = getPerceptualPayload(row);
+  if (!payload || typeof payload !== "object") return false;
+  const status = String(payload?.status || "").trim().toLowerCase();
+  const hasStatus = !!status;
+  const hasJobId = String(payload?.job_id || "").trim().length > 0;
+  const hasScores = row?.lpips != null || row?.dists != null;
+  const hasHeatmap = String(row?.heatmap_path || "").trim().length > 0;
+  return hasStatus || hasJobId || hasScores || hasHeatmap;
+}
+
 function getPerceptualPollingStats(rows) {
   if (!Array.isArray(rows) || !rows.length) {
     return {
@@ -138,7 +152,7 @@ function getPerceptualPollingStats(rows) {
   let pendingJobs = 0;
   let perceptualRows = 0;
   for (const row of rows) {
-    if (!isPerceptualMode(row?.compare_mode)) continue;
+    if (!shouldTrackPerceptualRow(row)) continue;
     perceptualRows += 1;
     const payload = getPerceptualPayload(row);
     const status = String(payload?.status || "").trim().toLowerCase();
