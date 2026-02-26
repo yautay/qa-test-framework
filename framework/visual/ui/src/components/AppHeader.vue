@@ -83,15 +83,20 @@
             <div class="app-info-row">{{ t('appInfo.builtAt') }}: {{ buildInfo.builtAt }}</div>
             <div class="app-info-divider"></div>
             <div class="app-info-row"><strong>{{ t('appInfo.pmsHealth') }}</strong></div>
-            <div class="app-info-row">{{ t('appInfo.status') }}: {{ pmsHealth.status }}</div>
-            <div class="app-info-row">{{ t('appInfo.http') }}: {{ pmsHealth.statusCode }}</div>
-            <div class="app-info-row">{{ t('appInfo.device') }}: {{ pmsHealth.device }}</div>
-            <div class="app-info-row">{{ t('appInfo.metrics') }}: {{ pmsHealth.metrics }}</div>
-            <div class="app-info-row">{{ t('appInfo.jobStore') }}: {{ pmsHealth.jobStore }}</div>
-            <div class="app-info-row">{{ t('appInfo.git') }}: {{ pmsHealth.gitTag }}</div>
-            <div class="app-info-row">{{ t('appInfo.lastCheck') }}: {{ pmsHealth.checkedAt }}</div>
-            <div v-if="pmsHealth.reasonText" class="app-info-row">{{ t('appInfo.healthDetail') }}: {{ pmsHealth.reasonText }}</div>
-            <div v-if="pmsHealth.error" class="app-info-row">{{ t('appInfo.error') }}: {{ pmsHealth.error }}</div>
+            <template v-if="pmsHealthDisabled">
+              <div class="app-info-row">{{ t('appInfo.pmsDisabled') }}</div>
+            </template>
+            <template v-else>
+              <div class="app-info-row">{{ t('appInfo.status') }}: {{ pmsHealth.status }}</div>
+              <div class="app-info-row">{{ t('appInfo.http') }}: {{ pmsHealth.statusCode }}</div>
+              <div class="app-info-row">{{ t('appInfo.device') }}: {{ pmsHealth.device }}</div>
+              <div class="app-info-row">{{ t('appInfo.metrics') }}: {{ pmsHealth.metrics }}</div>
+              <div class="app-info-row">{{ t('appInfo.jobStore') }}: {{ pmsHealth.jobStore }}</div>
+              <div class="app-info-row">{{ t('appInfo.git') }}: {{ pmsHealth.gitTag }}</div>
+              <div class="app-info-row">{{ t('appInfo.lastCheck') }}: {{ pmsHealth.checkedAt }}</div>
+              <div v-if="pmsHealth.reasonText" class="app-info-row">{{ t('appInfo.healthDetail') }}: {{ pmsHealth.reasonText }}</div>
+              <div v-if="pmsHealth.error" class="app-info-row">{{ t('appInfo.error') }}: {{ pmsHealth.error }}</div>
+            </template>
           </div>
         </div>
       </div>
@@ -317,10 +322,13 @@ export default {
       statusCode: "-",
       checkedAt: "never",
       reasonText: "",
+      reasonCode: "",
       error: "",
       ok: null,
+      enabled: null,
     });
-    const pmsHealthFailed = computed(() => pmsHealth.value.ok === false);
+    const pmsHealthDisabled = computed(() => pmsHealth.value.reasonCode === "pms_disabled" || pmsHealth.value.enabled === false);
+    const pmsHealthFailed = computed(() => !pmsHealthDisabled.value && pmsHealth.value.ok === false);
 
     const selectTheme = (key) => {
       setTheme(key);
@@ -453,8 +461,10 @@ export default {
           statusCode: String(response?.status_code || "-"),
           checkedAt,
           reasonText,
-          error: String(response?.error_message || "").trim(),
+          reasonCode,
+          error: reasonCode === "pms_disabled" ? "" : String(response?.error_message || "").trim(),
           ok: response?.ok === true,
+          enabled: response?.enabled === false ? false : true,
         };
       } catch (error) {
         pmsHealth.value = {
@@ -466,8 +476,10 @@ export default {
             statusCode: "-",
             checkedAt: new Date().toLocaleString(),
             reasonText: t("appInfo.pmsUnreachable"),
+            reasonCode: "",
             error: String(error?.message || "healthcheck failed"),
             ok: false,
+            enabled: true,
         };
       }
     };
@@ -504,6 +516,7 @@ export default {
       runtimeInfo,
       buildInfo,
       pmsHealth,
+      pmsHealthDisabled,
       pmsHealthFailed,
       isOpen,
       selectTheme,
@@ -578,7 +591,7 @@ export default {
 
 .theme-dropdown .dropdown-item.active {
   background-color: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .datetime {
@@ -649,7 +662,7 @@ export default {
 .app-info.app-info-error {
   border-color: var(--danger);
   color: var(--danger);
-  background: rgba(220, 53, 69, 0.12);
+  background: var(--danger-subtle);
 }
 
 .app-info-icon {
@@ -706,13 +719,13 @@ export default {
 .language-selector .btn:hover {
   background-color: var(--primary);
   border-color: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .language-selector .btn.btn-primary,
 .language-selector .btn.active {
   background-color: var(--primary);
   border-color: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
 }
 </style>

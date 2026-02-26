@@ -44,8 +44,15 @@ export default {
   --success: #198754;
   --danger: #dc3545;
   --warning: #ffc107;
+  --on-primary: #ffffff;
+  --on-secondary: #ffffff;
+  --on-success: #ffffff;
+  --on-danger: #ffffff;
+  --on-warning: #212529;
   --body-bg: #ffffff;
   --body-color: #212529;
+  --hero-text: #212529;
+  --hero-muted: #495057;
   --card-bg: #ffffff;
   --border: rgba(0, 0, 0, 0.08);
   --text-muted: #6c757d;
@@ -177,6 +184,7 @@ body {
 .btn-primary {
   background-color: var(--primary);
   border-color: var(--primary);
+  color: var(--on-primary);
 }
 
 .btn-primary:hover {
@@ -187,6 +195,15 @@ body {
 .btn-success {
   background-color: var(--success);
   border-color: var(--success);
+  color: var(--on-success);
+}
+
+.btn-danger {
+  color: var(--on-danger);
+}
+
+.btn-warning {
+  color: var(--on-warning);
 }
 
 .btn-outline-primary {
@@ -247,7 +264,7 @@ body {
 .btn-outline-warning:hover {
   background-color: var(--warning);
   border-color: var(--warning);
-  color: #000;
+  color: var(--on-warning);
 }
 
 .bg-success-subtle {
@@ -344,6 +361,31 @@ body {
 
 .table-active {
   background-color: var(--body-bg) !important;
+}
+
+.bg-primary,
+.text-bg-primary {
+  color: var(--on-primary) !important;
+}
+
+.bg-secondary,
+.text-bg-secondary {
+  color: var(--on-secondary) !important;
+}
+
+.bg-success,
+.text-bg-success {
+  color: var(--on-success) !important;
+}
+
+.bg-danger,
+.text-bg-danger {
+  color: var(--on-danger) !important;
+}
+
+.bg-warning,
+.text-bg-warning {
+  color: var(--on-warning) !important;
 }
 
 [data-theme="dark"] .btn-close,

@@ -148,7 +148,7 @@
     "git": "git",
     "lastCheck": "last check",
     "healthDetail": "health detail",
-    "pmsDisabled": "PMS is disabled in settings.py",
+    "pmsDisabled": "PMS integration is disabled in the application configuration",
     "pmsBaseUrlMissing": "PMS base URL is missing",
     "pmsUnreachable": "PMS API is unreachable",
     "error": "error",

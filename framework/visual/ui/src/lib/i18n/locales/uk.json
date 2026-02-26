@@ -148,7 +148,7 @@
     "git": "git",
     "lastCheck": "остання перевірка",
     "healthDetail": "деталі стану",
-    "pmsDisabled": "PMS вимкнено в settings.py",
+    "pmsDisabled": "Інтеграцію з PMS вимкнено в конфігурації застосунку",
     "pmsBaseUrlMissing": "Відсутній PMS_BASE_URL",
     "pmsUnreachable": "API PMS недоступне",
     "error": "помилка",
