@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from qa.e2e.netcorner.nuxt.pl.app.data.orders import ORDER_SMOKE_CASES
-from qa.e2e.netcorner.nuxt.pl.app.pages.cart_page import CartPage
-from qa.e2e.netcorner.nuxt.pl.app.pages.checkout_page import CheckoutPage
+from qa.e2e.netcorner.nuxt.pl.lib.test_data.orders import ORDER_SMOKE_CASES
+from qa.e2e.netcorner.nuxt.pl.lib.pages.cart_page import CartPage
+from qa.e2e.netcorner.nuxt.pl.lib.pages.checkout_page import CheckoutPage
 from qa.scenario import scenario
 
 pytestmark = [pytest.mark.e2e, pytest.mark.smoke]

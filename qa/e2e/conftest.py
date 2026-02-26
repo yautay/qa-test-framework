@@ -69,25 +69,40 @@ def context(
     context_started = time.perf_counter()
     viewport_preset = str(pytestconfig.getoption("viewport") or "fhd")
     viewport_width, viewport_height = VIEWPORT_PRESETS.get(viewport_preset, VIEWPORT_PRESETS["fhd"])
-    storage_state_path = None
-    try:
-        storage_state_path = request.getfixturevalue("storage_state")
-    except pytest.FixtureLookupError:
-        storage_state_path = None
+    context = browser.new_context(
+        viewport={"width": viewport_width, "height": viewport_height},
+        ignore_https_errors=runtime_env.ignore_https_errors,
+        record_video_dir=str(run_artifacts.videos) if runtime_env.record_video else None,
+    )
+    context.add_init_script(
+        """() => {
+            const dismiss = () => {
+                const accept = document.querySelector('#onetrust-accept-btn-handler');
+                if (accept && typeof accept.click === 'function') {
+                    accept.click();
+                }
 
-    if storage_state_path:
-        context = browser.new_context(
-            viewport={"width": viewport_width, "height": viewport_height},
-            ignore_https_errors=runtime_env.ignore_https_errors,
-            record_video_dir=str(run_artifacts.videos) if runtime_env.record_video else None,
-            storage_state=str(storage_state_path),
-        )
-    else:
-        context = browser.new_context(
-            viewport={"width": viewport_width, "height": viewport_height},
-            ignore_https_errors=runtime_env.ignore_https_errors,
-            record_video_dir=str(run_artifacts.videos) if runtime_env.record_video else None,
-        )
+                const sdk = document.querySelector('#onetrust-consent-sdk');
+                if (sdk) {
+                    sdk.remove();
+                }
+
+                const backdrop = document.querySelector('.onetrust-pc-dark-filter');
+                if (backdrop) {
+                    backdrop.remove();
+                }
+
+                if (document.body) {
+                    document.body.style.overflow = '';
+                }
+            };
+
+            dismiss();
+            const observer = new MutationObserver(dismiss);
+            observer.observe(document.documentElement, { childList: true, subtree: true });
+            window.addEventListener('load', dismiss, { once: true });
+        }"""
+    )
     context.tracing.start(screenshots=True, snapshots=True, sources=True)
     yield context
 

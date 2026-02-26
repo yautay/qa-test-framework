@@ -7,7 +7,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from qa.e2e.netcorner.nuxt.pl.app.data.scenario_catalog import build_order_smoke_scenarios
+from qa.e2e.netcorner.nuxt.pl.lib.test_data.scenario_catalog import build_order_smoke_scenarios
 
 
 def main() -> int:

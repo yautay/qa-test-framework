@@ -1,0 +1,81 @@
+from __future__ import annotations
+
+from typing import Optional
+
+from playwright.sync_api import Locator, expect
+
+
+class BaseComponent:
+    DEFAULT_TIMEOUT = 10_000
+
+    def __init__(self, root: Locator, name: str = "Component"):
+        self.root = root
+        self.name = name
+
+    # ---------- state ----------
+    def wait_visible(self, timeout: Optional[int] = None) -> "BaseComponent":
+        expect(self.root).to_be_visible(timeout=timeout or self.DEFAULT_TIMEOUT)
+        return self
+
+    def wait_hidden(self, timeout: Optional[int] = None) -> "BaseComponent":
+        expect(self.root).to_be_hidden(timeout=timeout or self.DEFAULT_TIMEOUT)
+        return self
+
+    def assert_visible(self) -> None:
+        expect(self.root).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+
+    def assert_hidden(self) -> None:
+        expect(self.root).to_be_hidden(timeout=self.DEFAULT_TIMEOUT)
+
+    # ---------- safe actions ----------
+    def safe_click(self, locator: Locator, *, timeout: Optional[int] = None) -> None:
+        t = timeout or self.DEFAULT_TIMEOUT
+        expect(locator).to_be_visible(timeout=t)
+        expect(locator).to_be_enabled(timeout=t)
+        locator.scroll_into_view_if_needed()
+        try:
+            locator.click(timeout=t)
+        except Exception:
+            try:
+                locator.page.evaluate(
+                    """() => {
+                        const accept = document.querySelector('#onetrust-accept-btn-handler');
+                        if (accept && typeof accept.click === 'function') {
+                            accept.click();
+                        }
+                        const sdk = document.querySelector('#onetrust-consent-sdk');
+                        if (sdk) {
+                            sdk.remove();
+                        }
+                        const backdrop = document.querySelector('.onetrust-pc-dark-filter');
+                        if (backdrop) {
+                            backdrop.remove();
+                        }
+                    }"""
+                )
+            except Exception:
+                pass
+            locator.click(timeout=t)
+
+    def safe_fill(self, locator: Locator, value: str, *, timeout: Optional[int] = None) -> None:
+        t = timeout or self.DEFAULT_TIMEOUT
+        expect(locator).to_be_visible(timeout=t)
+        locator.scroll_into_view_if_needed()
+        locator.fill(value, timeout=t)
+
+    def safe_type(self, locator: Locator, value: str, *, timeout: Optional[int] = None) -> None:
+        """
+        Przydatne przy inputach z maską lub JS validation.
+        """
+        t = timeout or self.DEFAULT_TIMEOUT
+        expect(locator).to_be_visible(timeout=t)
+        locator.scroll_into_view_if_needed()
+        locator.type(value, timeout=t)
+
+    # ---------- assertions ----------
+    def should_have_text(self, locator: Locator, text: str) -> None:
+        expect(locator).to_have_text(text, timeout=self.DEFAULT_TIMEOUT)
+
+    # ---------- helpers ----------
+    def find(self, selector: str) -> Locator:
+        return self.root.locator(selector)

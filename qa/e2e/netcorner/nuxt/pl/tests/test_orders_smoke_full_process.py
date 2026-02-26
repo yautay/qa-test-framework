@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from qa.e2e.netcorner.nuxt.pl.app.data.orders_smoke_data import ORDER_SMOKE_CASES
-from qa.e2e.netcorner.nuxt.pl.app.services.order_flow_service import OrderFlowService
+from qa.e2e.netcorner.nuxt.pl.lib.test_data.orders_smoke_data import ORDER_SMOKE_CASES
+from qa.e2e.netcorner.nuxt.pl.lib.services.order_flow_service import OrderFlowService
 
 pytestmark = [pytest.mark.e2e, pytest.mark.slow]
 
