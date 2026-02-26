@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import uuid
 
+
 @dataclass
 class RegisterUserData:
     email: str
@@ -16,7 +17,7 @@ class RegisterUserData:
 class RegisterUserDataBuilder:
     def __init__(self) -> None:
         unique = uuid.uuid4().hex[:6]
-        self._email = f"client_{unique}@test.pl" #  Mailhog nie lubi domeny netcorner bo Wosina
+        self._email = f"client_{unique}@test.pl"  #  Mailhog nie lubi domeny netcorner bo Wosina
         self._password = unique
         self._repeated_password = unique
         self._business_offer = False
@@ -51,7 +52,10 @@ class RegisterUserDataBuilder:
             business_offer=self._business_offer,
             accept_required_terms=self._accept_required_terms,
             accept_marketing=self._accept_marketing,
+            nip=self._nip,
+            phone=self._phone,
         )
+
 
 def valid_clients() -> list[RegisterUserData]:
     return [
@@ -59,6 +63,7 @@ def valid_clients() -> list[RegisterUserData]:
         RegisterUserDataBuilder().with_required_terms().with_marketing().build(),
         RegisterUserDataBuilder().with_required_terms().build(),
     ]
+
 
 def invalid_clients() -> list[RegisterUserData]:
     return [
@@ -68,6 +73,7 @@ def invalid_clients() -> list[RegisterUserData]:
         RegisterUserDataBuilder().with_wrong_repeated_password().build(),
     ]
 
+
 def registered_client() -> RegisterUserData:
     return RegisterUserData(
         email="nc-test-user@komputronik.pl",
@@ -76,4 +82,6 @@ def registered_client() -> RegisterUserData:
         business_offer=True,
         accept_required_terms=True,
         accept_marketing=True,
+        nip="7770020640",
+        phone="791233545",
     )

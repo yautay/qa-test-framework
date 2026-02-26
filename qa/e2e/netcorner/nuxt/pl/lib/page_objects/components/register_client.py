@@ -9,39 +9,40 @@ class RegisterClient(BaseComponent):
         super().__init__(root, name="Register Client Component")
 
         # --- pola podstawowe ---
-        self._input_login = self.find('#login')
-        self._input_password = self.find('#password')
-        self._input_password_repeated = self.find('#passwordRepeated')
+        self._input_login = self.find("#login")
+        self._input_password = self.find("#password")
+        self._input_password_repeated = self.find("#passwordRepeated")
 
         # --- checkboxy ---
-        self._checkbox_business_offer = self.find('#businessOffer')
-        self._checkbox_terms = self.find('#customer_company_rules_terms')
-        self._checkbox_marketing = self.find('#customer_marketing_terms')
+        self._checkbox_business_offer = self.find("#businessOffer")
+        self._checkbox_terms = self.find("#customer_company_rules_terms")
+        self._checkbox_marketing = self.find("#customer_marketing_terms")
 
         # --- captcha ---
-        self._recaptcha_container = self.find('#recaptcha-register')
+        self._recaptcha_container = self.find("#recaptcha-register")
 
         # --- przyciski ---
         self._button_register = self.find('button:has-text("Załóż konto")')
         self._button_login_redirect = self.find('button:has-text("Masz już konto? Zaloguj się.")')
 
         # --- business section root ---
-        self._business_section = self.find('#businessOffer').locator(
-            'xpath=ancestor::div[contains(@class,"col-span-full")]')
+        self._business_section = self.find("#businessOffer").locator(
+            'xpath=ancestor::div[contains(@class,"col-span-full")]'
+        )
 
         # --- NIP ---
-        self._input_tax_id = self.find('#taxIdentificationNumber')
+        self._input_tax_id = self.find("#taxIdentificationNumber")
 
         # --- dane firmy (auto-uzupełniane po NIP) ---
-        self._input_company_name = self.find('#companyName')
-        self._input_street_name = self.find('#streetName')
-        self._input_street_number = self.find('#streetNumber')
-        self._input_postal_code = self.find('#postalCode')
-        self._input_city = self.find('#city')
+        self._input_company_name = self.find("#companyName")
+        self._input_street_name = self.find("#streetName")
+        self._input_street_number = self.find("#streetNumber")
+        self._input_postal_code = self.find("#postalCode")
+        self._input_city = self.find("#city")
 
         # --- kontakt ---
-        self._input_phone = self.find('#phoneNumber')
-        self._input_business_email = self.find('#email')
+        self._input_phone = self.find("#phoneNumber")
+        self._input_business_email = self.find("#email")
 
     # ============================================================
     # ACTIONS
@@ -79,16 +80,13 @@ class RegisterClient(BaseComponent):
         self.safe_click(self._button_login_redirect)
 
     def fill_business_personal_data(self, nip: str, phone: str, email: str) -> "RegisterClient":
-        expect(self._input_tax_id).to_be_enabled()
-        self._input_tax_id.fill(nip)
-        expect(self._input_phone).to_be_enabled()
-        self._input_phone.fill(phone)
-        expect(self._input_business_email).to_be_enabled()
-        self._input_business_email.fill(email)
+        self.safe_type(self._input_tax_id, nip)
+        self.safe_type(self._input_phone, phone)
+        self.safe_type(self._input_business_email, email)
         return self
 
     def solve_captcha(self) -> "RegisterClient":
         frame = self.root.page.frame_locator('#recaptcha-register iframe[title="reCAPTCHA"]')
-        checkbox = frame.locator('#recaptcha-anchor')
+        checkbox = frame.locator("#recaptcha-anchor")
         checkbox.click(timeout=10000)
         return self
