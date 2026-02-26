@@ -99,10 +99,10 @@ def test_report_server_endpoints_handle_listing_results_ref_tags_and_baseline_fl
         assert status == 200
         assert content == b"ref-bytes"
 
-        status, payload = _http_json(base_url, f"/api/builds/{run_id}/state")
+        status, payload = _http_json(base_url, f"/api/builds/{run_id}/tags")
         assert status == 200
         assert payload["run_id"] == run_id
-        assert payload["state"]["test_cases"] == {}
+        assert payload["tags"]["test_cases"] == {}
 
         status, payload = _http_json(base_url, f"/api/reports/{run_id}/baseline/challenge", method="POST", body={})
         assert status == 200

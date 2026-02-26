@@ -168,6 +168,9 @@ def test_pytest_sessionfinish_writes_visual_report_for_controller(
         captured["write_calls"] = int(captured.get("write_calls", 0)) + 1
 
     monkeypatch.setattr(plugin, "write_visual_report", _fake_write_visual_report)
+    monkeypatch.setattr(plugin, "prepare_perceptual_placeholders", lambda **_kwargs: None)
+    monkeypatch.setattr(plugin, "run_perceptual_postprocess", lambda **_kwargs: None)
+    monkeypatch.setattr(plugin, "load_env", lambda: SimpleNamespace(pms_enabled=True))
     monkeypatch.setattr(plugin, "_ensure_run_metadata", lambda _root, _config: None)
     monkeypatch.setattr(plugin, "_merge_worker_durations", lambda _root: None)
     monkeypatch.setenv("PYTEST_XDIST_WORKER", "master")

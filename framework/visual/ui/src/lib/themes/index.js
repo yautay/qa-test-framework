@@ -24,8 +24,15 @@ function applyTheme(name) {
   root.style.setProperty("--success", preset.success);
   root.style.setProperty("--danger", preset.danger);
   root.style.setProperty("--warning", preset.warning);
+  root.style.setProperty("--on-primary", preset.onPrimary || "#ffffff");
+  root.style.setProperty("--on-secondary", preset.onSecondary || "#ffffff");
+  root.style.setProperty("--on-success", preset.onSuccess || "#ffffff");
+  root.style.setProperty("--on-danger", preset.onDanger || "#ffffff");
+  root.style.setProperty("--on-warning", preset.onWarning || preset.bodyColor);
   root.style.setProperty("--body-bg", preset.bodyBg);
   root.style.setProperty("--body-color", preset.bodyColor);
+  root.style.setProperty("--hero-text", preset.heroText || preset.bodyColor);
+  root.style.setProperty("--hero-muted", preset.heroMuted || preset.textMuted);
   root.style.setProperty("--card-bg", preset.cardBg);
   root.style.setProperty("--border", preset.border);
   root.style.setProperty("--text-muted", preset.textMuted);

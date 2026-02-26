@@ -35,6 +35,11 @@ export default {
 .hero-header {
   background: var(--hero-gradient);
   border: 1px solid var(--border);
+  color: var(--hero-text, var(--body-color));
+}
+
+.hero-header .text-muted {
+  color: var(--hero-muted, var(--text-muted)) !important;
 }
 
 .eyebrow {
@@ -61,7 +66,7 @@ h1 {
 }
 
 .stats-label {
-  color: var(--text-muted);
+  color: var(--hero-muted, var(--text-muted));
   font-size: 0.85rem;
 }
 

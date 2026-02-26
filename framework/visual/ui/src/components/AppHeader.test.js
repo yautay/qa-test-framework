@@ -53,7 +53,7 @@ vi.mock("../lib/i18n", () => ({
       "appInfo.git": "git",
       "appInfo.lastCheck": "last check",
       "appInfo.healthDetail": "health detail",
-      "appInfo.pmsDisabled": "PMS is disabled in settings.py",
+      "appInfo.pmsDisabled": "PMS integration is disabled in the application configuration",
       "appInfo.pmsBaseUrlMissing": "PMS base URL is missing",
       "appInfo.pmsUnreachable": "PMS API is unreachable",
       "appInfo.error": "error",
@@ -179,9 +179,13 @@ describe("AppHeader", () => {
     const wrapper = mount(AppHeader);
     await flushPromises();
 
+    const infoIcon = wrapper.find(".app-info");
+    expect(infoIcon.classes()).not.toContain("app-info-error");
+
     const tooltip = wrapper.find(".app-info-tooltip").text();
-    expect(tooltip).toContain("health detail: PMS is disabled in settings.py");
-    expect(tooltip).toContain("error: PMS disabled in settings.py");
+    expect(tooltip).toContain("PMS integration is disabled in the application configuration");
+    expect(tooltip).not.toContain("status:");
+    expect(tooltip).not.toContain("error:");
   });
 
   it("has correct CSS classes for styling", async () => {

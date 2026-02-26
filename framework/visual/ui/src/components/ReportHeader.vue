@@ -65,6 +65,11 @@ const summaryText = computed(() => {
 .report-header {
   background: var(--hero-gradient);
   border: 1px solid var(--border);
+  color: var(--hero-text, var(--body-color));
+}
+
+.report-header .text-muted {
+  color: var(--hero-muted, var(--text-muted)) !important;
 }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
 .btn-saturated {

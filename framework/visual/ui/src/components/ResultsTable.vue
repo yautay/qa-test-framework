@@ -442,25 +442,25 @@ export default {
 
 .artifact-ref {
   background-color: var(--primary);
-  color: white;
+  color: var(--on-primary);
   opacity: 0.85;
 }
 
 .artifact-test {
   background-color: var(--success);
-  color: white;
+  color: var(--on-success);
   opacity: 0.85;
 }
 
 .artifact-diff {
   background-color: var(--danger);
-  color: white;
+  color: var(--on-danger);
   opacity: 0.85;
 }
 
 .artifact-perc {
   background-color: var(--warning);
-  color: #212529;
+  color: var(--on-warning);
   opacity: 0.85;
 }
 

@@ -175,13 +175,13 @@ visual_minio_secure = True
 # - True: wlacza integracje z PMS.
 # - False: brak zapytan do PMS.
 # Skutek: True daje dodatkowe metryki percepcyjne kosztem czasu i zaleznosci sieciowej.
-pms_enabled = True
+pms_enabled = False
 
 # pms_base_url:
 # - Bazowy URL uslugi PMS.
 # - Przyklad: "http://pms:8080".
 # Skutek: pusty URL przy wlaczonym PMS spowoduje bledy polaczenia.
-pms_base_url = "http://192.168.2.108:8080"
+pms_base_url = "http://127.0.0.1:8080"
 
 # pms_metric:
 # - "lpips", "dists" albo "both".
@@ -203,7 +203,7 @@ pms_normalize = True
 # pms_submit_rps:
 # - Limit request/sec dla wysylania zadan do PMS.
 # Skutek: zbyt wysoki moze przeciazyc serwis, zbyt niski wydluzy kolejke.
-pms_submit_rps = 2.0
+pms_submit_rps = 4.0
 
 # pms_poll_rps:
 # - Limit request/sec dla odpytywania statusu.
@@ -218,7 +218,7 @@ pms_max_inflight = 10
 # pms_server_active_limit:
 # - Limit aktywnych zadan po stronie serwera.
 # Skutek: pozwala uniknac odrzucen przy przeciążonym PMS.
-pms_server_active_limit = 100
+pms_server_active_limit = 40
 
 # pms_timeout_sec:
 # - Timeout pojedynczego zadania PMS (sekundy).
@@ -233,18 +233,18 @@ pms_retry_max = 3
 # pms_health_timeout_seconds:
 # - Timeout sprawdzenia health endpoint PMS.
 # Skutek: niski timeout szybciej wykrywa niedostepnosc, ale moze byc zbyt agresywny.
-pms_health_timeout_seconds = 2
+pms_health_timeout_seconds = 5
 
 # pms_poll_interval_ms:
 # - Odstep miedzy kolejnymi pollami statusu (ms).
 # Skutek: nizszy interval = szybsza reakcja, ale wiecej zapytan.
-pms_poll_interval_ms = 5000
+pms_poll_interval_ms = 2500
 
 # pms_poll_idle_multiplier:
 # - Mnoznik interwalu pollingu PMS, gdy brak aktywnych zadan.
 # - Przyklad: 3.0 => polling idle co 3x dluzej niz bazowy interwal.
 # Skutek: zmniejsza obciazenie przy bezczynnosci kosztem wolniejszej reakcji po starcie nowych zadan.
-pms_poll_idle_multiplier = 3.0
+pms_poll_idle_multiplier = 10.0
 
 # Reporting API (optional).
 
@@ -264,16 +264,6 @@ reporting_schema_version = "2.0"
 # - Nazwa projektu zrodlowego wysylana do API.
 # Skutek: uzywana do filtrowania i grupowania raportow.
 reporting_source_project = "netQArner"
-
-# reporting_source_origin:
-# - Opcjonalna informacja o zrodle (np. URL CI, namespace, team).
-# Skutek: pomaga w traceability i diagnostyce.
-reporting_source_origin = ""
-
-# framework_version:
-# - Wersja frameworka wysylana w payloadzie.
-# Skutek: ulatwia analizowanie regresji po upgrade frameworka.
-framework_version = "1.0.0"
 
 # reporting_api_url:
 # - Bazowy URL Reporting API.
@@ -324,4 +314,4 @@ reporting_api_timeout_seconds = 5
 # reporting_api_retries:
 # - Liczba ponowien requestu po bledzie.
 # Skutek: wiecej retry poprawia odpornosc na chwilowe bledy 5xx/network.
-reporting_api_retries = 2
+reporting_api_retries = 3

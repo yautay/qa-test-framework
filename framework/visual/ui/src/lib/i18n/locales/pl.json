@@ -148,7 +148,7 @@
     "git": "git",
     "lastCheck": "ostatnie sprawdzenie",
     "healthDetail": "szczegóły stanu",
-    "pmsDisabled": "PMS jest wyłączony w settings.py",
+    "pmsDisabled": "Integracja z PMS jest wyłączona w konfiguracji aplikacji",
     "pmsBaseUrlMissing": "Brak PMS_BASE_URL",
     "pmsUnreachable": "API PMS jest nieosiągalne",
     "error": "błąd",
