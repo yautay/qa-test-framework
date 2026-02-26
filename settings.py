@@ -265,16 +265,6 @@ reporting_schema_version = "2.0"
 # Skutek: uzywana do filtrowania i grupowania raportow.
 reporting_source_project = "netQArner"
 
-# reporting_source_origin:
-# - Opcjonalna informacja o zrodle (np. URL CI, namespace, team).
-# Skutek: pomaga w traceability i diagnostyce.
-reporting_source_origin = "local machine"
-
-# framework_version:
-# - Wersja frameworka wysylana w payloadzie.
-# Skutek: ulatwia analizowanie regresji po upgrade frameworka.
-framework_version = "1.0.0"
-
 # reporting_api_url:
 # - Bazowy URL Reporting API.
 # - Przyklad: "http://127.0.0.1:3001" lub "https://reporting.example.com".

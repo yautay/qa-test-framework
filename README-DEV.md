@@ -134,5 +134,9 @@ Main defaults:
 Important env groups:
 - Runtime/browser/grid: `BROWSER`, `HEADLESS`, `IS_GRID_AVAILABLE`, `GRID_*`
 - Target routing: `BASE_URL`, `BASE_URL_OVERRIDE`, `server_type`, `server_name`
-- Reporting v2: `REPORTING_*`, `FRAMEWORK_VERSION`
+- Reporting v2: `REPORTING_*`
 - Visual baseline and perceptual post-process: `VISUAL_*`, `VISUAL_MINIO_*`, `PMS_*`
+
+Reporting notes:
+- `REPORTING_SOURCE_ORIGIN` can be left empty to auto-detect (`ci` when `CI` exists, otherwise `local`).
+- `source.framework_version` is auto-resolved from package metadata (falls back to `unknown` when metadata is unavailable).

@@ -17,8 +17,7 @@ Supported variables:
 - `REPORTING_ENABLED` (`0|1`)
 - `REPORTING_SCHEMA_VERSION` (default `2.0`)
 - `REPORTING_SOURCE_PROJECT`
-- `REPORTING_SOURCE_ORIGIN` (`local|ci|server`, auto-detected when empty)
-- `FRAMEWORK_VERSION`
+- `REPORTING_SOURCE_ORIGIN` (optional override; when empty, framework auto-sets `ci` if `CI` is present, otherwise `local`)
 - `REPORTING_API_URL`
 - `REPORTING_API_TOKEN` (optional)
 - `REPORTING_API_RUN_START_ENDPOINT`
@@ -35,8 +34,8 @@ Example:
 REPORTING_ENABLED=1
 REPORTING_SCHEMA_VERSION=2.0
 REPORTING_SOURCE_PROJECT=nc-functional-tests-py
+# empty = auto (`ci` when CI env exists, otherwise `local`)
 REPORTING_SOURCE_ORIGIN=
-FRAMEWORK_VERSION=1.0.0
 REPORTING_API_URL=http://127.0.0.1:8080
 REPORTING_API_TOKEN=
 REPORTING_API_RUN_START_ENDPOINT=/test-run/start
@@ -79,6 +78,9 @@ Every event includes common envelope fields:
 - `idempotency_key`
 - `source` (`project`, `framework_version`, `instance_id`, `host`, `user`, `worker_id`, `origin`)
 
+`source.framework_version` is resolved automatically from installed package metadata.
+If metadata is unavailable (for example, running from source without installed distribution), value is set to `unknown`.
+
 Run start payload includes:
 - `run_id`
 - `run_started_at`
@@ -115,6 +117,6 @@ Run finish payload includes:
 
 1. system environment variable
 2. `.env` file
-3. `settings_cli.py` defaults
+3. `settings.py` defaults
 
 This allows local `.env` use with easy override in CI.

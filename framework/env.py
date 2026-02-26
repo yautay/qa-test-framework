@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from importlib import metadata as importlib_metadata
 from dotenv import dotenv_values
 
 import settings_cli
@@ -34,6 +35,25 @@ def _as_bool(value: str | None, default: bool) -> bool:
 def _load_dotenv_file(env_file: str = ".env") -> dict[str, str]:
     """Parse a dotenv-style file into a string dictionary, ignoring comments."""
     return {k: v for k, v in dotenv_values(env_file).items() if v is not None}
+
+
+def _resolve_framework_version() -> str:
+    """Return framework version from installed package metadata or 'unknown'."""
+
+    try:
+        distribution_names = importlib_metadata.packages_distributions().get("framework", [])
+    except Exception:
+        return "unknown"
+
+    for distribution_name in distribution_names:
+        try:
+            version = importlib_metadata.version(distribution_name).strip()
+        except importlib_metadata.PackageNotFoundError:
+            continue
+        if version:
+            return version
+
+    return "unknown"
 
 
 @dataclass(frozen=True)
@@ -146,7 +166,7 @@ def load_env() -> RuntimeEnv:
 
     reporting_source_origin = env_str(
         "REPORTING_SOURCE_ORIGIN",
-        str(settings.reporting_source_origin),
+        "",
     ).strip()
 
     if not reporting_source_origin:
@@ -189,10 +209,7 @@ def load_env() -> RuntimeEnv:
             str(settings.reporting_source_project),
         ),
         reporting_source_origin=reporting_source_origin,
-        framework_version=env_str(
-            "FRAMEWORK_VERSION",
-            str(settings.framework_version),
-        ),
+        framework_version=_resolve_framework_version(),
         reporting_api_url=env_str("REPORTING_API_URL", settings.reporting_api_url),
         reporting_api_token=env_str("REPORTING_API_TOKEN", settings.reporting_api_token),
         reporting_api_run_start_endpoint=env_str(
