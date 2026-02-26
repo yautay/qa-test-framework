@@ -67,9 +67,9 @@ def test_reporting_disabled_treats_sync_as_success_for_frontend(tmp_path: Path) 
         assert status == 200
         assert payload["event"]["status"] == "sent"
 
-        status, payload = _http_json(base_url, f"/api/builds/{run_id}/state")
+        status, payload = _http_json(base_url, f"/api/builds/{run_id}/tags")
         assert status == 200
-        state = payload["state"]
+        state = payload["tags"]
         assert state["test_cases"][case_id]["bug"]["synced"] is True
         assert state["outbox"][0]["status"] == "sent"
 
@@ -253,9 +253,9 @@ def test_state_endpoint_normalizes_legacy_unsynced_state_when_reporting_disabled
     )
     server, base_url, thread = _start_server(context)
     try:
-        status, payload = _http_json(base_url, f"/api/builds/{run_id}/state")
+        status, payload = _http_json(base_url, f"/api/builds/{run_id}/tags")
         assert status == 200
-        state = payload["state"]
+        state = payload["tags"]
         assert state["test_cases"][case_id]["bug"]["synced"] is True
         assert state["test_cases"][case_id]["aso"]["synced"] is True
         assert all(entry["status"] == "sent" for entry in state["outbox"])

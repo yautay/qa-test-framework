@@ -88,7 +88,7 @@ def test_load_scenarios_parses_steps_and_thresholds(tmp_path: Path) -> None:
     _write_json(
         file_path,
         _base_payload(
-            compare_mode="Perceptual",
+            compare_mode="hybrid",
             capture={"type": "element", "selector": "#hero", "full_page": False},
             thresholds={"pixel_max": "0.01", "lpips_max": 0.12, "dists_max": "0.2"},
             mask={"selectors": [".badge"], "color": "#123456"},
@@ -107,7 +107,7 @@ def test_load_scenarios_parses_steps_and_thresholds(tmp_path: Path) -> None:
 
     scenario = _load_scenarios(file_path)[0]
 
-    assert scenario.compare_mode == "perceptual"
+    assert scenario.compare_mode == "hybrid"
     assert scenario.capture.capture_type == "element"
     assert scenario.capture.selector == "#hero"
     assert scenario.capture.full_page is False
