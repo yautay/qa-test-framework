@@ -27,15 +27,11 @@ class BasePage:
     def open(self, path: str = "", *, wait_until: LoadState = "domcontentloaded") -> "BasePage":
         url = f"{self.base_url}{path}"
         self.page.goto(url, wait_until=wait_until, timeout=self.DEFAULT_TIMEOUT)
-        self._accept_cookie_if_needed()
         return self
 
     def reload(self, *, wait_until: LoadState = "domcontentloaded") -> "BasePage":
         self.page.reload(wait_until=wait_until, timeout=self.DEFAULT_TIMEOUT)
         return self
-
-    def _accept_cookie_if_needed(self) -> None:
-        self.overlays.cookie.dismiss_if_present()
 
     # ---------- state ----------
     def wait_loaded(self, *, state: LoadState = "domcontentloaded") -> "BasePage":
