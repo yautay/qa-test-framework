@@ -74,35 +74,6 @@ def context(
         ignore_https_errors=runtime_env.ignore_https_errors,
         record_video_dir=str(run_artifacts.videos) if runtime_env.record_video else None,
     )
-    context.add_init_script(
-        """() => {
-            const dismiss = () => {
-                const accept = document.querySelector('#onetrust-accept-btn-handler');
-                if (accept && typeof accept.click === 'function') {
-                    accept.click();
-                }
-
-                const sdk = document.querySelector('#onetrust-consent-sdk');
-                if (sdk) {
-                    sdk.remove();
-                }
-
-                const backdrop = document.querySelector('.onetrust-pc-dark-filter');
-                if (backdrop) {
-                    backdrop.remove();
-                }
-
-                if (document.body) {
-                    document.body.style.overflow = '';
-                }
-            };
-
-            dismiss();
-            const observer = new MutationObserver(dismiss);
-            observer.observe(document.documentElement, { childList: true, subtree: true });
-            window.addEventListener('load', dismiss, { once: true });
-        }"""
-    )
     context.tracing.start(screenshots=True, snapshots=True, sources=True)
     yield context
 

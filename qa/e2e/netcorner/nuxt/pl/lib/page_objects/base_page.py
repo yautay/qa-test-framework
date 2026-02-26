@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from pathlib import Path
-from typing import Literal, Optional
-from urllib.parse import urlparse
+from typing import Literal
 
 from playwright.sync_api import Page, expect
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.overlays import Overlays
