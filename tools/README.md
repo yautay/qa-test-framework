@@ -30,7 +30,7 @@ This directory contains helper scripts used by local developers, testers, and CI
 ```bash
 make verify-scenarios
 make scenario-report
-make visual-validate
+make visual-report-serve
 make clean-artifacts
 make clean-artifacts-older DAYS=14
 make test-api
@@ -45,4 +45,5 @@ make minio-down
 - Scenario tooling scripts live in `tools/scenarios/`.
 - Reporting helper API lives in `tools/reporting/test_api.py`.
 - Visual tooling scripts live in `tools/visual/`.
+- Visual report server: `tools/visual/report_server.py` (hero page + run listing).
 - Windows launchers/scripts live in `tools/windows/`.

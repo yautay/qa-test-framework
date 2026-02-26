@@ -1,7 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import StrEnum
+
+try:
+    from enum import StrEnum
+except ImportError:  # Python < 3.11
+    from enum import Enum as _Enum
+
+    class StrEnum(str, _Enum):
+        """Lightweight backport emulating `enum.StrEnum`."""
+
+        def __str__(self) -> str:
+            return str(self.value)
 
 
 class OrderAs(StrEnum):
@@ -18,7 +28,6 @@ class DeliveryKind(StrEnum):
     DIGITAL = "digital"
     INPOST = "inpost"
     DHLPOP = "dhlpop"
-
 
 
 class PaymentKind(StrEnum):

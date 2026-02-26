@@ -1,15 +1,12 @@
 from __future__ import annotations
-import base64
-import binascii
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from playwright.sync_api import Page
 from framework.env import RuntimeEnv
 from framework.visual.baseline_store import BaselineStore
 from framework.visual.compare_pixel import compare_images
 from framework.visual.models import VisualResult, VisualScenario
-from framework.visual.perceptual_client import PerceptualClient, PerceptualServiceError
 
 
 """Driver for executing visual regression scenarios and emitting comparison results."""
@@ -29,7 +26,7 @@ def _safe_float(value: object, default: float | None = None) -> float | None:
     try:
         if value is None:
             return default
-        return float(value)
+        return float(cast(Any, value))
     except (TypeError, ValueError):
         return default
 
@@ -47,19 +44,14 @@ class VisualRunner:
         self._actual_dir.mkdir(parents=True, exist_ok=True)
         self._diff_dir.mkdir(parents=True, exist_ok=True)
         self._heatmap_dir.mkdir(parents=True, exist_ok=True)
-        self._perceptual = PerceptualClient(env)
 
-    @property
-    def perceptual_client(self) -> PerceptualClient:
-        """Expose the latent perceptual client for custom checks or tests."""
-        return self._perceptual
-
-    def run(self, page: Page, scenario: VisualScenario, viewport: str, approve: bool) -> VisualResult:
+    def run(self, page: Page, scenario: VisualScenario, viewport: str) -> VisualResult:
         """Execute the scenario, compare captures, and either approve or evaluate."""
 
         self._navigate(page, scenario)
 
-        file_stem = _safe_filename(scenario.scenario_id)
+        viewport_token = (viewport or "").strip() or "default"
+        file_stem = _safe_filename(f"{scenario.scenario_id}__{viewport_token}")
         actual_path = self._actual_dir / f"{file_stem}.png"
         self._capture(page, scenario, actual_path)
 
@@ -75,33 +67,9 @@ class VisualRunner:
         baseline_path = self._store.resolve_baseline(
             scenario.suite_id,
             scenario.scenario_id,
-            viewport,
+            viewport_token,
             browser_family,
         )
-
-        if approve:
-            saved = self._store.store_baseline(
-                scenario.suite_id,
-                scenario.scenario_id,
-                viewport,
-                browser_family,
-                actual_path,
-            )
-            return VisualResult(
-                scenario_id=scenario.scenario_id,
-                status="approved",
-                message="Baseline approved",
-                compare_mode=scenario.compare_mode,
-                baseline_path=str(saved),
-                actual_path=str(actual_path),
-                diff_path="",
-                heatmap_path="",
-                pixel_changed_ratio=0.0,
-                lpips=None,
-                dists=None,
-                thresholds=scenario.thresholds,
-            )
-
         if baseline_path is None:
             status = "failed" if self._env.visual_fail_on_missing_baseline else "new"
             return VisualResult(
@@ -109,6 +77,9 @@ class VisualRunner:
                 status=status,
                 message="Baseline missing",
                 compare_mode=scenario.compare_mode,
+                suite_id=scenario.suite_id,
+                viewport=viewport_token,
+                browser=browser_family,
                 baseline_path="",
                 actual_path=str(actual_path),
                 diff_path="",
@@ -120,76 +91,41 @@ class VisualRunner:
             )
 
         diff_path = self._diff_dir / f"{file_stem}.png"
-        pixel_changed_ratio = compare_images(baseline_path, actual_path, diff_path)
+        pixel_out = compare_images(baseline_path, actual_path, diff_path)
+        pixel_changed_ratio = float(pixel_out[0]) if isinstance(pixel_out, tuple) else float(pixel_out)
 
         lpips_score: float | None = None
         dists_score: float | None = None
         heatmap_path_str = ""
-        mode_effective = scenario.compare_mode
+        mode_effective = str(getattr(scenario, "compare_mode", "pixel") or "pixel").strip().lower()
+        if mode_effective not in {"pixel", "hybrid"}:
+            mode_effective = "pixel"
 
-        requires_perceptual = scenario.compare_mode in {"perceptual", "hybrid"}
-        must_have_perceptual = bool(self._env.visual_perceptual_required or scenario.perceptual_required)
-
-        if requires_perceptual:
-            available = self._perceptual.ensure_ready(required=must_have_perceptual)
-            if available:
-                try:
-                    response = self._perceptual.compare(baseline_path, actual_path)
-
-                    lpips_score = _safe_float(
-                        (response.get("lpips") or {}).get("value") if isinstance(response.get("lpips"), dict) else None,
-                        default=None,
-                    )
-                    dists_score = _safe_float(
-                        (response.get("dists") or {}).get("value") if isinstance(response.get("dists"), dict) else None,
-                        default=None,
-                    )
-
-                    heatmap_b64 = response.get("lpips_heatmap_png_base64", "")
-                    if isinstance(heatmap_b64, str) and heatmap_b64.strip():
-                        heatmap_file = self._heatmap_dir / f"{file_stem}.png"
-                        try:
-                            heatmap_file.write_bytes(base64.b64decode(heatmap_b64))
-                            heatmap_path_str = str(heatmap_file)
-                        except (binascii.Error, ValueError):
-                            # ignore invalid heatmap payload
-                            heatmap_path_str = ""
-
-                except PerceptualServiceError as exc:
-                    if must_have_perceptual or self._env.visual_perceptual_fallback_mode == "abort":
-                        return VisualResult(
-                            scenario_id=scenario.scenario_id,
-                            status="failed",
-                            message=f"Perceptual compare failed: {exc}",
-                            compare_mode=scenario.compare_mode,
-                            baseline_path=str(baseline_path),
-                            actual_path=str(actual_path),
-                            diff_path=str(diff_path),
-                            heatmap_path=heatmap_path_str,
-                            pixel_changed_ratio=pixel_changed_ratio,
-                            lpips=None,
-                            dists=None,
-                            thresholds=scenario.thresholds,
-                        )
-                    mode_effective = "pixel"
-            else:
-                mode_effective = "pixel"
-
-        status, message = _evaluate(
-            mode_effective,
-            pixel_changed_ratio,
-            lpips_score,
-            dists_score,
-            scenario.thresholds.pixel_max,
-            scenario.thresholds.lpips_max,
-            scenario.thresholds.dists_max,
-        )
+        if mode_effective == "hybrid" and self._env.pms_enabled and str(self._env.pms_base_url or "").strip():
+            status, message = "analysis", "Perceptual analysis in progress"
+        else:
+            status, message = _evaluate(
+                "pixel" if mode_effective == "hybrid" else mode_effective,
+                pixel_changed_ratio,
+                lpips_score,
+                dists_score,
+                scenario.thresholds.pixel_max,
+                scenario.thresholds.lpips_max,
+                scenario.thresholds.dists_max,
+                self._env.visual_uncertain_enabled,
+                scenario.thresholds.pixel_uncertain_delta or self._env.visual_uncertain_pixel_delta,
+                scenario.thresholds.lpips_uncertain_delta or self._env.visual_uncertain_lpips_delta,
+                scenario.thresholds.dists_uncertain_delta or self._env.visual_uncertain_dists_delta,
+            )
 
         return VisualResult(
             scenario_id=scenario.scenario_id,
-            status=status,
+            status=cast(Any, status),
             message=message,
-            compare_mode=mode_effective,
+            compare_mode=cast(Any, mode_effective),
+            suite_id=scenario.suite_id,
+            viewport=viewport_token,
+            browser=browser_family,
             baseline_path=str(baseline_path),
             actual_path=str(actual_path),
             diff_path=str(diff_path),
@@ -341,28 +277,37 @@ def _evaluate(
     pixel_max: float,
     lpips_max: float,
     dists_max: float,
+    uncertain_enabled: bool,
+    pixel_uncertain_delta: float,
+    lpips_uncertain_delta: float,
+    dists_uncertain_delta: float,
 ) -> tuple[str, str]:
     """Assess thresholds and return the status/message tuple."""
     mode = (mode or "").strip().lower()
 
+    def _in_uncertain_zone(value: float | None, threshold: float, delta: float) -> bool:
+        """Check if value is in the uncertainty zone (threshold < value <= threshold + delta)."""
+        if value is None or delta <= 0:
+            return False
+        return threshold < value <= threshold + delta
+
     if mode == "pixel":
         if pixel_changed_ratio <= pixel_max:
             return "passed", "Pixel threshold passed"
+        if uncertain_enabled and _in_uncertain_zone(pixel_changed_ratio, pixel_max, pixel_uncertain_delta):
+            return "uncertain", "Pixel within uncertainty zone"
         return "failed", "Pixel threshold exceeded"
 
     lpips_ok = lpips is not None and lpips <= lpips_max
     dists_ok = dists is not None and dists <= dists_max
     perceptual_ok = lpips_ok and dists_ok
 
-    if mode == "perceptual":
-        if perceptual_ok:
-            return "passed", "Perceptual thresholds passed"
-        return "failed", "Perceptual thresholds exceeded"
-
     # hybrid
     pixel_ok = pixel_changed_ratio <= pixel_max
     if perceptual_ok and pixel_ok:
         return "passed", "Pixel and perceptual thresholds passed"
     if perceptual_ok and not pixel_ok:
-        return "warn", "Pixel exceeded, perceptual passed"
+        if uncertain_enabled and _in_uncertain_zone(pixel_changed_ratio, pixel_max, pixel_uncertain_delta):
+            return "uncertain", "Pixel within uncertainty zone"
+        return "uncertain", "Pixel exceeded, perceptual passed"
     return "failed", "Perceptual thresholds exceeded"

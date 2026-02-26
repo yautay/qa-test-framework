@@ -8,17 +8,43 @@ Includes helpers to load VisualScenario definitions from JSON using the schema:
 """
 
 import json
+from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal
 
-
 CaptureType = Literal["page", "viewport", "element"]
-CompareMode = Literal["pixel", "perceptual", "hybrid"]
-ResultStatus = Literal["passed", "failed", "skipped", "error"]
+CompareMode = Literal["pixel", "hybrid"]
+ResultStatus = Literal["passed", "failed", "skipped", "new", "uncertain", "analysis"]
 
 
 def _require_str(d: dict[str, Any], key: str) -> str:
+    """
+    Return a required non-empty string field from a dictionary.
+
+    Parameters
+    ----------
+    d : dict[str, Any]
+        Source dictionary (typically parsed JSON/config payload).
+    key : str
+        Field name to read.
+
+    Returns
+    -------
+    str
+        Validated non-empty string value.
+
+    Raises
+    ------
+    ValueError
+        If the field is missing, not a string, or an empty/whitespace value.
+
+    Notes
+    -----
+    This helper enforces strict schema validation for required
+    string fields.
+    """
+
     v = d.get(key)
     if not isinstance(v, str) or not v.strip():
         raise ValueError(f"Missing/invalid string field: {key}")
@@ -26,6 +52,30 @@ def _require_str(d: dict[str, Any], key: str) -> str:
 
 
 def _opt_str(d: dict[str, Any], key: str, default: str = "") -> str:
+    """
+    Return an optional string field from a dictionary.
+
+    Parameters
+    ----------
+    d : dict[str, Any]
+        Source dictionary.
+    key : str
+        Field name to read.
+    default : str, optional
+        Value returned when the field is missing or None.
+
+    Returns
+    -------
+    str
+        Field value converted to string, or default.
+
+    Notes
+    -----
+    - None values resolve to `default`.
+    - Non-string values are converted using `str(...)`.
+    - Intended for permissive parsing of optional fields.
+    """
+
     v = d.get(key, default)
     if v is None:
         return default
@@ -33,6 +83,34 @@ def _opt_str(d: dict[str, Any], key: str, default: str = "") -> str:
 
 
 def _opt_bool(d: dict[str, Any], key: str, default: bool) -> bool:
+    """
+    Return an optional boolean field from a dictionary.
+
+    Parameters
+    ----------
+    d : dict[str, Any]
+        Source dictionary.
+    key : str
+        Field name to read.
+    default : bool
+        Fallback value if the field is missing.
+
+    Returns
+    -------
+    bool
+        Boolean value from the dictionary or default.
+
+    Raises
+    ------
+    ValueError
+        If the value exists but is not a boolean.
+
+    Notes
+    -----
+    This function performs strict type validation and does not
+    coerce values like "true"/"false" strings.
+    """
+
     v = d.get(key, default)
     if isinstance(v, bool):
         return v
@@ -40,6 +118,34 @@ def _opt_bool(d: dict[str, Any], key: str, default: bool) -> bool:
 
 
 def _opt_float(d: dict[str, Any], key: str, default: float) -> float:
+    """
+    Return an optional numeric field as float.
+
+    Parameters
+    ----------
+    d : dict[str, Any]
+        Source dictionary.
+    key : str
+        Field name to read.
+    default : float
+        Fallback value if the field is missing.
+
+    Returns
+    -------
+    float
+        Parsed numeric value converted to float.
+
+    Raises
+    ------
+    ValueError
+        If the value exists but is not int or float.
+
+    Notes
+    -----
+    Integers are accepted and converted to float.
+    No string conversion is performed.
+    """
+
     v = d.get(key, default)
     if isinstance(v, (int, float)):
         return float(v)
@@ -47,6 +153,30 @@ def _opt_float(d: dict[str, Any], key: str, default: float) -> float:
 
 
 def _as_tuple_str(v: Any) -> tuple[str, ...]:
+    """
+    Normalize a list/tuple of strings into a tuple.
+
+    Parameters
+    ----------
+    v : Any
+        Input value expected to be a list or tuple of strings.
+
+    Returns
+    -------
+    tuple[str, ...]
+        Normalized immutable tuple of strings.
+
+    Raises
+    ------
+    ValueError
+        If the value is not a sequence of strings.
+
+    Notes
+    -----
+    - None returns an empty tuple.
+    - Used to normalize configuration data into immutable form.
+    """
+
     if v is None:
         return ()
     if isinstance(v, list) and all(isinstance(x, str) for x in v):
@@ -57,6 +187,32 @@ def _as_tuple_str(v: Any) -> tuple[str, ...]:
 
 
 def _as_tuple_dict(v: Any, field_name: str) -> tuple[dict[str, Any], ...]:
+    """
+    Normalize a list/tuple of dictionaries into a tuple.
+
+    Parameters
+    ----------
+    v : Any
+        Input value expected to be a list or tuple of dict objects.
+    field_name : str
+        Field name used for error reporting.
+
+    Returns
+    -------
+    tuple[dict[str, Any], ...]
+        Normalized immutable tuple of dictionaries.
+
+    Raises
+    ------
+    ValueError
+        If the value is not a sequence of dictionaries.
+
+    Notes
+    -----
+    - None returns an empty tuple.
+    - Useful when loading structured configuration sections.
+    """
+
     if v is None:
         return ()
     if isinstance(v, list) and all(isinstance(x, dict) for x in v):
@@ -74,6 +230,10 @@ class VisualThresholds:
     lpips_max: float
     dists_max: float
 
+    pixel_uncertain_delta: float | None = None
+    lpips_uncertain_delta: float | None = None
+    dists_uncertain_delta: float | None = None
+
     def __post_init__(self) -> None:
         if self.pixel_max < 0 or self.lpips_max < 0 or self.dists_max < 0:
             raise ValueError("Thresholds must be >= 0")
@@ -88,6 +248,9 @@ class VisualThresholds:
             pixel_max=_opt_float(d, "pixel_max", 0.0),
             lpips_max=_opt_float(d, "lpips_max", 0.0),
             dists_max=_opt_float(d, "dists_max", 0.0),
+            pixel_uncertain_delta=d.get("pixel_uncertain_delta") if "pixel_uncertain_delta" in d else None,
+            lpips_uncertain_delta=d.get("lpips_uncertain_delta") if "lpips_uncertain_delta" in d else None,
+            dists_uncertain_delta=d.get("dists_uncertain_delta") if "dists_uncertain_delta" in d else None,
         )
 
 
@@ -189,11 +352,14 @@ class VisualScenario:
     target_url: str
     suite_id: str
     compare_mode: CompareMode
+    viewport: tuple[str, ...]
     capture: VisualCapture
     thresholds: VisualThresholds
     mask: VisualMask = field(default_factory=VisualMask)
     steps: tuple[VisualStep, ...] = ()
     perceptual_required: bool = False
+    raw_definition: dict[str, Any] = field(default_factory=dict)
+    source_file: str = ""
 
     def __post_init__(self) -> None:
         if not self.scenario_id.strip():
@@ -212,7 +378,7 @@ class VisualScenario:
         scenario_id = _opt_str(d, "id", "").strip() or _require_str(d, "scenario_id")
 
         compare_mode = _require_str(d, "compare_mode").strip().lower()
-        if compare_mode not in ("pixel", "perceptual", "hybrid"):
+        if compare_mode not in ("pixel", "hybrid"):
             raise ValueError(f"Invalid compare_mode: {compare_mode!r}")
 
         steps_raw = _as_tuple_dict(d.get("steps"), "steps")
@@ -224,11 +390,13 @@ class VisualScenario:
             target_url=_require_str(d, "target_url"),
             suite_id=_require_str(d, "suite_id"),
             compare_mode=compare_mode,  # type: ignore[assignment]
+            viewport=_as_tuple_str(d.get("viewport")),
             capture=VisualCapture.from_dict(d.get("capture")),
             thresholds=VisualThresholds.from_dict(d.get("thresholds")),
             mask=VisualMask.from_dict(d.get("mask")),
             steps=steps,
             perceptual_required=_opt_bool(d, "perceptual_required", False),
+            raw_definition=deepcopy(d),
         )
 
 
@@ -241,16 +409,24 @@ class VisualResult:
     message: str
     compare_mode: CompareMode
 
-    baseline_path: Path
-    actual_path: Path
-    diff_path: Path | None = None
-    heatmap_path: Path | None = None
+    baseline_path: str
+    actual_path: str
+    diff_path: str = ""
+    heatmap_path: str = ""
+
+    suite_id: str = ""
+    viewport: str = ""
+    browser: str = ""
 
     pixel_changed_ratio: float | None = None
     lpips: float | None = None
     dists: float | None = None
 
     thresholds: VisualThresholds | None = None
+    tester: str = ""
+    run_note: str = ""
+    test_metadata: dict[str, Any] | None = None
+    perceptual: dict[str, Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -258,10 +434,13 @@ class VisualResult:
             "status": self.status,
             "message": self.message,
             "compare_mode": self.compare_mode,
-            "baseline_path": str(self.baseline_path),
-            "actual_path": str(self.actual_path),
-            "diff_path": str(self.diff_path) if self.diff_path else "",
-            "heatmap_path": str(self.heatmap_path) if self.heatmap_path else "",
+            "suite_id": self.suite_id,
+            "viewport": self.viewport,
+            "browser": self.browser,
+            "baseline_path": self.baseline_path,
+            "actual_path": self.actual_path,
+            "diff_path": self.diff_path,
+            "heatmap_path": self.heatmap_path,
             "pixel_changed_ratio": self.pixel_changed_ratio,
             "lpips": self.lpips,
             "dists": self.dists,
@@ -269,9 +448,16 @@ class VisualResult:
                 "pixel_max": self.thresholds.pixel_max,
                 "lpips_max": self.thresholds.lpips_max,
                 "dists_max": self.thresholds.dists_max,
+                "pixel_uncertain_delta": self.thresholds.pixel_uncertain_delta,
+                "lpips_uncertain_delta": self.thresholds.lpips_uncertain_delta,
+                "dists_uncertain_delta": self.thresholds.dists_uncertain_delta,
             }
             if self.thresholds
             else None,
+            "tester": self.tester,
+            "run_note": self.run_note,
+            "test_metadata": self.test_metadata,
+            "perceptual": self.perceptual,
         }
 
 

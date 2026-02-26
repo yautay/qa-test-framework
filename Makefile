@@ -8,57 +8,58 @@ PYTEST ?= $(PYTHON) -m pytest
 
 .DEFAULT_GOAL := help
 
-.PHONY: help test test-aso test-functional test-visual validate-config visual-validate visual-sync visual-approve clean-artifacts clean-artifacts-older collect lint format format-check typecheck security verify-discovery verify-scenarios scenario-report test-api remote-up remote-down remote-smoke minio-up minio-down check
+.PHONY: help test test-aso tests-aso test-functional test-visual validate-config visual-sync visual-approve visual-report-serve clean-artifacts clean-artifacts-older collect lint format format-check typecheck security verify-discovery verify-scenarios scenario-report test-api remote-up remote-down remote-smoke minio-up minio-down check
 
 help: ## Show this help
 	$(PYTHON) tools/make/make_help.py
+##@ Framework
+
+report-serve: ## Uruchom lokalny serwer raportu visual
+	$(PYTHON)  framework/visual/report_server.py $(if $(RUN_ID),--run-id $(RUN_ID),) $(if $(REPORT_DIR),--report-dir $(REPORT_DIR),) $(if $(PORT),--port $(PORT),)
 
 ##@ Tests
 
 test: ## Uruchom wszystkie testy
-	$(PYTEST)
-
-test-functional: ## Testy funkcjonalne
-	$(PYTEST) -m "not aso"
-
-test-smoke: ## Testy dymne
-	$(PYTEST) -m "smoke"
+	$(PYTEST) -q
 
 test-api: ## Testy api
-	$(PYTEST) -m "api"
+	$(PYTEST) -m api -q
 
 test-visual: ## Testy regresji wizualnej
-	REPORTING_ENABLED=0 VISUAL_ENABLED=1 $(PYTEST) -m visual -q
+	$(PYTEST) -m visual -q
+
+test-e2e: ## Testy funkcjonalne
+	$(PYTEST) -m e2e -q
+
+test-aso: ## Testy oznaczone markerem aso
+	$(PYTEST) -m aso -q
+
+test-smoke: ## Testy dymne
+	$(PYTEST) -m smoke -q
+
 
 ##@ Development
 
-validate-config: ## Walidacja konfiguracji (scenariusze + visual)
-validate-config: verify-scenarios visual-validate
-
 check: ## Full check pipeline
-check: lint format-check typecheck security verify-discovery validate-config collect
-
-test-aso: ## Testy oznaczone markerem aso (bez reportingu)
-	$(MAKE) validate-config
-	REPORTING_ENABLED=0 $(PYTEST) -m aso -q
+check: test-aso lint format-check typecheck security verify-discovery verify-scenarios collect
 
 collect: ## Collect-only (pytest)
 	$(PYTEST) --collect-only -q
 
 lint: ## Ruff lint
-	$(PYTHON) -m ruff check qa framework
+	$(PYTHON) -m ruff check qa framework tools
 
 format: ## Formatowanie black
-	$(PYTHON) -m black qa framework
+	$(PYTHON) -m black qa framework tools
 
 format-check: ## Sprawdzenie formatowania
-	$(PYTHON) -m black --check qa framework
+	$(PYTHON) -m black --check qa framework tools
 
 typecheck: ## MyPy typecheck
-	$(PYTHON) -m mypy qa framework
+	$(PYTHON) -m mypy qa framework tools
 
 security: ## Bandit + pip-audit
-	$(PYTHON) -m bandit -q -r qa framework
+	$(PYTHON) -m bandit -q -r qa framework tools
 	$(PYTHON) -m pip_audit
 
 verify-discovery: ## Guard dla pytest discovery
@@ -73,14 +74,8 @@ scenario-report: ## Raport scenariuszy
 
 ##@ Regresja wizualna
 
-visual-validate: ## Walidacja scenariuszy visual
-	$(PYTHON) tools/visual/validate_scenarios.py
-
 visual-sync: ## Synchronizacja visual baseline
 	$(PYTHON) tools/visual/sync_baseline.py
-
-visual-approve: ## Akceptacja zmian visual
-	REPORTING_ENABLED=0 VISUAL_ENABLED=1 $(PYTEST) -m visual -q --visual-approve
 
 ##@ Helpers
 
@@ -92,21 +87,14 @@ clean-artifacts-older: ## Usuń artefakty starsze niż DAYS (domyślnie 14)
 
 ##@ Debug
 
-debug-test-api: ## Test API reportingu
-	$(PYTHON) tools/reporting/test_api.py
-
 debug-remote-grid-up: ## Start grid remote (docker)
 	docker compose -f tools/remote/docker-compose.yml up -d
 
 debug-remote-grid-down: ## Stop grid remote (docker)
 	docker compose -f tools/remote/docker-compose.yml down
 
-debug-remote-smoke: ## Smoke testy na remote grid
-	IS_GRID_AVAILABLE=1 GRID_WS_ENDPOINT=ws://127.0.0.1:9323/ $(PYTEST) -m smoke -q
-
 debug-minio-up: ## Start MinIO
 	docker compose -f tools/minio/docker-compose.yml up -d
 
 debug-minio-down: ## Stop MinIO
 	docker compose -f tools/minio/docker-compose.yml down
-

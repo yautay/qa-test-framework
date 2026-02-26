@@ -1,12 +1,15 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=68", "wheel", "setuptools_scm[toml]>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "netQArner"
-version = "0.1.0"
+name = "netQArner San Eskobar"
+dynamic = ["version"]
 description = "Playwright-first QA automation framework"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
+
+[tool.netqawner]
+codename = "San Eskobar"
 
 [project.optional-dependencies]
 dev = [
@@ -20,6 +23,7 @@ dev = [
   "playwright>=1.48.0",
   "loguru>=0.7.2",
   "requests>=2.32.0",
+  "reportlab>=4.2.5",
   "opencv-python>=4.10.0",
   "minio>=7.2.9",
 ]
@@ -54,3 +58,8 @@ ignore_missing_imports = true
 check_untyped_defs = true
 no_implicit_optional = true
 exclude = '.*legacy.*'
+
+[tool.setuptools_scm]
+version_scheme = "release-branch-semver"
+local_scheme = "node-and-date"
+tag_regex = "^v(?P<version>\\d+\\.\\d+\\.\\d+)$"

@@ -14,6 +14,10 @@ resolve_pl = url_resolver(
 
 @pytest.hookimpl(trylast=True)
 def pytest_configure(config: pytest.Config) -> None:
+    markexpr = str(getattr(config.option, "markexpr", "") or "").strip().lower()
+    if markexpr == "visual":
+        return
+
     env: RuntimeEnv | None = getattr(config, "_runtime_env", None)
     if env is None:
         return
@@ -21,6 +25,8 @@ def pytest_configure(config: pytest.Config) -> None:
     if (env.base_url or "").strip():
         return
 
+    # Legacy compatibility: env.server_type + env.server_name split is resolved
+    # centrally in qa/conftest.py (including server_name aliases demo/prod/local).
     try:
         resolved = resolve_pl(env.server_type, env.server_name).rstrip("/")
     except ValueError as e:

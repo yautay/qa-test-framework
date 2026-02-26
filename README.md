@@ -69,7 +69,7 @@ Key values for regular execution:
 - `server_type`, `server_name` (in `settings_cli.py`)
 - `BROWSER`, `HEADLESS`
 - `VISUAL_ENABLED`
-- `VISUAL_PERCEPTUAL_ENABLED`, `VISUAL_PERCEPTUAL_REQUIRED`, `VISUAL_PERCEPTUAL_API_URL`
+- `PMS_ENABLED`, `PMS_BASE_URL` (+ throttling knobs in `.env.example`)
 
 ## Visual regression
 
@@ -84,9 +84,20 @@ Commands:
 make test-visual
 make visual-approve
 make visual-sync
+make visual-report-serve
 make minio-up
 make minio-down
 ```
+
+Baseline approval from report UI:
+
+- start report server (`make visual-report-serve`),
+- open hero page (`http://127.0.0.1:4173/`) and pick report run,
+- tag rows with `BASELINE`,
+- click `SEND BASELINE` and rewrite challenge phrase,
+- selected `TEST` images are copied to local baseline candidates (`qa/visual/baselines/<suite>/<profile>/candidates`).
+
+Details: `docs/VISUAL_BASELINE_APPROVAL_FLOW.md`
 
 ## Artifacts and troubleshooting
 

@@ -1,68 +1,110 @@
 # Artifacts Guide
 
-This document explains what is written under `artifacts/<run_id>/` and how to use it.
+This document explains how runtime artifacts are built and finalized under `artifacts/<run_id>/`.
 
-## Run directory layout
+## Directory layout
 
-Typical structure:
+Typical structure for one run:
 
 - `artifacts/<run_id>/logs/`
 - `artifacts/<run_id>/screenshots/`
 - `artifacts/<run_id>/videos/`
 - `artifacts/<run_id>/traces/`
 - `artifacts/<run_id>/visual/`
+- `artifacts/<run_id>/workers/` (xdist only)
+
+## Run id and run root
+
+Run root is resolved in `qa/conftest.py` via `resolve_artifacts_base_dir(...)` and `build_run_artifacts(...)`.
+
+- Non-xdist run: run id is timestamp (`YYYYMMDD_HHMMSS_microseconds`).
+- Xdist controller: run id is initialized once and shared with workers.
+- Xdist worker: run id is read from `workerinput["run_id"]`.
+
+Important behavior:
+
+- Worker must receive `run_id` from controller; otherwise startup fails fast.
+- This guarantees one shared run directory for all workers.
+
+## What writes artifacts
+
+Core run directories are created by `framework/artifacts.py`:
+
+- `logs/`
+- `screenshots/`
+- `videos/`
+- `traces/`
+
+Per-test writing:
+
+- screenshots, traces, videos are written by test/runtime helpers during test execution,
+- filenames are already worker-safe (unique test/node id based naming).
+
+Run-level writing:
+
+- `run-metadata.json` is written early in `qa/conftest.py` (tester + run_note),
+- `logs/test_durations_<worker>.json` is written by each worker,
+- `logs/test_durations.json` is merged on xdist controller at session finish.
+
+## Visual flow (single process)
+
+Without xdist:
+
+- tests append `VisualResult` objects to session fixture list,
+- fixture finalizer calls `write_visual_report(...)`,
+- report outputs are generated directly in `visual/`.
+
+## Visual flow (xdist)
+
+With xdist:
+
+1. Worker phase:
+   - each worker writes `workers/<gw>/visual_results.json` at session end,
+   - each worker writes `logs/test_durations_<gw>.json`.
+
+2. Controller phase:
+   - plugin `framework/plugins/xdist_report_finalize.py` runs on controller,
+   - worker `visual_results.json` files are loaded and merged,
+   - merge key is `(scenario_id, viewport, browser)` (last write wins),
+   - `write_visual_report(...)` is called once,
+   - durations are merged into `logs/test_durations.json`.
+
+## Visual report outputs
+
+`framework/visual/report_builder.py` generates:
+
+- `visual/results.json` - machine-readable result list,
+- `visual/index.html` - offline report page,
+- `visual/assets/*` - bundled frontend assets,
+- `visual/vrt-tags.json` - tags snapshot file,
+- `visual/.report-ready.json` - readiness marker for report discovery.
+
+`actual/` and `diff/` are produced by visual runner execution. PMS post-process writes LPIPS heatmaps into `visual/heatmaps/` and updates `results.json` (`perceptual.*` + compatibility `lpips/dists/heatmap_path`).
+
+## Asset copy behavior
+
+Assets are copied file-by-file (not metadata-preserving copy). This avoids cross-platform permission issues seen on Windows/WSL/NFS setups.
 
 ## Logs
 
-- `logs/test_run.log` - Loguru output with structured metadata.
-- `logs/test_durations.json` - per-test timing snapshot used for trend checks.
+- `logs/test_run.log/` - structured Loguru logs (per worker + controller files),
+- `logs/test_durations_<worker>.json` - worker-local timing snapshots,
+- `logs/test_durations.json` - merged timing snapshot.
 
-## Screenshots
+## Troubleshooting checklist
 
-Written mainly on failures:
+If visual report files are missing:
 
-- raw screenshot (`screenshot_raw`)
-- annotated screenshot (`screenshot_annotated`)
-
-Annotated files include metadata overlay to speed up triage.
-
-## Videos
-
-Videos are recorded per context when enabled (`RECORD_VIDEO=1`).
-Failure preservation and minimum-duration rules are handled by framework helpers.
-
-## Traces
-
-Tracing starts for E2E contexts and is persisted to `.zip` mainly on failed tests.
-
-Trace zip contains:
-- action timeline,
-- DOM snapshots,
-- network timeline,
-- trace screenshots,
-- source references.
-
-Open trace locally:
-
-```bash
-python -m playwright show-trace artifacts/<run_id>/traces/<file>.zip
-```
-
-## Visual artifacts
-
-Visual runs write:
-
-- `visual/actual/` - captured images,
-- `visual/diff/` - pixel-diff overlays,
-- `visual/heatmap/` - LPIPS heatmaps (when perceptual API is used),
-- `visual/results.json` - structured result summary,
-- `visual/index.html` - local interactive report.
+1. Check `workers/*/visual_results.json` exists.
+2. Check controller log for `visual_worker_results_missing`.
+3. Check controller log for `visual_report_finalize_failed`.
+4. Verify `framework/visual/ui/dist/` exists (built frontend bundle).
+5. Verify all workers and controller use the same `artifacts/<run_id>/` root.
 
 ## Retention recommendation
 
-Artifacts can grow quickly in long-running environments.
-Recommended policy:
+Artifacts can grow quickly in CI and long-lived environments.
 
-- keep recent runs locally,
-- archive only needed failures,
-- clean old run directories periodically.
+- keep only recent runs locally,
+- archive selected failing runs,
+- periodically prune old `artifacts/<run_id>/` directories.

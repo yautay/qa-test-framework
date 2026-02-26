@@ -1,12 +1,10 @@
 from __future__ import annotations
-
-"""Load visual regression scenario definitions from JSON files (with error aggregation)."""
-
 import json
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
-
+import settings
 from framework.visual.models import (
     VisualCapture,
     VisualMask,
@@ -15,10 +13,13 @@ from framework.visual.models import (
     VisualThresholds,
 )
 
+"""Load visual regression scenario definitions from JSON files (with error aggregation)."""
+
 
 @dataclass(frozen=True)
 class ScenarioLoadError:
     """Represents an error when loading a single scenario file."""
+
     file: Path
     message: str
 
@@ -72,6 +73,23 @@ def _as_str_list(v: Any, file_path: Path, field: str) -> list[str]:
     raise _err(file_path, f"{field} must be a list of strings")
 
 
+def _as_viewports(v: Any, file_path: Path, field: str) -> tuple[str, ...]:
+    if v is None:
+        return ()
+    if isinstance(v, str):
+        presets = (v,)
+    elif isinstance(v, list) and all(isinstance(x, str) for x in v):
+        presets = tuple(v)
+    else:
+        raise _err(file_path, f"{field} must be a string or list of strings")
+    allowed = set(settings.visual_viewport_presets.keys())
+    invalid = [p for p in presets if p not in allowed]
+    if invalid:
+        invalid_str = ", ".join(repr(p) for p in invalid)
+        raise _err(file_path, f"{field} must be one of {sorted(allowed)!r} (got {invalid_str})")
+    return presets
+
+
 def _as_steps(raw_steps: Any, file_path: Path, field_prefix: str) -> tuple[VisualStep, ...]:
     """Translate raw dicts into typed VisualStep dataclasses."""
     if raw_steps is None:
@@ -86,8 +104,9 @@ def _as_steps(raw_steps: Any, file_path: Path, field_prefix: str) -> tuple[Visua
                 action=_as_str(raw.get("action", "")).strip(),
                 selector=_as_str(raw.get("selector", "")).strip(),
                 value=_as_str(raw.get("value", "")),
-                timeout_ms=_as_int(raw.get("timeout_ms", 5000), 5000, file_path,
-                                   f"{field_prefix}steps[{i}].timeout_ms"),
+                timeout_ms=_as_int(
+                    raw.get("timeout_ms", 5000), 5000, file_path, f"{field_prefix}steps[{i}].timeout_ms"
+                ),
                 url=_as_str(raw.get("url", "")).strip(),
             )
         )
@@ -111,8 +130,8 @@ def _scenario_from_payload(payload: dict[str, Any], file_path: Path, idx: int) -
         raise _err(file_path, f"{pfx}target_url must be non-empty")
 
     compare_mode = _as_str(payload.get("compare_mode", "hybrid")).strip().lower()
-    if compare_mode not in {"pixel", "perceptual", "hybrid"}:
-        raise _err(file_path, f"{pfx}compare_mode must be pixel|perceptual|hybrid (got {compare_mode!r})")
+    if compare_mode not in {"pixel", "hybrid"}:
+        raise _err(file_path, f"{pfx}compare_mode must be pixel|hybrid (got {compare_mode!r})")
 
     capture_raw = payload.get("capture") or {}
     if not isinstance(capture_raw, dict):
@@ -121,6 +140,8 @@ def _scenario_from_payload(payload: dict[str, Any], file_path: Path, idx: int) -
     capture_type = _as_str(capture_raw.get("type", "page")).strip().lower()
     if capture_type not in {"page", "viewport", "element"}:
         raise _err(file_path, f"{pfx}capture.type must be page|viewport|element (got {capture_type!r})")
+
+    viewport = _as_viewports(payload.get("viewport"), file_path, f"{pfx}viewport")
 
     mask_raw = payload.get("mask") or {}
     if not isinstance(mask_raw, dict):
@@ -141,18 +162,25 @@ def _scenario_from_payload(payload: dict[str, Any], file_path: Path, idx: int) -
             selector=_as_str(capture_raw.get("selector", "")).strip(),
             full_page=_as_bool(capture_raw.get("full_page", True), True, file_path, f"{pfx}capture.full_page"),
         ),
+        viewport=viewport,
         thresholds=VisualThresholds(
             pixel_max=_as_float(thresholds_raw.get("pixel_max", 0.005), 0.005, file_path, f"{pfx}thresholds.pixel_max"),
             lpips_max=_as_float(thresholds_raw.get("lpips_max", 0.08), 0.08, file_path, f"{pfx}thresholds.lpips_max"),
             dists_max=_as_float(thresholds_raw.get("dists_max", 0.08), 0.08, file_path, f"{pfx}thresholds.dists_max"),
+            pixel_uncertain_delta=thresholds_raw.get("pixel_uncertain_delta"),
+            lpips_uncertain_delta=thresholds_raw.get("lpips_uncertain_delta"),
+            dists_uncertain_delta=thresholds_raw.get("dists_uncertain_delta"),
         ),
         mask=VisualMask(
             selectors=tuple(_as_str_list(mask_raw.get("selectors"), file_path, f"{pfx}mask.selectors")),
             color=_as_str(mask_raw.get("color", "#00FF00")),
         ),
         steps=_as_steps(payload.get("steps", []), file_path, pfx),
-        perceptual_required=_as_bool(payload.get("perceptual_required", False), False, file_path,
-                                     f"{pfx}perceptual_required"),
+        perceptual_required=_as_bool(
+            payload.get("perceptual_required", False), False, file_path, f"{pfx}perceptual_required"
+        ),
+        raw_definition=deepcopy(payload),
+        source_file=str(file_path),
     )
 
 
@@ -182,21 +210,15 @@ def _load_scenarios(file_path: Path) -> list[VisualScenario]:
     return [_scenario_from_payload(item, file_path, idx) for idx, item in enumerate(raw_list)]
 
 
-def load_scenarios_with_errors(
-        scenarios_dir: Path,
-        scenario_filter: str = "",
-) -> tuple[list[VisualScenario], list[ScenarioLoadError]]:
+def load_scenarios_with_errors(scenarios_dir: Path) -> tuple[list[VisualScenario], list[ScenarioLoadError]]:
     """Load scenarios and collect errors instead of raising immediately."""
     scenarios: list[VisualScenario] = []
     errors: list[ScenarioLoadError] = []
-    filter_value = scenario_filter.strip().lower()
 
     for file_path in sorted(scenarios_dir.glob("*.json")):
         try:
             loaded = _load_scenarios(file_path)
             for scenario in loaded:
-                if filter_value and filter_value not in scenario.scenario_id.lower():
-                    continue
                 scenarios.append(scenario)
         except Exception as exc:
             errors.append(ScenarioLoadError(file=file_path, message=str(exc)))

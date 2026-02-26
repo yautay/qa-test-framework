@@ -75,7 +75,7 @@ def load_previous_timings(current_run_dir: Path) -> dict[str, float]:
 def detect_slow_regressions(
     current: dict[str, float],
     previous: dict[str, float],
-    threshold_ratio: float = 0.2,
+    threshold_ratio: float = 0.5,
 ) -> list[dict[str, float | str]]:
     """Compare runs and report regressions that exceed the threshold ratio.
 

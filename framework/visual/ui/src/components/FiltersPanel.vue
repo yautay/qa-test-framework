@@ -1,62 +1,123 @@
 <template>
-  <div class="card mb-3 shadow-sm">
+  <div class="card mb-3 shadow-sm" :class="{ 'filters-panel-active': store.filtersActive }">
     <div class="card-body">
       <div class="row g-2 align-items-end">
         <div class="col-12 col-md-4">
-          <label class="form-label">Szukaj (scenario/message)</label>
-          <input class="form-control" v-model="store.q" placeholder="np. hero, header..." />
+          <label class="form-label">{{ t('filtersPanel.search') }}</label>
+          <input
+            class="form-control"
+            :class="{ 'filter-active-field': searchActive }"
+            v-model="store.q"
+            :placeholder="t('filtersPanel.searchPlaceholder')"
+          />
         </div>
 
         <div class="col-6 col-md-2">
-          <label class="form-label">Status</label>
-          <select class="form-select" v-model="store.status">
-            <option value="">All</option>
-            <option value="passed">passed</option>
-            <option value="failed">failed</option>
-            <option value="skipped">skipped</option>
-            <option value="error">error</option>
-            <option value="new">new</option>
+          <label class="form-label">{{ t('filtersPanel.status') }}</label>
+          <select class="form-select" :class="{ 'filter-active-field': statusActive }" v-model="store.status">
+            <option value="">{{ t('filtersPanel.all') }}</option>
+            <option value="passed">{{ t('status.passed') }}</option>
+            <option value="failed">{{ t('status.failed') }}</option>
+            <option value="uncertain">{{ t('status.uncertain') }}</option>
+            <option value="analysis">{{ t('status.analysis') }}</option>
+            <option value="skipped">{{ t('status.skipped') }}</option>
+            <option value="with_note">{{ t('filtersPanel.statusWithNote') }}</option>
           </select>
         </div>
 
         <div class="col-6 col-md-2">
-          <label class="form-label">Mode</label>
-          <select class="form-select" v-model="store.mode">
-            <option value="">All</option>
-            <option value="pixel">pixel</option>
-            <option value="perceptual">perceptual</option>
-            <option value="hybrid">hybrid</option>
+          <label class="form-label">{{ t('filtersPanel.viewport') }}</label>
+          <select class="form-select" :class="{ 'filter-active-field': viewportActive }" v-model="store.viewport">
+            <option value="">{{ t('filtersPanel.all') }}</option>
+            <option v-for="vp in store.viewports" :key="vp" :value="vp">{{ vp }}</option>
           </select>
         </div>
 
         <div class="col-6 col-md-2">
-          <label class="form-label">Sort</label>
+          <label class="form-label">{{ t('filtersPanel.browser') }}</label>
+          <select class="form-select" :class="{ 'filter-active-field': browserActive }" v-model="store.browser">
+            <option value="">{{ t('filtersPanel.all') }}</option>
+            <option v-for="browser in store.browsers" :key="browser" :value="browser">{{ browser }}</option>
+          </select>
+        </div>
+
+        <div class="col-6 col-md-2">
+          <label class="form-label">{{ t('filtersPanel.sort') }}</label>
           <select class="form-select" v-model="store.sortKey">
-            <option value="scenario_id">scenario_id</option>
-            <option value="status">status</option>
-            <option value="pixel_changed_ratio">pixel</option>
-            <option value="lpips">lpips</option>
-            <option value="dists">dists</option>
+            <option value="scenario_id">{{ t('sort.scenario_id') }}</option>
+            <option value="status">{{ t('sort.status') }}</option>
+            <option value="pixel_changed_ratio">{{ t('sort.pixel') }}</option>
+            <option value="lpips">{{ t('sort.lpips') }}</option>
+            <option value="dists">{{ t('sort.dists') }}</option>
+            <option value="tags">{{ t('sort.tags') }}</option>
+            <option value="note">{{ t('sort.note') }}</option>
           </select>
         </div>
 
         <div class="col-6 col-md-2">
           <label class="form-label">&nbsp;</label>
-          <button class="btn btn-outline-secondary w-100" @click="$emit('reset')">Reset</button>
+          <button class="btn btn-outline-secondary w-100" @click="store.resetFilters()">{{ t('filtersPanel.reset') }}</button>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
-export default {
-  name: "FiltersPanel",
-  props: {
-    store: {
-      type: Object,
-      required: true,
-    },
-  },
-};
+<script setup>
+import { computed } from "vue";
+import { useResultsStore } from "../stores/resultsStore";
+import { t } from "../lib/i18n";
+
+const store = useResultsStore();
+
+const searchActive = computed(() => !!store.q.trim());
+const statusActive = computed(() => !!store.status);
+const viewportActive = computed(() => !!store.viewport);
+const browserActive = computed(() => !!store.browser);
 </script>
+
+<style scoped>
+.card {
+  background-color: var(--card-bg);
+  border-color: var(--border);
+}
+
+.form-control {
+  background-color: var(--card-bg);
+  color: var(--body-color);
+  border-color: var(--border);
+}
+
+.form-control::placeholder {
+  color: var(--text-muted);
+}
+
+.form-control:focus {
+  background-color: var(--card-bg);
+  color: var(--body-color);
+  border-color: var(--primary);
+}
+
+.form-select {
+  background-color: var(--card-bg);
+  color: var(--body-color);
+  border-color: var(--border);
+}
+
+.form-select:focus {
+  background-color: var(--card-bg);
+  color: var(--body-color);
+  border-color: var(--primary);
+}
+
+.filter-active-field {
+  border-color: var(--filter-highlight-border, var(--primary)) !important;
+  background-color: var(--filter-highlight-bg, rgba(13, 110, 253, 0.12));
+  color: var(--filter-highlight-color, var(--body-color));
+}
+
+.card.filters-panel-active {
+  border-color: var(--filter-highlight-border, var(--primary));
+  box-shadow: 0 0 0 1px var(--filter-highlight-border, var(--primary));
+}
+</style>

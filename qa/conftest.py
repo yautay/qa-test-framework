@@ -1,16 +1,18 @@
 from __future__ import annotations
 from dataclasses import replace
 import getpass
+import json
 import os
 import socket
 import time
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, timezone
+from pathlib import Path
 import pytest
 import settings_cli
 from loguru import logger
 
-from framework.artifacts import RunArtifacts, build_run_artifacts
+from framework.artifacts import RunArtifacts, build_run_artifacts, resolve_artifacts_base_dir
 from framework.env import RuntimeEnv, load_env
 from framework.git_info import get_git_metadata
 from framework.logger import configure_logging
@@ -34,7 +36,119 @@ def _get_scenario_description(item: pytest.Item) -> str | None:
 
 
 def _utc_now() -> str:
-    return datetime.now(UTC).isoformat()
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _current_worker_id() -> str:
+    return os.getenv("PYTEST_XDIST_WORKER", "master")
+
+
+def _is_xdist_worker(config: pytest.Config) -> bool:
+    worker_id = str(os.getenv("PYTEST_XDIST_WORKER") or "").strip()
+    if worker_id and worker_id != "master":
+        return True
+    return hasattr(config, "workerinput")
+
+
+def _is_xdist_controller(config: pytest.Config) -> bool:
+    return bool(config.pluginmanager.hasplugin("xdist") and not _is_xdist_worker(config))
+
+
+def _resolve_shared_run_id(config: pytest.Config) -> str | None:
+    worker_input = getattr(config, "workerinput", None)
+    if isinstance(worker_input, dict):
+        token = str(worker_input.get("run_id") or "").strip()
+        if token:
+            return token
+    shared_run_id = str(getattr(config, "_shared_run_id", "") or "").strip()
+    if shared_run_id:
+        return shared_run_id
+    if _is_xdist_worker(config):
+        raise pytest.UsageError("xdist worker missing shared run_id in workerinput")
+    return None
+
+
+def _load_worker_timing_files(logs_dir: Path) -> dict[str, float]:
+    merged: dict[str, float] = {}
+    for path in sorted(logs_dir.glob("test_durations_*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            continue
+        cases = payload.get("cases", {}) if isinstance(payload, dict) else {}
+        if not isinstance(cases, dict):
+            continue
+        for nodeid, seconds in cases.items():
+            if not isinstance(nodeid, str):
+                continue
+            try:
+                merged[nodeid] = float(seconds)
+            except (TypeError, ValueError):
+                continue
+    return merged
+
+
+def _normalize_run_note(raw: object, source: str) -> str:
+    text = str(raw or "").strip()
+    if len(text) > 50:
+        raise pytest.UsageError(f"{source} accepts at most 50 characters")
+    return text
+
+
+_ENV_ALIAS_TOKENS = {"demo", "prod", "local"}
+
+
+def _normalize_target_selector(server_type: str, server_name: str) -> tuple[str, str, str]:
+    """Resolve effective target selector while preserving legacy compatibility.
+
+    Returns: (resolved_server_type, resolved_server_name, source_kind)
+    source_kind is either "legacy_server_type" or "server_name_alias".
+    """
+
+    env_type = str(server_type or "").strip().lower()
+    host_token = str(server_name or "").strip().lower()
+
+    if host_token in _ENV_ALIAS_TOKENS:
+        return host_token, "", "server_name_alias"
+    return env_type, host_token, "legacy_server_type"
+
+
+def _normalize_reference_selector(reference_host: str) -> tuple[str, str, str]:
+    """Resolve reference selector from a token used by visual dual-pass.
+
+    Returns: (resolved_server_type, resolved_server_name, source_kind)
+    source_kind is either "reference_alias" or "reference_host".
+    """
+
+    token = str(reference_host or "").strip().lower()
+    if token in _ENV_ALIAS_TOKENS:
+        return token, "", "reference_alias"
+    return "test", token, "reference_host"
+
+
+def _resolve_run_metadata(config: pytest.Config) -> dict[str, str]:
+    cli_tester = str(config.getoption("--tester") or "").strip()
+    cli_run_note_raw = config.getoption("--run_note")
+    cli_run_note = _normalize_run_note(cli_run_note_raw, "--run_note")
+
+    settings_tester = str(getattr(settings_cli, "tester", "") or "").strip()
+    settings_run_note = _normalize_run_note(getattr(settings_cli, "run_note", ""), "settings_cli.run_note")
+
+    tester = cli_tester if cli_tester else settings_tester
+    run_note = cli_run_note if cli_run_note else settings_run_note
+    return {
+        "tester": tester,
+        "run_note": run_note,
+    }
+
+
+def _write_run_metadata_file(artifacts: RunArtifacts, metadata: dict[str, str]) -> None:
+    payload = {
+        "tester": str(metadata.get("tester", "") or ""),
+        "run_note": str(metadata.get("run_note", "") or ""),
+    }
+    target = artifacts.root / "run-metadata.json"
+    target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def _resolve_run_profile(config: pytest.Config) -> str:
@@ -88,6 +202,7 @@ def _derive_test_status(item: pytest.Item) -> str:
         return "xpassed" if wasxfail else "passed"
     return "error"
 
+
 def _base_url_resolver(config: pytest.Config):
     env: RuntimeEnv | None = getattr(config, "_runtime_env", None)
     if env is None:
@@ -96,11 +211,44 @@ def _base_url_resolver(config: pytest.Config):
     cli_server_type = (config.getoption("--server-type") or "").strip()
     cli_server_name = (config.getoption("--server-name") or "").strip()
     cli_base_url = (config.getoption("--base-url") or "").strip()
+    cli_reference_host = (config.getoption("--reference-host") or "").strip()
 
     if cli_server_type:
         env = replace(env, server_type=cli_server_type)
     if cli_server_name:
         env = replace(env, server_name=cli_server_name)
+    if cli_reference_host:
+        env = replace(env, reference_host=cli_reference_host)
+
+    normalized_server_type, normalized_server_name, target_source = _normalize_target_selector(
+        env.server_type,
+        env.server_name,
+    )
+    if normalized_server_type != env.server_type or normalized_server_name != env.server_name:
+        logger.info(
+            "runtime_target_resolved",
+            source=target_source,
+            requested_server_type=env.server_type,
+            requested_server_name=env.server_name,
+            resolved_server_type=normalized_server_type,
+            resolved_server_name=normalized_server_name,
+        )
+        env = replace(
+            env,
+            server_type=normalized_server_type,
+            server_name=normalized_server_name,
+        )
+
+    reference_host = str(getattr(env, "reference_host", "") or "").strip()
+    if reference_host:
+        ref_server_type, ref_server_name, ref_source = _normalize_reference_selector(reference_host)
+        logger.info(
+            "runtime_reference_resolved",
+            source=ref_source,
+            reference_host=reference_host,
+            resolved_server_type=ref_server_type,
+            resolved_server_name=ref_server_name,
+        )
 
     if cli_base_url:
         config._runtime_env = replace(env, base_url=cli_base_url)
@@ -111,13 +259,18 @@ def _base_url_resolver(config: pytest.Config):
         return
 
     if env.base_url:
-        config._runtime_env = replace(env, base_url=env.base_url)
+        env = replace(env, base_url=env.base_url)
+
+    config._runtime_env = env
+
 
 def pytest_configure(config: pytest.Config) -> None:
-    env = load_env()
-    artifacts = build_run_artifacts(env.artifacts_dir)
-    worker_id = os.getenv("PYTEST_XDIST_WORKER", "master")
+    env = replace(load_env(), ignore_https_errors=True)
+    artifacts_base_dir = resolve_artifacts_base_dir(env.artifacts_dir, config.rootpath)
+    artifacts = build_run_artifacts(str(artifacts_base_dir), run_id=_resolve_shared_run_id(config))
+    worker_id = _current_worker_id()
     git_metadata = get_git_metadata()
+    run_metadata = _resolve_run_metadata(config)
     configure_logging(
         artifacts.logs / "test_run.log",
         artifacts.run_id,
@@ -125,9 +278,14 @@ def pytest_configure(config: pytest.Config) -> None:
         worker_id,
         git_metadata.user,
         git_metadata.email,
+        run_metadata.get("tester", ""),
+        run_metadata.get("run_note", ""),
     )
 
     config._runtime_env = env
+    _base_url_resolver(config)
+    env = config._runtime_env
+    config._run_metadata = run_metadata
     config._run_artifacts = artifacts
     config._git_metadata = git_metadata
     config._reporting_client = ReportingClient(
@@ -165,6 +323,17 @@ def pytest_configure(config: pytest.Config) -> None:
             "collectonly",
         )
     )
+    metadata_path = artifacts.root / "run-metadata.json"
+    if (not _is_xdist_worker(config)) or (not metadata_path.exists()):
+        _write_run_metadata_file(artifacts, run_metadata)
+
+
+def pytest_configure_node(node) -> None:
+    artifacts = getattr(node.config, "_run_artifacts", None)
+    if artifacts is None:
+        return
+    node.workerinput["run_id"] = artifacts.run_id
+
 
 def pytest_sessionstart(session: pytest.Session) -> None:
     if getattr(session.config, "_reporting_suspended", False):
@@ -202,16 +371,28 @@ def pytest_sessionstart(session: pytest.Session) -> None:
             "author_name": metadata.user,
             "author_email": metadata.email,
         },
+        "metadata": session.config._run_metadata,
     }
     session.config._run_start_payload = run_start_payload
+    logger.info("reporting_run_start", run_id=artifacts.run_id, **session.config._run_metadata)
     session.config._reporting_client.run_start(run_start_payload)
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     artifacts: RunArtifacts = session.config._run_artifacts
     timings: dict[str, float] = session.config._test_case_timings
-    durations_path = artifacts.logs / "test_durations.json"
-    save_run_timings(durations_path, timings)
+    worker_id = _current_worker_id()
+    if _is_xdist_worker(session.config):
+        durations_path = artifacts.logs / f"test_durations_{worker_id}.json"
+        save_run_timings(durations_path, timings)
+    elif _is_xdist_controller(session.config):
+        merged_timings = _load_worker_timing_files(artifacts.logs)
+        durations_path = artifacts.logs / "test_durations.json"
+        save_run_timings(durations_path, merged_timings)
+        timings = merged_timings
+    else:
+        durations_path = artifacts.logs / "test_durations.json"
+        save_run_timings(durations_path, timings)
 
     previous = load_previous_timings(artifacts.root)
     for regression in detect_slow_regressions(timings, previous):
@@ -239,9 +420,11 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
             "flaky_count": 0,
             "slow_regression_count": 0,
         },
+        "metadata": session.config._run_metadata,
     }
     session.config._run_finish_payload = run_finish_payload
     if not getattr(session.config, "_reporting_suspended", False):
+        logger.info("reporting_run_finish", run_id=artifacts.run_id, **session.config._run_metadata)
         session.config._reporting_client.run_finish(run_finish_payload)
 
 
@@ -295,6 +478,8 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
         "visual_actual": "visual_actual",
         "visual_diff": "visual_diff",
         "visual_heatmap": "visual_heatmap",
+        "visual_reference_actual": "visual_reference_actual",
+        "visual_reference_baseline": "visual_reference_baseline",
     }
     for key, path in artifacts_payload.items():
         if not isinstance(path, str):
@@ -335,6 +520,7 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
             "run_start": item.config._run_start_payload,
             "run_finish": item.config._run_finish_payload,
         },
+        "metadata": item.config._run_metadata,
     }
 
     visual_payload = getattr(item, "_visual_payload", None)
@@ -342,6 +528,13 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
         payload["visual"] = visual_payload
 
     if not getattr(item.config, "_reporting_suspended", False):
+        logger.info(
+            "reporting_test_result",
+            run_id=run_artifacts.run_id,
+            nodeid=item.nodeid,
+            status=status,
+            **item.config._run_metadata,
+        )
         item.config._reporting_client.test_result(payload)
     item.config._test_case_emitted.add(item.nodeid)
     counters = item.config._result_counters
