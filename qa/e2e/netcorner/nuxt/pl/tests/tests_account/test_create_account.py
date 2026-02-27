@@ -13,6 +13,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
     "user_data",
     valid_clients(),
     ids=["business_required_marketing", "required_marketing", "required_only"],
+    ids=["1", "2", "3"],
 )
 @scenario("Account Tests: Zakładanie nowego konta")
 def test_create_account(page, context, runtime_env, user_data):
