@@ -4,7 +4,9 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page, expect, TimeoutError as PwTimeoutError
+
+from qa.e2e.conftest import allure
 
 
 class ToastType(str, Enum):
@@ -33,7 +35,8 @@ class ToastOverlay:
         self.page = page
         self._root = page.locator('[data-name="toast"]')
 
-    def get_toast(self, timeout: int = 7000) -> Optional[ToastObject]:
+    @allure.step("Sprawdzam czy pojawił się toast {expected_instance}")
+    def get_toast(self, expected_instance: ToastInstance = ToastInstance.UNKNOWN, timeout: int = 7000) -> Optional[ToastObject]:
         toast = self._root.last
 
         try:
@@ -43,9 +46,8 @@ class ToastOverlay:
             toast_type = self._resolve_type(classes)
             instance = self._resolve_instance(message)
 
-        except TimeoutError:
+        except PwTimeoutError:
             return None
-
 
         return ToastObject(
             message=message,
