@@ -2,7 +2,7 @@ from framework.env import RuntimeEnv
 from playwright.sync_api import BrowserContext, Page
 
 from qa.e2e.conftest import allure
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.toast_overlay import ToastType
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.toast_overlay import ToastType, ToastInstance
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.register_page import RegisterPage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.register_user_data import RegisterUserData
@@ -24,11 +24,11 @@ class FlowRegisterClient:
             home = HomePage(self.page, self.runtime_env.base_url)
             home.open().wait_loaded()
 
-        with _step("Open register form"):
+        with _step("Open login layer and select register form"):
             home.header.actions.open_login()
             home.overlays.login.enter_register_form()
 
-        with _step("Fill registration form"):
+        with _step(f"Fill registration form {user_data}"):
             register_page = RegisterPage(self.page, self.runtime_env.base_url)
             register_page.wait_loaded()
             register_page.content.register_form.fill_login(user_data.email)
@@ -51,6 +51,6 @@ class FlowRegisterClient:
             register_page.content.register_form.submit_registration()
 
         with _step("Validate successful registration"):
-            toast = register_page.overlays.toast.get_toast()
+            toast = register_page.overlays.toast.get_toast(ToastInstance.USER_REGISTERED)
             logged = register_page.header.actions.is_my_account_available()
             return bool(toast.type == ToastType.SUCCESS and logged)

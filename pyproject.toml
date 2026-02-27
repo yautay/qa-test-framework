@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel", "setuptools_scm[toml]>=8"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "netQArner San Eskobar"
+name = "netQArner"
 dynamic = ["version"]
 description = "Playwright-first QA automation framework"
 requires-python = ">=3.13"
