@@ -11,7 +11,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
 @pytest.mark.parametrize(
     "user_data",
     valid_clients(),
-    ids=lambda u: u.email,
+    ids=["1", "2", "3"],
 )
 @scenario("Account Tests: Zakładanie nowego konta")
 def test_create_account(page, context, runtime_env, user_data):
