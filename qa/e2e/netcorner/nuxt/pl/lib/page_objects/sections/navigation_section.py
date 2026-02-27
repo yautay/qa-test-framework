@@ -4,6 +4,6 @@ from playwright.sync_api import Page
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 
 
-class Navigation(BaseComponent):
+class NavigationSection(BaseComponent):
     def __init__(self, page: Page):
         super().__init__(page.locator('[data-name="navigationBar"]'), name="Navigation Bar Section")

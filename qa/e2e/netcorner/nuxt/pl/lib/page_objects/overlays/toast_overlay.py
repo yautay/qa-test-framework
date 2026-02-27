@@ -33,19 +33,15 @@ class ToastOverlay(BaseComponent):
         super().__init__(page.locator('[data-name="toast"]'), name="Toast Overlay")
 
     @allure.step("Sprawdzam czy pojawił się toast {expected_instance}")
-    def get_toast(
-        self,
-        expected_instance: ToastInstance = ToastInstance.UNKNOWN,
-        timeout: int = 7000,
-    ) -> ToastObject | None:
+    def get_toast(self, expected_instance: ToastInstance = ToastInstance.UNKNOWN, timeout: int = 7000) -> ToastObject | None:
         toast = self.root.last
 
         try:
             expect(toast).to_be_visible(timeout=timeout)
             message = toast.locator("div").inner_text().strip()
             classes = toast.get_attribute("class") or ""
-            toast_type = self._resolve_type(classes)
-            instance = self._resolve_instance(message)
+            toast_type = self.__resolve_type(classes)
+            instance = self.__resolve_instance(message)
             if expected_instance != ToastInstance.UNKNOWN and instance != expected_instance:
                 return None
 
@@ -59,14 +55,14 @@ class ToastOverlay(BaseComponent):
         )
 
     @staticmethod
-    def _resolve_type(classes: str) -> ToastType:
+    def __resolve_type(classes: str) -> ToastType:
         for t in ToastType:
             if t != ToastType.UNKNOWN and f"toast-{t.value}" in classes:
                 return t
         return ToastType.UNKNOWN
 
     @staticmethod
-    def _resolve_instance(message: str) -> ToastInstance:
+    def __resolve_instance(message: str) -> ToastInstance:
         for i in ToastInstance:
             if i != ToastInstance.UNKNOWN and message == i.value:
                 return i

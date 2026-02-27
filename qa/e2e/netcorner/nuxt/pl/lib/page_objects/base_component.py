@@ -6,7 +6,7 @@ from playwright.sync_api import Locator, expect
 
 
 class BaseComponent:
-    DEFAULT_TIMEOUT = 10_000
+    DEFAULT_TIMEOUT = 5_000
 
     def __init__(self, root: Locator, name: str = "Component"):
         self.root = root

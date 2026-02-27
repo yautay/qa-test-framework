@@ -7,7 +7,7 @@ from collections.abc import Callable
 class RegisterUserData:
     email: str
     password: str
-    repeated_password: str
+    password_changed: str
     business_offer: bool = False
     accept_required_terms: bool = False
     accept_marketing: bool = False
@@ -25,17 +25,13 @@ class RegisterUserDataBuilder:
     def __init__(self) -> None:
         unique = uuid.uuid4().hex[:6]
         self._email = f"client_{unique}@test.pl"  # Mailhog nie lubi domeny netcorner bo Wosina
-        self._password = unique
-        self._repeated_password = unique
+        self._password = uuid.uuid4().hex[:6]
+        self._password_changed = uuid.uuid4().hex[:6]
         self._business_offer = False
         self._accept_required_terms = False
         self._accept_marketing = False
         self._nip = ""
         self._phone = ""
-
-    def with_wrong_repeated_password(self) -> "RegisterUserDataBuilder":
-        self._repeated_password = uuid.uuid4().hex[:8]
-        return self
 
     def with_business_offer(self) -> "RegisterUserDataBuilder":
         self._business_offer = True
@@ -55,7 +51,7 @@ class RegisterUserDataBuilder:
         return RegisterUserData(
             email=self._email,
             password=self._password,
-            repeated_password=self._repeated_password,
+            password_changed=self._password_changed,
             business_offer=self._business_offer,
             accept_required_terms=self._accept_required_terms,
             accept_marketing=self._accept_marketing,
@@ -67,17 +63,17 @@ class RegisterUserDataBuilder:
 def valid_client_cases() -> list[RegisterUserCase]:
     return [
         RegisterUserCase(
-            case_id="b2c_terms_marketing_business",
+            case_id="pl_terms_marketing_business",
             factory=lambda: (
                 RegisterUserDataBuilder().with_business_offer().with_required_terms().with_marketing().build()
             ),
         ),
         RegisterUserCase(
-            case_id="b2c_terms_marketing",
+            case_id="pl_terms_marketing",
             factory=lambda: RegisterUserDataBuilder().with_required_terms().with_marketing().build(),
         ),
         RegisterUserCase(
-            case_id="b2c_terms_only",
+            case_id="pl_terms_only",
             factory=lambda: RegisterUserDataBuilder().with_required_terms().build(),
         ),
     ]
@@ -86,17 +82,17 @@ def valid_client_cases() -> list[RegisterUserCase]:
 def invalid_client_cases() -> list[RegisterUserCase]:
     return [
         RegisterUserCase(
-            case_id="b2c_marketing_business",
+            case_id="pl_marketing_business",
             factory=lambda: (
                 RegisterUserDataBuilder().with_business_offer().with_marketing().build()
             ),
         ),
         RegisterUserCase(
-            case_id="b2c_marketing",
+            case_id="pl_marketing",
             factory=lambda: RegisterUserDataBuilder().with_marketing().build(),
         ),
         RegisterUserCase(
-            case_id="b2c_only",
+            case_id="pl_only",
             factory=lambda: RegisterUserDataBuilder().build(),
         ),
     ]
@@ -106,7 +102,7 @@ def prod_registered_client() -> RegisterUserData:
     return RegisterUserData(
         email="nc-test-user@komputronik.pl",
         password="UjK_$CE4pCRB9hjn$_eX",
-        repeated_password="UjK_$CE4pCRB9hjn$_eX",
+        password_changed="",
         business_offer=True,
         accept_required_terms=True,
         accept_marketing=True,
