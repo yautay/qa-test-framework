@@ -1,9 +1,89 @@
 from __future__ import annotations
+from datetime import UTC, datetime
+import os
+from pathlib import Path
+from typing import Any, cast
+
 import pytest
 import settings
 
+from framework.artifacts import resolve_artifacts_base_dir
+from framework.env import load_env
+
 
 pytest_plugins = ("framework.plugins.xdist_report_finalize",)
+
+
+def _looks_like_e2e_selection(config: pytest.Config) -> bool:
+    root = Path(str(config.rootpath)).resolve()
+    qa_root = (root / "qa").resolve()
+    e2e_root = (qa_root / "e2e").resolve()
+
+    raw_args = tuple(getattr(config, "args", ()) or ())
+    if not raw_args:
+        return True
+
+    for raw in raw_args:
+        token = str(raw or "").strip().replace("\\", "/")
+        if not token:
+            continue
+        token_path = token.split("::", 1)[0]
+        candidate = Path(token_path)
+        if not candidate.is_absolute():
+            candidate = (root / candidate).resolve()
+        else:
+            candidate = candidate.resolve()
+
+        if candidate == root or candidate == qa_root:
+            return True
+        if e2e_root == candidate or e2e_root in candidate.parents:
+            return True
+
+    return False
+
+
+def _resolve_report_run_id(config: pytest.Config) -> str:
+    worker_input = cast(Any, getattr(config, "workerinput", None))
+    if isinstance(worker_input, dict):
+        worker_run_id = str(worker_input.get("run_id") or "").strip()
+        if worker_run_id:
+            return worker_run_id
+
+    shared_run_id = str(getattr(config, "_shared_run_id", "") or "").strip()
+    if shared_run_id:
+        return shared_run_id
+
+    env_run_id = str(os.getenv("PYTEST_XDIST_TESTRUNUID") or "").strip()
+    if env_run_id:
+        return env_run_id
+
+    return datetime.now(UTC).strftime("%Y%m%d_%H%M%S_%f")
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_configure(config: pytest.Config) -> None:
+    if not _looks_like_e2e_selection(config):
+        return
+
+    run_id = _resolve_report_run_id(config)
+    cast(Any, config)._shared_run_id = run_id
+    os.environ.setdefault("PYTEST_XDIST_TESTRUNUID", run_id)
+
+    env = load_env()
+    artifacts_base = resolve_artifacts_base_dir(env.artifacts_dir, config.rootpath)
+    run_root = (artifacts_base / run_id).resolve()
+    run_root.mkdir(parents=True, exist_ok=True)
+
+    current_allure_dir = str(getattr(config.option, "allure_report_dir", "") or "").strip()
+    if hasattr(config.option, "allure_report_dir") and not current_allure_dir:
+        allure_results_dir = run_root / "allure-results"
+        allure_results_dir.mkdir(parents=True, exist_ok=True)
+        cast(Any, config.option).allure_report_dir = str(allure_results_dir)
+
+    current_html_path = str(getattr(config.option, "htmlpath", "") or "").strip()
+    if hasattr(config.option, "htmlpath") and not current_html_path:
+        cast(Any, config.option).htmlpath = str(run_root / "pytest-report.html")
+        cast(Any, config.option).self_contained_html = True
 
 
 def _validate_run_note(value: str) -> str:

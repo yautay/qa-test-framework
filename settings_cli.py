@@ -1,6 +1,6 @@
 # Remote Playwright grid defaults.
 is_grid_available = False
-is_session_headless = False
+is_session_headless = True
 
 # Browser runtime
 # Supported: chromium, firefox, webkit, chrome

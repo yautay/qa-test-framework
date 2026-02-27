@@ -41,21 +41,6 @@ def _allure_enabled(pytestconfig: pytest.Config) -> bool:
     return bool(str(alluredir or "").strip())
 
 
-def _looks_like_e2e_run(config: pytest.Config) -> bool:
-    markexpr = str(getattr(config.option, "markexpr", "") or "").strip().lower()
-    if "e2e" in markexpr:
-        return True
-
-    raw_args = tuple(getattr(config.invocation_params, "args", ()) or ())
-    for raw in raw_args:
-        token = str(raw or "").strip().replace("\\", "/")
-        if not token or token.startswith("-"):
-            continue
-        if token.startswith("qa/e2e") or "/qa/e2e" in token:
-            return True
-    return False
-
-
 def _resolve_allure_run_id(config: pytest.Config) -> str:
     worker_input = cast(Any, getattr(config, "workerinput", None))
     if isinstance(worker_input, dict):
@@ -76,9 +61,6 @@ def _resolve_allure_run_id(config: pytest.Config) -> str:
 
 @pytest.hookimpl(tryfirst=True)
 def pytest_configure(config: pytest.Config) -> None:
-    if not _looks_like_e2e_run(config):
-        return
-
     run_id = _resolve_allure_run_id(config)
     cast(Any, config)._shared_run_id = run_id
     os.environ.setdefault("PYTEST_XDIST_TESTRUNUID", run_id)

@@ -8,11 +8,14 @@ from qa.scenario import scenario
 
 pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
 
+
 @pytest.mark.parametrize(
     "user_data",
     valid_clients(),
-    ids=lambda u: u.email,
+    ids=["business_required_marketing", "required_marketing", "required_only"],
 )
 @scenario("Account Tests: Zakładanie nowego konta")
 def test_create_account(page, context, runtime_env, user_data):
-    assert FlowRegisterClient(page, context, runtime_env).register_new_client(user_data), "Użytkownik nie został poprawnie zarejestrowany"
+    assert FlowRegisterClient(page, context, runtime_env).register_new_client(user_data), (
+        "Użytkownik nie został poprawnie zarejestrowany"
+    )
