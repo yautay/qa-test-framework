@@ -19,3 +19,6 @@ class HeaderActions(BaseComponent):
 
     def open_cart(self) -> None:
         self.safe_click(self._cart)
+
+    def is_my_account_available(self) -> bool:
+        return self._my_account.is_visible()
