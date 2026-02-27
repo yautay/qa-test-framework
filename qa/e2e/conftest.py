@@ -4,7 +4,7 @@ import importlib
 import os
 import time
 from collections.abc import Iterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
@@ -71,18 +71,12 @@ def _resolve_allure_run_id(config: pytest.Config) -> str:
     if env_run_id:
         return env_run_id
 
-    return datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
+    return datetime.now(UTC).strftime("%Y%m%d_%H%M%S_%f")
 
 
 @pytest.hookimpl(tryfirst=True)
 def pytest_configure(config: pytest.Config) -> None:
-    if allure is None:
-        return
     if not _looks_like_e2e_run(config):
-        return
-
-    current_allure_dir = str(getattr(config.option, "allure_report_dir", "") or "").strip()
-    if current_allure_dir:
         return
 
     run_id = _resolve_allure_run_id(config)
@@ -91,9 +85,19 @@ def pytest_configure(config: pytest.Config) -> None:
 
     env = load_env()
     artifacts_base = resolve_artifacts_base_dir(env.artifacts_dir, config.rootpath)
-    allure_results_dir = (artifacts_base / run_id / "allure-results").resolve()
-    allure_results_dir.mkdir(parents=True, exist_ok=True)
-    cast(Any, config.option).allure_report_dir = str(allure_results_dir)
+    run_root = (artifacts_base / run_id).resolve()
+    run_root.mkdir(parents=True, exist_ok=True)
+
+    current_allure_dir = str(getattr(config.option, "allure_report_dir", "") or "").strip()
+    if allure is not None and not current_allure_dir:
+        allure_results_dir = run_root / "allure-results"
+        allure_results_dir.mkdir(parents=True, exist_ok=True)
+        cast(Any, config.option).allure_report_dir = str(allure_results_dir)
+
+    current_html_path = str(getattr(config.option, "htmlpath", "") or "").strip()
+    if not current_html_path:
+        cast(Any, config.option).htmlpath = str(run_root / "pytest-report.html")
+        cast(Any, config.option).self_contained_html = True
 
 
 def _allure_attach_file(
