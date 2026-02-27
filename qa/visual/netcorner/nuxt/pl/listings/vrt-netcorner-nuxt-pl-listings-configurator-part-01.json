@@ -14,6 +14,16 @@
       "selectors": [
         ".cookie-banner",
         "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
         "[data-name='replace-mask-selector']"
       ],
       "color": "#00FF00"
@@ -39,31 +49,16 @@
       "selectors": [
         ".cookie-banner",
         "[data-testid='dynamic-banner']",
-        "[data-name='replace-mask-selector']"
-      ],
-      "color": "#00FF00"
-    },
-    "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
-    }
-  },
-  {
-    "id": "vrt-netcorner-nuxt-pl-listings-configurator-advanced-configurator-case-a-0",
-    "name": "Listings configurator /advanced-configurator/case?a=0",
-    "suite_id": "netcorner/nuxt/pl/listings",
-    "target_url": "/advanced-configurator/case?a=0",
-    "compare_mode": "hybrid",
-    "capture": {
-      "type": "page",
-      "full_page": true,
-      "selector": "[data-name='replace-capture-selector']"
-    },
-    "mask": {
-      "selectors": [
-        ".cookie-banner",
-        "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
         "[data-name='replace-mask-selector']"
       ],
       "color": "#00FF00"
@@ -89,6 +84,16 @@
       "selectors": [
         ".cookie-banner",
         "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
         "[data-name='replace-mask-selector']"
       ],
       "color": "#00FF00"
@@ -114,6 +119,16 @@
       "selectors": [
         ".cookie-banner",
         "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
         "[data-name='replace-mask-selector']"
       ],
       "color": "#00FF00"
@@ -139,31 +154,16 @@
       "selectors": [
         ".cookie-banner",
         "[data-testid='dynamic-banner']",
-        "[data-name='replace-mask-selector']"
-      ],
-      "color": "#00FF00"
-    },
-    "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
-    }
-  },
-  {
-    "id": "vrt-netcorner-nuxt-pl-listings-configurator-advanced-configurator-dram-memory-a-0",
-    "name": "Listings configurator /advanced-configurator/dram_memory?a=0",
-    "suite_id": "netcorner/nuxt/pl/listings",
-    "target_url": "/advanced-configurator/dram_memory?a=0",
-    "compare_mode": "hybrid",
-    "capture": {
-      "type": "page",
-      "full_page": true,
-      "selector": "[data-name='replace-capture-selector']"
-    },
-    "mask": {
-      "selectors": [
-        ".cookie-banner",
-        "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
         "[data-name='replace-mask-selector']"
       ],
       "color": "#00FF00"
@@ -189,31 +189,16 @@
       "selectors": [
         ".cookie-banner",
         "[data-testid='dynamic-banner']",
-        "[data-name='replace-mask-selector']"
-      ],
-      "color": "#00FF00"
-    },
-    "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
-    }
-  },
-  {
-    "id": "vrt-netcorner-nuxt-pl-listings-configurator-advanced-configurator-graphics-card-a-0",
-    "name": "Listings configurator /advanced-configurator/graphics_card?a=0",
-    "suite_id": "netcorner/nuxt/pl/listings",
-    "target_url": "/advanced-configurator/graphics_card?a=0",
-    "compare_mode": "hybrid",
-    "capture": {
-      "type": "page",
-      "full_page": true,
-      "selector": "[data-name='replace-capture-selector']"
-    },
-    "mask": {
-      "selectors": [
-        ".cookie-banner",
-        "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
         "[data-name='replace-mask-selector']"
       ],
       "color": "#00FF00"
@@ -239,6 +224,16 @@
       "selectors": [
         ".cookie-banner",
         "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
         "[data-name='replace-mask-selector']"
       ],
       "color": "#00FF00"

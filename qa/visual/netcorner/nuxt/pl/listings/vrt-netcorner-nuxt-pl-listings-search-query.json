@@ -14,6 +14,16 @@
       "selectors": [
         ".cookie-banner",
         "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
         "[data-name='replace-mask-selector']"
       ],
       "color": "#00FF00"
@@ -39,6 +49,16 @@
       "selectors": [
         ".cookie-banner",
         "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
         "[data-name='replace-mask-selector']"
       ],
       "color": "#00FF00"
@@ -64,6 +84,16 @@
       "selectors": [
         ".cookie-banner",
         "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
         "[data-name='replace-mask-selector']"
       ],
       "color": "#00FF00"
