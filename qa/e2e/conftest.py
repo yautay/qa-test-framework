@@ -4,6 +4,7 @@ import importlib
 import os
 import time
 from collections.abc import Iterator
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, cast
 
@@ -16,8 +17,8 @@ try:
 except Exception:  # pragma: no cover - optional dependency
     allure = None
 
-from framework.artifacts import RunArtifacts
-from framework.env import RuntimeEnv
+from framework.artifacts import RunArtifacts, resolve_artifacts_base_dir
+from framework.env import RuntimeEnv, load_env
 from framework.screenshot_annotator import annotate_fail_screenshot, extract_selector_from_error
 from framework.video_utils import ensure_min_fail_video
 
@@ -38,6 +39,61 @@ def _allure_enabled(pytestconfig: pytest.Config) -> bool:
     except Exception:
         return False
     return bool(str(alluredir or "").strip())
+
+
+def _looks_like_e2e_run(config: pytest.Config) -> bool:
+    markexpr = str(getattr(config.option, "markexpr", "") or "").strip().lower()
+    if "e2e" in markexpr:
+        return True
+
+    raw_args = tuple(getattr(config.invocation_params, "args", ()) or ())
+    for raw in raw_args:
+        token = str(raw or "").strip().replace("\\", "/")
+        if not token or token.startswith("-"):
+            continue
+        if token.startswith("qa/e2e") or "/qa/e2e" in token:
+            return True
+    return False
+
+
+def _resolve_allure_run_id(config: pytest.Config) -> str:
+    worker_input = cast(Any, getattr(config, "workerinput", None))
+    if isinstance(worker_input, dict):
+        worker_run_id = str(worker_input.get("run_id") or "").strip()
+        if worker_run_id:
+            return worker_run_id
+
+    shared_run_id = str(getattr(config, "_shared_run_id", "") or "").strip()
+    if shared_run_id:
+        return shared_run_id
+
+    env_run_id = str(os.getenv("PYTEST_XDIST_TESTRUNUID") or "").strip()
+    if env_run_id:
+        return env_run_id
+
+    return datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_configure(config: pytest.Config) -> None:
+    if allure is None:
+        return
+    if not _looks_like_e2e_run(config):
+        return
+
+    current_allure_dir = str(getattr(config.option, "allure_report_dir", "") or "").strip()
+    if current_allure_dir:
+        return
+
+    run_id = _resolve_allure_run_id(config)
+    cast(Any, config)._shared_run_id = run_id
+    os.environ.setdefault("PYTEST_XDIST_TESTRUNUID", run_id)
+
+    env = load_env()
+    artifacts_base = resolve_artifacts_base_dir(env.artifacts_dir, config.rootpath)
+    allure_results_dir = (artifacts_base / run_id / "allure-results").resolve()
+    allure_results_dir.mkdir(parents=True, exist_ok=True)
+    cast(Any, config.option).allure_report_dir = str(allure_results_dir)
 
 
 def _allure_attach_file(

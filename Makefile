@@ -8,7 +8,7 @@ PYTEST ?= $(PYTHON) -m pytest
 
 .DEFAULT_GOAL := help
 
-.PHONY: help test test-aso tests-aso test-functional test-visual test-e2e-allure validate-config visual-sync visual-approve visual-report-serve clean-artifacts clean-artifacts-older collect lint format format-check typecheck security verify-discovery verify-scenarios scenario-report test-api remote-up remote-down remote-smoke minio-up minio-down check
+.PHONY: help test test-aso tests-aso test-functional test-visual validate-config visual-sync visual-approve visual-report-serve clean-artifacts clean-artifacts-older collect lint format format-check typecheck security verify-discovery verify-scenarios scenario-report test-api remote-up remote-down remote-smoke minio-up minio-down check
 
 help: ## Show this help
 	$(PYTHON) tools/make/make_help.py
@@ -30,9 +30,6 @@ test-visual: ## Testy regresji wizualnej
 
 test-e2e: ## Testy funkcjonalne
 	$(PYTEST) -m e2e -q
-
-test-e2e-allure: ## Testy e2e z raportem Allure
-	$(PYTEST) qa/e2e -m e2e --alluredir artifacts/allure-results -q
 
 test-aso: ## Testy oznaczone markerem aso
 	$(PYTEST) -m aso -q
