@@ -59,7 +59,7 @@ class RegisterUserDataBuilder:
 
 def valid_clients() -> list[RegisterUserData]:
     return [
-        RegisterUserDataBuilder().with_required_terms().with_business_offer().with_marketing().build(),
+        RegisterUserDataBuilder().with_business_offer().with_required_terms().with_marketing().build(),
         RegisterUserDataBuilder().with_required_terms().with_marketing().build(),
         RegisterUserDataBuilder().with_required_terms().build(),
     ]

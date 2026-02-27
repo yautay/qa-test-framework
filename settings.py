@@ -3,7 +3,7 @@
 # - Dozwolone: TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL
 # - Przyklad: "DEBUG" da wiecej szczegolow podczas diagnozy.
 # Skutek: nizszy poziom (np. TRACE) = wiecej logow i latwiejszy debug, ale wiekszy szum.
-console_log_level = "DEBUG"
+console_log_level = "WARNING"
 
 # ignore_https_errors:
 # - True: ignoruje bledy certyfikatow TLS/HTTPS (np. self-signed lokalnie).
