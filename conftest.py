@@ -8,7 +8,7 @@ import pytest
 import settings
 
 from framework.artifacts import resolve_artifacts_base_dir
-from framework.env import load_env
+from framework.env import RuntimeEnv, load_env
 
 
 pytest_plugins = ("framework.plugins.xdist_report_finalize",)
@@ -60,6 +60,16 @@ def _resolve_report_run_id(config: pytest.Config) -> str:
     return datetime.now(UTC).strftime("%Y%m%d_%H%M%S_%f")
 
 
+def _resolve_report_toggles(config: pytest.Config, env: RuntimeEnv) -> tuple[bool, bool]:
+    cli_allure_enabled = getattr(config.option, "allure_enabled", None)
+    cli_pytest_html_enabled = getattr(config.option, "pytest_html_enabled", None)
+    allure_enabled = env.allure_enabled if cli_allure_enabled is None else bool(cli_allure_enabled)
+    pytest_html_enabled = (
+        env.pytest_html_enabled if cli_pytest_html_enabled is None else bool(cli_pytest_html_enabled)
+    )
+    return allure_enabled, pytest_html_enabled
+
+
 @pytest.hookimpl(tryfirst=True)
 def pytest_configure(config: pytest.Config) -> None:
     if not _looks_like_e2e_selection(config):
@@ -70,20 +80,28 @@ def pytest_configure(config: pytest.Config) -> None:
     os.environ.setdefault("PYTEST_XDIST_TESTRUNUID", run_id)
 
     env = load_env()
+    allure_enabled, pytest_html_enabled = _resolve_report_toggles(config, env)
+    cast(Any, config)._allure_enabled = allure_enabled
+    cast(Any, config)._pytest_html_enabled = pytest_html_enabled
+
     artifacts_base = resolve_artifacts_base_dir(env.artifacts_dir, config.rootpath)
     run_root = (artifacts_base / run_id).resolve()
     run_root.mkdir(parents=True, exist_ok=True)
 
     current_allure_dir = str(getattr(config.option, "allure_report_dir", "") or "").strip()
-    if hasattr(config.option, "allure_report_dir") and not current_allure_dir:
+    if hasattr(config.option, "allure_report_dir") and allure_enabled and not current_allure_dir:
         allure_results_dir = run_root / "allure-results"
         allure_results_dir.mkdir(parents=True, exist_ok=True)
         cast(Any, config.option).allure_report_dir = str(allure_results_dir)
+    if hasattr(config.option, "allure_report_dir") and not allure_enabled:
+        cast(Any, config.option).allure_report_dir = ""
 
     current_html_path = str(getattr(config.option, "htmlpath", "") or "").strip()
-    if hasattr(config.option, "htmlpath") and not current_html_path:
+    if hasattr(config.option, "htmlpath") and pytest_html_enabled and not current_html_path:
         cast(Any, config.option).htmlpath = str(run_root / "pytest-report.html")
         cast(Any, config.option).self_contained_html = True
+    if hasattr(config.option, "htmlpath") and not pytest_html_enabled:
+        cast(Any, config.option).htmlpath = ""
 
 
 def _validate_run_note(value: str) -> str:
@@ -229,4 +247,30 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         default=None,
         type=_validate_run_note,
         help="Optional run note (max 50 chars) attached to run/test metadata",
+    )
+    parser.addoption(
+        "--allure-enabled",
+        action="store_true",
+        dest="allure_enabled",
+        default=None,
+        help="Enable automatic Allure results directory setup",
+    )
+    parser.addoption(
+        "--allure-disabled",
+        action="store_false",
+        dest="allure_enabled",
+        help="Disable automatic Allure results directory setup",
+    )
+    parser.addoption(
+        "--pytest-html-enabled",
+        action="store_true",
+        dest="pytest_html_enabled",
+        default=None,
+        help="Enable automatic pytest-html report path setup",
+    )
+    parser.addoption(
+        "--pytest-html-disabled",
+        action="store_false",
+        dest="pytest_html_enabled",
+        help="Disable automatic pytest-html report path setup",
     )

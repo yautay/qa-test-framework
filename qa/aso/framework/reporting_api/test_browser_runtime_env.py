@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+import settings
 from framework.env import load_env
 
 pytestmark = [pytest.mark.aso]
@@ -42,3 +43,29 @@ def test_load_env_reads_reference_host_from_environment(monkeypatch):
     env = load_env()
 
     assert env.reference_host == "demo"
+
+
+def test_load_env_reads_allure_toggle_from_environment(monkeypatch):
+    monkeypatch.setenv("ALLURE_ENABLED", "1")
+
+    env = load_env()
+
+    assert env.allure_enabled is True
+
+
+def test_load_env_reads_pytest_html_toggle_from_environment(monkeypatch):
+    monkeypatch.setenv("PYTEST_HTML_ENABLED", "0")
+
+    env = load_env()
+
+    assert env.pytest_html_enabled is False
+
+
+def test_load_env_uses_settings_defaults_for_report_toggles(monkeypatch):
+    monkeypatch.delenv("ALLURE_ENABLED", raising=False)
+    monkeypatch.delenv("PYTEST_HTML_ENABLED", raising=False)
+
+    env = load_env()
+
+    assert env.allure_enabled is bool(settings.allure_enabled)
+    assert env.pytest_html_enabled is bool(settings.pytest_html_enabled)

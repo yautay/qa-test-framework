@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: netQArner
-Version: 0.2.0.dev20+gbb2eba7b8.d20260227
+Version: 0.1.0.dev303+gc103e85cb.d20260227
 Summary: Playwright-first QA automation framework
 Requires-Python: >=3.13
 Provides-Extra: dev

@@ -32,13 +32,16 @@ VIEWPORT_PRESETS: dict[str, tuple[int, int]] = {
 
 
 def _allure_enabled(pytestconfig: pytest.Config) -> bool:
+    if not bool(getattr(pytestconfig, "_allure_enabled", True)):
+        return False
     if allure is None:
         return False
+    allure_dir = ""
     try:
-        alluredir = pytestconfig.getoption("--alluredir")
+        allure_dir = str(pytestconfig.getoption("--alluredir") or "")
     except Exception:
-        return False
-    return bool(str(alluredir or "").strip())
+        allure_dir = str(getattr(pytestconfig.option, "allure_report_dir", "") or "")
+    return bool(allure_dir.strip())
 
 
 def _resolve_allure_run_id(config: pytest.Config) -> str:
@@ -59,6 +62,16 @@ def _resolve_allure_run_id(config: pytest.Config) -> str:
     return datetime.now(UTC).strftime("%Y%m%d_%H%M%S_%f")
 
 
+def _resolve_report_toggles(config: pytest.Config, env: RuntimeEnv) -> tuple[bool, bool]:
+    cli_allure_enabled = getattr(config.option, "allure_enabled", None)
+    cli_pytest_html_enabled = getattr(config.option, "pytest_html_enabled", None)
+    allure_enabled = env.allure_enabled if cli_allure_enabled is None else bool(cli_allure_enabled)
+    pytest_html_enabled = (
+        env.pytest_html_enabled if cli_pytest_html_enabled is None else bool(cli_pytest_html_enabled)
+    )
+    return allure_enabled, pytest_html_enabled
+
+
 @pytest.hookimpl(tryfirst=True)
 def pytest_configure(config: pytest.Config) -> None:
     run_id = _resolve_allure_run_id(config)
@@ -66,20 +79,28 @@ def pytest_configure(config: pytest.Config) -> None:
     os.environ.setdefault("PYTEST_XDIST_TESTRUNUID", run_id)
 
     env = load_env()
+    allure_enabled, pytest_html_enabled = _resolve_report_toggles(config, env)
+    cast(Any, config)._allure_enabled = allure_enabled
+    cast(Any, config)._pytest_html_enabled = pytest_html_enabled
+
     artifacts_base = resolve_artifacts_base_dir(env.artifacts_dir, config.rootpath)
     run_root = (artifacts_base / run_id).resolve()
     run_root.mkdir(parents=True, exist_ok=True)
 
     current_allure_dir = str(getattr(config.option, "allure_report_dir", "") or "").strip()
-    if allure is not None and not current_allure_dir:
+    if hasattr(config.option, "allure_report_dir") and allure_enabled and allure is not None and not current_allure_dir:
         allure_results_dir = run_root / "allure-results"
         allure_results_dir.mkdir(parents=True, exist_ok=True)
         cast(Any, config.option).allure_report_dir = str(allure_results_dir)
+    if hasattr(config.option, "allure_report_dir") and not allure_enabled:
+        cast(Any, config.option).allure_report_dir = ""
 
     current_html_path = str(getattr(config.option, "htmlpath", "") or "").strip()
-    if not current_html_path:
+    if hasattr(config.option, "htmlpath") and pytest_html_enabled and not current_html_path:
         cast(Any, config.option).htmlpath = str(run_root / "pytest-report.html")
         cast(Any, config.option).self_contained_html = True
+    if hasattr(config.option, "htmlpath") and not pytest_html_enabled:
+        cast(Any, config.option).htmlpath = ""
 
 
 def _allure_attach_file(

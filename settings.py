@@ -20,6 +20,18 @@ ignore_https_errors = True
 # Skutek: zmiana porzadkuje output i moze ulatwic archiwizacje w CI.
 artifacts_dir = "artifacts"
 
+# allure_enabled:
+# - True: wlacza automatyczne generowanie raportu Allure (allure-results).
+# - False: nie ustawia katalogu Allure i pomija attach'e Allure.
+# Skutek: False przyspiesza lokalny run i ogranicza artefakty, True daje bogatsze raportowanie.
+allure_enabled = False
+
+# pytest_html_enabled:
+# - True: wlacza automatyczne generowanie raportu pytest-html.
+# - False: nie ustawia htmlpath, wiec raport HTML nie jest tworzony automatycznie.
+# Skutek: True ulatwia szybki podglad wynikow po runie.
+pytest_html_enabled = True
+
 # record_video:
 # - True: nagrywa wideo z przebiegu testow.
 # - False: bez nagran.
