@@ -1,12 +1,20 @@
 from __future__ import annotations
 
+import importlib
 import os
 import time
+from collections.abc import Iterator
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 from loguru import logger
 from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_playwright
+
+try:
+    allure = importlib.import_module("allure")
+except Exception:  # pragma: no cover - optional dependency
+    allure = None
 
 from framework.artifacts import RunArtifacts
 from framework.env import RuntimeEnv
@@ -22,6 +30,58 @@ VIEWPORT_PRESETS: dict[str, tuple[int, int]] = {
 }
 
 
+def _allure_enabled(pytestconfig: pytest.Config) -> bool:
+    if allure is None:
+        return False
+    try:
+        alluredir = pytestconfig.getoption("--alluredir")
+    except Exception:
+        return False
+    return bool(str(alluredir or "").strip())
+
+
+def _allure_attach_file(
+    pytestconfig: pytest.Config,
+    file_path: Path,
+    *,
+    name: str,
+    attachment_type: str,
+    extension: str,
+) -> None:
+    if not _allure_enabled(pytestconfig):
+        return
+    if not file_path.is_file():
+        return
+    allure_runtime = cast(Any, allure)
+    try:
+        allure_runtime.attach.file(
+            str(file_path),
+            name=name,
+            attachment_type=attachment_type,
+            extension=extension,
+        )
+    except Exception as exc:
+        logger.debug(f"allure attach skipped: {exc}")
+
+
+def _allure_apply_dynamic_metadata(
+    request: pytest.FixtureRequest,
+    runtime_env: RuntimeEnv,
+    pytestconfig: pytest.Config,
+) -> None:
+    if not _allure_enabled(pytestconfig):
+        return
+    allure_runtime = cast(Any, allure)
+    scenario_marker = request.node.get_closest_marker("scenario")
+    if scenario_marker and scenario_marker.args:
+        scenario_text = str(scenario_marker.args[0]).strip()
+        if scenario_text:
+            allure_runtime.dynamic.story(scenario_text)
+    allure_runtime.dynamic.tag("e2e")
+    allure_runtime.dynamic.parameter("browser", runtime_env.browser)
+    allure_runtime.dynamic.parameter("viewport", str(pytestconfig.getoption("viewport") or "fhd"))
+
+
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item: pytest.Item, call):
     outcome = yield
@@ -30,14 +90,14 @@ def pytest_runtest_makereport(item: pytest.Item, call):
 
 
 @pytest.fixture(scope="session")
-def playwright_instance() -> Playwright:
+def playwright_instance() -> Iterator[Playwright]:
     """Session Playwright driver used to launch/connect browsers."""
     with sync_playwright() as playwright:
         yield playwright
 
 
 @pytest.fixture(scope="session")
-def browser(playwright_instance: Playwright, runtime_env: RuntimeEnv) -> Browser:
+def browser(playwright_instance: Playwright, runtime_env: RuntimeEnv) -> Iterator[Browser]:
     """Session browser instance (local launch or remote grid connect)."""
     if runtime_env.is_grid_available:
         if not runtime_env.grid_ws_endpoint:
@@ -64,7 +124,7 @@ def context(
     runtime_env: RuntimeEnv,
     run_artifacts: RunArtifacts,
     pytestconfig: pytest.Config,
-) -> BrowserContext:
+) -> Iterator[BrowserContext]:
     """Isolated browser context with viewport, tracing, and fail artifacts."""
     context_started = time.perf_counter()
     viewport_preset = str(pytestconfig.getoption("viewport") or "fhd")
@@ -93,6 +153,13 @@ def context(
         trace_path = run_artifacts.traces / f"{nodeid_safe}.zip"
         context.tracing.stop(path=str(trace_path))
         artifacts_payload["trace"] = str(trace_path)
+        _allure_attach_file(
+            pytestconfig,
+            trace_path,
+            name="trace",
+            attachment_type="application/zip",
+            extension="zip",
+        )
     else:
         context.tracing.stop()
 
@@ -103,6 +170,13 @@ def context(
         target = run_artifacts.videos / f"{nodeid_safe}_last{runtime_env.video_min_seconds}s.webm"
         saved = ensure_min_fail_video(raw, target, runtime_env.video_min_seconds)
         artifacts_payload["video"] = str(saved)
+        _allure_attach_file(
+            pytestconfig,
+            saved,
+            name="video",
+            attachment_type="video/webm",
+            extension="webm",
+        )
 
     screenshot_artifacts = getattr(request.node, "_screenshot_artifacts", None)
     if isinstance(screenshot_artifacts, dict):
@@ -161,8 +235,9 @@ def page(
     run_artifacts: RunArtifacts,
     runtime_env: RuntimeEnv,
     pytestconfig: pytest.Config,
-) -> Page:
+) -> Iterator[Page]:
     """Page object with optional fail screenshot annotation integration."""
+    _allure_apply_dynamic_metadata(request, runtime_env, pytestconfig)
     page = context.new_page()
     _set_consent_cookies(page, runtime_env.base_url)
     request.node._page = page
@@ -200,7 +275,7 @@ def page(
             "height": float(box.get("height", 0.0)),
         }
 
-    git = pytestconfig._git_metadata
+    git = cast(Any, pytestconfig)._git_metadata
     annotate_fail_screenshot(
         raw_path,
         ann_path,
@@ -216,4 +291,18 @@ def page(
         "screenshot_raw": str(raw_path),
         "screenshot_annotated": str(ann_path),
     }
+    _allure_attach_file(
+        pytestconfig,
+        raw_path,
+        name="screenshot_raw",
+        attachment_type="image/png",
+        extension="png",
+    )
+    _allure_attach_file(
+        pytestconfig,
+        ann_path,
+        name="screenshot_annotated",
+        attachment_type="image/png",
+        extension="png",
+    )
     page.close()
