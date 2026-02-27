@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import nullcontext
 from dataclasses import dataclass
 from enum import Enum
 
@@ -15,6 +16,8 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.register_user_data import RegisterUs
 
 
 def _step(title: str):
+    if allure is None:
+        return nullcontext()
     return allure.step(title)
 
 
@@ -55,14 +58,17 @@ class FlowRegisterClient:
                 register_page.content.register_form.accept_required_terms()
             register_page.content.register_form.submit_registration()
 
-        with (_step("Validate successful registration")):
+        with _step("Validate successful registration"):
             home_after_submit = HomePage(self.__page, self.__runtime_env.base_url)
             home_after_submit.overlays.toast.get_toast(timeout=5_000)
             my_account_visible = home_after_submit.header.actions.is_my_account_available()
             if my_account_visible:
                 home.header.actions.open_account()
-                logged_as = MyAccountPage(self.__page,
-                                          self.__runtime_env.base_url).wait_loaded().content.menu_root.get_logged_as()
+                logged_as = (
+                    MyAccountPage(self.__page, self.__runtime_env.base_url)
+                    .wait_loaded()
+                    .content.menu_root.get_logged_as()
+                )
                 if logged_as == user_data.email:
                     return True
             return False

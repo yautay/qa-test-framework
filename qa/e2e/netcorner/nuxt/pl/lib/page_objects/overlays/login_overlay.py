@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from playwright.sync_api import Page
 
-from qa.e2e.conftest import allure
+from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 
 
@@ -15,14 +15,13 @@ class LoginOverlay(BaseComponent):
         self.__reset_password = self.root.get_by_text("Odzyskaj hasło", exact=True)
         self.__register_account = self.root.locator('[href="/register"]')
 
-    @allure.step("Wchodzę w formularz rejestracji klienta.")
+    @step("Wchodzę w formularz rejestracji klienta.")
     def enter_register_form(self) -> None:
         self.wait_visible()
         self.safe_click(self.__register_account)
 
-    @allure.step("Loguję klienta loginem: {client_login} hasłem: {client_pwd}")
+    @step("Loguję klienta loginem: {client_login} hasłem: {client_pwd}")
     def log_client(self, client_login: str, client_pwd: str) -> None:
         self.safe_type(self.__input_login, client_login)
         self.safe_type(self.__input_password, client_pwd)
         self.safe_click(self.__button_login)
-

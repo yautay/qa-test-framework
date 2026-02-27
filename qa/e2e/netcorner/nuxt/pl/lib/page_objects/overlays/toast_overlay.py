@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from enum import Enum
 from playwright.sync_api import Page, expect
 
-from qa.e2e.conftest import allure
+from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 
 
@@ -32,8 +32,10 @@ class ToastOverlay(BaseComponent):
     def __init__(self, page: Page):
         super().__init__(page.locator('[data-name="toast"]'), name="Toast Overlay")
 
-    @allure.step("Sprawdzam czy pojawił się toast {expected_instance}")
-    def get_toast(self, expected_instance: ToastInstance = ToastInstance.UNKNOWN, timeout: int = 7000) -> ToastObject | None:
+    @step("Sprawdzam czy pojawił się toast {expected_instance}")
+    def get_toast(
+        self, expected_instance: ToastInstance = ToastInstance.UNKNOWN, timeout: int = 7000
+    ) -> ToastObject | None:
         toast = self.root.last
 
         try:
