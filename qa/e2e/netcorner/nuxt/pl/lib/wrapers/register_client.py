@@ -76,7 +76,7 @@ class FlowRegisterClient:
 
         with _step("Validate successful registration"):
             home_after_submit = HomePage(self.page, self.runtime_env.base_url)
-            toast = home_after_submit.overlays.toast.get_toast(timeout=7_000)
+            toast = home_after_submit.overlays.toast.get_toast(timeout=5_000)
             my_account_visible = home_after_submit.header.actions.is_my_account_available()
 
             if my_account_visible or (toast is not None and toast.instance == ToastInstance.USER_REGISTERED):
