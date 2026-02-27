@@ -11,7 +11,6 @@ pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
 
 
 @allure.feature("Konto użytkownika")
-@allure.story("Rejestracja konta")
 @allure.severity(allure.severity_level.CRITICAL)
 @pytest.mark.parametrize(
     "user_case",
@@ -26,7 +25,6 @@ def test_create_account(page, context, runtime_env, user_case):
 
 
 @allure.feature("Konto użytkownika")
-@allure.story("Rejestracja konta - błędne dane")
 @allure.severity(allure.severity_level.NORMAL)
 @pytest.mark.parametrize(
     "user_case",

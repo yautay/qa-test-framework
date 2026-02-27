@@ -6,8 +6,6 @@ import pytest
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.my_account_page import MyAccountPage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.register_user_data import (
-    valid_client_cases,
-    invalid_client_cases,
     RegisterUserCase,
     RegisterUserDataBuilder,
 )
@@ -17,7 +15,6 @@ pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
 
 
 @allure.feature("Konto użytkownika")
-@allure.story("Zmiana hasła")
 @allure.severity(allure.severity_level.CRITICAL)
 @pytest.mark.parametrize(
     "user_case",
