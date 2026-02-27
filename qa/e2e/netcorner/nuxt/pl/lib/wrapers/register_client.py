@@ -1,23 +1,15 @@
-import importlib
-from contextlib import nullcontext
-
 from framework.env import RuntimeEnv
 from playwright.sync_api import BrowserContext, Page
 
+from qa.e2e.conftest import allure
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.toast_overlay import ToastType
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.register_page import RegisterPage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.register_user_data import RegisterUserData
 
-try:
-    allure = importlib.import_module("allure")
-except Exception:  # pragma: no cover - optional dependency
-    allure = None
 
 
 def _step(title: str):
-    if allure is None:
-        return nullcontext()
     return allure.step(title)
 
 
@@ -61,6 +53,4 @@ class FlowRegisterClient:
         with _step("Validate successful registration"):
             toast = register_page.overlays.toast.get_toast()
             logged = register_page.header.actions.is_my_account_available()
-            if toast is None:
-                return False
             return bool(toast.type == ToastType.SUCCESS and logged)
