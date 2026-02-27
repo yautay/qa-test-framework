@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import uuid
+from collections.abc import Callable
 
 
 @dataclass
@@ -12,6 +13,12 @@ class RegisterUserData:
     accept_marketing: bool = False
     nip: str = ""
     phone: str = ""
+
+
+@dataclass(frozen=True)
+class RegisterUserCase:
+    case_id: str
+    factory: Callable[[], "RegisterUserData"]
 
 
 class RegisterUserDataBuilder:
@@ -58,10 +65,25 @@ class RegisterUserDataBuilder:
 
 
 def valid_clients() -> list[RegisterUserData]:
+    return [case.factory() for case in valid_client_cases()]
+
+
+def valid_client_cases() -> list[RegisterUserCase]:
     return [
-        RegisterUserDataBuilder().with_business_offer().with_required_terms().with_marketing().build(),
-        RegisterUserDataBuilder().with_required_terms().with_marketing().build(),
-        RegisterUserDataBuilder().with_required_terms().build(),
+        RegisterUserCase(
+            case_id="b2b_terms_marketing",
+            factory=lambda: (
+                RegisterUserDataBuilder().with_business_offer().with_required_terms().with_marketing().build()
+            ),
+        ),
+        RegisterUserCase(
+            case_id="b2c_terms_marketing",
+            factory=lambda: RegisterUserDataBuilder().with_required_terms().with_marketing().build(),
+        ),
+        RegisterUserCase(
+            case_id="b2c_terms_only",
+            factory=lambda: RegisterUserDataBuilder().with_required_terms().build(),
+        ),
     ]
 
 
