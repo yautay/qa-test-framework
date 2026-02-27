@@ -49,15 +49,15 @@ class RegisterClient(BaseComponent):
     # ============================================================
 
     def fill_login(self, email: str) -> "RegisterPage":
-        self.safe_fill(self._input_login, email)
+        self.safe_type(self._input_login, email)
         return self
 
     def fill_password(self, password: str) -> "RegisterPage":
-        self.safe_fill(self._input_password, password)
+        self.safe_type(self._input_password, password)
         return self
 
     def fill_repeated_password(self, password: str) -> "RegisterPage":
-        self.safe_fill(self._input_password_repeated, password)
+        self.safe_type(self._input_password_repeated, password)
         return self
 
     def check_business_offer(self) -> "RegisterPage":

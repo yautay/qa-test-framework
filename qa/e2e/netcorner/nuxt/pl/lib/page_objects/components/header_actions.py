@@ -21,4 +21,4 @@ class HeaderActions(BaseComponent):
         self.safe_click(self._cart)
 
     def is_my_account_available(self) -> bool:
-        return self._my_account.is_visible()
+        return self._my_account.is_visible(timeout=3000)

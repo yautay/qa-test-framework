@@ -10,7 +10,7 @@ LoadState = Literal["domcontentloaded", "load", "networkidle"]
 
 
 class BasePage:
-    DEFAULT_TIMEOUT = 10_000
+    DEFAULT_TIMEOUT = 3_000
 
     def __init__(self, page: Page, base_url: str):
         self.page = page

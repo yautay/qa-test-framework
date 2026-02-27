@@ -11,7 +11,7 @@ class SearchBar(BaseComponent):
         self._submit = self.find('[title="search-button"]')
 
     def fill_phrase(self, phrase: str) -> "SearchBar":
-        self.safe_fill(self._input, phrase)
+        self.safe_type(self._input, phrase)
         return self
 
     def submit(self) -> None:

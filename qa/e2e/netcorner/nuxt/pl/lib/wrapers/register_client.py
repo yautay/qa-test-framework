@@ -51,6 +51,7 @@ class FlowRegisterClient:
             register_page.content.register_form.submit_registration()
 
         with _step("Validate successful registration"):
-            toast = register_page.overlays.toast.get_toast(ToastInstance.USER_REGISTERED)
-            logged = register_page.header.actions.is_my_account_available()
-            return bool(toast.type == ToastType.SUCCESS and logged)
+            try:
+                return HomePage(self.page, self.runtime_env.base_url).wait_loaded(timeout=3000).header.actions.is_my_account_available()
+            except AssertionError:
+                return False

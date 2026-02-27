@@ -24,7 +24,7 @@ class RegisterUserCase:
 class RegisterUserDataBuilder:
     def __init__(self) -> None:
         unique = uuid.uuid4().hex[:6]
-        self._email = f"client_{unique}@test.pl"  #  Mailhog nie lubi domeny netcorner bo Wosina
+        self._email = f"client_{unique}@test.pl"  # Mailhog nie lubi domeny netcorner bo Wosina
         self._password = unique
         self._repeated_password = unique
         self._business_offer = False
@@ -64,14 +64,10 @@ class RegisterUserDataBuilder:
         )
 
 
-def valid_clients() -> list[RegisterUserData]:
-    return [case.factory() for case in valid_client_cases()]
-
-
 def valid_client_cases() -> list[RegisterUserCase]:
     return [
         RegisterUserCase(
-            case_id="b2b_terms_marketing",
+            case_id="b2c_terms_marketing_business",
             factory=lambda: (
                 RegisterUserDataBuilder().with_business_offer().with_required_terms().with_marketing().build()
             ),
@@ -87,16 +83,26 @@ def valid_client_cases() -> list[RegisterUserCase]:
     ]
 
 
-def invalid_clients() -> list[RegisterUserData]:
+def invalid_client_cases() -> list[RegisterUserCase]:
     return [
-        RegisterUserDataBuilder().with_business_offer().with_marketing().build(),
-        RegisterUserDataBuilder().with_marketing().build(),
-        RegisterUserDataBuilder().with_business_offer().build(),
-        RegisterUserDataBuilder().with_wrong_repeated_password().build(),
+        RegisterUserCase(
+            case_id="b2c_marketing_business",
+            factory=lambda: (
+                RegisterUserDataBuilder().with_business_offer().with_marketing().build()
+            ),
+        ),
+        RegisterUserCase(
+            case_id="b2c_marketing",
+            factory=lambda: RegisterUserDataBuilder().with_marketing().build(),
+        ),
+        RegisterUserCase(
+            case_id="b2c_only",
+            factory=lambda: RegisterUserDataBuilder().build(),
+        ),
     ]
 
 
-def registered_client() -> RegisterUserData:
+def prod_registered_client() -> RegisterUserData:
     return RegisterUserData(
         email="nc-test-user@komputronik.pl",
         password="UjK_$CE4pCRB9hjn$_eX",

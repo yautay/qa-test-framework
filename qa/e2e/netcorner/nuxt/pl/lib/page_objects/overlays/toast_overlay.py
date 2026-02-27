@@ -7,6 +7,7 @@ from typing import Optional
 from playwright.sync_api import Page, expect, TimeoutError as PwTimeoutError
 
 from qa.e2e.conftest import allure
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 
 
 class ToastType(str, Enum):
@@ -29,15 +30,14 @@ class ToastObject:
     instance: ToastInstance
 
 
-class ToastOverlay:
-
+class ToastOverlay(BaseComponent):
     def __init__(self, page: Page):
-        self.page = page
-        self._root = page.locator('[data-name="toast"]')
+        super().__init__(page.locator('[data-name="toast"]'), name="Toast Overlay")
 
     @allure.step("Sprawdzam czy pojawił się toast {expected_instance}")
-    def get_toast(self, expected_instance: ToastInstance = ToastInstance.UNKNOWN, timeout: int = 7000) -> Optional[ToastObject]:
-        toast = self._root.last
+    def get_toast(self, expected_instance: ToastInstance = ToastInstance.UNKNOWN, timeout: int = 7000) -> Optional[
+                                                                                                              ToastObject] | None:
+        toast = self.root.last
 
         try:
             expect(toast).to_be_visible(timeout=timeout)
@@ -46,7 +46,7 @@ class ToastOverlay:
             toast_type = self._resolve_type(classes)
             instance = self._resolve_instance(message)
 
-        except PwTimeoutError:
+        except AssertionError:
             return None
 
         return ToastObject(

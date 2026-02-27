@@ -33,29 +33,7 @@ class BaseComponent:
         expect(locator).to_be_visible(timeout=t)
         expect(locator).to_be_enabled(timeout=t)
         locator.scroll_into_view_if_needed()
-        try:
-            locator.click(timeout=t)
-        except Exception:
-            try:
-                locator.page.evaluate(
-                    """() => {
-                        const accept = document.querySelector('#onetrust-accept-btn-handler');
-                        if (accept && typeof accept.click === 'function') {
-                            accept.click();
-                        }
-                        const sdk = document.querySelector('#onetrust-consent-sdk');
-                        if (sdk) {
-                            sdk.remove();
-                        }
-                        const backdrop = document.querySelector('.onetrust-pc-dark-filter');
-                        if (backdrop) {
-                            backdrop.remove();
-                        }
-                    }"""
-                )
-            except Exception:
-                pass
-            locator.click(timeout=t)
+        locator.click(timeout=t)
 
     def safe_fill(self, locator: Locator, value: str, *, timeout: Optional[int] = None) -> None:
         t = timeout or self.DEFAULT_TIMEOUT
@@ -64,9 +42,6 @@ class BaseComponent:
         locator.fill(value, timeout=t)
 
     def safe_type(self, locator: Locator, value: str, *, timeout: Optional[int] = None) -> None:
-        """
-        Przydatne przy inputach z maską lub JS validation.
-        """
         t = timeout or self.DEFAULT_TIMEOUT
         expect(locator).to_be_visible(timeout=t)
         locator.scroll_into_view_if_needed()
