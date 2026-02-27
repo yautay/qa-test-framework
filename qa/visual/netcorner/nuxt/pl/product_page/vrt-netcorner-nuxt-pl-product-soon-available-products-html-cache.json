@@ -1,0 +1,252 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000201",
+    "name": "Product 500000201 tests-soon-available-products html-cache",
+    "target_url": "/product/500000201",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000202",
+    "name": "Product 500000202 tests-soon-available-products html-cache",
+    "target_url": "/product/500000202",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000203",
+    "name": "Product 500000203 tests-soon-available-products html-cache",
+    "target_url": "/product/500000203",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000204",
+    "name": "Product 500000204 tests-soon-available-products html-cache",
+    "target_url": "/product/500000204",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000205",
+    "name": "Product 500000205 tests-soon-available-products html-cache",
+    "target_url": "/product/500000205",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000206",
+    "name": "Product 500000206 tests-soon-available-products html-cache",
+    "target_url": "/product/500000206",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000207",
+    "name": "Product 500000207 tests-soon-available-products html-cache",
+    "target_url": "/product/500000207",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000208",
+    "name": "Product 500000208 tests-soon-available-products html-cache",
+    "target_url": "/product/500000208",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000209",
+    "name": "Product 500000209 tests-soon-available-products html-cache",
+    "target_url": "/product/500000209",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000210",
+    "name": "Product 500000210 tests-soon-available-products html-cache",
+    "target_url": "/product/500000210",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  }
+]

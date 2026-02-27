@@ -1,0 +1,77 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-listings-search-query-search-category-1-query-klawiatura-czarna",
+    "name": "Listings search-query /search/category/1?query=klawiatura+czarna",
+    "suite_id": "netcorner/nuxt/pl/listings",
+    "target_url": "/search/category/1?query=klawiatura+czarna",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-listings-search-query-search-category-1-query-klawiatura-czarna-showbuyactiveonly-1-p-20",
+    "name": "Listings search-query /search/category/1?query=klawiatura+czarna&showBuyActiveOnly=1&p=20",
+    "suite_id": "netcorner/nuxt/pl/listings",
+    "target_url": "/search/category/1?query=klawiatura+czarna&showBuyActiveOnly=1&p=20",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-listings-search-query-search-category-1-query-promo-tp-layout-context",
+    "name": "Listings search-query /search/category/1?query=promo:tp_layout_context",
+    "suite_id": "netcorner/nuxt/pl/listings",
+    "target_url": "/search/category/1?query=promo:tp_layout_context",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  }
+]

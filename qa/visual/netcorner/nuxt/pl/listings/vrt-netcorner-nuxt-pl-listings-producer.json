@@ -1,0 +1,127 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-listings-producer-producer-24-samsung-html",
+    "name": "Listings producer /producer/24/samsung.html",
+    "suite_id": "netcorner/nuxt/pl/listings",
+    "target_url": "/producer/24/samsung.html",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-listings-producer-producer-24-samsung-html-a-0",
+    "name": "Listings producer /producer/24/samsung.html?a=0",
+    "suite_id": "netcorner/nuxt/pl/listings",
+    "target_url": "/producer/24/samsung.html?a=0",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-listings-producer-producer-7-apple-html",
+    "name": "Listings producer /producer/7/apple.html",
+    "suite_id": "netcorner/nuxt/pl/listings",
+    "target_url": "/producer/7/apple.html",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-listings-producer-producer-7-apple-html-a-0",
+    "name": "Listings producer /producer/7/apple.html?a=0",
+    "suite_id": "netcorner/nuxt/pl/listings",
+    "target_url": "/producer/7/apple.html?a=0",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-listings-producer-producer-7-apple-html-p-2",
+    "name": "Listings producer /producer/7/apple.html?p=2",
+    "suite_id": "netcorner/nuxt/pl/listings",
+    "target_url": "/producer/7/apple.html?p=2",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  }
+]

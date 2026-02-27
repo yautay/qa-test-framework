@@ -1,0 +1,227 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-sezam-promotions-products-54244167",
+    "name": "Product 54244167 tests-sezam-promotions-products html-cache",
+    "target_url": "/product/54244167",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-sezam-promotions-products-54244168",
+    "name": "Product 54244168 tests-sezam-promotions-products html-cache",
+    "target_url": "/product/54244168",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-sezam-promotions-products-54244169",
+    "name": "Product 54244169 tests-sezam-promotions-products html-cache",
+    "target_url": "/product/54244169",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-sezam-promotions-products-54244170",
+    "name": "Product 54244170 tests-sezam-promotions-products html-cache",
+    "target_url": "/product/54244170",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-sezam-promotions-products-54244171",
+    "name": "Product 54244171 tests-sezam-promotions-products html-cache",
+    "target_url": "/product/54244171",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-sezam-promotions-products-54244172",
+    "name": "Product 54244172 tests-sezam-promotions-products html-cache",
+    "target_url": "/product/54244172",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-sezam-promotions-products-54244173",
+    "name": "Product 54244173 tests-sezam-promotions-products html-cache",
+    "target_url": "/product/54244173",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-sezam-promotions-products-54244174",
+    "name": "Product 54244174 tests-sezam-promotions-products html-cache",
+    "target_url": "/product/54244174",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-sezam-promotions-products-54244175",
+    "name": "Product 54244175 tests-sezam-promotions-products html-cache",
+    "target_url": "/product/54244175",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  }
+]
