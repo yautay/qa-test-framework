@@ -48,28 +48,28 @@ class RegisterClient(BaseComponent):
     # ACTIONS
     # ============================================================
 
-    def fill_login(self, email: str) -> "RegisterPage":
+    def fill_login(self, email: str) -> "RegisterClient":
         self.safe_type(self._input_login, email)
         return self
 
-    def fill_password(self, password: str) -> "RegisterPage":
+    def fill_password(self, password: str) -> "RegisterClient":
         self.safe_type(self._input_password, password)
         return self
 
-    def fill_repeated_password(self, password: str) -> "RegisterPage":
+    def fill_repeated_password(self, password: str) -> "RegisterClient":
         self.safe_type(self._input_password_repeated, password)
         return self
 
-    def check_business_offer(self) -> "RegisterPage":
+    def check_business_offer(self) -> "RegisterClient":
         self.safe_click(self._checkbox_business_offer)
         expect(self._input_tax_id).to_be_visible()
         return self
 
-    def accept_required_terms(self) -> "RegisterPage":
+    def accept_required_terms(self) -> "RegisterClient":
         self.safe_click(self._checkbox_terms)
         return self
 
-    def accept_marketing_terms(self) -> "RegisterPage":
+    def accept_marketing_terms(self) -> "RegisterClient":
         self.safe_click(self._checkbox_marketing)
         return self
 
@@ -88,5 +88,6 @@ class RegisterClient(BaseComponent):
     def solve_captcha(self) -> "RegisterClient":
         frame = self.root.page.frame_locator('#recaptcha-register iframe[title="reCAPTCHA"]')
         checkbox = frame.locator("#recaptcha-anchor")
-        checkbox.click(timeout=10000)
+        expect(checkbox).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+        checkbox.click(timeout=self.DEFAULT_TIMEOUT)
         return self

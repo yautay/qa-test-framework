@@ -34,8 +34,13 @@ class BasePage:
         return self
 
     # ---------- state ----------
-    def wait_loaded(self, *, state: LoadState = "domcontentloaded") -> "BasePage":
-        self.page.wait_for_load_state(state, timeout=self.DEFAULT_TIMEOUT)
+    def wait_loaded(
+        self,
+        *,
+        state: LoadState = "domcontentloaded",
+        timeout: int | None = None,
+    ) -> "BasePage":
+        self.page.wait_for_load_state(state, timeout=timeout or self.DEFAULT_TIMEOUT)
         return self
 
     def assert_url_contains(self, fragment: str) -> None:

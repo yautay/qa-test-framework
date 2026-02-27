@@ -17,9 +17,8 @@ pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
 @scenario("Account Tests: Zakładanie nowego konta")
 def test_create_account(page, context, runtime_env, user_case):
     user_data = user_case.factory()
-    assert FlowRegisterClient(page, context, runtime_env).register_new_client(user_data), (
-        "Użytkownik nie został poprawnie zarejestrowany"
-    )
+    result = FlowRegisterClient(page, context, runtime_env).register_new_client(user_data)
+    assert result.is_success, f"Użytkownik nie został poprawnie zarejestrowany: {result}"
 
 
 @pytest.mark.parametrize(
@@ -30,6 +29,5 @@ def test_create_account(page, context, runtime_env, user_case):
 @scenario("Account Tests: Nieudane zakładanie nowego konta")
 def test_create_account_forbidden(page, context, runtime_env, user_case):
     user_data = user_case.factory()
-    assert not FlowRegisterClient(page, context, runtime_env).register_new_client(user_data), (
-        "Użytkownik został poprawnie zarejestrowany"
-    )
+    result = FlowRegisterClient(page, context, runtime_env).register_new_client(user_data)
+    assert not result.is_success, f"Użytkownik został poprawnie zarejestrowany: {result}"
