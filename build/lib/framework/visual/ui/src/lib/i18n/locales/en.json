@@ -1,0 +1,211 @@
+{
+  "hero": {
+    "eyebrow": "Visual Reports",
+    "title": "Artifacts Dashboard",
+    "subtitle": "Select a visual report to view test results.",
+    "availableRuns": "Available runs"
+  },
+  "filters": {
+    "searchLabel": "Search run id or summary",
+    "searchPlaceholder": "e.g. 20260218",
+    "testerLabel": "Tester",
+    "allTesters": "All"
+  },
+  "empty": {
+    "noReports": "No visual reports found.",
+    "runCommand": "Run `make test-visual` and refresh."
+  },
+  "card": {
+    "passed": "passed",
+    "failed": "failed",
+    "uncertain": "uncertain",
+    "skipped": "skipped",
+    "tests": "tests",
+    "openReport": "Open report",
+    "tester": "Tester",
+    "runNote": "Run note"
+  },
+  "listing": {
+    "scenario": "Scenario",
+    "status": "Status",
+    "signals": "Signals",
+    "pixel": "Pixel",
+    "lpips": "LPIPS",
+    "dists": "DISTS",
+    "message": "Message",
+    "viewport": "Viewport",
+    "browser": "Browser",
+    "artifacts": "Artifacts",
+    "metadata": "Meta",
+    "noResults": "No results for current filters."
+  },
+  "metadata": {
+    "open": "Meta",
+    "title": "Test metadata",
+    "key": "Field",
+    "value": "Value",
+    "empty": "No metadata available for this test.",
+    "close": "Close"
+  },
+  "filtersPanel": {
+    "search": "Search (scenario/message)",
+    "searchPlaceholder": "e.g. 20260218",
+    "status": "Status",
+    "statusWithNote": "with note",
+    "viewport": "Viewport",
+    "browser": "Browser",
+    "sort": "Sort",
+    "reset": "Reset",
+    "all": "All"
+  },
+  "status": {
+    "passed": "passed",
+    "failed": "failed",
+    "uncertain": "uncertain",
+    "skipped": "skipped",
+    "new": "new",
+    "analysis": "analysis"
+  },
+  "sort": {
+    "scenario_id": "scenario_id",
+    "status": "status",
+    "pixel": "pixel",
+    "lpips": "lpips",
+    "dists": "dists",
+    "tags": "tags",
+    "note": "note"
+  },
+  "report": {
+    "title": "Visual Regression Report",
+    "run": "Run",
+    "sendBaseline": "SEND BASELINE",
+    "sendReport": "REPORT",
+    "confirmSend": "Are you sure you want to submit BUG/ASO?",
+    "summary": {
+      "total": "total",
+      "passed": "passed",
+      "failed": "failed",
+      "skipped": "skipped",
+      "uncertain": "uncertain"
+    }
+  },
+  "modal": {
+    "exit": "Exit (K-LSHIFT)",
+    "keys": "Keys: 1-4 layout, A/D navigate, hold W super zoom, S/C/\\ tags prompt, Shift = exit",
+    "slot": "Slot",
+    "noImage": "No image for",
+    "scoringLabel": "Scoring",
+    "scoringPixel": "pixel diff",
+    "scoringLpips": "lpips",
+    "scoringDists": "dists"
+  },
+  "prompt": {
+    "confirm": "Confirmation",
+    "areYouSure": "Are you sure you want to tag this as",
+    "removeTag": "Are you sure you want to remove",
+    "notePlaceholder": "Optional note (max 500 chars)",
+    "yes": "Yes",
+    "no": "No",
+    "shiftNo": "Shift = NO",
+    "spaceYes": "Space = YES"
+  },
+  "tags": {
+    "bug": "BUG",
+    "aso": "ASO",
+    "baseline": "BASELINE",
+    "bugSent": "BUG SENT",
+    "asoSent": "ASO SENT"
+  },
+  "artifacts": {
+    "ref": "ref",
+    "test": "test",
+    "diff": "diff",
+    "lpips": "perc"
+  },
+  "navigate": {
+    "backToHero": "Press Shift to return to dashboard"
+  },
+  "language": {
+    "english": "English",
+    "polish": "Polski",
+    "ukrainian": "Українська"
+  },
+  "appInfo": {
+    "ariaLabel": "Application build info",
+    "runtime": "Runtime",
+    "uiBuild": "UI build",
+    "version": "version",
+    "codename": "codename",
+    "uiSrcVersion": "ui src version",
+    "commit": "commit",
+    "builtAt": "built at",
+    "pmsHealth": "PMS health",
+    "status": "status",
+    "http": "http",
+    "device": "device",
+    "metrics": "metrics",
+    "jobStore": "job store",
+    "git": "git",
+    "lastCheck": "last check",
+    "healthDetail": "health detail",
+    "pmsDisabled": "PMS integration is disabled in the application configuration",
+    "pmsBaseUrlMissing": "PMS base URL is missing",
+    "pmsUnreachable": "PMS API is unreachable",
+    "error": "error",
+    "weekendCountdownPrefix": "Time until weekend starts",
+    "days": "days",
+    "hours": "hours",
+    "minutes": "minutes",
+    "seconds": "seconds"
+  },
+  "message": {
+    "pixelThresholdExceeded": "Pixel threshold exceeded",
+    "pixelThresholdPassed": "Pixel threshold passed",
+    "pixelWithinUncertaintyZone": "Pixel within uncertainty zone",
+    "baselineMissing": "Baseline missing",
+    "perceptualAnalysisInProgress": "Perceptual analysis in progress",
+    "perceptualThresholdsExceeded": "Perceptual thresholds exceeded",
+    "perceptualThresholdsPassed": "Perceptual thresholds passed",
+    "perceptualWithinUncertaintyZone": "Perceptual within uncertainty zone",
+    "pixelAndPerceptualThresholdsPassed": "Pixel and perceptual thresholds passed",
+    "pixelExceededPerceptualPassed": "Pixel exceeded, perceptual passed"
+  },
+  "sync": {
+    "errorPrefix": "Sync failed",
+    "timeout": "Server not responding",
+    "unknown": "Unknown error",
+    "conflict": "Conflict with existing state",
+    "buildHasErrors": "Build has sync issues",
+    "tagAlreadyExists": "Tag is already set for this test case",
+    "pendingTooltip": "Sync in progress",
+    "unsyncedTooltip": "Sync is not complete",
+    "failedCount": "failed",
+    "pendingCount": "pending",
+    "sendingCount": "sending",
+    "unsyncedCount": "unsynced"
+  },
+  "pms": {
+    "pendingBuild": "PMS pending jobs",
+    "errorBuild": "PMS failed jobs",
+    "successBuild": "PMS done jobs",
+    "pendingTest": "PMS processing in progress",
+    "errorTest": "PMS error",
+    "errorTestUnknown": "PMS error: unknown",
+    "successTest": "PMS processed successfully",
+    "pendingTooltip": "Perceptual comparison in progress",
+    "issueTooltip": "Perceptual comparison issue",
+    "missingTooltip": "Perceptual score missing for this test",
+    "status": {
+      "queued": "queued",
+      "pending": "pending",
+      "submitted": "submitted",
+      "running": "running",
+      "done": "done",
+      "error": "error",
+      "timeout": "timeout",
+      "skipped": "skipped",
+      "failed": "failed",
+      "unknown": "unknown"
+    }
+  }
+}

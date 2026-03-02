@@ -1,0 +1,24 @@
+{
+  "id": "vrt-netcorner-nuxt-pl-product-54244181",
+  "name": "Product page 54244181 visual",
+  "suite_id": "netcorner/nuxt/pl/product_page",
+  "target_url": "/product/54244181",
+  "compare_mode": "hybrid",
+  "capture": {
+    "type": "page",
+    "full_page": true
+  },
+  "mask": {
+    "selectors": [
+      ".cookie-banner",
+      "[data-testid='dynamic-banner']"
+    ],
+    "color": "#00FF00"
+  },
+  "thresholds": {
+    "pixel_max": 0.01,
+    "lpips_max": 0.12,
+    "dists_max": 0.12
+  },
+  "steps": []
+}
