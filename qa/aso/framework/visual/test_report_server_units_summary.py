@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from framework.visual.report_server.reports import _read_results_rows, _report_summary
+from framework.reporting.report_server.reports import _read_results_rows, _report_summary
 
 pytestmark = [pytest.mark.aso]
 

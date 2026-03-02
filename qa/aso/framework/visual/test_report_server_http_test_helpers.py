@@ -6,7 +6,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
-from qa.aso.framework.visual.report_server_http_test_helpers import _http_json
+from qa.aso.framework.reporting.report_server_http_test_helpers import _http_json
 
 pytestmark = [pytest.mark.aso]
 

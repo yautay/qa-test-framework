@@ -6,7 +6,7 @@ import json
 import subprocess
 import tomllib
 
-from .context import ReportServerContext
+from ..context import ReportServerContext
 
 
 def _git_output(repo_root: Path, args: list[str]) -> str:

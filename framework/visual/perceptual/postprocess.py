@@ -13,7 +13,7 @@ from framework.env import RuntimeEnv
 from framework.visual.models import VisualResult
 
 from .ids import build_job_id, build_pair_id, build_test_id
-from .pms_client import PMSClient, PMSClientError
+from framework.reporting.clients.pms import PMSClient, PMSClientError
 
 
 PERCEPTUAL_STATUS_FILENAME = "perceptual-status.json"

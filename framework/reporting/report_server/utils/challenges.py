@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 
-from .context import ReportServerContext
+from ..context import ReportServerContext
 
 
 def _cleanup_expired_challenges(context: ReportServerContext) -> None:

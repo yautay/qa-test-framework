@@ -7,7 +7,7 @@ import pytest
 
 from framework.env import load_env
 from framework.visual.models import VisualResult, VisualThresholds
-from framework.visual.perceptual_client import postprocess
+from framework.visual.perceptual import postprocess
 
 pytestmark = [pytest.mark.aso]
 

@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import Any
 import time
 
-from .context import ReportServerContext
-from framework.visual.perceptual_client import PMSClient, PMSClientError
+from ..context import ReportServerContext
+from framework.reporting.clients.pms import PMSClient, PMSClientError
 
 
 def _perceptual_queue_payload(context: ReportServerContext) -> dict[str, Any]:

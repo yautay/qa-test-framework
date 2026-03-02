@@ -10,8 +10,8 @@ from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from framework.visual.report_server.context import ReportServerContext
-from framework.visual.report_server.http import _build_handler
+from framework.reporting.report_server.context import ReportServerContext
+from framework.reporting.report_server.http import _build_handler
 
 
 _HTTP_RETRY_ATTEMPTS = 3

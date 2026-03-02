@@ -9,7 +9,7 @@ from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_
 from framework.artifacts import RunArtifacts
 from framework.env import RuntimeEnv, load_env
 from framework.visual.models import VisualResult
-from framework.visual.perceptual_client import prepare_perceptual_placeholders, run_perceptual_postprocess
+from framework.visual.perceptual import prepare_perceptual_placeholders, run_perceptual_postprocess
 from framework.visual.report_builder import write_visual_report, write_visual_results_json
 
 VIEWPORT_PRESETS: dict[str, tuple[int, int]] = settings.visual_viewport_presets
