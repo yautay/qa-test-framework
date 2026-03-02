@@ -8,7 +8,7 @@ from urllib.parse import urlencode
 import pytest
 
 from framework.visual.baseline_store import BaselineStore
-from framework.visual.report_server import ReportServerContext
+from framework.visual.report_server.context import ReportServerContext
 from qa.aso.framework.visual.report_server_http_test_helpers import (
     _env,
     _http_bytes,

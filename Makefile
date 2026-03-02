@@ -15,7 +15,7 @@ help: ## Show this help
 ##@ Framework
 
 report-serve: ## Uruchom lokalny serwer raportu visual
-	$(PYTHON)  framework/visual/report_server.py $(if $(RUN_ID),--run-id $(RUN_ID),) $(if $(REPORT_DIR),--report-dir $(REPORT_DIR),) $(if $(PORT),--port $(PORT),)
+	$(PYTHON) -m framework.visual.report_server $(if $(RUN_ID),--run-id $(RUN_ID),) $(if $(REPORT_DIR),--report-dir $(REPORT_DIR),) $(if $(PORT),--port $(PORT),)
 
 ##@ Tests
 

@@ -12,7 +12,7 @@ This document describes the local baseline approval workflow driven by the visua
 ## How it works
 
 1. Visual tests generate report in `artifacts/<run_id>/visual/`.
-2. A local report server is started (`tools/visual/report_server.py`).
+2. A local report server is started (`python -m framework.visual.report_server`).
 3. User opens report and marks desired rows with `BASELINE`.
 4. User clicks `SEND BASELINE` in report header.
 5. UI asks backend for challenge phrase and requires manual rewrite.

@@ -45,5 +45,5 @@ make minio-down
 - Scenario tooling scripts live in `tools/scenarios/`.
 - Reporting helper API lives in `tools/reporting/test_api.py`.
 - Visual tooling scripts live in `tools/visual/`.
-- Visual report server: `tools/visual/report_server.py` (hero page + run listing).
+- Visual report server: `python -m framework.visual.report_server` (hero page + run listing).
 - Windows launchers/scripts live in `tools/windows/`.
