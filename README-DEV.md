@@ -9,9 +9,6 @@ For day-to-day test execution, use `README.md`.
 - `qa/` - active tests (E2E + API + visual)
 - `framework/` - runtime utilities (env, artifacts, logger, reporting, visual runner)
 - `tools/` - helper scripts grouped by domain
-- `aQuArius/` - central aggregation handoff documentation (separate system)
-- `legacy/` - archived old implementation
-- `PLAYWRIGHT_BIG_BANG_PLAN.md` - migration plan and progress checklist
 
 ## Docs index
 
@@ -21,9 +18,6 @@ For day-to-day test execution, use `README.md`.
 - `docs/REPORTING_HTTP_INTEGRATION.md`
 - `docs/visual-timeout-postmortem.md`
 - `tools/README.md`
-- `aQuArius/README.md`
-- `aQuArius/EVENT_CONTRACT_V2.md`
-- `aQuArius/CURRENT_PAYLOAD_AUDIT.md`
 
 ## Core commands
 
@@ -31,9 +25,8 @@ For day-to-day test execution, use `README.md`.
 python -m pytest --collect-only -q
 python framework/pytest_discovery_guard.py
 
-make validate-config
 make test-aso
-make test-functional
+make test-e2e
 make test-visual
 make clean-artifacts-older DAYS=14
 
@@ -46,9 +39,8 @@ make check
 
 ## Config validation flow
 
-- `make validate-config` runs:
-  - `python tools/scenarios/verify_scenarios.py`
-- `make test-aso` runs `validate-config` first, then `pytest -m aso -q`.
+- `make verify-scenarios` runs `python tools/scenarios/verify_scenarios.py`
+- `make verify-discovery` runs `python framework/pytest_discovery_guard.py`
 
 ## Visual regression development
 
@@ -61,14 +53,13 @@ Helpful commands:
 
 ```bash
 make test-visual
-make visual-approve
 make visual-sync
-make visual-report-serve
+make report-serve
 ```
 
 Report-driven local baseline approval:
 
-- run `make visual-report-serve` (optionally `RUN_ID=...`),
+- run `make report-serve` (optionally `RUN_ID=...`),
 - open hero page (`http://127.0.0.1:4173/`) and select run,
 - mark rows with `BASELINE`,
 - use `SEND BASELINE` + challenge phrase confirmation,
@@ -86,7 +77,7 @@ pytest qa/aso/framework/visual/test_report_server_units.py -q
 pytest qa/aso/framework/visual/test_report_server_http_endpoints.py -q
 ```
 
-Note: these backend tests require Python 3.11+ (project `qa/conftest.py` imports `datetime.UTC`).
+Note: project runtime targets Python 3.13 (`pyproject.toml`), so run backend tests on Python 3.13.
 
 Reference: `docs/VISUAL_BASELINE_APPROVAL_FLOW.md`
 
@@ -100,22 +91,19 @@ make clean-artifacts-older DAYS=14
 Local MinIO baseline storage:
 
 ```bash
-make minio-up
-make minio-down
+make debug-minio-up
+make debug-minio-down
 ```
 
 ## Reporting and local API harness
 
-- Local receiver: `python tools/reporting/test_api.py`
 - Make target: `make test-api`
-- Contract diagnostics endpoint: `GET /captured/summary`
 
 ## Remote/grid helpers
 
 ```bash
-make remote-up
-make remote-smoke
-make remote-down
+make debug-remote-grid-up
+make debug-remote-grid-down
 ```
 
 ## Local git hooks
@@ -133,7 +121,7 @@ Main defaults:
 
 Important env groups:
 - Runtime/browser/grid: `BROWSER`, `HEADLESS`, `IS_GRID_AVAILABLE`, `GRID_*`
-- Target routing: `BASE_URL`, `BASE_URL_OVERRIDE`, `server_type`, `server_name`
+- Target routing: `BASE_URL`, `BASE_URL_OVERRIDE`, `REFERENCE_HOST` + CLI `--server-type`, `--server-name`
 - Reporting v2: `REPORTING_*`
 - Visual baseline and perceptual post-process: `VISUAL_*`, `VISUAL_MINIO_*`, `PMS_*`
 
