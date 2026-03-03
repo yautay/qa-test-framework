@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .state import TEXT_MAX_LENGTH, _normalize_text
+from ..state import TEXT_MAX_LENGTH, _normalize_text
 
 
 def _validated_text(value: Any, field_name: str) -> str:

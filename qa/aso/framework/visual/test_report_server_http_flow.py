@@ -9,7 +9,7 @@ import pytest
 
 from framework.visual.baseline_store import BaselineStore
 from framework.reporting.report_server.context import ReportServerContext
-from qa.aso.framework.reporting.report_server_http_test_helpers import (
+from qa.aso.framework.visual.report_server_http_test_helpers import (
     _env,
     _http_bytes,
     _http_json,
