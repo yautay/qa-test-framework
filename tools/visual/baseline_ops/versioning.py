@@ -7,7 +7,7 @@ from framework.env import RuntimeEnv
 
 from .executor import execute_ops, plan_copy_ops, print_summary
 from .manifest import write_manifest
-from .minio_ops import MinioOps
+from .minio_ops import MinioCredentials, MinioOps
 from .paths import local_baseline_root, parse_object_key, repo_root, rewrite_object_key_version
 from .scanner import list_local_versions as _list_local_versions
 from .scanner import scan_local_version
@@ -39,6 +39,7 @@ def promote_candidates_local(
         dry_run=dry_run,
         prune_missing=prune_missing,
         with_minio=False,
+        minio_credentials=None,
         write_manifest_file=False,
     )
 
@@ -53,6 +54,7 @@ def apply_version_copy(
     dry_run: bool,
     prune_missing: bool,
     with_minio: bool,
+    minio_credentials: MinioCredentials | None,
     write_manifest_file: bool,
 ) -> VersioningResult:
     repo = repo_root()
@@ -116,7 +118,16 @@ def apply_version_copy(
 
     minio_copied = 0
     if with_minio:
-        minio_copied = _copy_minio(env, source_entries=source_entries, to_version=to_version, dry_run=dry_run)
+        minio_copied = _sync_minio(
+            env,
+            source_entries=source_entries,
+            to_version=to_version,
+            dry_run=dry_run,
+            prune_missing=prune_missing,
+            credentials=minio_credentials,
+            profile=profile,
+            suites=suites,
+        )
 
     manifest_path: Path | None = None
     if write_manifest_file and not dry_run:
@@ -193,15 +204,20 @@ def _scan_cache_version(
     return out
 
 
-def _copy_minio(
+def _sync_minio(
     env: RuntimeEnv,
     *,
     source_entries: dict[str, FileEntry],
     to_version: str,
     dry_run: bool,
+    prune_missing: bool,
+    credentials: MinioCredentials | None,
+    profile: str,
+    suites: set[str] | None,
 ) -> int:
-    ops = MinioOps(env)
+    ops = MinioOps(env, credentials=credentials)
     copied = 0
+    removed = 0
     print("\n== MinIO copy ==")
     for source_key in sorted(source_entries.keys()):
         target_key = rewrite_object_key_version(source_key, to_version)
@@ -215,5 +231,30 @@ def _copy_minio(
             copied += 1
         except Exception as exc:
             print(f"FAIL  {source_key} -> {target_key}: {exc}")
-    print(f"done ({'dry-run' if dry_run else 'apply'}): minio_copied={copied}")
+    if prune_missing:
+        target_prefixes = _minio_target_prefixes(profile=profile, version=to_version, suites=suites)
+        existing_target_keys: set[str] = set()
+        for prefix in target_prefixes:
+            existing_target_keys.update(ops.list_keys(prefix))
+        expected_target_keys = {rewrite_object_key_version(source_key, to_version) for source_key in source_entries}
+        to_remove = sorted(existing_target_keys - expected_target_keys)
+        for object_key in to_remove:
+            if dry_run:
+                print(f"RM    {object_key}")
+                removed += 1
+                continue
+            try:
+                ops.remove_object(object_key)
+                print(f"RM    {object_key}")
+                removed += 1
+            except Exception as exc:
+                print(f"FAIL  {object_key}: {exc}")
+
+    print(f"done ({'dry-run' if dry_run else 'apply'}): minio_copied={copied}, minio_removed={removed}")
     return copied
+
+
+def _minio_target_prefixes(*, profile: str, version: str, suites: set[str] | None) -> list[str]:
+    if suites:
+        return [f"{suite_id}/{profile}/{version}/" for suite_id in sorted(suites)]
+    return [""]

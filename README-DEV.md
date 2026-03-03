@@ -81,6 +81,7 @@ Note: project runtime targets Python 3.13 (`pyproject.toml`), so run backend tes
 Reference: `docs/VISUAL_BASELINE_APPROVAL_FLOW.md`
 
 Visual baseline promotion/versioning scripts: `tools/visual/README.md`
+Operator runbook: `tools/visual/OPERATOR_RUNBOOK.md`
 
 Examples:
 
@@ -88,6 +89,8 @@ Examples:
 python tools/visual/promote_candidates_local.py --apply
 python tools/visual/version_baselines.py create --from-version latest --to-version 2026-03-03_1 --apply
 python tools/visual/version_baselines.py promote --from-version 2026-03-03_1 --with-minio --apply
+python tools/visual/version_baselines.py promote --from-version 2026-03-03_1 --with-minio --apply --ask-release-credentials
+python tools/visual/retention_baselines.py --with-minio --apply --ask-release-credentials
 ```
 
 Scenario JSON reference and authoring guide: `qa/visual/README.md`

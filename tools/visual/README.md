@@ -2,6 +2,8 @@
 
 This directory contains helper scripts for local baseline promotion and baseline versioning.
 
+Operator quick procedure: `tools/visual/OPERATOR_RUNBOOK.md`
+
 ## Scripts
 
 - `python tools/visual/promote_candidates_local.py`
@@ -12,6 +14,9 @@ This directory contains helper scripts for local baseline promotion and baseline
 - `python tools/visual/version_baselines.py`
   - Manage baseline versions (`create`, `promote`, `list`).
   - Can optionally copy the same operations inside MinIO (`--with-minio`).
+- `python tools/visual/retention_baselines.py`
+  - Apply retention policy for local baselines/cache and optional MinIO.
+  - Defaults: candidates TTL = 7 days, keep 5 latest historical versions per suite.
 
 ## Safety model
 
@@ -54,6 +59,42 @@ python tools/visual/version_baselines.py list --with-minio
 ## MinIO usage
 
 Add `--with-minio` to `create` or `promote` to copy object keys in MinIO bucket as well.
+
+For local setups without CI, use interactive release credentials prompt:
+
+```bash
+python tools/visual/version_baselines.py create \
+  --from-version latest \
+  --to-version 2026-03-03_1 \
+  --with-minio \
+  --apply \
+  --ask-release-credentials
+```
+
+`--prune-missing` prunes targets in local storage, cache mirror, and MinIO (when `--with-minio`).
+
+## Retention policy
+
+Default policy:
+
+- candidates TTL: 7 days,
+- keep 5 latest historical versions per suite,
+- `latest` is never removed by retention.
+
+Run retention in dry-run mode:
+
+```bash
+python tools/visual/retention_baselines.py
+```
+
+Apply retention locally and in MinIO:
+
+```bash
+python tools/visual/retention_baselines.py \
+  --with-minio \
+  --apply \
+  --ask-release-credentials
+```
 
 Required env (from `.env`/environment):
 

@@ -118,6 +118,7 @@ def test_apply_version_copy_promotes_candidates_to_latest_and_writes_manifest(
         dry_run=False,
         prune_missing=False,
         with_minio=False,
+        minio_credentials=None,
         write_manifest_file=True,
     )
 
@@ -164,6 +165,7 @@ def test_apply_version_copy_prunes_latest_files_missing_in_source(
         dry_run=False,
         prune_missing=True,
         with_minio=False,
+        minio_credentials=None,
         write_manifest_file=False,
     )
 
