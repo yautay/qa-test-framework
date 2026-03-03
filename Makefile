@@ -8,14 +8,14 @@ PYTEST ?= $(PYTHON) -m pytest
 
 .DEFAULT_GOAL := help
 
-.PHONY: help test test-aso tests-aso test-functional test-visual validate-config visual-sync visual-approve visual-report-serve clean-artifacts clean-artifacts-older collect lint format format-check typecheck security verify-discovery verify-scenarios scenario-report test-api remote-up remote-down remote-smoke minio-up minio-down check
+.PHONY: help report-serve test test-api test-visual test-e2e test-aso test-smoke check collect lint format format-check typecheck security verify-discovery verify-scenarios scenario-report visual-sync clean-artifacts clean-artifacts-older debug-remote-grid-up debug-remote-grid-down debug-minio-up debug-minio-down
 
 help: ## Show this help
 	$(PYTHON) tools/make/make_help.py
 ##@ Framework
 
 report-serve: ## Uruchom lokalny serwer raportu visual
-	$(PYTHON) -m framework.visual.report_server $(if $(RUN_ID),--run-id $(RUN_ID),) $(if $(REPORT_DIR),--report-dir $(REPORT_DIR),) $(if $(PORT),--port $(PORT),)
+	$(PYTHON) -m framework.reporting.report_server $(if $(RUN_ID),--run-id $(RUN_ID),) $(if $(REPORT_DIR),--report-dir $(REPORT_DIR),) $(if $(PORT),--port $(PORT),)
 
 ##@ Tests
 
