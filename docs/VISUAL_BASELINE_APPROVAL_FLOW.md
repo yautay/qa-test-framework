@@ -60,7 +60,7 @@ make report-serve REPORT_DIR=artifacts/20260218_120000_000001/visual PORT=4180
 - `GET /api/reports` - list visual report runs detected under `artifacts/*/visual`.
 - `GET /api/reports/<run_id>/results` - returns report rows.
 - `GET /api/reports/<run_id>/image/ref?...` - serves REF image from baseline storage.
-- `PUT /reports/<run_id>/vrt-tags.json` - persists tag snapshot for selected run.
+- `GET /api/builds/<run_id>/tags` - returns current build tag state snapshot.
 - `POST /api/reports/<run_id>/baseline/challenge` - returns one-time phrase + TTL.
 - `POST /api/reports/<run_id>/baseline/send` - validates phrase and stores selected local baselines.
 

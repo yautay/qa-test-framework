@@ -41,5 +41,6 @@ make debug-minio-down
 
 - Scenario tooling scripts live in `tools/scenarios/`.
 - Visual tooling scripts live in `tools/visual/`.
+- Visual baseline promotion/versioning runbook: `tools/visual/README.md`.
 - Visual report server: `python -m framework.reporting.report_server` (hero page + run listing).
 - Windows launchers/scripts live in `tools/windows/`.
