@@ -6,12 +6,11 @@ import time
 from http.client import RemoteDisconnected
 from http.server import ThreadingHTTPServer
 from types import SimpleNamespace
-from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
-from framework.visual.report_server import ReportServerContext, _build_handler
-
+from framework.reporting.report_server.context import ReportServerContext
+from framework.reporting.report_server.http import _build_handler
 
 _HTTP_RETRY_ATTEMPTS = 3
 _HTTP_RETRY_BACKOFF_SECONDS = 0.05
@@ -74,7 +73,7 @@ def _http_json(base_url: str, path: str, method: str = "GET", body: dict | None 
     except HTTPError as exc:
         raw = exc.read()
         if not raw:
-            raise AssertionError(f"Empty JSON error body for {method} {path} (status={int(exc.code)})")
+            raise AssertionError(f"Empty JSON error body for {method} {path} (status={int(exc.code)})") from exc
         payload = json.loads(raw.decode("utf-8"))
         return int(exc.code), payload
 

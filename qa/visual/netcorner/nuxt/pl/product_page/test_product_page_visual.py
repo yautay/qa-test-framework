@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 from pathlib import Path
+
 import pytest
+
 from framework.env import RuntimeEnv
 from framework.visual.models import VisualScenario
 from qa.visual.netcorner.nuxt.pl.visual_suite import apply_parametrization, execute_visual_scenario

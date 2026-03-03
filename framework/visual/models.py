@@ -11,7 +11,7 @@ import json
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 CaptureType = Literal["page", "viewport", "element"]
 CompareMode = Literal["pixel", "hybrid"]
@@ -239,7 +239,7 @@ class VisualThresholds:
             raise ValueError("Thresholds must be >= 0")
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any] | None) -> "VisualThresholds":
+    def from_dict(cls, d: dict[str, Any] | None) -> VisualThresholds:
         if d is None:
             d = {}
         if not isinstance(d, dict):
@@ -267,7 +267,7 @@ class VisualMask:
             raise ValueError(f"Invalid mask color: {self.color!r}")
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any] | None) -> "VisualMask":
+    def from_dict(cls, d: dict[str, Any] | None) -> VisualMask:
         if d is None:
             return cls()
         if not isinstance(d, dict):
@@ -291,7 +291,7 @@ class VisualCapture:
             raise ValueError("capture.selector is required when capture_type='element'")
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any] | None) -> "VisualCapture":
+    def from_dict(cls, d: dict[str, Any] | None) -> VisualCapture:
         if d is None:
             return cls()
         if not isinstance(d, dict):
@@ -303,7 +303,7 @@ class VisualCapture:
             raise ValueError(f"Invalid capture.type: {raw_type!r}")
 
         return cls(
-            capture_type=raw_type,  # type: ignore[assignment]
+            capture_type=cast(CaptureType, raw_type),
             selector=_opt_str(d, "selector", ""),
             full_page=_opt_bool(d, "full_page", True),
         )
@@ -327,7 +327,7 @@ class VisualStep:
             raise ValueError("timeout_ms must be >= 0")
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> "VisualStep":
+    def from_dict(cls, d: dict[str, Any]) -> VisualStep:
         if not isinstance(d, dict):
             raise ValueError("step must be an object")
         action = _require_str(d, "action").strip().lower()
@@ -370,7 +370,7 @@ class VisualScenario:
             raise ValueError("target_url must be non-empty")
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> "VisualScenario":
+    def from_dict(cls, d: dict[str, Any]) -> VisualScenario:
         if not isinstance(d, dict):
             raise ValueError("scenario must be an object")
 
@@ -389,7 +389,7 @@ class VisualScenario:
             name=_require_str(d, "name"),
             target_url=_require_str(d, "target_url"),
             suite_id=_require_str(d, "suite_id"),
-            compare_mode=compare_mode,  # type: ignore[assignment]
+            compare_mode=cast(CompareMode, compare_mode),
             viewport=_as_tuple_str(d.get("viewport")),
             capture=VisualCapture.from_dict(d.get("capture")),
             thresholds=VisualThresholds.from_dict(d.get("thresholds")),
@@ -444,16 +444,18 @@ class VisualResult:
             "pixel_changed_ratio": self.pixel_changed_ratio,
             "lpips": self.lpips,
             "dists": self.dists,
-            "thresholds": {
-                "pixel_max": self.thresholds.pixel_max,
-                "lpips_max": self.thresholds.lpips_max,
-                "dists_max": self.thresholds.dists_max,
-                "pixel_uncertain_delta": self.thresholds.pixel_uncertain_delta,
-                "lpips_uncertain_delta": self.thresholds.lpips_uncertain_delta,
-                "dists_uncertain_delta": self.thresholds.dists_uncertain_delta,
-            }
-            if self.thresholds
-            else None,
+            "thresholds": (
+                {
+                    "pixel_max": self.thresholds.pixel_max,
+                    "lpips_max": self.thresholds.lpips_max,
+                    "dists_max": self.thresholds.dists_max,
+                    "pixel_uncertain_delta": self.thresholds.pixel_uncertain_delta,
+                    "lpips_uncertain_delta": self.thresholds.lpips_uncertain_delta,
+                    "dists_uncertain_delta": self.thresholds.dists_uncertain_delta,
+                }
+                if self.thresholds
+                else None
+            ),
             "tester": self.tester,
             "run_note": self.run_note,
             "test_metadata": self.test_metadata,

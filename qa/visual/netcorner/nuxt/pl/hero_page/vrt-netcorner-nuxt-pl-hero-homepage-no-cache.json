@@ -1,0 +1,30 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-no-cache-a0",
+    "name": "Homepage no-cache visual",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/?a=0",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        "[data-name='heroSlider']",
+        "[alt]",
+        ".swiper-wrapper",
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  }
+]

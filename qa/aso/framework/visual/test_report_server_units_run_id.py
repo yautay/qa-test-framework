@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from framework.visual.report_server import _run_id_from_visual_dir, _safe_run_id_or_error
+from framework.reporting.report_server.paths import _run_id_from_visual_dir, _safe_run_id_or_error
 
 pytestmark = [pytest.mark.aso]
 

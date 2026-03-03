@@ -34,11 +34,7 @@ def load_previous_timings(current_run_dir: Path) -> dict[str, float]:
     if not runs_root.exists():
         return {}
 
-    run_dirs = [
-        p
-        for p in runs_root.iterdir()
-        if p.is_dir() and p.name != current_run_dir.name
-    ]
+    run_dirs = [p for p in runs_root.iterdir() if p.is_dir() and p.name != current_run_dir.name]
     if not run_dirs:
         return {}
 

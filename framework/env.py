@@ -5,10 +5,11 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from importlib import metadata as importlib_metadata
+
 from dotenv import dotenv_values
 
-import settings_cli
 import settings
+import settings_cli
 
 
 def _as_bool(value: str | None, default: bool) -> bool:
@@ -88,6 +89,8 @@ class RuntimeEnv:
     reporting_api_timeout_seconds: int
     reporting_api_retries: int
     artifacts_dir: str
+    allure_enabled: bool
+    pytest_html_enabled: bool
     highlight_on_fail: bool
     min_expected_tests: int
     visual_enabled: bool
@@ -245,6 +248,8 @@ def load_env() -> RuntimeEnv:
             settings.reporting_api_retries,
         ),
         artifacts_dir=env_str("ARTIFACTS_DIR", settings.artifacts_dir),
+        allure_enabled=env_bool("ALLURE_ENABLED", bool(settings.allure_enabled)),
+        pytest_html_enabled=env_bool("PYTEST_HTML_ENABLED", bool(settings.pytest_html_enabled)),
         highlight_on_fail=env_bool("HIGHLIGHT_ON_FAIL", settings.highlight_on_fail),
         min_expected_tests=env_int("MIN_EXPECTED_TESTS", settings.min_expected_tests),
         visual_enabled=env_bool(

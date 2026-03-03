@@ -15,7 +15,7 @@ server_type = "test"
 # Example legacy-compatible server name: "koncerz.test"
 # Supported: test, demo, prod, local
 # Suite URL mapping uses this value directly (no env override).
-server_name = "selenium.alfa"
+server_name = "weryfikacja.alfa"
 
 # Optional reference environment selector for visual dual-pass.
 # - demo|prod|local: selects fixed environment URL

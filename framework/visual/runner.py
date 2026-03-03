@@ -1,13 +1,15 @@
 from __future__ import annotations
+
 import re
 from pathlib import Path
 from typing import Any, cast
+
 from playwright.sync_api import Page
+
 from framework.env import RuntimeEnv
 from framework.visual.baseline_store import BaselineStore
 from framework.visual.compare_pixel import compare_images
 from framework.visual.models import VisualResult, VisualScenario
-
 
 """Driver for executing visual regression scenarios and emitting comparison results."""
 

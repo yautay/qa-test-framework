@@ -1,6 +1,10 @@
 Relevant files / directories
 - Backend core
-  - framework/visual/report_server.py (major edits: sync workers, non-blocking flush for PDF, sync counters in reports payload, disconnect handling, executor naming)
+  - framework/visual/report_server/server.py (reduced façade + shared helpers)
+  - framework/visual/report_server/routes/handler.py (HTTP routing and endpoint handlers)
+  - framework/visual/report_server/services/pdf.py (BUG PDF generation service)
+  - framework/visual/report_server/services/sync.py (event/outbox sync service)
+  - framework/visual/report_server/utils/*.py (app-info, perceptual, challenges, http, validation helpers)
   - framework/reporting_client.py (thread context logging + thread-local sessions)
 - Backend config (new)
   - framework/visual/config/__init__.py (new)

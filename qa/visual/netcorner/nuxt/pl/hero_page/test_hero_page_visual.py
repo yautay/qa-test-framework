@@ -1,6 +1,9 @@
 from __future__ import annotations
+
 from pathlib import Path
+
 import pytest
+
 from framework.env import RuntimeEnv
 from framework.visual.models import VisualScenario
 from qa.visual.netcorner.nuxt.pl.visual_suite import apply_parametrization, execute_visual_scenario
@@ -12,6 +15,7 @@ pytestmark = [pytest.mark.visual]
 
 def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     apply_parametrization(metafunc, scenarios_dir=SCENARIOS_DIR)
+
 
 @pytest.mark.scenario("VR - Hero Page")
 def test_hero_page_visual(

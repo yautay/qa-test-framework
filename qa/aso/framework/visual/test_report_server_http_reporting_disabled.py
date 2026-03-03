@@ -6,8 +6,8 @@ from typing import Any, cast
 
 import pytest
 
+from framework.reporting.report_server.context import ReportServerContext
 from framework.visual.baseline_store import BaselineStore
-from framework.visual.report_server import ReportServerContext
 from qa.aso.framework.visual.report_server_http_test_helpers import _env, _http_json, _start_server, _stop_server
 
 pytestmark = [pytest.mark.aso]
@@ -156,13 +156,15 @@ def test_report_endpoint_logs_single_skip_entry_when_reporting_disabled(
     ui_dist.mkdir(parents=True)
     (ui_dist / "index.html").write_text("<html>ui</html>", encoding="utf-8")
 
-    monkeypatch.setattr("framework.visual.report_server._generate_bug_pdf", lambda **_kwargs: ("/tmp/report.pdf", 1))
+    monkeypatch.setattr(
+        "framework.reporting.report_server.services.pdf._generate_bug_pdf", lambda **_kwargs: ("/tmp/report.pdf", 1)
+    )
     logged: list[tuple[str, dict[str, Any]]] = []
 
     def _debug(msg: str, **kwargs: Any) -> None:
         logged.append((msg, kwargs))
 
-    monkeypatch.setattr("framework.visual.report_server.logger.debug", _debug)
+    monkeypatch.setattr("framework.reporting.report_server.services.sync.logger.debug", _debug)
 
     context = ReportServerContext(
         repo_root=repo_root,

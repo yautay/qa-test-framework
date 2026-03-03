@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from framework.visual.report_server import _treat_reporting_disabled_as_success
+from framework.reporting.report_server.state import _treat_reporting_disabled_as_success
 
 pytestmark = [pytest.mark.aso]
 

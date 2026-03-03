@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from framework.visual.report_server import LOCK_TTL_SECONDS, _acquire_lock
+from framework.reporting.report_server.state import LOCK_TTL_SECONDS, _acquire_lock
 
 pytestmark = [pytest.mark.aso]
 

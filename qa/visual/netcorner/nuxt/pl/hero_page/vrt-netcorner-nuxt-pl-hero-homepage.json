@@ -13,10 +13,33 @@
     "mask": {
       "selectors": [
         "[data-name='heroSlider']",
-        "[alt]",
-        ".swiper-wrapper"
+        "[data-name='dailyDeal']",
+        "[data-name='TimeCounterDays']",
+        "[data-name='TimeCounterHours']",
+        "[data-name='TimeCounterMinutes']",
+        "[data-name='TimeCounterSeconds']",
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']"
       ],
-      "color": "#00FF00"
+      "color": "#111111"
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-hero_slider",
+    "name": "Hero Slider Component",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='heroSlider']"
+    },
+    "mask": {
+      "selectors": [
+        ".swiper-wrapper",
+        "[data-name='sliderAutoplayContainer']"
+      ],
+      "color": "#111111"
     }
   },
   {
@@ -28,6 +51,15 @@
     "capture": {
       "type": "element",
       "selector": "[data-name='DailyDealWidget']"
+    },
+    "mask": {
+      "selectors": [
+        "[data-name='TimeCounterDays']",
+        "[data-name='TimeCounterHours']",
+        "[data-name='TimeCounterMinutes']",
+        "[data-name='TimeCounterSeconds']"
+      ],
+      "color": "#111111"
     }
   },
   {
@@ -49,7 +81,28 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "nav"
+      "selector": "[data-name='navigationBar']"
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-recommendations",
+    "name": "Recommendations Component",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='recommendations']"
+    },
+    "mask": {
+      "selectors": [
+        ".swiper-wrapper",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='cardPhoto']",
+        "[data-name='productPrice']",
+        "[data-name='badge']"
+      ],
+      "color": "#111111"
     }
   },
   {
@@ -61,6 +114,63 @@
     "capture": {
       "type": "element",
       "selector": "[data-name='subsidiaryBanner']"
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-offer_section",
+    "name": "Offer Section Component",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='offerSection']"
+    },
+    "mask": {
+      "selectors": [
+        ".swiper-wrapper",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='cardPhoto']",
+        "[data-name='productPrice']",
+        "[data-name='badge']"
+      ],
+      "color": "#111111"
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-promotions_slider",
+    "name": "Promotions Slider Component",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='promotionsSlider']"
+    },
+    "mask": {
+      "selectors": [
+        ".swiper-wrapper",
+        "[data-name='sliderAutoplayContainer']"
+      ],
+      "color": "#111111"
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-news_slider",
+    "name": "News Slider Component",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='newsSlider']"
+    },
+    "mask": {
+      "selectors": [
+        ".swiper-wrapper",
+        "[data-name='sliderAutoplayContainer']"
+      ],
+      "color": "#111111"
     }
   },
   {
@@ -86,6 +196,24 @@
     }
   },
   {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-advice_slider",
+    "name": "Advice Slider Component",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='adviceSlider']"
+    },
+    "mask": {
+      "selectors": [
+        ".swiper-wrapper",
+        "[data-name='sliderAutoplayContainer']"
+      ],
+      "color": "#111111"
+    }
+  },
+  {
     "id": "vrt-netcorner-nuxt-pl-hero-homepage-brands",
     "name": "Brands Component",
     "suite_id": "netcorner/nuxt/pl/hero_page",
@@ -105,6 +233,17 @@
     "capture": {
       "type": "element",
       "selector": "[data-name='contactUs']"
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-visit_us",
+    "name": "VisitUs Component",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='visitUs']"
     }
   },
   {

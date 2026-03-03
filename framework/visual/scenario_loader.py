@@ -1,11 +1,15 @@
 from __future__ import annotations
+
 import json
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
+
 import settings
 from framework.visual.models import (
+    CaptureType,
+    CompareMode,
     VisualCapture,
     VisualMask,
     VisualScenario,
@@ -156,9 +160,9 @@ def _scenario_from_payload(payload: dict[str, Any], file_path: Path, idx: int) -
         name=name,
         target_url=target_url,
         suite_id=suite_id,
-        compare_mode=compare_mode,
+        compare_mode=cast(CompareMode, compare_mode),
         capture=VisualCapture(
-            capture_type=capture_type,
+            capture_type=cast(CaptureType, capture_type),
             selector=_as_str(capture_raw.get("selector", "")).strip(),
             full_page=_as_bool(capture_raw.get("full_page", True), True, file_path, f"{pfx}capture.full_page"),
         ),

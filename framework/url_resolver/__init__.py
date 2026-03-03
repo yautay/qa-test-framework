@@ -2,6 +2,7 @@ import re
 
 _DNS_LABEL = re.compile(r"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$")
 
+
 def resolve_pl_nuxt_base_url(server_type: str, server_name: str) -> str:
     env_type = server_type.strip().lower()
     server_name = server_name.strip().lower()
@@ -22,4 +23,4 @@ def resolve_pl_nuxt_base_url(server_type: str, server_name: str) -> str:
     try:
         return base_urls[env_type].rstrip("/")
     except KeyError:
-        raise ValueError(f"Unknown server_type: {server_type!r}")
+        raise ValueError(f"Unknown server_type: {server_type!r}") from None

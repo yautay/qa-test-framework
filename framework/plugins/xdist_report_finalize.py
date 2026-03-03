@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
@@ -13,7 +13,7 @@ import settings_cli
 from framework.artifacts import resolve_artifacts_base_dir
 from framework.env import load_env
 from framework.visual.models import VisualResult, VisualThresholds
-from framework.visual.perceptual_client import prepare_perceptual_placeholders, run_perceptual_postprocess
+from framework.visual.perceptual import prepare_perceptual_placeholders, run_perceptual_postprocess
 from framework.visual.report_builder import write_visual_report, write_visual_results_json
 
 
@@ -37,7 +37,7 @@ def _ensure_shared_run_id(config: pytest.Config) -> str:
         config._shared_run_id = token
         return token
 
-    token = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
+    token = datetime.now(UTC).strftime("%Y%m%d_%H%M%S_%f")
     config._shared_run_id = token
     return token
 
@@ -147,15 +147,15 @@ def _result_from_dict(data: dict[str, object]) -> VisualResult | None:
                 pixel_max=float(thresholds_raw.get("pixel_max", 0.0)),
                 lpips_max=float(thresholds_raw.get("lpips_max", 0.0)),
                 dists_max=float(thresholds_raw.get("dists_max", 0.0)),
-                pixel_uncertain_delta=float(cast(Any, pixel_uncertain_delta))
-                if pixel_uncertain_delta is not None
-                else None,
-                lpips_uncertain_delta=float(cast(Any, lpips_uncertain_delta))
-                if lpips_uncertain_delta is not None
-                else None,
-                dists_uncertain_delta=float(cast(Any, dists_uncertain_delta))
-                if dists_uncertain_delta is not None
-                else None,
+                pixel_uncertain_delta=(
+                    float(cast(Any, pixel_uncertain_delta)) if pixel_uncertain_delta is not None else None
+                ),
+                lpips_uncertain_delta=(
+                    float(cast(Any, lpips_uncertain_delta)) if lpips_uncertain_delta is not None else None
+                ),
+                dists_uncertain_delta=(
+                    float(cast(Any, dists_uncertain_delta)) if dists_uncertain_delta is not None else None
+                ),
             )
 
         pixel_changed_ratio_raw = data.get("pixel_changed_ratio")
@@ -181,9 +181,9 @@ def _result_from_dict(data: dict[str, object]) -> VisualResult | None:
             suite_id=str(data.get("suite_id") or ""),
             viewport=str(data.get("viewport") or ""),
             browser=str(data.get("browser") or ""),
-            pixel_changed_ratio=float(cast(Any, pixel_changed_ratio_raw))
-            if pixel_changed_ratio_raw is not None
-            else None,
+            pixel_changed_ratio=(
+                float(cast(Any, pixel_changed_ratio_raw)) if pixel_changed_ratio_raw is not None else None
+            ),
             lpips=float(cast(Any, lpips_raw)) if lpips_raw is not None else None,
             dists=float(cast(Any, dists_raw)) if dists_raw is not None else None,
             thresholds=thresholds,

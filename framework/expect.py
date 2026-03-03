@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing_extensions import deprecated
+
+from warnings import deprecated
 
 """Minimal helpers expressing expectations with friendly error messages."""
 

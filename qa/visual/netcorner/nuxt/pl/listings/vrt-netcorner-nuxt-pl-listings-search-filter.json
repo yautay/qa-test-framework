@@ -1,0 +1,142 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-listings-search-filter-search-filter-1596-smartfony-z-dual-sim",
+    "name": "Listings search-filter /search-filter/1596/smartfony-z-dual-sim",
+    "suite_id": "netcorner/nuxt/pl/listings",
+    "target_url": "/search-filter/1596/smartfony-z-dual-sim",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-listings-search-filter-search-filter-1596-smartfony-z-dual-sim-a-0",
+    "name": "Listings search-filter /search-filter/1596/smartfony-z-dual-sim?a=0",
+    "suite_id": "netcorner/nuxt/pl/listings",
+    "target_url": "/search-filter/1596/smartfony-z-dual-sim?a=0",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-listings-search-filter-search-filter-1596-smartfony-z-dual-sim-p-2",
+    "name": "Listings search-filter /search-filter/1596/smartfony-z-dual-sim?p=2",
+    "suite_id": "netcorner/nuxt/pl/listings",
+    "target_url": "/search-filter/1596/smartfony-z-dual-sim?p=2",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-listings-search-filter-search-filter-5022-laptopy-do-gier",
+    "name": "Listings search-filter /search-filter/5022/laptopy-do-gier",
+    "suite_id": "netcorner/nuxt/pl/listings",
+    "target_url": "/search-filter/5022/laptopy-do-gier",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  }
+]

@@ -1,0 +1,247 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-listings-category-category-1251-monitory-asus-html",
+    "name": "Listings category /category/1251/monitory,asus.html",
+    "suite_id": "netcorner/nuxt/pl/listings",
+    "target_url": "/category/1251/monitory,asus.html",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-listings-category-category-1596-telefony-html",
+    "name": "Listings category /category/1596/telefony.html",
+    "suite_id": "netcorner/nuxt/pl/listings",
+    "target_url": "/category/1596/telefony.html",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-listings-category-category-5022-laptopy-apple-html",
+    "name": "Listings category /category/5022/laptopy,apple.html",
+    "suite_id": "netcorner/nuxt/pl/listings",
+    "target_url": "/category/5022/laptopy,apple.html",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-listings-category-category-5022-laptopy-apple-html-p-2",
+    "name": "Listings category /category/5022/laptopy,apple.html?p=2",
+    "suite_id": "netcorner/nuxt/pl/listings",
+    "target_url": "/category/5022/laptopy,apple.html?p=2",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-listings-category-category-5022-laptopy-html",
+    "name": "Listings category /category/5022/laptopy.html",
+    "suite_id": "netcorner/nuxt/pl/listings",
+    "target_url": "/category/5022/laptopy.html",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-listings-category-category-5022-laptopy-html-a-0",
+    "name": "Listings category /category/5022/laptopy.html?a=0",
+    "suite_id": "netcorner/nuxt/pl/listings",
+    "target_url": "/category/5022/laptopy.html?a=0",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-listings-category-category-5022-laptopy-html-p-2",
+    "name": "Listings category /category/5022/laptopy.html?p=2",
+    "suite_id": "netcorner/nuxt/pl/listings",
+    "target_url": "/category/5022/laptopy.html?p=2",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='listingPrice']",
+        "[data-name='productPrice']",
+        "[data-name='checkingPromotion']",
+        "[data-name='statusAvailable']",
+        "[data-name='storehouseAvailability']",
+        "[data-name='cartLengthCounter']",
+        "[data-name='sliderAutoplayContainer']",
+        "[data-name='swiper-nav-btn']",
+        "[data-name='swiper-nav-btn-circleButton']",
+        "[data-name='heroSlider']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  }
+]

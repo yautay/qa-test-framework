@@ -11,9 +11,6 @@ This directory contains helper scripts used by local developers, testers, and CI
 - `tools/scenarios/`
   - Scenario catalog tooling.
   - `verify_scenarios.py`, `scenario_report.py`
-- `tools/reporting/`
-  - Local reporting API test receiver.
-  - `test_api.py`, `test_api_captures.jsonl`
 - `tools/hooks/`
   - Local git hooks and installers.
 - `tools/remote/`
@@ -30,20 +27,19 @@ This directory contains helper scripts used by local developers, testers, and CI
 ```bash
 make verify-scenarios
 make scenario-report
-make visual-report-serve
+make report-serve
 make clean-artifacts
 make clean-artifacts-older DAYS=14
 make test-api
-make remote-up
-make remote-down
-make minio-up
-make minio-down
+make debug-remote-grid-up
+make debug-remote-grid-down
+make debug-minio-up
+make debug-minio-down
 ```
 
 ## Notes
 
 - Scenario tooling scripts live in `tools/scenarios/`.
-- Reporting helper API lives in `tools/reporting/test_api.py`.
 - Visual tooling scripts live in `tools/visual/`.
-- Visual report server: `tools/visual/report_server.py` (hero page + run listing).
+- Visual report server: `python -m framework.reporting.report_server` (hero page + run listing).
 - Windows launchers/scripts live in `tools/windows/`.

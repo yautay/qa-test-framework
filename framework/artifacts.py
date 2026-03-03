@@ -2,9 +2,9 @@ from __future__ import annotations
 
 """Helper for preparing directories that collect test artifacts."""
 
-from dataclasses import dataclass
-from datetime import datetime, timezone
 import os
+from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -50,7 +50,7 @@ def build_run_artifacts(base_dir: str, run_id: str | None = None) -> RunArtifact
 
     resolved_run_id = str(run_id or os.getenv("PYTEST_XDIST_TESTRUNUID") or "").strip()
     if not resolved_run_id:
-        resolved_run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
+        resolved_run_id = datetime.now(UTC).strftime("%Y%m%d_%H%M%S_%f")
     root = (Path(base_dir) / resolved_run_id).resolve()
 
     traces = root / "traces"

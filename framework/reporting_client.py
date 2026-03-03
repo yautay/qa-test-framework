@@ -2,8 +2,8 @@ from __future__ import annotations
 
 """Client that delivers test-run metadata and screenshots to the reporting API."""
 
-import json
 import hashlib
+import json
 import threading
 import time
 from dataclasses import dataclass, field
@@ -57,10 +57,31 @@ class ReportingClient:
     def _is_failure_with_screenshots(payload: dict) -> bool:
         if payload.get("status") != "failed":
             return False
-        artifacts = payload.get("artifacts", {})
-        if not isinstance(artifacts, dict):
-            return False
-        return bool(artifacts.get("screenshot_raw") or artifacts.get("screenshot_annotated"))
+        return bool(ReportingClient._extract_screenshot_paths(payload))
+
+    @staticmethod
+    def _extract_screenshot_paths(payload: dict) -> list[Path]:
+        artifacts = payload.get("artifacts")
+        raw_paths: list[str] = []
+
+        if isinstance(artifacts, dict):
+            for key in ("screenshot_raw", "screenshot_annotated"):
+                path_value = artifacts.get(key)
+                if isinstance(path_value, str) and path_value.strip():
+                    raw_paths.append(path_value.strip())
+        elif isinstance(artifacts, list):
+            for row in artifacts:
+                if not isinstance(row, dict):
+                    continue
+                kind = str(row.get("kind") or "").strip()
+                if kind not in {"screenshot_raw", "screenshot_annotated"}:
+                    continue
+                path_value = row.get("path")
+                if isinstance(path_value, str) and path_value.strip():
+                    raw_paths.append(path_value.strip())
+
+        deduplicated_paths = dict.fromkeys(raw_paths)
+        return [Path(path) for path in deduplicated_paths]
 
     @staticmethod
     def _should_retry_status(status_code: int) -> bool:
@@ -173,15 +194,7 @@ class ReportingClient:
             return False
 
         url = f"{self.base_url.rstrip('/')}{self.test_result_endpoint}"
-        artifacts = payload.get("artifacts", {})
-        if not isinstance(artifacts, dict):
-            return self._post(self.test_result_endpoint, payload)
-
-        raw_path = artifacts.get("screenshot_raw")
-        ann_path = artifacts.get("screenshot_annotated")
-
-        file_paths = [p for p in (raw_path, ann_path) if isinstance(p, str) and p.strip()]
-        existing_paths = [Path(p) for p in file_paths if Path(p).is_file()]
+        existing_paths = [path for path in self._extract_screenshot_paths(payload) if path.is_file()]
         if not existing_paths:
             return self._post(self.test_result_endpoint, payload)
 

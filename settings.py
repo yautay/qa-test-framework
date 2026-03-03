@@ -3,7 +3,7 @@
 # - Dozwolone: TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL
 # - Przyklad: "DEBUG" da wiecej szczegolow podczas diagnozy.
 # Skutek: nizszy poziom (np. TRACE) = wiecej logow i latwiejszy debug, ale wiekszy szum.
-console_log_level = "DEBUG"
+console_log_level = "WARNING"
 
 # ignore_https_errors:
 # - True: ignoruje bledy certyfikatow TLS/HTTPS (np. self-signed lokalnie).
@@ -19,6 +19,18 @@ ignore_https_errors = True
 # - Przyklad: "artifacts" albo "out/test-artifacts".
 # Skutek: zmiana porzadkuje output i moze ulatwic archiwizacje w CI.
 artifacts_dir = "artifacts"
+
+# allure_enabled:
+# - True: wlacza automatyczne generowanie raportu Allure (allure-results).
+# - False: nie ustawia katalogu Allure i pomija attach'e Allure.
+# Skutek: False przyspiesza lokalny run i ogranicza artefakty, True daje bogatsze raportowanie.
+allure_enabled = False
+
+# pytest_html_enabled:
+# - True: wlacza automatyczne generowanie raportu pytest-html.
+# - False: nie ustawia htmlpath, wiec raport HTML nie jest tworzony automatycznie.
+# Skutek: True ulatwia szybki podglad wynikow po runie.
+pytest_html_enabled = True
 
 # record_video:
 # - True: nagrywa wideo z przebiegu testow.
@@ -175,13 +187,13 @@ visual_minio_secure = True
 # - True: wlacza integracje z PMS.
 # - False: brak zapytan do PMS.
 # Skutek: True daje dodatkowe metryki percepcyjne kosztem czasu i zaleznosci sieciowej.
-pms_enabled = False
+pms_enabled = True
 
 # pms_base_url:
 # - Bazowy URL uslugi PMS.
 # - Przyklad: "http://pms:8080".
 # Skutek: pusty URL przy wlaczonym PMS spowoduje bledy polaczenia.
-pms_base_url = "http://127.0.0.1:8080"
+pms_base_url = "http://192.168.2.108:8080"
 
 # pms_metric:
 # - "lpips", "dists" albo "both".

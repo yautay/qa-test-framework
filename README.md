@@ -40,7 +40,7 @@ python -m playwright install chromium
 ## Run tests
 
 ```bash
-make test-functional
+make test-e2e
 make test-visual
 make test-aso
 make clean-artifacts-older DAYS=14
@@ -82,16 +82,15 @@ Commands:
 
 ```bash
 make test-visual
-make visual-approve
 make visual-sync
-make visual-report-serve
-make minio-up
-make minio-down
+make report-serve
+make debug-minio-up
+make debug-minio-down
 ```
 
-Baseline approval from report UI:
+Baseline review from report UI:
 
-- start report server (`make visual-report-serve`),
+- start report server (`make report-serve`),
 - open hero page (`http://127.0.0.1:4173/`) and pick report run,
 - tag rows with `BASELINE`,
 - click `SEND BASELINE` and rewrite challenge phrase,
@@ -103,7 +102,6 @@ Details: `docs/VISUAL_BASELINE_APPROVAL_FLOW.md`
 
 - Artifact guide: `docs/ARTIFACTS.md`
 - Reporting API details: `docs/REPORTING_HTTP_INTEGRATION.md`
-- Local reporting test receiver: `python tools/reporting/test_api.py`
 
 Windows cleanup:
 - `tools/windows/Cleanup_Windows.cmd`

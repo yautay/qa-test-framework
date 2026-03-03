@@ -1,7 +1,10 @@
 from dataclasses import replace
+from typing import Any, cast
+
 import pytest
+
 from framework.env import RuntimeEnv
-from framework.url_resolver.url_resolver import url_resolver, EnvUrls
+from framework.url_resolver.url_resolver import EnvUrls, url_resolver
 
 resolve_pl = url_resolver(
     EnvUrls(
@@ -12,18 +15,11 @@ resolve_pl = url_resolver(
 )
 
 
-@pytest.hookimpl(trylast=True)
-def pytest_configure(config: pytest.Config) -> None:
-    markexpr = str(getattr(config.option, "markexpr", "") or "").strip().lower()
-    if markexpr == "visual":
-        return
-
-    env: RuntimeEnv | None = getattr(config, "_runtime_env", None)
-    if env is None:
-        return
-
+@pytest.fixture(scope="session")
+def runtime_env(pytestconfig: pytest.Config) -> RuntimeEnv:
+    env: RuntimeEnv = cast(Any, pytestconfig)._runtime_env
     if (env.base_url or "").strip():
-        return
+        return env
 
     # Legacy compatibility: env.server_type + env.server_name split is resolved
     # centrally in qa/conftest.py (including server_name aliases demo/prod/local).
@@ -32,4 +28,4 @@ def pytest_configure(config: pytest.Config) -> None:
     except ValueError as e:
         raise pytest.UsageError(f"Cannot resolve base_url for env={env!r}: {e}") from e
 
-    config._runtime_env = replace(env, base_url=resolved)
+    return replace(env, base_url=resolved)

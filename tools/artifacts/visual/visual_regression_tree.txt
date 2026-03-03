@@ -1,0 +1,157 @@
+qa/visual/netcorner/nuxt/pl/
+├── listings/
+├── vrt-netcorner-nuxt-pl-listings-category-part-01.json
+│   ├── /category/1251/monitory,asus.html
+│   ├── /category/1596/telefony.html
+│   ├── /category/5022/laptopy,apple.html
+│   ├── /category/5022/laptopy,apple.html?p=2
+│   ├── /category/5022/laptopy.html
+│   ├── /category/5022/laptopy.html?a=0
+│   └── /category/5022/laptopy.html?p=2
+├── vrt-netcorner-nuxt-pl-listings-category-part-02.json
+│   ├── /category/686/pendrive.html
+│   ├── /category/686/pendrive.html?a=0
+│   ├── /category/686/pendrive.html?p=2
+│   └── /category/686/pendrive.html?p=4
+├── vrt-netcorner-nuxt-pl-listings-components.json
+│   └── /category/5022/laptopy.html
+├── vrt-netcorner-nuxt-pl-listings-configurator-part-01.json
+│   ├── /advanced-configurator
+│   ├── /advanced-configurator/case
+│   ├── /advanced-configurator/cpu
+│   ├── /advanced-configurator/cpu?a=0
+│   ├── /advanced-configurator/dram_memory
+│   ├── /advanced-configurator/graphics_card
+│   └── /advanced-configurator/hdd
+├── vrt-netcorner-nuxt-pl-listings-configurator-part-02.json
+│   ├── /advanced-configurator/motherboard
+│   ├── /advanced-configurator/power_supply
+│   └── /advanced-configurator?a=0
+├── vrt-netcorner-nuxt-pl-listings-producer.json
+│   ├── /producer/24/samsung.html
+│   ├── /producer/7/apple.html
+│   ├── /producer/7/apple.html?a=0
+│   └── /producer/7/apple.html?p=2
+├── vrt-netcorner-nuxt-pl-listings-search-filter.json
+│   ├── /search-filter/1596/smartfony-z-dual-sim
+│   ├── /search-filter/1596/smartfony-z-dual-sim?a=0
+│   ├── /search-filter/1596/smartfony-z-dual-sim?p=2
+│   └── /search-filter/5022/laptopy-do-gier
+└── vrt-netcorner-nuxt-pl-listings-search-query.json
+    ├── /search/category/1?query=klawiatura+czarna
+    ├── /search/category/1?query=klawiatura+czarna&showBuyActiveOnly=1&p=20
+    └── /search/category/1?query=promo:tp_layout_context
+├── product_page/
+├── vrt-netcorner-nuxt-pl-product-demo-bugs-html-cache.json
+│   └── /product/914916
+├── vrt-netcorner-nuxt-pl-product-no-cache-smoke.json
+│   ├── /product/500000501?a=0
+│   ├── /product/500000513?a=0
+│   ├── /product/54244130?a=0
+│   ├── /product/54244133?a=0
+│   ├── /product/54244135?a=0
+│   └── /product/914916?a=0
+├── vrt-netcorner-nuxt-pl-product-price-component-products-html-cache-part-01.json
+│   ├── /product/500000501
+│   ├── /product/500000502
+│   ├── /product/500000503
+│   ├── /product/500000504
+│   ├── /product/500000505
+│   ├── /product/500000506
+│   ├── /product/500000507
+│   ├── /product/500000508
+│   ├── /product/500000509
+│   └── /product/500000510
+├── vrt-netcorner-nuxt-pl-product-price-component-products-html-cache-part-02.json
+│   ├── /product/500000511
+│   ├── /product/500000512
+│   └── /product/500000513
+├── vrt-netcorner-nuxt-pl-product-product-labels-products-html-cache.json
+│   ├── /product/530000001
+│   └── /product/530000002
+├── vrt-netcorner-nuxt-pl-product-rwd-front-products-html-cache-part-01.json
+│   ├── /product/54244111
+│   ├── /product/54244112
+│   ├── /product/54244113
+│   ├── /product/54244116
+│   ├── /product/54244117
+│   ├── /product/54244118
+│   ├── /product/54244119
+│   ├── /product/54244120
+│   ├── /product/54244121
+│   └── /product/54244122
+├── vrt-netcorner-nuxt-pl-product-rwd-front-products-html-cache-part-02.json
+│   ├── /product/54244123
+│   ├── /product/54244124
+│   ├── /product/54244125
+│   ├── /product/54244126
+│   ├── /product/54244127
+│   ├── /product/54244128
+│   ├── /product/54244129
+│   ├── /product/54244130
+│   ├── /product/54244131
+│   └── /product/54244132
+├── vrt-netcorner-nuxt-pl-product-rwd-front-products-html-cache-part-03.json
+│   ├── /product/54244133
+│   ├── /product/54244134
+│   ├── /product/54244135
+│   ├── /product/54244181
+│   ├── /product/54244182
+│   ├── /product/54244183
+│   ├── /product/54244184
+│   ├── /product/54244185
+│   ├── /product/54244186
+│   └── /product/54244187
+├── vrt-netcorner-nuxt-pl-product-rwd-front-products-html-cache-part-04.json
+│   └── /product/54244188
+├── vrt-netcorner-nuxt-pl-product-sezam-promotions-products-html-cache-part-01.json
+│   ├── /product/54244143
+│   ├── /product/54244145
+│   ├── /product/54244146
+│   ├── /product/54244150
+│   ├── /product/54244151
+│   ├── /product/54244152
+│   ├── /product/54244153
+│   ├── /product/54244154
+│   ├── /product/54244155
+│   └── /product/54244156
+├── vrt-netcorner-nuxt-pl-product-sezam-promotions-products-html-cache-part-02.json
+│   ├── /product/54244157
+│   ├── /product/54244158
+│   ├── /product/54244159
+│   ├── /product/54244160
+│   ├── /product/54244161
+│   ├── /product/54244162
+│   ├── /product/54244163
+│   ├── /product/54244164
+│   ├── /product/54244165
+│   └── /product/54244166
+├── vrt-netcorner-nuxt-pl-product-sezam-promotions-products-html-cache-part-03.json
+│   ├── /product/54244167
+│   ├── /product/54244168
+│   ├── /product/54244169
+│   ├── /product/54244170
+│   ├── /product/54244171
+│   ├── /product/54244172
+│   ├── /product/54244173
+│   ├── /product/54244174
+│   └── /product/54244175
+└── vrt-netcorner-nuxt-pl-product-soon-available-products-html-cache.json
+    ├── /product/500000201
+    ├── /product/500000202
+    ├── /product/500000203
+    ├── /product/500000204
+    ├── /product/500000205
+    ├── /product/500000206
+    ├── /product/500000207
+    ├── /product/500000208
+    ├── /product/500000209
+    └── /product/500000210
+├── hero_page/
+├── vrt-netcorner-nuxt-pl-hero-homepage-no-cache.json
+│   └── /?a=0
+└── vrt-netcorner-nuxt-pl-hero-homepage.json
+    └── /
+├── layers/
+└── vrt-netcorner-nuxt-pl-layers-login.json
+    └── /login

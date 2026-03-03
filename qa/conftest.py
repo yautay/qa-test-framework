@@ -1,17 +1,19 @@
 from __future__ import annotations
-from dataclasses import replace
+
 import getpass
 import json
 import os
 import socket
 import time
 import uuid
-from datetime import datetime, timezone
+from dataclasses import replace
+from datetime import UTC, datetime
 from pathlib import Path
+
 import pytest
-import settings_cli
 from loguru import logger
 
+import settings_cli
 from framework.artifacts import RunArtifacts, build_run_artifacts, resolve_artifacts_base_dir
 from framework.env import RuntimeEnv, load_env
 from framework.git_info import get_git_metadata
@@ -36,7 +38,7 @@ def _get_scenario_description(item: pytest.Item) -> str | None:
 
 
 def _utc_now() -> str:
-    return datetime.now(timezone.utc).isoformat()
+    return datetime.now(UTC).isoformat()
 
 
 def _current_worker_id() -> str:

@@ -1,0 +1,27 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-rwd-front-products-54244188",
+    "name": "Product 54244188 tests-rwd-front-products html-cache",
+    "target_url": "/product/54244188",
+    "suite_id": "netcorner/nuxt/pl/product_page",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "selector": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "selectors": [
+        ".cookie-banner",
+        "[data-testid='dynamic-banner']",
+        "[data-name='replace-mask-selector']"
+      ],
+      "color": "#00FF00"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
+    }
+  }
+]

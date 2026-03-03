@@ -6,7 +6,8 @@ from typing import Any, cast
 
 import pytest
 
-from framework.visual.report_server import ReportServerContext, _list_reports_payload
+from framework.reporting.report_server.context import ReportServerContext
+from framework.reporting.report_server.reports import _list_reports_payload
 
 pytestmark = [pytest.mark.aso]
 

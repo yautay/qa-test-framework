@@ -28,10 +28,10 @@ def extract_selector_from_error(longrepr: str) -> str | None:
 
 
 def annotate_fail_screenshot(
-        raw_path: Path,
-        out_path: Path,
-        metadata: dict[str, str],
-        highlight_box: dict[str, float] | None,
+    raw_path: Path,
+    out_path: Path,
+    metadata: dict[str, str],
+    highlight_box: dict[str, float] | None,
 ) -> None:
     """Draw a highlight box and overlay metadata text onto the failure capture."""
     image = cv2.imread(str(raw_path), cv2.IMREAD_COLOR)

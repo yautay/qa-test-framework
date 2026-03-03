@@ -12,7 +12,7 @@ This document describes the local baseline approval workflow driven by the visua
 ## How it works
 
 1. Visual tests generate report in `artifacts/<run_id>/visual/`.
-2. A local report server is started (`tools/visual/report_server.py`).
+2. A local report server is started (`python -m framework.reporting.report_server`).
 3. User opens report and marks desired rows with `BASELINE`.
 4. User clicks `SEND BASELINE` in report header.
 5. UI asks backend for challenge phrase and requires manual rewrite.
@@ -40,14 +40,14 @@ make test-visual
 2. Start report server for latest run:
 
 ```bash
-make visual-report-serve
+make report-serve
 ```
 
 Optional: explicit run id or report path:
 
 ```bash
-make visual-report-serve RUN_ID=20260218_120000_000001
-make visual-report-serve REPORT_DIR=artifacts/20260218_120000_000001/visual PORT=4180
+make report-serve RUN_ID=20260218_120000_000001
+make report-serve REPORT_DIR=artifacts/20260218_120000_000001/visual PORT=4180
 ```
 
 3. Open hero page (default: `http://127.0.0.1:4173/`) and select report run.
