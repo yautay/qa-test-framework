@@ -89,7 +89,7 @@ visual_compare_mode = "hybrid"  # pixel|perceptual|hybrid
 # - "local": baseline na dysku lokalnym.
 # - "minio": baseline w obiekcie MinIO/S3-compatible.
 # Skutek: wybor determinuje skad pobierane i gdzie zapisywane sa baseline'y.
-visual_baseline_provider = "local"  # minio|local
+visual_baseline_provider = "minio"  # minio|local
 
 # visual_baseline_profile:
 # - Nazwa profilu baseline (np. per branch/per env).
@@ -157,17 +157,17 @@ visual_viewport_presets = {
 # - Endpoint MinIO/S3 dla baseline'ow.
 # - Przyklad: "minio.local:9000" lub "https://minio.example.com".
 # Skutek: wymagany przy providerze "minio".
-visual_minio_endpoint = ""
+visual_minio_endpoint = "https://s3.cpt-sztos.com"
 
 # visual_minio_access_key:
 # - Access key uzytkownika MinIO.
 # Skutek: brak lub bledna wartosc = brak dostepu do bucketu.
-visual_minio_access_key = ""
+visual_minio_access_key = "user"
 
 # visual_minio_secret_key:
 # - Secret key uzytkownika MinIO.
 # Skutek: trzymaj poza repo (env/secret manager), bo to dana wrazliwa.
-visual_minio_secret_key = ""
+visual_minio_secret_key = "nc12345678"
 
 # visual_minio_bucket:
 # - Nazwa bucketu na baseline.
@@ -193,7 +193,7 @@ pms_enabled = True
 # - Bazowy URL uslugi PMS.
 # - Przyklad: "http://pms:8080".
 # Skutek: pusty URL przy wlaczonym PMS spowoduje bledy polaczenia.
-pms_base_url = "http://192.168.2.108:8080"
+pms_base_url = "https://pms.cpt-sztos.com"
 
 # pms_metric:
 # - "lpips", "dists" albo "both".
@@ -264,7 +264,7 @@ pms_poll_idle_multiplier = 10.0
 # - True: wysyla wyniki do zewnetrznego Reporting API.
 # - False: brak wysylek.
 # Skutek: True pozwala centralizowac raporty miedzy pipeline'ami.
-reporting_enabled = False
+reporting_enabled = True
 
 # reporting_schema_version:
 # - Wersja schematu payloadu raportowania.
@@ -281,7 +281,7 @@ reporting_source_project = "netQArner"
 # - Bazowy URL Reporting API.
 # - Przyklad: "http://127.0.0.1:3001" lub "https://reporting.example.com".
 # Skutek: bledny URL = brak raportowania mimo poprawnych testow.
-reporting_api_url = "http://127.0.0.1:3001"
+reporting_api_url = "https://toc.cpt-sztos.com"
 
 # reporting_api_token:
 # - Token autoryzacyjny do Reporting API.
