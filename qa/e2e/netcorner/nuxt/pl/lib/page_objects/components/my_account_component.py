@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from playwright.sync_api import expect, Locator
+from playwright.sync_api import Locator, expect
+
 from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 
@@ -90,15 +91,15 @@ class MyAccountPasswordChangeComponent(BaseComponent):
         self.__button_save = self.find('button:has-text("Zapisz zmiany")')
         self.__session_expired_alert = self.root.page.get_by_text("Twoja sesja wygasła")
 
-    def __fill_old_password(self, password: str) -> "MyAccountPasswordChangeComponent":
+    def __fill_old_password(self, password: str) -> MyAccountPasswordChangeComponent:
         self.safe_type(self.__input_old_password, password)
         return self
 
-    def __fill_new_password(self, password: str) -> "MyAccountPasswordChangeComponent":
+    def __fill_new_password(self, password: str) -> MyAccountPasswordChangeComponent:
         self.safe_type(self.__input_new_password, password)
         return self
 
-    def __fill_new_password_repeated(self, password: str) -> "MyAccountPasswordChangeComponent":
+    def __fill_new_password_repeated(self, password: str) -> MyAccountPasswordChangeComponent:
         self.safe_type(self.__input_new_password_repeated, password)
         return self
 

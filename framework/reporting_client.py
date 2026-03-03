@@ -2,8 +2,8 @@ from __future__ import annotations
 
 """Client that delivers test-run metadata and screenshots to the reporting API."""
 
-import json
 import hashlib
+import json
 import threading
 import time
 from dataclasses import dataclass, field

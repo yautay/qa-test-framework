@@ -81,8 +81,7 @@ def compare_images(
         out = a * 0.35 + r * 0.65
         overlay[sel] = np.clip(out, 0, 255).astype(np.uint8)
 
-
-    for (x, y, w, h) in kept_boxes:
+    for x, y, w, h in kept_boxes:
         cv2.rectangle(overlay, (x, y), (x + w, y + h), (0, 0, 255), 2)
 
     diff_path.parent.mkdir(parents=True, exist_ok=True)

@@ -4,7 +4,7 @@ from typing import Any, cast
 import pytest
 
 from framework.env import RuntimeEnv
-from framework.url_resolver.url_resolver import url_resolver, EnvUrls
+from framework.url_resolver.url_resolver import EnvUrls, url_resolver
 
 resolve_pl = url_resolver(
     EnvUrls(
@@ -17,7 +17,7 @@ resolve_pl = url_resolver(
 
 @pytest.fixture(scope="session")
 def runtime_env(pytestconfig: pytest.Config) -> RuntimeEnv:
-    env: RuntimeEnv = getattr(cast(Any, pytestconfig), "_runtime_env")
+    env: RuntimeEnv = cast(Any, pytestconfig)._runtime_env
     if (env.base_url or "").strip():
         return env
 

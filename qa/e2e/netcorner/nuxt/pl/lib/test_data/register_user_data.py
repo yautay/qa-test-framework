@@ -1,6 +1,6 @@
-from dataclasses import dataclass
 import uuid
 from collections.abc import Callable
+from dataclasses import dataclass
 
 
 @dataclass
@@ -83,9 +83,7 @@ def invalid_client_cases() -> list[RegisterUserCase]:
     return [
         RegisterUserCase(
             case_id="pl_marketing_business",
-            factory=lambda: (
-                RegisterUserDataBuilder().with_business_offer().with_marketing().build()
-            ),
+            factory=lambda: (RegisterUserDataBuilder().with_business_offer().with_marketing().build()),
         ),
         RegisterUserCase(
             case_id="pl_marketing",

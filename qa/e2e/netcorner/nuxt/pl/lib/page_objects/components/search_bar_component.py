@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from playwright.sync_api import expect, Locator
+from playwright.sync_api import Locator, expect
+
 from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 
@@ -12,7 +13,7 @@ class SearchBarComponent(BaseComponent):
         self.__submit = self.find('[title="search-button"]')
 
     @step("Wpisuję frazę wyszukiwania: {phrase}")
-    def fill_phrase(self, phrase: str) -> "SearchBarComponent":
+    def fill_phrase(self, phrase: str) -> SearchBarComponent:
         self.safe_type(self.__input, phrase)
         return self
 

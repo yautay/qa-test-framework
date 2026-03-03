@@ -1,7 +1,10 @@
 from __future__ import annotations
+
 import json
 from pathlib import Path
+
 import pytest
+
 from framework.visual.scenario_loader import (
     ScenarioLoadError,
     _load_scenarios,

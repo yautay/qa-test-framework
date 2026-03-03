@@ -19,7 +19,7 @@ class MyAccountPage(BasePage):
         self.__header: HeaderSection | None = None
         self.__footer: FooterSection | None = None
 
-    def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None ) -> "MyAccountPage":
+    def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> MyAccountPage:
         super().wait_loaded(state=state, timeout=timeout)
         self.header.wait_visible()
         self.content.wait_visible()

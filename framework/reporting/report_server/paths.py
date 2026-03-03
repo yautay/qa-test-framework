@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from pathlib import Path
 import re
+from pathlib import Path
 from urllib.parse import unquote
-
 
 _RUN_ID_SAFE = re.compile(r"^[A-Za-z0-9._-]+$")
 _READY_MARKER = ".report-ready.json"

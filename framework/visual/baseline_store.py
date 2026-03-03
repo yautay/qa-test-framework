@@ -35,7 +35,6 @@ Notes:
 import re
 import shutil
 from pathlib import Path
-from typing import Optional
 
 from loguru import logger
 
@@ -180,7 +179,7 @@ class BaselineStore:
         try:
             candidate.relative_to(self._cache_dir)
         except ValueError:
-            raise ValueError(f"Unsafe object key outside cache dir: {object_key!r}")
+            raise ValueError(f"Unsafe object key outside cache dir: {object_key!r}") from None
         return candidate
 
     def local_provider_path(self, object_key: str) -> Path:
@@ -195,7 +194,7 @@ class BaselineStore:
         try:
             candidate.relative_to(provider_root)
         except ValueError:
-            raise ValueError(f"Unsafe object key outside local provider dir: {object_key!r}")
+            raise ValueError(f"Unsafe object key outside local provider dir: {object_key!r}") from None
         return candidate
 
     def resolve_baseline(self, suite_id: str, scenario_id: str, viewport: str, browser: str) -> Path | None:

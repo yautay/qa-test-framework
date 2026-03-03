@@ -5,10 +5,11 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from importlib import metadata as importlib_metadata
+
 from dotenv import dotenv_values
 
-import settings_cli
 import settings
+import settings_cli
 
 
 def _as_bool(value: str | None, default: bool) -> bool:

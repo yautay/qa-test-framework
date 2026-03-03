@@ -1,21 +1,27 @@
 from __future__ import annotations
 
-from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler
 import json
 import re
 import time
+from http import HTTPStatus
+from http.server import BaseHTTPRequestHandler
 from typing import Any, cast
 from urllib.parse import parse_qs, urlparse
 
 from loguru import logger
 
-from ..context import ChallengeEntry, ReportServerContext
 from ..constants import CHALLENGE_TTL_SECONDS
+from ..context import ChallengeEntry, ReportServerContext
 from ..paths import _build_dir, _resolve_actual_png, _safe_run_id_or_error
 from ..reports import _list_reports_payload, _read_results_rows, _read_run_metadata
 from ..services.pdf import _generate_bug_pdf
-from ..services.sync import _apply_event_to_state, _flush_pending, _mark_case_synced, _row_tag_key, _schedule_outbox_event
+from ..services.sync import (
+    _apply_event_to_state,
+    _flush_pending,
+    _mark_case_synced,
+    _row_tag_key,
+    _schedule_outbox_event,
+)
 from ..state import (
     TEXT_MAX_LENGTH,
     _acquire_lock,

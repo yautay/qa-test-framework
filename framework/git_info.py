@@ -45,7 +45,7 @@ def _normalize_jenkins_branch(branch: str | None) -> str | None:
     # Typical formats: "origin/main", "refs/remotes/origin/main"
     for prefix in ("refs/remotes/origin/", "origin/"):
         if b.startswith(prefix):
-            b = b[len(prefix):]
+            b = b[len(prefix) :]
     return b or None
 
 
@@ -55,14 +55,10 @@ def get_git_metadata() -> GitMetadata:
     commit = os.getenv("GIT_COMMIT") or _git(["git", "rev-parse", "HEAD"])
 
     branch_env = os.getenv("GIT_BRANCH") or os.getenv("BRANCH_NAME")
-    branch = _normalize_jenkins_branch(branch_env) or _git(
-        ["git", "rev-parse", "--abbrev-ref", "HEAD"]
-    )
+    branch = _normalize_jenkins_branch(branch_env) or _git(["git", "rev-parse", "--abbrev-ref", "HEAD"])
 
     # User/email: available only if Jenkins is configured to expose them (e.g. Build User Vars Plugin)
-    user = os.getenv("BUILD_USER") or os.getenv("BUILD_USER_ID") or _git(
-        ["git", "config", "--get", "user.name"]
-    )
+    user = os.getenv("BUILD_USER") or os.getenv("BUILD_USER_ID") or _git(["git", "config", "--get", "user.name"])
     email = os.getenv("BUILD_USER_EMAIL") or _git(["git", "config", "--get", "user.email"])
 
     return GitMetadata(commit=commit, branch=branch, user=user, email=email)

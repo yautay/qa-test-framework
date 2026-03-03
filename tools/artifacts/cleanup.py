@@ -1,11 +1,10 @@
 from __future__ import annotations
 
+import shutil
 from argparse import ArgumentParser
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-import shutil
-
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 ARTIFACTS_DIR = REPO_ROOT / "artifacts"
@@ -17,8 +16,10 @@ class CleanupResult:
     removed: int
     removed_bytes: int
 
+
 def _bytes_to_mib(size_bytes: int) -> float:
-    return size_bytes / (1024 ** 2)
+    return size_bytes / (1024**2)
+
 
 def _run_dirs() -> list[Path]:
     if not ARTIFACTS_DIR.is_dir():
@@ -39,7 +40,7 @@ def _dir_size(path: Path) -> int:
 
 def _is_older_than(path: Path, cutoff_utc: datetime) -> bool:
     try:
-        mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+        mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
     except OSError:
         return False
     return mtime < cutoff_utc
@@ -64,7 +65,7 @@ def cleanup_all(dry_run: bool) -> CleanupResult:
 
 def cleanup_older(days: int, dry_run: bool) -> CleanupResult:
     dirs = _run_dirs()
-    cutoff_utc = datetime.now(timezone.utc) - timedelta(days=days)
+    cutoff_utc = datetime.now(UTC) - timedelta(days=days)
     removed = 0
     removed_bytes = 0
 

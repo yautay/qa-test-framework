@@ -1,10 +1,7 @@
 import re
 from dataclasses import dataclass
 
-_DNS_HOSTNAME = re.compile(
-    r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?"
-    r"(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$"
-)
+_DNS_HOSTNAME = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?" r"(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$")
 
 
 @dataclass(frozen=True)
@@ -31,9 +28,7 @@ def url_resolver(cfg: EnvUrls):
             try:
                 return cfg.test_template.format(host=name).rstrip("/")
             except KeyError as e:
-                raise ValueError(
-                    f"Invalid test_template {cfg.test_template!r}; expected placeholder {{host}}"
-                ) from e
+                raise ValueError(f"Invalid test_template {cfg.test_template!r}; expected placeholder {{host}}") from e
 
         raise ValueError(f"Unknown environment: {env!r}")
 

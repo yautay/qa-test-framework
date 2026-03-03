@@ -4,9 +4,6 @@ import os
 from pathlib import Path
 from typing import Any
 
-from loguru import logger
-
-from .constants import DEFAULT_PORT, REPO_ROOT
 from .context import ReportServerContext
 
 

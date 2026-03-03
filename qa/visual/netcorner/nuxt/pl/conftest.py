@@ -1,7 +1,9 @@
 from dataclasses import replace
+
 import pytest
+
 from framework.env import RuntimeEnv
-from framework.url_resolver.url_resolver import url_resolver, EnvUrls
+from framework.url_resolver.url_resolver import EnvUrls, url_resolver
 
 resolve_pl = url_resolver(
     EnvUrls(

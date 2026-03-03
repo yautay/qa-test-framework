@@ -19,7 +19,7 @@ class HomePage(BasePage):
         self.__navigation: NavigationSection | None = None
         self.__footer: FooterSection | None = None
 
-    def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> "HomePage":
+    def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> HomePage:
         super().wait_loaded(state=state, timeout=timeout)
         self.header.wait_visible()
         self.navigation.wait_visible()

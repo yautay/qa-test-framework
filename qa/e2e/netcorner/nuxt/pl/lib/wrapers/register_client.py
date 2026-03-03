@@ -1,14 +1,11 @@
 from __future__ import annotations
 
 from contextlib import nullcontext
-from dataclasses import dataclass
-from enum import Enum
 
-from framework.env import RuntimeEnv
 from playwright.sync_api import BrowserContext, Page
 
+from framework.env import RuntimeEnv
 from qa.e2e.conftest import allure
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.toast_overlay import ToastObject, ToastType, ToastInstance
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.my_account_page import MyAccountPage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.register_page import RegisterPage

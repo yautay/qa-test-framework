@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from playwright.sync_api import Locator, expect
 
 
@@ -13,11 +11,11 @@ class BaseComponent:
         self.name = name
 
     # ---------- state ----------
-    def wait_visible(self, timeout: Optional[int] = None) -> "BaseComponent":
+    def wait_visible(self, timeout: int | None = None) -> BaseComponent:
         expect(self.root).to_be_visible(timeout=timeout or self.DEFAULT_TIMEOUT)
         return self
 
-    def wait_hidden(self, timeout: Optional[int] = None) -> "BaseComponent":
+    def wait_hidden(self, timeout: int | None = None) -> BaseComponent:
         expect(self.root).to_be_hidden(timeout=timeout or self.DEFAULT_TIMEOUT)
         return self
 
@@ -28,20 +26,20 @@ class BaseComponent:
         expect(self.root).to_be_hidden(timeout=self.DEFAULT_TIMEOUT)
 
     # ---------- safe actions ----------
-    def safe_click(self, locator: Locator, *, timeout: Optional[int] = None) -> None:
+    def safe_click(self, locator: Locator, *, timeout: int | None = None) -> None:
         t = timeout or self.DEFAULT_TIMEOUT
         expect(locator).to_be_visible(timeout=t)
         expect(locator).to_be_enabled(timeout=t)
         locator.scroll_into_view_if_needed()
         locator.click(timeout=t)
 
-    def safe_fill(self, locator: Locator, value: str, *, timeout: Optional[int] = None) -> None:
+    def safe_fill(self, locator: Locator, value: str, *, timeout: int | None = None) -> None:
         t = timeout or self.DEFAULT_TIMEOUT
         expect(locator).to_be_visible(timeout=t)
         locator.scroll_into_view_if_needed()
         locator.fill(value, timeout=t)
 
-    def safe_type(self, locator: Locator, value: str, *, timeout: Optional[int] = None) -> None:
+    def safe_type(self, locator: Locator, value: str, *, timeout: int | None = None) -> None:
         t = timeout or self.DEFAULT_TIMEOUT
         expect(locator).to_be_visible(timeout=t)
         locator.scroll_into_view_if_needed()

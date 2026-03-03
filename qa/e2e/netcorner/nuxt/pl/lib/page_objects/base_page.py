@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Literal
 
 from playwright.sync_api import Page, expect
+
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.overlays import Overlays
 
 LoadState = Literal["domcontentloaded", "load", "networkidle"]
@@ -24,12 +25,12 @@ class BasePage:
         return self._overlays
 
     # ---------- navigation ----------
-    def open(self, path: str = "", *, wait_until: LoadState = "domcontentloaded") -> "BasePage":
+    def open(self, path: str = "", *, wait_until: LoadState = "domcontentloaded") -> BasePage:
         url = f"{self.base_url}{path}"
         self.page.goto(url, wait_until=wait_until, timeout=self.DEFAULT_TIMEOUT)
         return self
 
-    def reload(self, *, wait_until: LoadState = "domcontentloaded") -> "BasePage":
+    def reload(self, *, wait_until: LoadState = "domcontentloaded") -> BasePage:
         self.page.reload(wait_until=wait_until, timeout=self.DEFAULT_TIMEOUT)
         return self
 
@@ -39,7 +40,7 @@ class BasePage:
         *,
         state: LoadState = "domcontentloaded",
         timeout: int | None = None,
-    ) -> "BasePage":
+    ) -> BasePage:
         self.page.wait_for_load_state(state, timeout=timeout or self.DEFAULT_TIMEOUT)
         return self
 

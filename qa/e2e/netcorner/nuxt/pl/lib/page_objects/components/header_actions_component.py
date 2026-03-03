@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from playwright.sync_api import Locator
+
 from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 

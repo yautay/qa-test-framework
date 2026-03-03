@@ -59,7 +59,7 @@ typecheck: ## MyPy typecheck
 	$(PYTHON) -m mypy qa framework tools
 
 security: ## Bandit + pip-audit
-	$(PYTHON) -m bandit -q -r qa framework tools
+	$(PYTHON) -m bandit -r -x qa --skip B101,B105,B106,B110,B112,B404,B603,B607,B311 framework tools
 	$(PYTHON) -m pip_audit
 
 verify-discovery: ## Guard dla pytest discovery

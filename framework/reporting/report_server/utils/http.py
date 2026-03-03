@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import json
+import mimetypes
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from typing import Any
-import json
-import mimetypes
 
 
 def _json_bytes(payload: dict[str, Any]) -> bytes:

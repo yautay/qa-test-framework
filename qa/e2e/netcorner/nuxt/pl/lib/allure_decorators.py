@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from functools import wraps
-from typing import Any, Callable, TypeVar
-
 import importlib
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 try:
     allure = importlib.import_module("allure")

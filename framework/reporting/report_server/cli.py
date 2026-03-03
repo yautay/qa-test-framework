@@ -8,15 +8,16 @@ from typing import Any, cast
 
 from loguru import logger
 
-from .constants import DEFAULT_PORT, REPO_ROOT
-from .server import _resolve_sync_workers
-from .context import ReportServerContext
-from .http import _build_handler
-from .paths import _discover_visual_run_dirs, _resolve_report_dir, _run_id_from_visual_dir
 from framework.env import load_env
 from framework.reporting_client import ReportingClient
 from framework.visual.baseline_store import BaselineStore
 from framework.visual.config.server import REPORT_SYNC_WORKERS
+
+from .constants import DEFAULT_PORT, REPO_ROOT
+from .context import ReportServerContext
+from .http import _build_handler
+from .paths import _discover_visual_run_dirs, _resolve_report_dir, _run_id_from_visual_dir
+from .server import _resolve_sync_workers
 
 
 def _build_parser() -> ArgumentParser:
@@ -52,7 +53,10 @@ def main() -> int:
     reporting_client: ReportingClient | None = None
     if reporting_enabled:
         if not reporting_api_url:
-            logger.error("reporting_config_missing_url", message="reporting_enabled=true but REPORTING_API_URL is empty")
+            logger.error(
+                "reporting_config_missing_url",
+                message="reporting_enabled=true but REPORTING_API_URL is empty",
+            )
             reporting_enabled = False
         else:
             reporting_client = ReportingClient(
@@ -118,5 +122,6 @@ def main() -> int:
         server.server_close()
         sync_executor.shutdown(wait=False, cancel_futures=False)
     return 0
+
 
 __all__ = ["main"]

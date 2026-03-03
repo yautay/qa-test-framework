@@ -2,19 +2,19 @@ from __future__ import annotations
 
 import json
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable, cast
+from typing import Any, cast
 
 from loguru import logger
 
 from framework.env import RuntimeEnv
+from framework.reporting.clients.pms import PMSClient, PMSClientError
 from framework.visual.models import VisualResult
 
 from .ids import build_job_id, build_pair_id, build_test_id
-from framework.reporting.clients.pms import PMSClient, PMSClientError
-
 
 PERCEPTUAL_STATUS_FILENAME = "perceptual-status.json"
 
@@ -205,7 +205,7 @@ def _write_perceptual_status(
 ) -> None:
     report_dir.mkdir(parents=True, exist_ok=True)
     payload = {
-        "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "generated_at_utc": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "total_count": max(0, int(total_count)),
         "pending_count": max(0, int(pending_count)),
         "done_count": max(0, int(done_count)),

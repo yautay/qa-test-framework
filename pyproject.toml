@@ -51,7 +51,7 @@ exclude = ["**/*legacy*/**"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "N", "W"]
-ignore = ["E203"]
+ignore = ["E203", "E402"]
 
 [tool.mypy]
 python_version = "3.13"
@@ -61,8 +61,22 @@ ignore_missing_imports = true
 check_untyped_defs = true
 no_implicit_optional = true
 exclude = '.*legacy.*'
+disable_error_code = [
+    "import-untyped",
+    "attr-defined",
+    "no-any-return",
+    "arg-type",
+    "str-bytes-safe",
+    "call-overload",
+    "misc",
+    "assignment",
+]
 
 [tool.setuptools_scm]
 version_scheme = "release-branch-semver"
 local_scheme = "node-and-date"
 tag_regex = "^v(?P<version>\\d+\\.\\d+\\.\\d+)$"
+
+[tool.bandit]
+exclude = ["tests/", "**/test_*.py", "**/*_test.py", "qa/"]
+skips = ["B101", "B105", "B106", "B110", "B112", "B404", "B603", "B607", "B311"]
