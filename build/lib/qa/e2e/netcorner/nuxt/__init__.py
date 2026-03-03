@@ -1,1 +1,0 @@
-"""NUXT test package."""

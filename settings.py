@@ -187,13 +187,13 @@ visual_minio_secure = True
 # - True: wlacza integracje z PMS.
 # - False: brak zapytan do PMS.
 # Skutek: True daje dodatkowe metryki percepcyjne kosztem czasu i zaleznosci sieciowej.
-pms_enabled = False
+pms_enabled = True
 
 # pms_base_url:
 # - Bazowy URL uslugi PMS.
 # - Przyklad: "http://pms:8080".
 # Skutek: pusty URL przy wlaczonym PMS spowoduje bledy polaczenia.
-pms_base_url = "http://127.0.0.1:8080"
+pms_base_url = "http://192.168.2.108:8080"
 
 # pms_metric:
 # - "lpips", "dists" albo "both".
