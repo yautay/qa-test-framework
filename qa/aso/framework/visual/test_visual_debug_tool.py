@@ -6,19 +6,19 @@ from types import SimpleNamespace
 import pytest
 
 import tools.visual.debug as debug_cli
-from tools.visual.debug import (
-    _build_release_destination_key,
-    _is_access_denied_error,
-    _normalize_endpoint,
-    _resolve_credentials,
+from tools.visual.debug_helpers import (
+    build_release_destination_key,
+    is_access_denied_error,
+    normalize_endpoint,
+    resolve_credentials,
 )
 
 pytestmark = [pytest.mark.aso]
 
 
 def test_normalize_endpoint_accepts_host_and_url() -> None:
-    assert _normalize_endpoint("127.0.0.1:9000") == "127.0.0.1:9000"
-    assert _normalize_endpoint("https://minio.example.com") == "minio.example.com"
+    assert normalize_endpoint("127.0.0.1:9000") == "127.0.0.1:9000"
+    assert normalize_endpoint("https://minio.example.com") == "minio.example.com"
 
 
 @pytest.mark.parametrize(
@@ -32,12 +32,12 @@ def test_normalize_endpoint_accepts_host_and_url() -> None:
 )
 def test_normalize_endpoint_rejects_invalid_shapes(raw: str) -> None:
     with pytest.raises(ValueError):
-        _normalize_endpoint(raw)
+        normalize_endpoint(raw)
 
 
 def test_resolve_credentials_uses_env_mode() -> None:
     args = SimpleNamespace(auth_mode="env", ask_release_credentials=False)
-    access_key, secret_key = _resolve_credentials(
+    access_key, secret_key = resolve_credentials(
         args,
         env_access_key="env-user",
         env_secret_key="env-secret",
@@ -53,7 +53,7 @@ def test_resolve_credentials_uses_flags_mode() -> None:
         access_key="flag-user",
         secret_key="flag-secret",
     )
-    access_key, secret_key = _resolve_credentials(
+    access_key, secret_key = resolve_credentials(
         args,
         env_access_key="env-user",
         env_secret_key="env-secret",
@@ -70,9 +70,9 @@ def test_resolve_credentials_uses_interactive_prompt(monkeypatch: pytest.MonkeyP
         minio_access_key="",
     )
     monkeypatch.setattr("builtins.input", lambda *_a, **_k: "release-user")
-    monkeypatch.setattr("tools.visual.debug.getpass", lambda *_a, **_k: "release-secret")
+    monkeypatch.setattr("tools.visual.debug_helpers.getpass", lambda *_a, **_k: "release-secret")
 
-    access_key, secret_key = _resolve_credentials(
+    access_key, secret_key = resolve_credentials(
         args,
         env_access_key="env-user",
         env_secret_key="env-secret",
@@ -83,7 +83,7 @@ def test_resolve_credentials_uses_interactive_prompt(monkeypatch: pytest.MonkeyP
 
 def test_build_release_destination_key_uses_prefix_and_source_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("USERNAME", "tester")
-    key = _build_release_destination_key(
+    key = build_release_destination_key(
         src_key="suite/test-ref/latest/a.png",
         scratch_prefix="_debug",
     )
@@ -92,9 +92,9 @@ def test_build_release_destination_key_uses_prefix_and_source_key(monkeypatch: p
 
 
 def test_is_access_denied_error_matches_common_messages() -> None:
-    assert _is_access_denied_error(Exception("Access Denied"))
-    assert _is_access_denied_error(Exception("code: AccessDenied"))
-    assert not _is_access_denied_error(Exception("NoSuchBucket"))
+    assert is_access_denied_error(Exception("Access Denied"))
+    assert is_access_denied_error(Exception("code: AccessDenied"))
+    assert not is_access_denied_error(Exception("NoSuchBucket"))
 
 
 class _ParserStub:

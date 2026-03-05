@@ -10,7 +10,7 @@ import pytest
 from tools.visual.baseline_ops.executor import execute_ops, plan_copy_ops
 from tools.visual.baseline_ops.manifest import write_manifest
 from tools.visual.baseline_ops.types import FileEntry
-from tools.visual.baseline_ops.versioning import apply_version_copy
+from tools.visual.baseline_ops.version_copy import apply_version_copy
 
 pytestmark = [pytest.mark.aso]
 
@@ -105,7 +105,7 @@ def test_apply_version_copy_promotes_candidates_to_latest_and_writes_manifest(
     baseline_file.write_bytes(b"candidate")
     cache_file.write_bytes(b"candidate")
 
-    import tools.visual.baseline_ops.versioning as versioning
+    import tools.visual.baseline_ops.version_copy as versioning
 
     monkeypatch.setattr(versioning, "repo_root", lambda: repo_root)
 
@@ -152,7 +152,7 @@ def test_apply_version_copy_prunes_latest_files_missing_in_source(
     stale_local.write_bytes(b"stale")
     stale_cache.write_bytes(b"stale")
 
-    import tools.visual.baseline_ops.versioning as versioning
+    import tools.visual.baseline_ops.version_copy as versioning
 
     monkeypatch.setattr(versioning, "repo_root", lambda: repo_root)
 
@@ -183,7 +183,7 @@ def test_apply_version_copy_prunes_latest_files_missing_in_source(
 def test_sync_minio_falls_back_to_local_upload_when_source_key_missing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import tools.visual.baseline_ops.versioning as versioning
+    import tools.visual.baseline_ops.version_copy as versioning
 
     source_path = tmp_path / "source.png"
     source_path.write_bytes(b"png-bytes")
@@ -216,7 +216,7 @@ def test_sync_minio_falls_back_to_local_upload_when_source_key_missing(
 
     monkeypatch.setattr(versioning, "MinioOps", _FakeMinioOps)
 
-    copied = versioning._sync_minio(
+    copied = getattr(versioning, "_sync_minio")(
         cast(Any, _env()),
         source_entries=source_entries,
         to_version="2026-03-05",
@@ -235,7 +235,7 @@ def test_sync_minio_falls_back_to_local_upload_when_source_key_missing(
 def test_sync_minio_does_not_fallback_upload_for_non_missing_source_errors(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    import tools.visual.baseline_ops.versioning as versioning
+    import tools.visual.baseline_ops.version_copy as versioning
 
     source_path = tmp_path / "source.png"
     source_path.write_bytes(b"png-bytes")
@@ -266,7 +266,7 @@ def test_sync_minio_does_not_fallback_upload_for_non_missing_source_errors(
 
     monkeypatch.setattr(versioning, "MinioOps", _FakeMinioOps)
 
-    copied = versioning._sync_minio(
+    copied = getattr(versioning, "_sync_minio")(
         cast(Any, _env()),
         source_entries=source_entries,
         to_version="2026-03-05",
