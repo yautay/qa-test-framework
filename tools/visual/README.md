@@ -17,6 +17,11 @@ Operator quick procedure: `tools/visual/OPERATOR_RUNBOOK.md`
 - `python tools/visual/retention_baselines.py`
   - Apply retention policy for local baselines/cache and optional MinIO.
   - Defaults: candidates TTL = 7 days, keep 5 latest historical versions per suite.
+- `python tools/visual/debug.py`
+  - Verify MinIO permissions for readonly/release accounts.
+  - `--check-profile auto` (default) always checks list/get and runs release checks only if write access is available.
+  - `--check-profile readonly` checks list/get.
+  - `--check-profile release` checks list/get/copy/delete using temporary scratch prefix.
 
 ## Safety model
 

@@ -155,9 +155,9 @@ visual_viewport_presets = {
 
 # visual_minio_endpoint:
 # - Endpoint MinIO/S3 dla baseline'ow.
-# - Przyklad: "minio.local:9000" lub "s3.cpt-sztos.com" (bez sciezki URL).
+# - Przyklad: "minio.local:9000" lub "minio.example.com" (bez sciezki URL).
 # Skutek: wymagany przy providerze "minio".
-visual_minio_endpoint = "https://s3.cpt-sztos.com"
+visual_minio_endpoint = ""
 
 # visual_minio_access_key:
 # - Access key uzytkownika MinIO.
