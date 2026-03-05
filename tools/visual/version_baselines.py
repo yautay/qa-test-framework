@@ -5,6 +5,8 @@ from getpass import getpass
 from argparse import ArgumentParser
 from pathlib import Path
 
+from loguru import logger
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
@@ -12,6 +14,7 @@ if str(REPO_ROOT) not in sys.path:
 from tools.visual.baseline_ops import apply_version_copy, list_local_versions, list_minio_versions
 from tools.visual.baseline_ops.minio_ops import MinioCredentials
 from framework.env import load_env
+from framework.logger import configure_tools_logging
 
 
 def _build_parser() -> ArgumentParser:
@@ -62,6 +65,9 @@ def _build_parser() -> ArgumentParser:
 
 
 def main() -> int:
+    log_path = configure_tools_logging("version_baselines")
+    logger.debug(f"tools_log_file={log_path}")
+
     args = _build_parser().parse_args()
     env = load_env()
 

@@ -3,6 +3,8 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
+from loguru import logger
+
 from .types import CopyOp, OperationSummary
 
 
@@ -39,12 +41,12 @@ def execute_ops(ops: list[CopyOp], *, dry_run: bool) -> OperationSummary:
     for op in ops:
         if op.action == "skip":
             skipped += 1
-            print(f"SKIP  {op.object_key} ({op.reason})")
+            logger.debug(f"SKIP  {op.object_key} ({op.reason})")
             continue
 
         if op.action == "copy":
             if dry_run:
-                print(f"COPY  {op.object_key}")
+                logger.debug(f"COPY  {op.object_key}")
                 copied += 1
                 copied_bytes += op.size_bytes
                 continue
@@ -55,24 +57,24 @@ def execute_ops(ops: list[CopyOp], *, dry_run: bool) -> OperationSummary:
                 shutil.copyfile(str(op.source), str(op.target))
                 copied += 1
                 copied_bytes += op.size_bytes
-                print(f"COPY  {op.object_key}")
+                logger.debug(f"COPY  {op.object_key}")
             except Exception as exc:
                 failed += 1
-                print(f"FAIL  {op.object_key}: {exc}")
+                logger.debug(f"FAIL  {op.object_key}: {exc}")
             continue
 
         if op.action == "remove":
             if dry_run:
-                print(f"RM    {op.object_key}")
+                logger.debug(f"RM    {op.object_key}")
                 removed += 1
                 continue
             try:
                 op.target.unlink(missing_ok=True)
                 removed += 1
-                print(f"RM    {op.object_key}")
+                logger.debug(f"RM    {op.object_key}")
             except Exception as exc:
                 failed += 1
-                print(f"FAIL  {op.object_key}: {exc}")
+                logger.debug(f"FAIL  {op.object_key}: {exc}")
 
     return OperationSummary(
         copied=copied,

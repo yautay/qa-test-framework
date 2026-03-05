@@ -5,6 +5,33 @@
 # Skutek: nizszy poziom (np. TRACE) = wiecej logow i latwiejszy debug, ale wiekszy szum.
 console_log_level = "WARNING"
 
+# tools_logs_dir:
+# - Katalog na logi skryptow z tools/.
+# - Przyklad: "tools/logs".
+# Skutek: kazdy skrypt moze miec osobny plik .log po nazwie.
+tools_logs_dir = "tools/logs"
+
+# tools_file_log_level:
+# - Poziom logowania dla sinka plikowego narzedzi tools/.
+# - Dozwolone: TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL
+# Skutek: DEBUG daje pelny detal operacji do pliku.
+tools_file_log_level = "DEBUG"
+
+# log_rotation:
+# - Rotacja plikow logow Loguru (np. rozmiar/czas).
+# - Przyklad: "50 MB".
+log_rotation = "50 MB"
+
+# log_retention:
+# - Retencja starych logow Loguru.
+# - Przyklad: "7 days".
+log_retention = "7 days"
+
+# log_compression:
+# - Kompresja zrotowanych logow.
+# - Przyklad: "zip".
+log_compression = "zip"
+
 # ignore_https_errors:
 # - True: ignoruje bledy certyfikatow TLS/HTTPS (np. self-signed lokalnie).
 # - False: wymaga poprawnego certyfikatu.
@@ -162,12 +189,12 @@ visual_minio_endpoint = "s3.cpt-sztos.com"
 # visual_minio_access_key:
 # - Access key uzytkownika MinIO.
 # Skutek: brak lub bledna wartosc = brak dostepu do bucketu.
-visual_minio_access_key = "user"
+visual_minio_access_key = "release"
 
 # visual_minio_secret_key:
 # - Secret key uzytkownika MinIO.
 # Skutek: trzymaj poza repo (env/secret manager), bo to dana wrazliwa.
-visual_minio_secret_key = "nc12345678"
+visual_minio_secret_key = "Bytniebytodbyt"
 
 # visual_minio_bucket:
 # - Nazwa bucketu na baseline.

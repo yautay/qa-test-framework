@@ -37,6 +37,12 @@ def _sanitize_worker_id(worker_id: str) -> str:
     return safe or "w0"
 
 
+def _resolve_log_option(env_name: str, settings_name: str, default: str) -> str:
+    value = os.getenv(env_name, getattr(settings, settings_name, default))
+    normalized = str(value).strip()
+    return normalized or default
+
+
 def configure_logging(
     run_log_dir: Path,
     run_id: str,
@@ -103,12 +109,52 @@ def configure_logging(
         serialize=True,  # machine-readable JSON
         backtrace=True,  # richer error context in file logs
         diagnose=True,
-        rotation=os.getenv("LOG_ROTATION", "50 MB"),
-        retention=os.getenv("LOG_RETENTION", "7 days"),
-        compression=os.getenv("LOG_COMPRESSION", "zip"),
+        rotation=_resolve_log_option("LOG_ROTATION", "log_rotation", "50 MB"),
+        retention=_resolve_log_option("LOG_RETENTION", "log_retention", "7 days"),
+        compression=_resolve_log_option("LOG_COMPRESSION", "log_compression", "zip"),
     )
 
     return log_file
+
+
+def add_tools_file_sink(script_name: str) -> Path:
+    """Add per-script file sink under tools/logs without touching existing sinks."""
+    root = Path(__file__).resolve().parents[1]
+    logs_rel = str(getattr(settings, "tools_logs_dir", "tools/logs") or "tools/logs")
+    logs_dir = (root / logs_rel).resolve()
+    logs_dir.mkdir(parents=True, exist_ok=True)
+
+    safe_name = _sanitize_worker_id(script_name)
+    log_path = (logs_dir / f"{safe_name}.log").resolve()
+    logger.add(
+        str(log_path),
+        level=_resolve_log_option("TOOLS_FILE_LOG_LEVEL", "tools_file_log_level", "DEBUG"),
+        enqueue=True,
+        serialize=False,
+        backtrace=True,
+        diagnose=True,
+        rotation=_resolve_log_option("LOG_ROTATION", "log_rotation", "50 MB"),
+        retention=_resolve_log_option("LOG_RETENTION", "log_retention", "7 days"),
+        compression=_resolve_log_option("LOG_COMPRESSION", "log_compression", "zip"),
+        format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | {name}:{function}:{line} | {message}",
+    )
+    return log_path
+
+
+def configure_tools_logging(script_name: str) -> Path:
+    """Configure concise console sink and detailed file sink for tools scripts."""
+    logger.remove()
+    logger.add(
+        sys.stdout,
+        level=_resolve_console_log_level(),
+        enqueue=False,
+        serialize=False,
+        backtrace=False,
+        diagnose=False,
+        colorize=True,
+        format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | {message}",
+    )
+    return add_tools_file_sink(script_name)
 
 
 def bind_test_context(nodeid: str):

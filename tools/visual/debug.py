@@ -8,11 +8,14 @@ from pathlib import Path
 from time import time
 from urllib.parse import urlsplit
 
+from loguru import logger
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from framework.env import load_env
+from framework.logger import configure_tools_logging
 
 
 def _build_parser() -> ArgumentParser:
@@ -163,6 +166,9 @@ def _mask_secret(value: str, *, mask_ratio: float = 0.8) -> str:
 
 
 def main() -> int:
+    log_path = configure_tools_logging("visual_debug")
+    logger.debug(f"tools_log_file={log_path}")
+
     args = _build_parser().parse_args()
     env = load_env()
 

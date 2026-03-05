@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from loguru import logger
+
 from framework.env import RuntimeEnv
 
 from .executor import execute_ops, plan_copy_ops, print_summary
@@ -217,20 +219,34 @@ def _sync_minio(
 ) -> int:
     ops = MinioOps(env, credentials=credentials)
     copied = 0
+    uploaded = 0
     removed = 0
+    failed = 0
     print("\n== MinIO copy ==")
-    for source_key in sorted(source_entries.keys()):
+    for source_key, entry in sorted(source_entries.items()):
         target_key = rewrite_object_key_version(source_key, to_version)
         if dry_run:
-            print(f"COPY  {source_key} -> {target_key}")
+            logger.debug(f"COPY  {source_key} -> {target_key}")
             copied += 1
             continue
         try:
             ops.copy_object(source_key, target_key)
-            print(f"COPY  {source_key} -> {target_key}")
+            logger.debug(f"COPY  {source_key} -> {target_key}")
             copied += 1
         except Exception as exc:
-            print(f"FAIL  {source_key} -> {target_key}: {exc}")
+            if _is_no_such_key_error(exc):
+                try:
+                    ops.upload_file(entry.absolute_path, target_key)
+                    logger.debug(f"UPLOAD {entry.absolute_path} -> {target_key}")
+                    copied += 1
+                    uploaded += 1
+                    continue
+                except Exception as upload_exc:
+                    failed += 1
+                    logger.debug(f"FAIL  {source_key} -> {target_key}: {upload_exc}")
+                    continue
+            failed += 1
+            logger.debug(f"FAIL  {source_key} -> {target_key}: {exc}")
     if prune_missing:
         target_prefixes = _minio_target_prefixes(profile=profile, version=to_version, suites=suites)
         existing_target_keys: set[str] = set()
@@ -240,17 +256,21 @@ def _sync_minio(
         to_remove = sorted(existing_target_keys - expected_target_keys)
         for object_key in to_remove:
             if dry_run:
-                print(f"RM    {object_key}")
+                logger.debug(f"RM    {object_key}")
                 removed += 1
                 continue
             try:
                 ops.remove_object(object_key)
-                print(f"RM    {object_key}")
+                logger.debug(f"RM    {object_key}")
                 removed += 1
             except Exception as exc:
-                print(f"FAIL  {object_key}: {exc}")
+                failed += 1
+                logger.debug(f"FAIL  {object_key}: {exc}")
 
-    print(f"done ({'dry-run' if dry_run else 'apply'}): minio_copied={copied}, minio_removed={removed}")
+    print(
+        f"done ({'dry-run' if dry_run else 'apply'}): "
+        f"minio_copied={copied}, minio_uploaded={uploaded}, minio_removed={removed}, minio_failed={failed}"
+    )
     return copied
 
 
@@ -258,3 +278,8 @@ def _minio_target_prefixes(*, profile: str, version: str, suites: set[str] | Non
     if suites:
         return [f"{suite_id}/{profile}/{version}/" for suite_id in sorted(suites)]
     return [""]
+
+
+def _is_no_such_key_error(exc: Exception) -> bool:
+    text = str(exc).lower()
+    return "nosuchkey" in text or "no such key" in text

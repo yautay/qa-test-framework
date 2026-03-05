@@ -178,3 +178,104 @@ def test_apply_version_copy_prunes_latest_files_missing_in_source(
     assert not stale_cache.exists()
     assert result.local_summary.removed == 1
     assert result.cache_summary.removed == 1
+
+
+def test_sync_minio_falls_back_to_local_upload_when_source_key_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import tools.visual.baseline_ops.versioning as versioning
+
+    source_path = tmp_path / "source.png"
+    source_path.write_bytes(b"png-bytes")
+    source_key = "suite-1/test-ref/latest/a.png"
+    source_entries = {
+        source_key: FileEntry(
+            object_key=source_key,
+            absolute_path=source_path,
+            size_bytes=source_path.stat().st_size,
+            suite_id="suite-1",
+        )
+    }
+
+    copied_calls: list[tuple[str, str]] = []
+    upload_calls: list[tuple[Path, str]] = []
+
+    class _FakeMinioOps:
+        def __init__(self, *_a, **_k) -> None:
+            pass
+
+        def copy_object(self, source_key: str, target_key: str) -> None:
+            copied_calls.append((source_key, target_key))
+            raise Exception("S3 operation failed; code: NoSuchKey")
+
+        def upload_file(self, local_path: Path, target_key: str) -> None:
+            upload_calls.append((local_path, target_key))
+
+        def list_keys(self, _prefix: str) -> set[str]:
+            return set()
+
+    monkeypatch.setattr(versioning, "MinioOps", _FakeMinioOps)
+
+    copied = versioning._sync_minio(
+        cast(Any, _env()),
+        source_entries=source_entries,
+        to_version="2026-03-05",
+        dry_run=False,
+        prune_missing=False,
+        credentials=None,
+        profile="test-ref",
+        suites={"suite-1"},
+    )
+
+    assert copied == 1
+    assert copied_calls == [(source_key, "suite-1/test-ref/2026-03-05/a.png")]
+    assert upload_calls == [(source_path, "suite-1/test-ref/2026-03-05/a.png")]
+
+
+def test_sync_minio_does_not_fallback_upload_for_non_missing_source_errors(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import tools.visual.baseline_ops.versioning as versioning
+
+    source_path = tmp_path / "source.png"
+    source_path.write_bytes(b"png-bytes")
+    source_key = "suite-1/test-ref/latest/a.png"
+    source_entries = {
+        source_key: FileEntry(
+            object_key=source_key,
+            absolute_path=source_path,
+            size_bytes=source_path.stat().st_size,
+            suite_id="suite-1",
+        )
+    }
+
+    upload_calls: list[tuple[Path, str]] = []
+
+    class _FakeMinioOps:
+        def __init__(self, *_a, **_k) -> None:
+            pass
+
+        def copy_object(self, _source_key: str, _target_key: str) -> None:
+            raise Exception("S3 operation failed; code: AccessDenied")
+
+        def upload_file(self, local_path: Path, target_key: str) -> None:
+            upload_calls.append((local_path, target_key))
+
+        def list_keys(self, _prefix: str) -> set[str]:
+            return set()
+
+    monkeypatch.setattr(versioning, "MinioOps", _FakeMinioOps)
+
+    copied = versioning._sync_minio(
+        cast(Any, _env()),
+        source_entries=source_entries,
+        to_version="2026-03-05",
+        dry_run=False,
+        prune_missing=False,
+        credentials=None,
+        profile="test-ref",
+        suites={"suite-1"},
+    )
+
+    assert copied == 0
+    assert upload_calls == []

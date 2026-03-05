@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Iterable
 from urllib.parse import urlsplit
 
@@ -73,6 +74,10 @@ class MinioOps:
         self.ensure_bucket_exists()
         source = self._copy_source_cls(self._bucket, source_key)
         self._client.copy_object(self._bucket, target_key, source)
+
+    def upload_file(self, local_path: Path, target_key: str) -> None:
+        self.ensure_bucket_exists()
+        self._client.fput_object(self._bucket, target_key, str(local_path))
 
     def remove_object(self, object_key: str) -> None:
         self.ensure_bucket_exists()
