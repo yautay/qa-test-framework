@@ -19,6 +19,7 @@ This directory contains helper scripts used by local developers, testers, and CI
   - Local MinIO docker setup for visual baselines.
 - `tools/visual/`
   - Visual regression utility scripts.
+  - Modular internals for baseline versioning/debug flows (entrypoint + parser/handlers/helpers).
 - `tools/artifacts/`
   - Artifact cleanup scripts.
 
@@ -29,6 +30,8 @@ make verify-scenarios
 make scenario-report
 make report-serve
 make clean-artifacts
+make clean-visual-baselines
+make clean
 make clean-artifacts-older DAYS=14
 make test-api
 make debug-remote-grid-up
@@ -42,5 +45,6 @@ make debug-minio-down
 - Scenario tooling scripts live in `tools/scenarios/`.
 - Visual tooling scripts live in `tools/visual/`.
 - Visual baseline promotion/versioning runbook: `tools/visual/README.md`.
+- Baseline operations in `tools/visual/baseline_ops/` are split by responsibility (copy, lifecycle, listing, scan, models) with `versioning.py` as compatibility re-export.
 - Visual report server: `python -m framework.reporting.report_server` (hero page + run listing).
 - Windows launchers/scripts live in `tools/windows/`.

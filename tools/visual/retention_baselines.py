@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import sys
 from argparse import ArgumentParser
-from getpass import getpass
 from pathlib import Path
 
 from loguru import logger
@@ -11,8 +10,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from tools.visual.baseline_ops.minio_ops import MinioCredentials
 from tools.visual.baseline_ops.retention import apply_retention
+from tools.visual.minio_credentials import resolve_runtime_minio_credentials
 from framework.env import load_env
 from framework.logger import configure_tools_logging
 
@@ -49,7 +48,7 @@ def main() -> int:
     profile = str(args.profile or env.visual_baseline_profile).strip()
     suites = {str(item).strip() for item in args.suite if str(item).strip()} or None
     dry_run = not bool(args.apply)
-    minio_credentials = _resolve_runtime_minio_credentials(args, dry_run=dry_run)
+    minio_credentials = resolve_runtime_minio_credentials(args, dry_run=dry_run, apply_flag="--apply")
 
     print("baseline retention")
     print(f"profile={profile}")
@@ -77,27 +76,6 @@ def main() -> int:
         f"removed_minio_objects={summary.removed_minio_objects}"
     )
     return 0
-
-
-def _resolve_runtime_minio_credentials(args, *, dry_run: bool) -> MinioCredentials | None:
-    with_minio = bool(getattr(args, "with_minio", False))
-    ask = bool(getattr(args, "ask_release_credentials", False))
-    if ask and not with_minio:
-        raise ValueError("--ask-release-credentials requires --with-minio")
-    if ask and dry_run:
-        raise ValueError("--ask-release-credentials is allowed only with --apply")
-    if not ask:
-        return None
-
-    access_key = str(getattr(args, "minio_access_key", "")).strip()
-    if not access_key:
-        access_key = input("MinIO release access key: ").strip()
-    if not access_key:
-        raise ValueError("missing MinIO release access key")
-    secret_key = getpass("MinIO release secret key: ").strip()
-    if not secret_key:
-        raise ValueError("missing MinIO release secret key")
-    return MinioCredentials(access_key=access_key, secret_key=secret_key)
 
 
 if __name__ == "__main__":
