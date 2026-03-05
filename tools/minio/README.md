@@ -6,7 +6,7 @@ Compose also runs one-shot `minio-init` that:
 
 - creates bucket `visual-baselines` (or `MINIO_BUCKET` override),
 - creates users `visual-readonly` and `visual-release`,
-- attaches policies from `tools/minio/policies/`,
+- renders and attaches policies from `tools/minio/policies/` for `MINIO_BUCKET`,
 - sets bucket quota (`MINIO_BUCKET_QUOTA`, default: `20GiB`).
 
 ## Optional overrides
@@ -22,6 +22,13 @@ export VISUAL_READONLY_USER=visual-readonly
 export VISUAL_READONLY_PASSWORD=readonly-pass-change-me
 export VISUAL_RELEASE_USER=visual-release
 export VISUAL_RELEASE_PASSWORD=release-pass-change-me
+```
+
+Or use an env file:
+
+```bash
+cp tools/minio/.env.example tools/minio/.env
+docker compose --env-file tools/minio/.env -f tools/minio/docker-compose.yml up -d
 ```
 
 ## Start

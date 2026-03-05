@@ -41,10 +41,16 @@ services:
       - >
         mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" &&
         mc mb --ignore-existing "local/$$MINIO_BUCKET" &&
+        sed "s|__MINIO_BUCKET__|$$MINIO_BUCKET|g" /policies/readonly.json > /tmp/readonly.json &&
+        sed "s|__MINIO_BUCKET__|$$MINIO_BUCKET|g" /policies/release.json > /tmp/release.json &&
         mc admin user add local "$$VISUAL_READONLY_USER" "$$VISUAL_READONLY_PASSWORD" || true &&
         mc admin user add local "$$VISUAL_RELEASE_USER" "$$VISUAL_RELEASE_PASSWORD" || true &&
-        mc admin policy create local visual-readonly /policies/readonly.json || true &&
-        mc admin policy create local visual-release /policies/release.json || true &&
+        mc admin policy detach local visual-readonly --user "$$VISUAL_READONLY_USER" || true &&
+        mc admin policy detach local visual-release --user "$$VISUAL_RELEASE_USER" || true &&
+        mc admin policy remove local visual-readonly || true &&
+        mc admin policy remove local visual-release || true &&
+        mc admin policy create local visual-readonly /tmp/readonly.json &&
+        mc admin policy create local visual-release /tmp/release.json &&
         mc admin policy attach local visual-readonly --user "$$VISUAL_READONLY_USER" &&
         mc admin policy attach local visual-release --user "$$VISUAL_RELEASE_USER" &&
         mc quota set "local/$$MINIO_BUCKET" --size "$$MINIO_BUCKET_QUOTA"

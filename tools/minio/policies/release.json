@@ -5,10 +5,11 @@
       "Sid": "ListVisualBaselinesBucket",
       "Effect": "Allow",
       "Action": [
-        "s3:ListBucket"
+        "s3:ListBucket",
+        "s3:GetBucketLocation"
       ],
       "Resource": [
-        "arn:aws:s3:::visual-baselines"
+        "arn:aws:s3:::__MINIO_BUCKET__"
       ]
     },
     {
@@ -20,7 +21,7 @@
         "s3:DeleteObject"
       ],
       "Resource": [
-        "arn:aws:s3:::visual-baselines/*"
+        "arn:aws:s3:::__MINIO_BUCKET__/*"
       ]
     }
   ]
