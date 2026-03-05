@@ -9,8 +9,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from baseline_ops import apply_version_copy, list_local_versions, list_minio_versions
-from baseline_ops.minio_ops import MinioCredentials
+from tools.visual.baseline_ops import apply_version_copy, list_local_versions, list_minio_versions
+from tools.visual.baseline_ops.minio_ops import MinioCredentials
 from framework.env import load_env
 
 
