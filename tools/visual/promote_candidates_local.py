@@ -53,13 +53,25 @@ def main() -> int:
     print(f"suites={sorted(suites) if suites else 'ALL'}")
     print(f"mode={'dry-run' if dry_run else 'apply'}")
 
-    promote_candidates_local(
-        env,
-        profile=profile,
-        suites=suites,
-        dry_run=dry_run,
-        prune_missing=bool(args.prune_missing),
-    )
+    try:
+        promote_candidates_local(
+            env,
+            profile=profile,
+            suites=suites,
+            dry_run=dry_run,
+            prune_missing=bool(args.prune_missing),
+        )
+    except ValueError as exc:
+        message = str(exc)
+        if "no source PNG files found" in message:
+            print(
+                "nothing to promote: no candidates PNG files found "
+                f"for profile={profile!r}{', suites=' + str(sorted(suites)) if suites else ''}",
+                file=sys.stderr,
+            )
+            return 2
+        print(f"error: {message}", file=sys.stderr)
+        return 1
     return 0
 
 

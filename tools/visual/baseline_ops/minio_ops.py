@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Iterable
+from urllib.parse import urlsplit
 
 from framework.env import RuntimeEnv
 
@@ -24,6 +25,7 @@ class MinioOps:
     def __init__(self, env: RuntimeEnv, *, credentials: MinioCredentials | None = None) -> None:
         if not env.visual_minio_endpoint:
             raise ValueError("VISUAL_MINIO_ENDPOINT is required for --with-minio")
+        endpoint = _normalize_minio_endpoint(env.visual_minio_endpoint)
         self._bucket = env.visual_minio_bucket
         access_key = credentials.access_key if credentials else env.visual_minio_access_key
         secret_key = credentials.secret_key if credentials else env.visual_minio_secret_key
@@ -37,7 +39,7 @@ class MinioOps:
 
         self._copy_source_cls = CopySource
         self._client = Minio(
-            env.visual_minio_endpoint,
+            endpoint,
             access_key=access_key,
             secret_key=secret_key,
             secure=env.visual_minio_secure,
@@ -82,3 +84,26 @@ class MinioOps:
             self.remove_object(object_key)
             removed += 1
         return removed
+
+
+def _normalize_minio_endpoint(raw_endpoint: str) -> str:
+    endpoint = str(raw_endpoint).strip()
+    if not endpoint:
+        raise ValueError("VISUAL_MINIO_ENDPOINT is required for --with-minio")
+
+    parsed = urlsplit(endpoint if "://" in endpoint else f"//{endpoint}")
+    if parsed.scheme and parsed.scheme not in {"http", "https"}:
+        raise ValueError("invalid VISUAL_MINIO_ENDPOINT: unsupported scheme; use host[:port] or http(s)://host[:port]")
+
+    if parsed.path not in {"", "/"}:
+        raise ValueError("invalid VISUAL_MINIO_ENDPOINT: path is not allowed; use host[:port] only")
+    if parsed.query or parsed.fragment:
+        raise ValueError("invalid VISUAL_MINIO_ENDPOINT: query and fragment are not allowed")
+
+    host_port = parsed.netloc.strip()
+    if not host_port:
+        raise ValueError("invalid VISUAL_MINIO_ENDPOINT: missing host")
+    if "@" in host_port:
+        raise ValueError("invalid VISUAL_MINIO_ENDPOINT: credentials in endpoint are not allowed")
+
+    return host_port

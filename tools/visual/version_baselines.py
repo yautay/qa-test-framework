@@ -68,51 +68,56 @@ def main() -> int:
     profile = str(args.profile or env.visual_baseline_profile).strip()
     suites = {str(item).strip() for item in args.suite if str(item).strip()} or None
 
-    if args.command == "list":
-        local_versions = list_local_versions(env, profile=profile, suites=suites)
-        print("local versions:")
-        for version in local_versions:
-            print(f"- {version}")
-        if args.with_minio:
-            minio_versions = list_minio_versions(env, profile=profile, suites=suites)
-            print("minio versions:")
-            for version in minio_versions:
+    try:
+        if args.command == "list":
+            local_versions = list_local_versions(env, profile=profile, suites=suites)
+            print("local versions:")
+            for version in local_versions:
                 print(f"- {version}")
-        return 0
+            if args.with_minio:
+                minio_versions = list_minio_versions(env, profile=profile, suites=suites)
+                print("minio versions:")
+                for version in minio_versions:
+                    print(f"- {version}")
+            return 0
 
-    if args.command == "create":
-        dry_run = not bool(args.apply)
-        minio_credentials = _resolve_runtime_minio_credentials(args, dry_run=dry_run)
-        apply_version_copy(
-            env,
-            profile=profile,
-            from_version=str(args.from_version).strip(),
-            to_version=str(args.to_version).strip(),
-            suites=suites,
-            dry_run=dry_run,
-            prune_missing=bool(args.prune_missing),
-            with_minio=bool(args.with_minio),
-            minio_credentials=minio_credentials,
-            write_manifest_file=True,
-        )
-        return 0
+        if args.command == "create":
+            dry_run = not bool(args.apply)
+            minio_credentials = _resolve_runtime_minio_credentials(args, dry_run=dry_run)
+            apply_version_copy(
+                env,
+                profile=profile,
+                from_version=str(args.from_version).strip(),
+                to_version=str(args.to_version).strip(),
+                suites=suites,
+                dry_run=dry_run,
+                prune_missing=bool(args.prune_missing),
+                with_minio=bool(args.with_minio),
+                minio_credentials=minio_credentials,
+                write_manifest_file=True,
+            )
+            return 0
 
-    if args.command == "promote":
-        dry_run = not bool(args.apply)
-        minio_credentials = _resolve_runtime_minio_credentials(args, dry_run=dry_run)
-        apply_version_copy(
-            env,
-            profile=profile,
-            from_version=str(args.from_version).strip(),
-            to_version="latest",
-            suites=suites,
-            dry_run=dry_run,
-            prune_missing=bool(args.prune_missing),
-            with_minio=bool(args.with_minio),
-            minio_credentials=minio_credentials,
-            write_manifest_file=True,
-        )
-        return 0
+        if args.command == "promote":
+            dry_run = not bool(args.apply)
+            minio_credentials = _resolve_runtime_minio_credentials(args, dry_run=dry_run)
+            apply_version_copy(
+                env,
+                profile=profile,
+                from_version=str(args.from_version).strip(),
+                to_version="latest",
+                suites=suites,
+                dry_run=dry_run,
+                prune_missing=bool(args.prune_missing),
+                with_minio=bool(args.with_minio),
+                minio_credentials=minio_credentials,
+                write_manifest_file=True,
+            )
+            return 0
+    except ValueError as exc:
+        message = str(exc)
+        print(f"error: {message}", file=sys.stderr)
+        return 2 if "VISUAL_MINIO_ENDPOINT" in message else 1
 
     raise ValueError(f"unsupported command: {args.command}")
 
