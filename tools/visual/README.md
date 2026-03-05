@@ -40,9 +40,7 @@ Notes:
 
 ```bash
 # Auto mode (default): list/get always, release checks only when writes are allowed
-python tools/visual/debug.py \
-  --src-key qa/visual/baselines/sample_suite/default/latest/sample.png \
-  --dst-key qa/visual/baselines/_debug/tmp/sample-copy.png
+python tools/visual/debug.py --src-key qa/visual/baselines/sample_suite/default/latest/sample.png --dst-key qa/visual/baselines/_debug/tmp/sample-copy.png
 
 # Readonly policy: list/get only
 python tools/visual/debug.py \

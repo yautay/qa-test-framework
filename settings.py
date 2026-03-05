@@ -157,7 +157,7 @@ visual_viewport_presets = {
 # - Endpoint MinIO/S3 dla baseline'ow.
 # - Przyklad: "minio.local:9000" lub "minio.example.com" (bez sciezki URL).
 # Skutek: wymagany przy providerze "minio".
-visual_minio_endpoint = ""
+visual_minio_endpoint = "s3.cpt-sztos.com"
 
 # visual_minio_access_key:
 # - Access key uzytkownika MinIO.
@@ -264,7 +264,7 @@ pms_poll_idle_multiplier = 10.0
 # - True: wysyla wyniki do zewnetrznego Reporting API.
 # - False: brak wysylek.
 # Skutek: True pozwala centralizowac raporty miedzy pipeline'ami.
-reporting_enabled = True
+reporting_enabled = False
 
 # reporting_schema_version:
 # - Wersja schematu payloadu raportowania.

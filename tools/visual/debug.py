@@ -144,6 +144,24 @@ def _is_access_denied_error(exc: Exception) -> bool:
     return "access denied" in text or "accessdenied" in text
 
 
+def _mask_secret(value: str, *, mask_ratio: float = 0.8) -> str:
+    raw = str(value or "")
+    if not raw:
+        return "<empty>"
+
+    length = len(raw)
+    mask_count = max(1, int(round(length * mask_ratio)))
+    if mask_count >= length:
+        mask_count = length - 1
+
+    visible = length - mask_count
+    left_visible = (visible + 1) // 2
+    right_visible = visible // 2
+    masked_middle = "*" * mask_count
+    right_part = raw[-right_visible:] if right_visible > 0 else ""
+    return f"{raw[:left_visible]}{masked_middle}{right_part}"
+
+
 def main() -> int:
     args = _build_parser().parse_args()
     env = load_env()
@@ -177,6 +195,16 @@ def main() -> int:
         secure = True
     if args.insecure:
         secure = False
+
+    print("loaded config (env/settings)")
+    print(f"env.visual_minio_endpoint={str(env.visual_minio_endpoint).strip() or '<empty>'}")
+    print(f"env.visual_minio_bucket={str(env.visual_minio_bucket).strip() or '<empty>'}")
+    print(f"env.visual_minio_access_key={_mask_secret(str(env.visual_minio_access_key).strip())}")
+    print(f"env.visual_minio_secret_key={_mask_secret(str(env.visual_minio_secret_key).strip())}")
+    print(f"env.visual_minio_secure={bool(env.visual_minio_secure)}")
+    print("effective credentials")
+    print(f"effective.access_key={_mask_secret(access_key)}")
+    print(f"effective.secret_key={_mask_secret(secret_key)}")
 
     try:
         endpoint = _normalize_endpoint(endpoint_raw)
