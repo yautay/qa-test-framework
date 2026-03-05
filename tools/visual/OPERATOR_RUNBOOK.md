@@ -5,6 +5,10 @@ This runbook describes a minimal operator flow for baseline lifecycle.
 ## Quick cheat sheet
 
 ```bash
+# 0) Debug MinIO permissions (readonly/release)
+python tools/visual/debug.py --check-profile readonly --src-key qa/visual/baselines/sample_suite/default/latest/sample.png --dst-key qa/visual/baselines/_debug/tmp/sample-copy.png
+python tools/visual/debug.py --check-profile release --ask-release-credentials --src-key qa/visual/baselines/sample_suite/default/latest/sample.png --dst-key qa/visual/baselines/_debug/tmp/sample-copy.png
+
 # 1) Local promote candidates -> latest
 python tools/visual/promote_candidates_local.py --apply
 
@@ -27,7 +31,30 @@ python tools/visual/version_baselines.py list --with-minio
 - local `.env` uses readonly MinIO credentials,
 - release credentials are provided only on prompt for write operations.
 
-## 1) Review and approve candidates in report UI
+## 1) Debug MinIO permissions
+
+Readonly account checks (`list/get`):
+
+```bash
+python tools/visual/debug.py \
+  --check-profile readonly \
+  --src-key qa/visual/baselines/sample_suite/default/latest/sample.png \
+  --dst-key qa/visual/baselines/_debug/tmp/sample-copy.png
+```
+
+Release account checks (`list/get/copy/delete` with temporary scratch path):
+
+```bash
+python tools/visual/debug.py \
+  --check-profile release \
+  --ask-release-credentials \
+  --src-key qa/visual/baselines/sample_suite/default/latest/sample.png \
+  --dst-key qa/visual/baselines/_debug/tmp/sample-copy.png
+```
+
+In `--check-profile auto` (default), release checks are skipped automatically when credentials are readonly.
+
+## 2) Review and approve candidates in report UI
 
 ```bash
 make test-visual
@@ -42,7 +69,7 @@ In UI:
 
 Effect: selected images are written to local `candidates` lane.
 
-## 2) Promote candidates to latest locally
+## 3) Promote candidates to latest locally
 
 Dry-run:
 
@@ -62,7 +89,7 @@ Optional cleanup of stale latest targets:
 python tools/visual/promote_candidates_local.py --prune-missing --apply
 ```
 
-## 3) Create version snapshot
+## 4) Create version snapshot
 
 Dry-run:
 
@@ -83,7 +110,7 @@ python tools/visual/version_baselines.py create \
 
 Effect: creates versioned baselines and manifest file.
 
-## 4) Promote version to latest
+## 5) Promote version to latest
 
 Dry-run:
 
@@ -102,7 +129,7 @@ python tools/visual/version_baselines.py promote \
   --ask-release-credentials
 ```
 
-## 5) Apply retention policy
+## 6) Apply retention policy
 
 Policy defaults:
 
@@ -125,7 +152,7 @@ python tools/visual/retention_baselines.py \
   --ask-release-credentials
 ```
 
-## 6) Verify state
+## 7) Verify state
 
 ```bash
 python tools/visual/version_baselines.py list

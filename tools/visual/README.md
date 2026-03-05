@@ -29,6 +29,35 @@ Operator quick procedure: `tools/visual/OPERATOR_RUNBOOK.md`
 - Use `--apply` to execute file writes.
 - Optional `--prune-missing` removes target files that are missing in source.
 
+## Debug MinIO permissions
+
+Use `debug.py` to validate policy permissions before running write flows.
+
+Notes:
+
+- `--src-key` and `--dst-key` are required by CLI.
+- For `--check-profile release` and `--check-profile auto`, writes use a temporary key under `--scratch-prefix`.
+
+```bash
+# Auto mode (default): list/get always, release checks only when writes are allowed
+python tools/visual/debug.py \
+  --src-key qa/visual/baselines/sample_suite/default/latest/sample.png \
+  --dst-key qa/visual/baselines/_debug/tmp/sample-copy.png
+
+# Readonly policy: list/get only
+python tools/visual/debug.py \
+  --check-profile readonly \
+  --src-key qa/visual/baselines/sample_suite/default/latest/sample.png \
+  --dst-key qa/visual/baselines/_debug/tmp/sample-copy.png
+
+# Release policy: list/get/copy/delete with prompt credentials
+python tools/visual/debug.py \
+  --check-profile release \
+  --ask-release-credentials \
+  --src-key qa/visual/baselines/sample_suite/default/latest/sample.png \
+  --dst-key qa/visual/baselines/_debug/tmp/sample-copy.png
+```
+
 ## Promote candidates to latest
 
 ```bash
