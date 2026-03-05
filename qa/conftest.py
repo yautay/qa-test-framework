@@ -274,7 +274,7 @@ def pytest_configure(config: pytest.Config) -> None:
     git_metadata = get_git_metadata()
     run_metadata = _resolve_run_metadata(config)
     configure_logging(
-        artifacts.logs / "test_run.log",
+        artifacts.logs,
         artifacts.run_id,
         env.browser,
         worker_id,

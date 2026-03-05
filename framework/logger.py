@@ -1,13 +1,39 @@
 from __future__ import annotations
 
+import logging
 import os
+import re
 import socket
 import sys
 from pathlib import Path
+from typing import Any, cast
 
 from loguru import logger
 
 import settings
+
+
+_REDACTED = "***REDACTED***"
+_SENSITIVE_KEY_FRAGMENTS = (
+    "password",
+    "passwd",
+    "secret",
+    "token",
+    "api_key",
+    "apikey",
+    "access_key",
+    "accesskey",
+    "authorization",
+    "cookie",
+    "session",
+    "private_key",
+)
+
+_INLINE_SECRET_PATTERN = re.compile(
+    r"(?i)\b(authorization|token|password|passwd|secret|api[_-]?key|access[_-]?key)\b\s*[:=]\s*([^\s,;]+)"
+)
+_BEARER_PATTERN = re.compile(r"(?i)\b(Bearer)\s+([A-Za-z0-9._~+/=-]+)")
+_URL_CREDENTIALS_PATTERN = re.compile(r"(?i)(https?://)([^\s/@:]+):([^\s/@]+)@")
 
 """Loguru helpers that bind execution context and channel logs to stdout + JSON file.
 
@@ -29,6 +55,61 @@ def _resolve_console_log_level() -> str:
 
     allowed = {"TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"}
     return normalized if normalized in allowed else "INFO"
+
+
+def _is_sensitive_key(key: str) -> bool:
+    token = str(key or "").strip().lower()
+    return any(fragment in token for fragment in _SENSITIVE_KEY_FRAGMENTS)
+
+
+def _redact_text(value: str) -> str:
+    text = str(value or "")
+    text = _BEARER_PATTERN.sub(lambda m: f"{m.group(1)} {_REDACTED}", text)
+    text = _URL_CREDENTIALS_PATTERN.sub(lambda m: f"{m.group(1)}{_REDACTED}:{_REDACTED}@", text)
+    text = _INLINE_SECRET_PATTERN.sub(lambda m: f"{m.group(1)}={_REDACTED}", text)
+    return text
+
+
+def _redact_value(value: Any) -> Any:
+    if isinstance(value, dict):
+        return {key: (_REDACTED if _is_sensitive_key(str(key)) else _redact_value(item)) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_redact_value(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_redact_value(item) for item in value)
+    if isinstance(value, str):
+        return _redact_text(value)
+    return value
+
+
+def _redact_record(record: Any) -> None:
+    if not isinstance(record, dict):
+        return
+    record["message"] = _redact_text(str(record.get("message", "")))
+    extra = record.get("extra")
+    if isinstance(extra, dict):
+        record["extra"] = _redact_value(extra)
+
+
+class _InterceptHandler(logging.Handler):
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            level = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+
+        frame = logging.currentframe()
+        depth = 2
+        while frame and frame.f_code.co_filename == logging.__file__:
+            frame = frame.f_back
+            depth += 1
+
+        logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+
+
+def _install_stdlib_logging_bridge() -> None:
+    logging.basicConfig(handlers=[_InterceptHandler()], level=0, force=True)
+    logging.captureWarnings(True)
 
 
 def _sanitize_worker_id(worker_id: str) -> str:
@@ -61,6 +142,7 @@ def configure_logging(
         The per-worker log file path.
     """
     logger.remove()
+    _install_stdlib_logging_bridge()
     run_log_dir.mkdir(parents=True, exist_ok=True)
 
     hostname = socket.gethostname()
@@ -75,7 +157,7 @@ def configure_logging(
         "run_note": str(run_note or ""),
         "nodeid": "(session)",  # safe default until bind_test_context() is used
     }
-    logger.configure(extra=base_extra)
+    logger.configure(extra=base_extra, patcher=cast(Any, _redact_record))
 
     # Human-readable console sink
     logger.add(
@@ -144,6 +226,8 @@ def add_tools_file_sink(script_name: str) -> Path:
 def configure_tools_logging(script_name: str) -> Path:
     """Configure concise console sink and detailed file sink for tools scripts."""
     logger.remove()
+    _install_stdlib_logging_bridge()
+    logger.configure(patcher=cast(Any, _redact_record))
     logger.add(
         sys.stdout,
         level=_resolve_console_log_level(),

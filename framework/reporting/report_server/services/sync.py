@@ -255,7 +255,7 @@ def _flush_pending(
             if synced_cases > 0 or sent_events > 0:
                 _save_state(build_dir, state)
             logger.debug(
-                "reporting_api_disabled_skipping_sync",
+                "reporting_sync_skipped_reporting_disabled",
                 run_id=run_id,
                 source="report_flush",
                 events_count=sent_events,
@@ -278,7 +278,7 @@ def _flush_pending(
             try:
                 future.result()
             except Exception:
-                logger.opt(exception=True).warning("outbox_sync_worker_failed", run_id=run_id)
+                logger.opt(exception=True).warning("reporting_outbox_worker_failed", run_id=run_id)
 
     with context._lock:
         return _load_state(build_dir)

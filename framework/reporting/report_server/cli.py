@@ -9,6 +9,7 @@ from typing import Any, cast
 from loguru import logger
 
 from framework.env import load_env
+from framework.logger import configure_tools_logging
 from framework.reporting_client import ReportingClient
 from framework.visual.baseline_store import BaselineStore
 from framework.visual.config.server import REPORT_SYNC_WORKERS
@@ -32,6 +33,8 @@ def _build_parser() -> ArgumentParser:
 def main() -> int:
     parser = _build_parser()
     args = parser.parse_args()
+    log_path = configure_tools_logging("report_server")
+    logger.debug(f"tools_log_file={log_path}")
 
     ui_dist_dir = (REPO_ROOT / "framework" / "visual" / "ui" / "dist").resolve()
     if not ui_dist_dir.is_dir():
