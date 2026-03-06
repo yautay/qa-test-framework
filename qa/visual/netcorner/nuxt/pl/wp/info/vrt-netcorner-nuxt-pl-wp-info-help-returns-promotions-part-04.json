@@ -1,0 +1,128 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-zwroty",
+    "name": "WP info /informacje/pomoc/zwroty",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/zwroty",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-zwroty-consumer-return",
+    "name": "WP info /informacje/pomoc/zwroty/#consumer-return",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/zwroty/#consumer-return",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-zwroty-faq",
+    "name": "WP info /informacje/pomoc/zwroty/#faq",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/zwroty/#faq",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-zwroty-nonconsumer-return",
+    "name": "WP info /informacje/pomoc/zwroty/#nonconsumer-return",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/zwroty/#nonconsumer-return",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-zwroty-return-address",
+    "name": "WP info /informacje/pomoc/zwroty/#return-address",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/zwroty/#return-address",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-promocje",
+    "name": "WP info /informacje/promocje",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/promocje",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  }
+]

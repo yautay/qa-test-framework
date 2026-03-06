@@ -1,0 +1,191 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-tematyka-sprzet-dla-firm",
+    "name": "WP info /informacje/tematyka/sprzet-dla-firm",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/tematyka/sprzet-dla-firm",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-uslugi-platnosci-dla-firm",
+    "name": "WP info /informacje/uslugi/platnosci-dla-firm",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/uslugi/platnosci-dla-firm",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-uslugi-transport-z-wniesieniem",
+    "name": "WP info /informacje/uslugi/transport-z-wniesieniem",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/uslugi/transport-z-wniesieniem",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-uslugi-wsparcie-komputronik",
+    "name": "WP info /informacje/uslugi/wsparcie-komputronik",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/uslugi/wsparcie-komputronik",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-uslugi-wsparcie-komputronik-helpdesk",
+    "name": "WP info /informacje/uslugi/wsparcie-komputronik/helpdesk",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/uslugi/wsparcie-komputronik/helpdesk",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-uslugi-wsparcie-komputronik-helpdesk-howto",
+    "name": "WP info /informacje/uslugi/wsparcie-komputronik/helpdesk/#howTo",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/uslugi/wsparcie-komputronik/helpdesk/#howTo",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-uslugi-wsparcie-komputronik-naprawa",
+    "name": "WP info /informacje/uslugi/wsparcie-komputronik/naprawa",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/uslugi/wsparcie-komputronik/naprawa",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-uslugi-pl",
+    "name": "WP info /informacje/usługi",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/usługi",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-uslugi-raty-pl",
+    "name": "WP info /informacje/usługi/raty",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/usługi/raty",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  }
+]

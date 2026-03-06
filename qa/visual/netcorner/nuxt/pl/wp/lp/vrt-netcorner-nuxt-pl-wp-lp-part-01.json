@@ -1,0 +1,86 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-lp-lp-aplikacja",
+    "name": "WP lp /lp/aplikacja",
+    "suite_id": "netcorner/nuxt/pl/wp/lp",
+    "target_url": "/lp/aplikacja",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-lp-lp-newsletter",
+    "name": "WP lp /lp/newsletter",
+    "suite_id": "netcorner/nuxt/pl/wp/lp",
+    "target_url": "/lp/newsletter",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-lp-lp-oferta-dla-firm",
+    "name": "WP lp /lp/oferta-dla-firm",
+    "suite_id": "netcorner/nuxt/pl/wp/lp",
+    "target_url": "/lp/oferta-dla-firm",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-lp-lp-program-partnerski",
+    "name": "WP lp /lp/program-partnerski",
+    "suite_id": "netcorner/nuxt/pl/wp/lp",
+    "target_url": "/lp/program-partnerski",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  }
+]

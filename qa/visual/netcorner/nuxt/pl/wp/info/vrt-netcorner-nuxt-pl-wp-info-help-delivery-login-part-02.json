@@ -1,0 +1,212 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-dostawa",
+    "name": "WP info /informacje/pomoc/dostawa",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/dostawa",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-dostawa-damaged-shipments",
+    "name": "WP info /informacje/pomoc/dostawa/#damaged-shipments",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/dostawa/#damaged-shipments",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-dostawa-delivery-cost",
+    "name": "WP info /informacje/pomoc/dostawa/#delivery-cost",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/dostawa/#delivery-cost",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-dostawa-free-delivery",
+    "name": "WP info /informacje/pomoc/dostawa/#free-delivery",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/dostawa/#free-delivery",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-dostawa-transport-with-lodging",
+    "name": "WP info /informacje/pomoc/dostawa/#transport-with-lodging",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/dostawa/#transport-with-lodging",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-logowanie-i-rejestracja",
+    "name": "WP info /informacje/pomoc/logowanie-i-rejestracja",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/logowanie-i-rejestracja",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-logowanie-i-rejestracja-logging",
+    "name": "WP info /informacje/pomoc/logowanie-i-rejestracja/#logging",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/logowanie-i-rejestracja/#logging",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-logowanie-i-rejestracja-opinions",
+    "name": "WP info /informacje/pomoc/logowanie-i-rejestracja/#opinions",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/logowanie-i-rejestracja/#opinions",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-logowanie-i-rejestracja-pass-recovery",
+    "name": "WP info /informacje/pomoc/logowanie-i-rejestracja/#pass-recovery",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/logowanie-i-rejestracja/#pass-recovery",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-logowanie-i-rejestracja-registration",
+    "name": "WP info /informacje/pomoc/logowanie-i-rejestracja/#registration",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/logowanie-i-rejestracja/#registration",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  }
+]

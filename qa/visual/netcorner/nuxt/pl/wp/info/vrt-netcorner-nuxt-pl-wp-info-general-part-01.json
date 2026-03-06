@@ -1,0 +1,212 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje",
+    "name": "WP info /informacje",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-aktualnosci",
+    "name": "WP info /informacje/aktualności",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/aktualności",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-artykuly",
+    "name": "WP info /informacje/artykuly",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/artykuly",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-co-kupic",
+    "name": "WP info /informacje/co-kupic",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/co-kupic",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-komputronik-poznan-outlet",
+    "name": "WP info /informacje/komputronik-poznan-outlet",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/komputronik-poznan-outlet",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-kontakt",
+    "name": "WP info /informacje/kontakt",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/kontakt",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-leasing-laptopow-komputerow-leasing-it",
+    "name": "WP info /informacje/leasing-laptopow-komputerow-leasing-it",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/leasing-laptopow-komputerow-leasing-it",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-leasing-telefonu-komputronik",
+    "name": "WP info /informacje/leasing-telefonu-komputronik",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/leasing-telefonu-komputronik",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc",
+    "name": "WP info /informacje/pomoc",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-poradniki",
+    "name": "WP info /informacje/poradniki",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/poradniki",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  }
+]

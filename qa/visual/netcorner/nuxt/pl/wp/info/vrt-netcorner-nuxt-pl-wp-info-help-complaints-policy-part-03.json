@@ -1,0 +1,191 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-regulamin-polityka",
+    "name": "WP info /informacje/pomoc/regulamin-polityka",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/regulamin-polityka",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-reklamacje",
+    "name": "WP info /informacje/pomoc/reklamacje",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/reklamacje",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-reklamacje-checking-complaint-status",
+    "name": "WP info /informacje/pomoc/reklamacje/#checking-complaint-status",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/reklamacje/#checking-complaint-status",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-reklamacje-complaint-procedure",
+    "name": "WP info /informacje/pomoc/reklamacje/#complaint-procedure",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/reklamacje/#complaint-procedure",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-reklamacje-store-guarantees",
+    "name": "WP info /informacje/pomoc/reklamacje/#store-guarantees",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/reklamacje/#store-guarantees",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-reklamacje-warranty-complaint",
+    "name": "WP info /informacje/pomoc/reklamacje/#warranty-complaint",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/reklamacje/#warranty-complaint",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-utylizacja",
+    "name": "WP info /informacje/pomoc/utylizacja",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/utylizacja",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-utylizacja-preparing-equipment",
+    "name": "WP info /informacje/pomoc/utylizacja/#preparing-equipment",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/utylizacja/#preparing-equipment",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-utylizacja-waste-equipment-collection-points",
+    "name": "WP info /informacje/pomoc/utylizacja/#waste-equipment-collection-points",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/utylizacja/#waste-equipment-collection-points",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  }
+]
