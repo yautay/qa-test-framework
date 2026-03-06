@@ -5,25 +5,60 @@
     "suite_id": "netcorner/nuxt/pl/hero_page",
     "target_url": "/?a=0",
     "compare_mode": "hybrid",
+    "viewport": ["fhd", "tablet"],
     "capture": {
       "type": "page",
-      "full_page": true,
-      "selector": "[data-name='replace-capture-selector']"
+      "full_page": true
     },
     "mask": {
       "selectors": [
         "[data-name='heroSlider']",
-        "[alt]",
-        ".swiper-wrapper",
-        ".cookie-banner",
-        "[data-testid='dynamic-banner']",
-        "[data-name='replace-mask-selector']"
+        "[data-name='offerSection']",
+        "[data-name='newsSlider']",
+        "[data-name='adviceSlider']",
+        "[data-name='TimeCounterDays']",
+        "[data-name='TimeCounterHours']",
+        "[data-name='TimeCounterMinutes']",
+        "[data-name='TimeCounterSeconds']",
+        ".deal-active",
+        "[data-testid='dynamic-banner']"
       ]
     },
     "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-no-cache-a0-mobile",
+    "name": "Homepage no-cache visual",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/?a=0",
+    "compare_mode": "hybrid",
+    "viewport": ["mobile"],
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "[data-name='heroSlider']",
+        "[data-name='offerSection']",
+        "[data-name='newsSlider']",
+        "[data-name='adviceSlider']",
+        "[data-name='TimeCounterDays']",
+        "[data-name='TimeCounterHours']",
+        "[data-name='TimeCounterMinutes']",
+        "[data-name='TimeCounterSeconds']",
+        ".deal-active",
+        "[data-testid='dynamic-banner']"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
     }
   }
 ]
