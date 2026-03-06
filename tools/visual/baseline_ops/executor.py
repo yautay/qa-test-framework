@@ -36,7 +36,7 @@ def plan_copy_ops(
 
 
 def execute_ops(ops: list[CopyOp], *, dry_run: bool) -> OperationSummary:
-    copied = skipped = removed = failed = copied_bytes = 0
+    copied = skipped = removed = failed = copied_bytes = removed_bytes = 0
 
     for op in ops:
         if op.action == "skip":
@@ -67,10 +67,12 @@ def execute_ops(ops: list[CopyOp], *, dry_run: bool) -> OperationSummary:
             if dry_run:
                 logger.debug(f"RM    {op.object_key}")
                 removed += 1
+                removed_bytes += op.size_bytes
                 continue
             try:
                 op.target.unlink(missing_ok=True)
                 removed += 1
+                removed_bytes += op.size_bytes
                 logger.debug(f"RM    {op.object_key}")
             except Exception as exc:
                 failed += 1
@@ -82,15 +84,18 @@ def execute_ops(ops: list[CopyOp], *, dry_run: bool) -> OperationSummary:
         removed=removed,
         failed=failed,
         copied_bytes=copied_bytes,
+        removed_bytes=removed_bytes,
     )
 
 
 def print_summary(summary: OperationSummary, *, dry_run: bool) -> None:
     mode = "dry-run" if dry_run else "apply"
-    mib = summary.copied_bytes / (1024**2)
+    copied_mib = summary.copied_bytes / (1024**2)
+    removed_mib = summary.removed_bytes / (1024**2)
     print(
         f"done ({mode}): copied={summary.copied}, skipped={summary.skipped}, "
-        f"removed={summary.removed}, failed={summary.failed}, copied_size_mib={mib:.2f}"
+        f"removed={summary.removed}, failed={summary.failed}, "
+        f"copied_size_mib={copied_mib:.2f}, removed_size_mib={removed_mib:.2f}"
     )
 
 

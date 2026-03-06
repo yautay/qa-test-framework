@@ -29,3 +29,4 @@ class OperationSummary:
     removed: int
     failed: int
     copied_bytes: int
+    removed_bytes: int = 0
