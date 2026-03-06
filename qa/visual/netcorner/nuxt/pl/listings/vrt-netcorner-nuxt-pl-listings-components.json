@@ -10,17 +10,12 @@
       "selector": "[data-name='headerBar']"
     },
     "mask": {
-      "selectors": [
-        "[data-name='cartLengthCounter']",
-        "[data-name='loginDialogTrigger']",
-        "[data-name='showMobileAppIcon']",
-        "[data-name='replace-mask-selector']"
-      ]
+      "selectors": []
     },
     "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
     }
   },
   {
@@ -34,12 +29,7 @@
       "selector": "[data-name='navigationBar']"
     },
     "mask": {
-      "selectors": [
-        "[data-name='sliderAutoplayContainer']",
-        "[data-name='swiper-nav-btn']",
-        "[data-name='swiper-nav-btn-circleButton']",
-        "[data-name='replace-mask-selector']"
-      ]
+      "selectors": []
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -58,11 +48,7 @@
       "selector": "[data-name='filtersWrapper']"
     },
     "mask": {
-      "selectors": [
-        "[data-name='accordionTrigger']",
-        ".badge",
-        "[data-name='replace-mask-selector']"
-      ]
+      "selectors": []
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -81,10 +67,7 @@
       "selector": "[data-name='footer']"
     },
     "mask": {
-      "selectors": [
-        "[data-name='sliderAutoplayContainer']",
-        "[data-name='replace-mask-selector']"
-      ]
+      "selectors": []
     },
     "thresholds": {
       "pixel_max": 0.01,
