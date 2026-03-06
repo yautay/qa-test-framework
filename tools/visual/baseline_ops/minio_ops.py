@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -78,6 +79,24 @@ class MinioOps:
     def upload_file(self, local_path: Path, target_key: str) -> None:
         self.ensure_bucket_exists()
         self._client.fput_object(self._bucket, target_key, str(local_path))
+
+    def download_file(self, object_key: str, target_path: Path) -> None:
+        self.ensure_bucket_exists()
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        self._client.fget_object(self._bucket, object_key, str(target_path))
+
+    def object_sha256(self, object_key: str) -> str:
+        self.ensure_bucket_exists()
+        digest = hashlib.sha256()
+        response = self._client.get_object(self._bucket, object_key)
+        try:
+            for chunk in response.stream(1024 * 64):
+                if chunk:
+                    digest.update(chunk)
+        finally:
+            response.close()
+            response.release_conn()
+        return digest.hexdigest()
 
     def remove_object(self, object_key: str) -> None:
         self.ensure_bucket_exists()

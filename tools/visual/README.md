@@ -144,6 +144,12 @@ make clean
 
 Add `--with-minio` to `create` or `promote` to copy object keys in MinIO bucket as well.
 
+`create` and `promote` support `--source`:
+
+- `auto` (default): use local baseline store, fallback to cache mirror when baseline source is missing,
+- `baseline`: require source files in `qa/visual/baselines`,
+- `cache`: use source files from local cache mirror.
+
 For `clean` with MinIO:
 
 - `--with-minio --all` is blocked for safety.

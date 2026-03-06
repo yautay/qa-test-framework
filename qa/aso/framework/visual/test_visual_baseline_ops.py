@@ -180,6 +180,73 @@ def test_apply_version_copy_prunes_latest_files_missing_in_source(
     assert result.cache_summary.removed == 1
 
 
+def test_apply_version_copy_uses_cache_source_when_requested(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    repo_root = tmp_path / "repo"
+    source_cache = repo_root / ".visual_cache" / "suite-1" / "test-ref" / "latest" / "from-cache.png"
+    source_cache.parent.mkdir(parents=True, exist_ok=True)
+    source_cache.write_bytes(b"cache-bytes")
+
+    import tools.visual.baseline_ops.version_copy as versioning
+
+    monkeypatch.setattr(versioning, "repo_root", lambda: repo_root)
+
+    result = apply_version_copy(
+        cast(Any, _env()),
+        profile="test-ref",
+        from_version="latest",
+        to_version="2026-03-06",
+        suites={"suite-1"},
+        source="cache",
+        dry_run=False,
+        prune_missing=False,
+        with_minio=False,
+        minio_credentials=None,
+        write_manifest_file=False,
+    )
+
+    target_local = repo_root / "qa" / "visual" / "baselines" / "suite-1" / "test-ref" / "2026-03-06" / "from-cache.png"
+    target_cache = repo_root / ".visual_cache" / "suite-1" / "test-ref" / "2026-03-06" / "from-cache.png"
+
+    assert target_local.is_file()
+    assert target_cache.is_file()
+    assert target_local.read_bytes() == b"cache-bytes"
+    assert target_cache.read_bytes() == b"cache-bytes"
+    assert result.local_summary.copied == 1
+    assert result.cache_summary.copied == 1
+
+
+def test_apply_version_copy_auto_uses_baseline_for_cache_when_source_cache_missing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    repo_root = tmp_path / "repo"
+    source_local = repo_root / "qa" / "visual" / "baselines" / "suite-1" / "test-ref" / "latest" / "from-local.png"
+    source_local.parent.mkdir(parents=True, exist_ok=True)
+    source_local.write_bytes(b"local-only")
+
+    import tools.visual.baseline_ops.version_copy as versioning
+
+    monkeypatch.setattr(versioning, "repo_root", lambda: repo_root)
+
+    result = apply_version_copy(
+        cast(Any, _env()),
+        profile="test-ref",
+        from_version="latest",
+        to_version="2026-03-06",
+        suites={"suite-1"},
+        source="auto",
+        dry_run=False,
+        prune_missing=False,
+        with_minio=False,
+        minio_credentials=None,
+        write_manifest_file=False,
+    )
+
+    target_cache = repo_root / ".visual_cache" / "suite-1" / "test-ref" / "2026-03-06" / "from-local.png"
+    assert target_cache.is_file()
+    assert target_cache.read_bytes() == b"local-only"
+    assert result.cache_summary.copied == 1
+
+
 def test_sync_minio_falls_back_to_local_upload_when_source_key_missing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

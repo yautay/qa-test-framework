@@ -16,7 +16,7 @@
         "[data-name='showMobileAppIcon']",
         "[data-name='replace-mask-selector']"
       ],
-      "color": "#00FF00"
+      "color": "#DDF527"
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -41,7 +41,7 @@
         "[data-name='swiper-nav-btn-circleButton']",
         "[data-name='replace-mask-selector']"
       ],
-      "color": "#00FF00"
+      "color": "#DDF527"
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -65,7 +65,7 @@
         ".badge",
         "[data-name='replace-mask-selector']"
       ],
-      "color": "#00FF00"
+      "color": "#DDF527"
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -88,7 +88,7 @@
         "[data-name='sliderAutoplayContainer']",
         "[data-name='replace-mask-selector']"
       ],
-      "color": "#00FF00"
+      "color": "#DDF527"
     },
     "thresholds": {
       "pixel_max": 0.01,

@@ -26,7 +26,7 @@
         "[data-name='heroSlider']",
         "[data-name='replace-mask-selector']"
       ],
-      "color": "#00FF00"
+      "color": "#DDF527"
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -61,7 +61,7 @@
         "[data-name='heroSlider']",
         "[data-name='replace-mask-selector']"
       ],
-      "color": "#00FF00"
+      "color": "#DDF527"
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -96,7 +96,7 @@
         "[data-name='heroSlider']",
         "[data-name='replace-mask-selector']"
       ],
-      "color": "#00FF00"
+      "color": "#DDF527"
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -131,7 +131,7 @@
         "[data-name='heroSlider']",
         "[data-name='replace-mask-selector']"
       ],
-      "color": "#00FF00"
+      "color": "#DDF527"
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -166,7 +166,7 @@
         "[data-name='heroSlider']",
         "[data-name='replace-mask-selector']"
       ],
-      "color": "#00FF00"
+      "color": "#DDF527"
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -201,7 +201,7 @@
         "[data-name='heroSlider']",
         "[data-name='replace-mask-selector']"
       ],
-      "color": "#00FF00"
+      "color": "#DDF527"
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -236,7 +236,7 @@
         "[data-name='heroSlider']",
         "[data-name='replace-mask-selector']"
       ],
-      "color": "#00FF00"
+      "color": "#DDF527"
     },
     "thresholds": {
       "pixel_max": 0.01,

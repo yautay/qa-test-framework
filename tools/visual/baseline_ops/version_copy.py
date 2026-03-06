@@ -11,7 +11,7 @@ from .manifest import write_manifest
 from .minio_ops import MinioCredentials, MinioOps
 from .models import VersioningResult
 from .paths import local_baseline_root, repo_root, rewrite_object_key_version
-from .scan_ops import scan_cache_version, scan_minio_version
+from .scan_ops import scan_cache_version, scan_minio_version, to_file_entries
 from .scanner import scan_local_version
 from .types import FileEntry
 
@@ -30,6 +30,7 @@ def promote_candidates_local(
         from_version="candidates",
         to_version="latest",
         suites=suites,
+        source="auto",
         dry_run=dry_run,
         prune_missing=prune_missing,
         with_minio=False,
@@ -45,6 +46,7 @@ def apply_version_copy(
     from_version: str,
     to_version: str,
     suites: set[str] | None,
+    source: str = "auto",
     dry_run: bool,
     prune_missing: bool,
     with_minio: bool,
@@ -55,14 +57,15 @@ def apply_version_copy(
     baseline_root = local_baseline_root(repo)
     cache_root = (repo / env.visual_cache_dir).resolve()
 
-    source_entries = scan_local_version(
+    source_entries, source_store = _load_source_entries(
         baseline_root,
+        cache_root,
         profile=profile,
-        version=from_version,
+        from_version=from_version,
         suites=suites,
+        source=source,
     )
-    if not source_entries:
-        raise ValueError(f"no source PNG files found for profile={profile!r}, version={from_version!r}")
+    source_cache_entries = scan_cache_version(cache_root, profile=profile, version=from_version, suites=suites)
 
     local_source_paths: dict[str, Path] = {}
     local_target_paths: dict[str, Path] = {}
@@ -74,8 +77,10 @@ def apply_version_copy(
         local_source_paths[target_key] = entry.absolute_path
         local_target_paths[target_key] = baseline_root / target_key
 
-        cache_source_paths[target_key] = cache_root / object_key
+        cache_source_paths[target_key] = source_cache_entries.get(object_key, entry.absolute_path)
         cache_target_paths[target_key] = cache_root / target_key
+
+    print(f"source_store={source_store}")
 
     existing_local_target = scan_local_version(
         baseline_root,
@@ -226,3 +231,47 @@ def _minio_target_prefixes(*, profile: str, version: str, suites: set[str] | Non
 def _is_no_such_key_error(exc: Exception) -> bool:
     text = str(exc).lower()
     return "nosuchkey" in text or "no such key" in text
+
+
+def _load_source_entries(
+    baseline_root: Path,
+    cache_root: Path,
+    *,
+    profile: str,
+    from_version: str,
+    suites: set[str] | None,
+    source: str,
+) -> tuple[dict[str, FileEntry], str]:
+    source_normalized = str(source or "auto").strip().lower()
+    if source_normalized not in {"auto", "baseline", "cache"}:
+        raise ValueError("--source must be one of: auto, baseline, cache")
+
+    baseline_entries = scan_local_version(
+        baseline_root,
+        profile=profile,
+        version=from_version,
+        suites=suites,
+    )
+    cache_entries = to_file_entries(
+        scan_cache_version(cache_root, profile=profile, version=from_version, suites=suites)
+    )
+
+    if source_normalized == "baseline":
+        if baseline_entries:
+            return baseline_entries, "baseline"
+        raise ValueError(
+            f"no source PNG files found in baseline store for profile={profile!r}, version={from_version!r}"
+        )
+
+    if source_normalized == "cache":
+        if cache_entries:
+            return cache_entries, "cache"
+        raise ValueError(f"no source PNG files found in cache store for profile={profile!r}, version={from_version!r}")
+
+    if baseline_entries:
+        return baseline_entries, "baseline"
+    if cache_entries:
+        return cache_entries, "cache"
+    raise ValueError(
+        f"no source PNG files found for profile={profile!r}, version={from_version!r} in baseline or cache store"
+    )
