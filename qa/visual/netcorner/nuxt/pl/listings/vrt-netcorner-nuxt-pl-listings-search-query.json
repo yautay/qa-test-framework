@@ -28,9 +28,9 @@
       ]
     },
     "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
     }
   },
   {
@@ -62,9 +62,9 @@
       ]
     },
     "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
     }
   },
   {
@@ -96,9 +96,9 @@
       ]
     },
     "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
     }
   }
 ]
