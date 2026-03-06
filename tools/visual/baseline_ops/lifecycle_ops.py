@@ -114,6 +114,7 @@ def clean_local_versions(
         clean_cache = True
 
     local_summary = OperationSummary(copied=0, skipped=0, removed=0, failed=0, copied_bytes=0, removed_bytes=0)
+    local_dirs_removed = 0
     if clean_local:
         print("\n== Local baseline store ==")
         local_targets = scan_local_profile_files(
@@ -125,8 +126,21 @@ def clean_local_versions(
         local_ops = plan_copy_ops({}, local_targets, prune_missing=True)
         local_summary = execute_ops(local_ops, dry_run=dry_run)
         print_summary(local_summary, dry_run=dry_run)
+        local_dirs_removed, local_dirs_failed = _clean_empty_directories(
+            baseline_root,
+            profile=profile,
+            version=None if all_versions else tag,
+            suites=suites,
+            dry_run=dry_run,
+        )
+        if local_dirs_removed or local_dirs_failed:
+            print(
+                f"cleanup: removed_dirs={local_dirs_removed}, failed_dirs={local_dirs_failed} "
+                f"({'dry-run' if dry_run else 'apply'})"
+            )
 
     cache_summary = OperationSummary(copied=0, skipped=0, removed=0, failed=0, copied_bytes=0, removed_bytes=0)
+    cache_dirs_removed = 0
     if clean_cache:
         print("\n== Local cache mirror ==")
         cache_targets = scan_local_profile_files(
@@ -138,6 +152,18 @@ def clean_local_versions(
         cache_ops = plan_copy_ops({}, cache_targets, prune_missing=True)
         cache_summary = execute_ops(cache_ops, dry_run=dry_run)
         print_summary(cache_summary, dry_run=dry_run)
+        cache_dirs_removed, cache_dirs_failed = _clean_empty_directories(
+            cache_root,
+            profile=profile,
+            version=None if all_versions else tag,
+            suites=suites,
+            dry_run=dry_run,
+        )
+        if cache_dirs_removed or cache_dirs_failed:
+            print(
+                f"cleanup: removed_dirs={cache_dirs_removed}, failed_dirs={cache_dirs_failed} "
+                f"({'dry-run' if dry_run else 'apply'})"
+            )
 
     minio_removed = 0
     minio_failed = 0
@@ -473,3 +499,69 @@ def _print_examples(label: str, items: list[str], *, limit: int) -> None:
     remaining = len(items) - shown
     if remaining > 0:
         print(f"- ... and {remaining} more")
+
+
+def _clean_empty_directories(
+    root: Path,
+    *,
+    profile: str,
+    version: str | None,
+    suites: set[str] | None,
+    dry_run: bool,
+) -> tuple[int, int]:
+    removed_dirs = 0
+    failed_dirs = 0
+
+    if not root.is_dir():
+        return removed_dirs, failed_dirs
+
+    for suite_dir in sorted(p for p in root.iterdir() if p.is_dir()):
+        suite_id = suite_dir.name
+        if suites and suite_id not in suites:
+            continue
+        profile_dir = suite_dir / profile
+        if not profile_dir.is_dir():
+            continue
+
+        version_dirs = (
+            [profile_dir / version] if version is not None else [p for p in profile_dir.iterdir() if p.is_dir()]
+        )
+
+        for version_dir in version_dirs:
+            if not version_dir.is_dir():
+                continue
+            if _is_empty_directory(version_dir):
+                if dry_run:
+                    logger.debug(f"RMDR  {version_dir.relative_to(root)}")
+                    removed_dirs += 1
+                else:
+                    try:
+                        version_dir.rmdir()
+                        logger.debug(f"RMDR  {version_dir.relative_to(root)}")
+                        removed_dirs += 1
+                    except OSError:
+                        failed_dirs += 1
+
+        if _is_empty_directory(profile_dir):
+            if dry_run:
+                logger.debug(f"RMDR  {profile_dir.relative_to(root)}")
+                removed_dirs += 1
+            else:
+                try:
+                    profile_dir.rmdir()
+                    logger.debug(f"RMDR  {profile_dir.relative_to(root)}")
+                    removed_dirs += 1
+                except OSError:
+                    failed_dirs += 1
+
+    return removed_dirs, failed_dirs
+
+
+def _is_empty_directory(path: Path) -> bool:
+    if not path.is_dir():
+        return False
+    try:
+        next(path.iterdir())
+        return False
+    except StopIteration:
+        return True
