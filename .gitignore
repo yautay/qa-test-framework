@@ -21,3 +21,4 @@ logs/*
 /.venv/
 /framework/visual/ui/node_modules/
 /framework/visual/ui/coverage/
+/qa/visual/baselines/
