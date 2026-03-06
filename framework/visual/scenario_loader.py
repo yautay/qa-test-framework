@@ -10,6 +10,7 @@ import settings
 from framework.visual.models import (
     CaptureType,
     CompareMode,
+    DEFAULT_MASK_COLOR,
     VisualCapture,
     VisualMask,
     VisualScenario,
@@ -177,7 +178,7 @@ def _scenario_from_payload(payload: dict[str, Any], file_path: Path, idx: int) -
         ),
         mask=VisualMask(
             selectors=tuple(_as_str_list(mask_raw.get("selectors"), file_path, f"{pfx}mask.selectors")),
-            color=_as_str(mask_raw.get("color", "#00FF00")),
+            color=_as_str(mask_raw.get("color", DEFAULT_MASK_COLOR)),
         ),
         steps=_as_steps(payload.get("steps", []), file_path, pfx),
         perceptual_required=_as_bool(

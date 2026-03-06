@@ -53,7 +53,6 @@ Helpful commands:
 
 ```bash
 make test-visual
-make visual-sync
 make report-serve
 ```
 
@@ -80,6 +79,21 @@ pytest qa/aso/framework/visual/test_report_server_http_endpoints.py -q
 Note: project runtime targets Python 3.13 (`pyproject.toml`), so run backend tests on Python 3.13.
 
 Reference: `docs/VISUAL_BASELINE_APPROVAL_FLOW.md`
+
+Visual baseline promotion/versioning scripts: `tools/visual/README.md`
+Operator runbook: `tools/visual/OPERATOR_RUNBOOK.md`
+
+Examples:
+
+```bash
+python tools/visual/promote_candidates_local.py --apply
+python tools/visual/version_baselines.py create --from-version latest --to-version 2026-03-03_1 --apply
+python tools/visual/version_baselines.py promote --from-version 2026-03-03_1 --with-minio --apply
+python tools/visual/version_baselines.py promote --from-version 2026-03-03_1 --with-minio --apply --ask-release-credentials
+python tools/visual/retention_baselines.py --with-minio --apply --ask-release-credentials
+```
+
+Scenario JSON reference and authoring guide: `qa/visual/README.md`
 
 Artifact cleanup commands:
 

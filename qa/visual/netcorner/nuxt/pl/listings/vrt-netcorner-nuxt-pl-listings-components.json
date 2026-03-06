@@ -15,8 +15,7 @@
         "[data-name='loginDialogTrigger']",
         "[data-name='showMobileAppIcon']",
         "[data-name='replace-mask-selector']"
-      ],
-      "color": "#00FF00"
+      ]
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -40,8 +39,7 @@
         "[data-name='swiper-nav-btn']",
         "[data-name='swiper-nav-btn-circleButton']",
         "[data-name='replace-mask-selector']"
-      ],
-      "color": "#00FF00"
+      ]
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -64,8 +62,7 @@
         "[data-name='accordionTrigger']",
         ".badge",
         "[data-name='replace-mask-selector']"
-      ],
-      "color": "#00FF00"
+      ]
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -87,8 +84,7 @@
       "selectors": [
         "[data-name='sliderAutoplayContainer']",
         "[data-name='replace-mask-selector']"
-      ],
-      "color": "#00FF00"
+      ]
     },
     "thresholds": {
       "pixel_max": 0.01,

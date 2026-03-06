@@ -378,7 +378,18 @@ class BaselineStore:
             local_path.parent.mkdir(parents=True, exist_ok=True)
             client.fget_object(self._env.visual_minio_bucket, object_key, str(local_path))
             return local_path.is_file()
-        except Exception:
+        except Exception as exc:
+            error_code = str(getattr(exc, "code", "") or "")
+            if error_code == "NoSuchKey":
+                logger.warning(
+                    "minio baseline object missing",
+                    bucket=self._env.visual_minio_bucket,
+                    key=object_key,
+                    path=str(local_path),
+                    code=error_code,
+                )
+                return False
+
             logger.opt(exception=True).warning(
                 "minio download failed",
                 bucket=self._env.visual_minio_bucket,

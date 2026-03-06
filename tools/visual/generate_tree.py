@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from loguru import logger
+
 try:
     import pyperclip
 
@@ -10,6 +12,7 @@ except ImportError:
     HAS_PYPERCLIP = False
 
 from framework.visual.scenario_loader import load_scenarios_with_errors
+from framework.logger import configure_tools_logging
 
 
 def generate_visual_tree() -> str:
@@ -50,6 +53,9 @@ def generate_visual_tree() -> str:
 
 
 def main() -> int:
+    log_path = configure_tools_logging("generate_tree")
+    logger.debug(f"tools_log_file={log_path}")
+
     tree = generate_visual_tree()
     print(tree)
 

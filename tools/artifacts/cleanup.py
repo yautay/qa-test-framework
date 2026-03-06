@@ -1,12 +1,20 @@
 from __future__ import annotations
 
 import shutil
+import sys
 from argparse import ArgumentParser
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+from loguru import logger
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from framework.logger import configure_tools_logging
+
 ARTIFACTS_DIR = REPO_ROOT / "artifacts"
 
 
@@ -105,6 +113,9 @@ def _build_parser() -> ArgumentParser:
 
 
 def main() -> int:
+    log_path = configure_tools_logging("artifacts_cleanup")
+    logger.debug(f"tools_log_file={log_path}")
+
     parser = _build_parser()
     args = parser.parse_args()
 
@@ -128,10 +139,7 @@ def main() -> int:
 
     mode = "dry-run" if args.dry_run else "delete"
     size_mib = _bytes_to_mib(result.removed_bytes)
-    print(
-        f"cleanup complete ({mode}): scanned={result.scanned}, "
-        f"removed={result.removed}, removed: {size_mib:.2f} MiB"
-    )
+    print(f"cleanup complete ({mode}): scanned={result.scanned}, removed={result.removed}, removed: {size_mib:.2f} MiB")
     return 0
 
 

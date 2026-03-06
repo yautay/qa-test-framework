@@ -15,8 +15,7 @@
         ".cookie-banner",
         "[data-testid='dynamic-banner']",
         "[data-name='replace-mask-selector']"
-      ],
-      "color": "#00FF00"
+      ]
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -40,8 +39,7 @@
         ".cookie-banner",
         "[data-testid='dynamic-banner']",
         "[data-name='replace-mask-selector']"
-      ],
-      "color": "#00FF00"
+      ]
     },
     "thresholds": {
       "pixel_max": 0.01,

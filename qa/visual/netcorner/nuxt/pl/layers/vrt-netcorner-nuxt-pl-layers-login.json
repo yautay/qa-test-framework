@@ -12,8 +12,7 @@
     "selectors": [
       ".cookie-banner",
       "[data-testid='dynamic-banner']"
-    ],
-    "color": "#00FF00"
+    ]
   },
   "thresholds": {
     "pixel_max": 0.01,

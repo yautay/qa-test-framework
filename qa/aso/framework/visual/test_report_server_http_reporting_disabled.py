@@ -182,7 +182,7 @@ def test_report_endpoint_logs_single_skip_entry_when_reporting_disabled(
         skip_logs = [
             item
             for item in logged
-            if item[0] == "reporting_api_disabled_skipping_sync" and item[1].get("source") == "report_flush"
+            if item[0] == "reporting_sync_skipped_reporting_disabled" and item[1].get("source") == "report_flush"
         ]
         assert len(skip_logs) == 1
         assert skip_logs[0][1].get("events_count") == 2

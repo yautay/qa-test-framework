@@ -5,7 +5,13 @@
     "suite_id": "netcorner/nuxt/pl/hero_page",
     "target_url": "/",
     "compare_mode": "hybrid",
-    "viewport": ["fhd", "2k", "4k", "tablet", "mobile"],
+    "viewport": [
+      "fhd",
+      "2k",
+      "4k",
+      "tablet",
+      "mobile"
+    ],
     "capture": {
       "type": "page",
       "full_page": true
@@ -20,8 +26,12 @@
         "[data-name='TimeCounterSeconds']",
         ".cookie-banner",
         "[data-testid='dynamic-banner']"
-      ],
-      "color": "#111111"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
     }
   },
   {
@@ -38,8 +48,12 @@
       "selectors": [
         ".swiper-wrapper",
         "[data-name='sliderAutoplayContainer']"
-      ],
-      "color": "#111111"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
     }
   },
   {
@@ -58,8 +72,12 @@
         "[data-name='TimeCounterHours']",
         "[data-name='TimeCounterMinutes']",
         "[data-name='TimeCounterSeconds']"
-      ],
-      "color": "#111111"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
     }
   },
   {
@@ -82,6 +100,11 @@
     "capture": {
       "type": "element",
       "selector": "[data-name='navigationBar']"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
     }
   },
   {
@@ -101,8 +124,12 @@
         "[data-name='cardPhoto']",
         "[data-name='productPrice']",
         "[data-name='badge']"
-      ],
-      "color": "#111111"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
     }
   },
   {
@@ -133,8 +160,12 @@
         "[data-name='cardPhoto']",
         "[data-name='productPrice']",
         "[data-name='badge']"
-      ],
-      "color": "#111111"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
     }
   },
   {
@@ -151,8 +182,12 @@
       "selectors": [
         ".swiper-wrapper",
         "[data-name='sliderAutoplayContainer']"
-      ],
-      "color": "#111111"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
     }
   },
   {
@@ -169,8 +204,12 @@
       "selectors": [
         ".swiper-wrapper",
         "[data-name='sliderAutoplayContainer']"
-      ],
-      "color": "#111111"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
     }
   },
   {
@@ -193,6 +232,11 @@
     "capture": {
       "type": "element",
       "selector": "[data-name='categoryListDesktop']"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
     }
   },
   {
@@ -209,8 +253,12 @@
       "selectors": [
         ".swiper-wrapper",
         "[data-name='sliderAutoplayContainer']"
-      ],
-      "color": "#111111"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
     }
   },
   {
@@ -222,6 +270,11 @@
     "capture": {
       "type": "element",
       "selector": "[data-name='brandZone']"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
     }
   },
   {
@@ -233,6 +286,11 @@
     "capture": {
       "type": "element",
       "selector": "[data-name='contactUs']"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
     }
   },
   {
@@ -244,6 +302,11 @@
     "capture": {
       "type": "element",
       "selector": "[data-name='visitUs']"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
     }
   },
   {
@@ -255,6 +318,11 @@
     "capture": {
       "type": "element",
       "selector": "[data-name='newsletterSignup']"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
     }
   },
   {
@@ -266,6 +334,11 @@
     "capture": {
       "type": "element",
       "selector": "[data-name='linksCloud']"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
     }
   },
   {
@@ -277,6 +350,11 @@
     "capture": {
       "type": "element",
       "selector": "[data-name='aboutUs']"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
     }
   },
   {
@@ -288,6 +366,11 @@
     "capture": {
       "type": "element",
       "selector": "[data-name='footer']"
+    },
+    "thresholds": {
+      "pixel_max": 0.01,
+      "lpips_max": 0.12,
+      "dists_max": 0.12
     }
   }
 ]

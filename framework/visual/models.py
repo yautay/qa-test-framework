@@ -16,6 +16,7 @@ from typing import Any, Literal, cast
 CaptureType = Literal["page", "viewport", "element"]
 CompareMode = Literal["pixel", "hybrid"]
 ResultStatus = Literal["passed", "failed", "skipped", "new", "uncertain", "analysis"]
+DEFAULT_MASK_COLOR = "#DDF527"
 
 
 def _require_str(d: dict[str, Any], key: str) -> str:
@@ -259,7 +260,7 @@ class VisualMask:
     """Optional DOM selectors that receive translucent overlay masking."""
 
     selectors: tuple[str, ...] = ()
-    color: str = "#00FF00"
+    color: str = DEFAULT_MASK_COLOR
 
     def __post_init__(self) -> None:
         # Very basic validation (#RRGGBB)
@@ -274,7 +275,7 @@ class VisualMask:
             raise ValueError("mask must be an object")
         return cls(
             selectors=_as_tuple_str(d.get("selectors")),
-            color=_opt_str(d, "color", "#00FF00"),
+            color=_opt_str(d, "color", DEFAULT_MASK_COLOR),
         )
 
 

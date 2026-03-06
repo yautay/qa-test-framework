@@ -82,7 +82,6 @@ Commands:
 
 ```bash
 make test-visual
-make visual-sync
 make report-serve
 make debug-minio-up
 make debug-minio-down
@@ -97,6 +96,21 @@ Baseline review from report UI:
 - selected `TEST` images are copied to local baseline candidates (`qa/visual/baselines/<suite>/<profile>/candidates`).
 
 Details: `docs/VISUAL_BASELINE_APPROVAL_FLOW.md`
+
+Baseline promotion/versioning scripts: `tools/visual/README.md`
+Operator runbook: `tools/visual/OPERATOR_RUNBOOK.md`
+
+Examples:
+
+```bash
+python tools/visual/promote_candidates_local.py --apply
+python tools/visual/version_baselines.py create --from-version latest --to-version 2026-03-03_1 --apply
+python tools/visual/version_baselines.py list --with-minio
+python tools/visual/version_baselines.py promote --from-version 2026-03-03_1 --with-minio --apply --ask-release-credentials
+python tools/visual/retention_baselines.py --with-minio --apply --ask-release-credentials
+```
+
+Scenario JSON reference and authoring guide: `qa/visual/README.md`
 
 ## Artifacts and troubleshooting
 

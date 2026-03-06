@@ -113,7 +113,8 @@ class ReportingClient:
         for attempt in range(self.retries + 1):
             try:
                 logger.debug(
-                    f"reporting_api_post_attempt endpoint={path}",
+                    "reporting_api_post_attempt",
+                    endpoint=path,
                     url=url,
                     method="POST",
                     attempt=attempt,
@@ -126,7 +127,8 @@ class ReportingClient:
                 response = self._session().post(url, json=payload, headers=headers, timeout=self.timeout_seconds)
             except requests.RequestException as e:
                 logger.warning(
-                    f"reporting api call failed endpoint={path}",
+                    "reporting_api_request_exception",
+                    endpoint=path,
                     url=url,
                     method="POST",
                     attempt=attempt,
@@ -141,7 +143,8 @@ class ReportingClient:
 
             if response.ok:
                 logger.info(
-                    f"reporting_api_call_success endpoint={path}",
+                    "reporting_api_call_success",
+                    endpoint=path,
                     url=url,
                     method="POST",
                     status=response.status_code,
@@ -155,7 +158,8 @@ class ReportingClient:
             except Exception:
                 preview = ""
             logger.warning(
-                f"reporting api non-2xx endpoint={path}",
+                "reporting_api_non_2xx",
+                endpoint=path,
                 status=response.status_code,
                 url=url,
                 method="POST",
@@ -169,7 +173,8 @@ class ReportingClient:
                 continue
 
             logger.error(
-                f"reporting_api_call_failed endpoint={path}",
+                "reporting_api_call_failed",
+                endpoint=path,
                 url=url,
                 method="POST",
                 status=response.status_code,
@@ -180,7 +185,8 @@ class ReportingClient:
             return False  # do not retry non-retriable status codes
 
         logger.critical(
-            f"reporting_api_call_final_failure endpoint={path}",
+            "reporting_api_call_final_failure",
+            endpoint=path,
             url=url,
             method="POST",
             total_attempts=self.retries + 1,
@@ -206,7 +212,8 @@ class ReportingClient:
             opened_handles: list[BinaryIO] = []
             try:
                 logger.debug(
-                    f"reporting_api_post_files_attempt endpoint={self.test_result_endpoint}",
+                    "reporting_api_post_files_attempt",
+                    endpoint=self.test_result_endpoint,
                     url=url,
                     method="POST",
                     attempt=attempt,
@@ -233,7 +240,8 @@ class ReportingClient:
 
                 if response.ok:
                     logger.info(
-                        f"reporting_api_call_success endpoint={self.test_result_endpoint}",
+                        "reporting_api_call_success",
+                        endpoint=self.test_result_endpoint,
                         url=url,
                         method="POST",
                         status=response.status_code,
@@ -247,7 +255,8 @@ class ReportingClient:
                 except Exception:
                     preview = ""
                 logger.warning(
-                    f"reporting api non-2xx endpoint={self.test_result_endpoint}",
+                    "reporting_api_non_2xx",
+                    endpoint=self.test_result_endpoint,
                     status=response.status_code,
                     url=url,
                     method="POST",
@@ -261,7 +270,8 @@ class ReportingClient:
                     continue
 
                 logger.error(
-                    f"reporting_api_call_failed endpoint={self.test_result_endpoint}",
+                    "reporting_api_call_failed",
+                    endpoint=self.test_result_endpoint,
                     url=url,
                     method="POST",
                     status=response.status_code,
@@ -273,7 +283,8 @@ class ReportingClient:
 
             except requests.RequestException as e:
                 logger.warning(
-                    f"reporting screenshot upload failed endpoint={self.test_result_endpoint}",
+                    "reporting_api_files_upload_exception",
+                    endpoint=self.test_result_endpoint,
                     url=url,
                     method="POST",
                     attempt=attempt,
@@ -293,7 +304,8 @@ class ReportingClient:
                         pass
 
         logger.critical(
-            f"reporting_api_call_final_failure endpoint={self.test_result_endpoint}",
+            "reporting_api_call_final_failure",
+            endpoint=self.test_result_endpoint,
             url=url,
             method="POST",
             total_attempts=self.retries + 1,

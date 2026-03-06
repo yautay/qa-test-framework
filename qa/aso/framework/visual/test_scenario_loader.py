@@ -5,6 +5,7 @@ from pathlib import Path
 
 import pytest
 
+from framework.visual.models import DEFAULT_MASK_COLOR
 from framework.visual.scenario_loader import (
     ScenarioLoadError,
     _load_scenarios,
@@ -51,7 +52,7 @@ def test_load_scenarios_single_object_defaults(tmp_path: Path) -> None:
     assert scenario.thresholds.lpips_max == 0.08
     assert scenario.thresholds.dists_max == 0.08
     assert scenario.mask.selectors == ()
-    assert scenario.mask.color == "#00FF00"
+    assert scenario.mask.color == DEFAULT_MASK_COLOR
     assert scenario.steps == ()
     assert scenario.perceptual_required is False
     assert scenario.raw_definition == payload

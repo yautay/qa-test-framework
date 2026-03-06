@@ -142,12 +142,29 @@ class VisualRunner:
         """Navigate to the scenario URL and execute all preparatory steps."""
         if scenario.target_url:
             if scenario.target_url.startswith(("http://", "https://")):
-                page.goto(scenario.target_url)
+                response = page.goto(scenario.target_url)
+                self._assert_navigation_response(response, scenario.target_url)
             else:
                 base = self._env.base_url.rstrip("/")
-                page.goto(f"{base}/{scenario.target_url.lstrip('/')}")
+                target = f"{base}/{scenario.target_url.lstrip('/')}"
+                response = page.goto(target)
+                self._assert_navigation_response(response, target)
         for step in scenario.steps:
             self._run_step(page, step.action, step.selector, step.value, step.timeout_ms, step.url)
+
+    @staticmethod
+    def _assert_navigation_response(response: Any, target: str) -> None:
+        """Fail fast when navigation ends with HTTP error or missing response."""
+        if response is None:
+            raise ValueError(f"Navigation failed without HTTP response: {target}")
+        status_raw = getattr(response, "status", None)
+        try:
+            status = int(cast(Any, status_raw))
+        except (TypeError, ValueError):
+            raise ValueError(f"Navigation failed with invalid HTTP status for: {target}")
+        if status >= 400:
+            response_url = str(getattr(response, "url", "") or target)
+            raise ValueError(f"Navigation failed with HTTP {status}: {response_url}")
 
     def _run_step(self, page: Page, action: str, selector: str, value: str, timeout_ms: int, url: str) -> None:
         """Perform a single action specified in the scenario, such as click or fill."""
@@ -179,7 +196,8 @@ class VisualRunner:
             target = (url or value or "").strip()
             if not target:
                 raise ValueError("step.goto requires url or value")
-            page.goto(target, timeout=timeout_ms)
+            response = page.goto(target, timeout=timeout_ms)
+            self._assert_navigation_response(response, target)
             return
 
         raise ValueError(f"Unknown step action: {action!r}")
@@ -187,6 +205,8 @@ class VisualRunner:
     def _capture(self, page: Page, scenario: VisualScenario, output_path: Path) -> None:
         """Capture the screenshot based on capture settings while masking selectors."""
         output_path.parent.mkdir(parents=True, exist_ok=True)
+        if scenario.capture.full_page:
+            _stabilize_full_page_capture(page)
         cleanup_ids = _inject_masks(page, list(scenario.mask.selectors), scenario.mask.color)
         try:
             if scenario.capture.capture_type == "element" and scenario.capture.selector:
@@ -210,6 +230,86 @@ def _hex_to_rgba(hex_color: str, alpha: float) -> str:
         except ValueError:
             return s
     return s
+
+
+def _stabilize_full_page_capture(page: Page) -> None:
+    """Best-effort pre-capture stabilization for lazy-loaded full-page content."""
+    try:
+        page.wait_for_load_state("networkidle", timeout=5000)
+    except Exception:
+        pass
+
+    try:
+        page.evaluate(
+            """
+            () => new Promise((resolve) => {
+              const doc = document.scrollingElement || document.documentElement;
+              const maxY = Math.max(0, (doc?.scrollHeight || 0) - window.innerHeight);
+              if (maxY <= 0) {
+                window.scrollTo(0, 0);
+                setTimeout(resolve, 100);
+                return;
+              }
+
+              const step = Math.max(Math.floor(window.innerHeight * 0.75), 200);
+              const delay = 120;
+              let y = 0;
+
+              const tick = () => {
+                y = Math.min(y + step, maxY);
+                window.scrollTo(0, y);
+                if (y >= maxY) {
+                  setTimeout(() => {
+                    window.scrollTo(0, 0);
+                    setTimeout(resolve, delay);
+                  }, delay);
+                  return;
+                }
+                setTimeout(tick, delay);
+              };
+
+              tick();
+            })
+            """
+        )
+    except Exception:
+        pass
+
+    try:
+        page.evaluate(
+            """
+            () => Promise.all([
+              (document.fonts && document.fonts.ready) ? document.fonts.ready.catch(() => undefined) : Promise.resolve(),
+              new Promise((resolve) => {
+                const images = Array.from(document.images || []);
+                const pending = images.filter((img) => !img.complete);
+                if (!pending.length) {
+                  resolve(undefined);
+                  return;
+                }
+                let done = 0;
+                const finish = () => {
+                  done += 1;
+                  if (done >= pending.length) {
+                    resolve(undefined);
+                  }
+                };
+                pending.forEach((img) => {
+                  img.addEventListener("load", finish, { once: true });
+                  img.addEventListener("error", finish, { once: true });
+                });
+                setTimeout(() => resolve(undefined), 1500);
+              }),
+            ])
+            """
+        )
+    except Exception:
+        pass
+
+    try:
+        page.wait_for_timeout(150)
+    except Exception:
+        pass
 
 
 def _inject_masks(page: Page, selectors: list[str], color: str) -> list[str]:

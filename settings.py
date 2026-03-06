@@ -5,6 +5,33 @@
 # Skutek: nizszy poziom (np. TRACE) = wiecej logow i latwiejszy debug, ale wiekszy szum.
 console_log_level = "WARNING"
 
+# tools_logs_dir:
+# - Katalog na logi skryptow z tools/.
+# - Przyklad: "tools/logs".
+# Skutek: kazdy skrypt moze miec osobny plik .log po nazwie.
+tools_logs_dir = "tools/logs"
+
+# tools_file_log_level:
+# - Poziom logowania dla sinka plikowego narzedzi tools/.
+# - Dozwolone: TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL
+# Skutek: DEBUG daje pelny detal operacji do pliku.
+tools_file_log_level = "DEBUG"
+
+# log_rotation:
+# - Rotacja plikow logow Loguru (np. rozmiar/czas).
+# - Przyklad: "50 MB".
+log_rotation = "50 MB"
+
+# log_retention:
+# - Retencja starych logow Loguru.
+# - Przyklad: "7 days".
+log_retention = "7 days"
+
+# log_compression:
+# - Kompresja zrotowanych logow.
+# - Przyklad: "zip".
+log_compression = "zip"
+
 # ignore_https_errors:
 # - True: ignoruje bledy certyfikatow TLS/HTTPS (np. self-signed lokalnie).
 # - False: wymaga poprawnego certyfikatu.
@@ -89,7 +116,7 @@ visual_compare_mode = "hybrid"  # pixel|perceptual|hybrid
 # - "local": baseline na dysku lokalnym.
 # - "minio": baseline w obiekcie MinIO/S3-compatible.
 # Skutek: wybor determinuje skad pobierane i gdzie zapisywane sa baseline'y.
-visual_baseline_provider = "local"  # minio|local
+visual_baseline_provider = "minio"  # minio|local
 
 # visual_baseline_profile:
 # - Nazwa profilu baseline (np. per branch/per env).
@@ -155,19 +182,19 @@ visual_viewport_presets = {
 
 # visual_minio_endpoint:
 # - Endpoint MinIO/S3 dla baseline'ow.
-# - Przyklad: "minio.local:9000" lub "https://minio.example.com".
+# - Przyklad: "minio.local:9000" lub "minio.example.com" (bez sciezki URL).
 # Skutek: wymagany przy providerze "minio".
-visual_minio_endpoint = ""
+visual_minio_endpoint = "s3.cpt-sztos.com"
 
 # visual_minio_access_key:
 # - Access key uzytkownika MinIO.
 # Skutek: brak lub bledna wartosc = brak dostepu do bucketu.
-visual_minio_access_key = ""
+visual_minio_access_key = "release"
 
 # visual_minio_secret_key:
 # - Secret key uzytkownika MinIO.
 # Skutek: trzymaj poza repo (env/secret manager), bo to dana wrazliwa.
-visual_minio_secret_key = ""
+visual_minio_secret_key = "Bytniebytodbyt"
 
 # visual_minio_bucket:
 # - Nazwa bucketu na baseline.
@@ -193,7 +220,7 @@ pms_enabled = True
 # - Bazowy URL uslugi PMS.
 # - Przyklad: "http://pms:8080".
 # Skutek: pusty URL przy wlaczonym PMS spowoduje bledy polaczenia.
-pms_base_url = "http://192.168.2.108:8080"
+pms_base_url = "https://pms.cpt-sztos.com"
 
 # pms_metric:
 # - "lpips", "dists" albo "both".
@@ -281,7 +308,7 @@ reporting_source_project = "netQArner"
 # - Bazowy URL Reporting API.
 # - Przyklad: "http://127.0.0.1:3001" lub "https://reporting.example.com".
 # Skutek: bledny URL = brak raportowania mimo poprawnych testow.
-reporting_api_url = "http://127.0.0.1:3001"
+reporting_api_url = "https://toc.cpt-sztos.com"
 
 # reporting_api_token:
 # - Token autoryzacyjny do Reporting API.
