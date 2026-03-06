@@ -9,27 +9,27 @@ class EnvUrls:
     prod: str
     demo: str
     test_template: str  # np. "https://komputronik-{host}.netcorner.pl"
+    local: str = ""
 
 
 def url_resolver(cfg: EnvUrls):
-    def resolve(env: str, server_name: str = "") -> str:
-        env_key = env.strip().lower()
+    def resolve(target: str) -> str:
+        token = target.strip().lower()
 
-        if env_key == "prod":
+        if token == "prod":
             return cfg.prod.rstrip("/")
-        elif env_key == "demo":
+        elif token == "demo":
             return cfg.demo.rstrip("/")
-        elif env_key == "test":
-            name = server_name.strip().lower()
-            if not name:
-                raise ValueError("server_name is required for test environment")
-            if not _DNS_HOSTNAME.match(name):
-                raise ValueError(f"Invalid server_name (DNS hostname expected): {server_name!r}")
-            try:
-                return cfg.test_template.format(host=name).rstrip("/")
-            except KeyError as e:
-                raise ValueError(f"Invalid test_template {cfg.test_template!r}; expected placeholder {{host}}") from e
+        elif token == "local":
+            if not cfg.local:
+                raise ValueError("Local URL is not configured")
+            return cfg.local.rstrip("/")
 
-        raise ValueError(f"Unknown environment: {env!r}")
+        if not _DNS_HOSTNAME.match(token):
+            raise ValueError(f"Invalid server_name (DNS hostname expected): {target!r}")
+        try:
+            return cfg.test_template.format(host=token).rstrip("/")
+        except KeyError as e:
+            raise ValueError(f"Invalid test_template {cfg.test_template!r}; expected placeholder {{host}}") from e
 
     return resolve

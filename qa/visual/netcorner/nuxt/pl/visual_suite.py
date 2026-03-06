@@ -20,6 +20,7 @@ resolve_pl = url_resolver(
         prod="https://komputronik.pl",
         demo="https://sklep3-demo.komputronik.dev",
         test_template="https://komputronik-{host}.netcorner.pl",
+        local="https://komputronik.local",
     )
 )
 
@@ -43,8 +44,8 @@ def _resolve_reference_base_url(reference_host: str) -> tuple[str, str, str]:
     if not token:
         raise ValueError("reference_host is required for reference pass")
     if token in _REFERENCE_ENV_ALIASES:
-        return resolve_pl(token, "").rstrip("/"), token, "reference_alias"
-    return resolve_pl("test", token).rstrip("/"), token, "reference_host"
+        return resolve_pl(token).rstrip("/"), token, "reference_alias"
+    return resolve_pl(token).rstrip("/"), token, "reference_host"
 
 
 def _attach_result_metadata(

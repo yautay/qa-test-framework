@@ -114,7 +114,7 @@ def _build_parser() -> ArgumentParser:
 
 def main() -> int:
     log_path = configure_tools_logging("artifacts_cleanup")
-    logger.debug(f"tools_log_file={log_path}")
+    logger.debug("tools_log_file", path=str(log_path), script="artifacts_cleanup")
 
     parser = _build_parser()
     args = parser.parse_args()

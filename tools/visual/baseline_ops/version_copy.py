@@ -174,27 +174,41 @@ def _sync_minio(
     for source_key, entry in sorted(source_entries.items()):
         target_key = rewrite_object_key_version(source_key, to_version)
         if dry_run:
-            logger.debug(f"COPY  {source_key} -> {target_key}")
+            logger.debug("baseline_minio_copy_dry_run", source_key=source_key, target_key=target_key)
             copied += 1
             continue
         try:
             ops.copy_object(source_key, target_key)
-            logger.debug(f"COPY  {source_key} -> {target_key}")
+            logger.debug("baseline_minio_copy_done", source_key=source_key, target_key=target_key)
             copied += 1
         except Exception as exc:
             if _is_no_such_key_error(exc):
                 try:
                     ops.upload_file(entry.absolute_path, target_key)
-                    logger.debug(f"UPLOAD {entry.absolute_path} -> {target_key}")
+                    logger.debug(
+                        "baseline_minio_upload_done",
+                        source_path=str(entry.absolute_path),
+                        target_key=target_key,
+                    )
                     copied += 1
                     uploaded += 1
                     continue
                 except Exception as upload_exc:
                     failed += 1
-                    logger.debug(f"FAIL  {source_key} -> {target_key}: {upload_exc}")
+                    logger.warning(
+                        "baseline_minio_upload_failed",
+                        source_key=source_key,
+                        target_key=target_key,
+                        error=str(upload_exc),
+                    )
                     continue
             failed += 1
-            logger.debug(f"FAIL  {source_key} -> {target_key}: {exc}")
+            logger.warning(
+                "baseline_minio_copy_failed",
+                source_key=source_key,
+                target_key=target_key,
+                error=str(exc),
+            )
     if prune_missing:
         target_prefixes = _minio_target_prefixes(profile=profile, version=to_version, suites=suites)
         existing_target_keys: set[str] = set()
@@ -204,16 +218,16 @@ def _sync_minio(
         to_remove = sorted(existing_target_keys - expected_target_keys)
         for object_key in to_remove:
             if dry_run:
-                logger.debug(f"RM    {object_key}")
+                logger.debug("baseline_minio_remove_dry_run", object_key=object_key)
                 removed += 1
                 continue
             try:
                 ops.remove_object(object_key)
-                logger.debug(f"RM    {object_key}")
+                logger.debug("baseline_minio_remove_done", object_key=object_key)
                 removed += 1
             except Exception as exc:
                 failed += 1
-                logger.debug(f"FAIL  {object_key}: {exc}")
+                logger.warning("baseline_minio_remove_failed", object_key=object_key, error=str(exc))
 
     print(
         f"done ({'dry-run' if dry_run else 'apply'}): "

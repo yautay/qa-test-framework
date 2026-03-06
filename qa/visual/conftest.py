@@ -126,7 +126,7 @@ def visual_results(pytestconfig: pytest.Config) -> list:
                 on_results_updated=lambda: write_visual_results_json(report_dir, results),
             )
         except Exception as exc:
-            logger.error("perceptual_postprocess_failed", run_id=str(run_artifacts.run_id), error=str(exc))
+            logger.exception("perceptual_postprocess_failed", run_id=str(run_artifacts.run_id), error=str(exc))
         write_visual_report(report_dir, results)
 
 

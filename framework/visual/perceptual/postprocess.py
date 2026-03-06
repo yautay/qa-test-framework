@@ -322,7 +322,7 @@ def run_perceptual_postprocess(
     if not client.enabled:
         msg = "PMS is enabled but PMS_BASE_URL is empty"
         affected = _fallback_hybrid_to_pixel(results, env, msg)
-        logger.error(
+        logger.warning(
             "perceptual_postprocess_unavailable",
             run_id=run_id,
             reason=msg,
@@ -336,7 +336,7 @@ def run_perceptual_postprocess(
     if not client.health():
         msg = "PMS healthcheck failed; skipping perceptual postprocess"
         affected = _fallback_hybrid_to_pixel(results, env, msg)
-        logger.error(
+        logger.warning(
             "perceptual_postprocess_unavailable",
             run_id=run_id,
             reason=msg,
@@ -569,7 +569,7 @@ def run_perceptual_postprocess(
                 payload.get("error_message") or payload.get("error") or payload.get("message") or ""
             ).strip()
             if status == "error":
-                logger.info(
+                logger.debug(
                     "perceptual_job_error_details_requested",
                     run_id=run_id,
                     pair_id=item.pair_id,
@@ -583,7 +583,7 @@ def run_perceptual_postprocess(
                     ).strip()
                     if endpoint_message:
                         err_message = endpoint_message
-                    logger.info(
+                    logger.debug(
                         "perceptual_job_error_details_loaded",
                         run_id=run_id,
                         pair_id=item.pair_id,

@@ -9,7 +9,7 @@ from typing import Any, cast
 from loguru import logger
 
 from framework.env import load_env
-from framework.logger import configure_tools_logging
+from framework.logger import add_reporting_api_sink, configure_tools_logging
 from framework.reporting_client import ReportingClient
 from framework.visual.baseline_store import BaselineStore
 from framework.visual.config.server import REPORT_SYNC_WORKERS
@@ -34,7 +34,7 @@ def main() -> int:
     parser = _build_parser()
     args = parser.parse_args()
     log_path = configure_tools_logging("report_server")
-    logger.debug(f"tools_log_file={log_path}")
+    logger.debug("tools_log_file", path=str(log_path), script="report_server")
 
     ui_dist_dir = (REPO_ROOT / "framework" / "visual" / "ui" / "dist").resolve()
     if not ui_dist_dir.is_dir():
@@ -66,9 +66,12 @@ def main() -> int:
                 enabled=True,
                 base_url=reporting_api_url,
                 token=env.reporting_api_token,
+                log_endpoint=env.reporting_api_log_endpoint,
+                log_level=env.reporting_api_log_level,
                 timeout_seconds=env.reporting_api_timeout_seconds,
                 retries=env.reporting_api_retries,
             )
+            add_reporting_api_sink(reporting_client, env.reporting_api_log_level)
     context = ReportServerContext(
         repo_root=REPO_ROOT,
         ui_dist_dir=ui_dist_dir,

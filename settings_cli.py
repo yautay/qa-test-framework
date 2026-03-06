@@ -6,15 +6,8 @@ is_session_headless = True
 # Supported: chromium, firefox, webkit, chrome
 browser = "chromium"
 
-# Legacy URL routing split: server_type + server_name.
-# Supported: test, demo, prod, local
-# Kept for backward compatibility; short aliases in server_name/reference_host
-# can also select demo/prod/local without explicitly changing server_type.
-server_type = "test"
-
-# Example legacy-compatible server name: "koncerz.test"
-# Supported: test, demo, prod, local
-# Suite URL mapping uses this value directly (no env override).
+# Target selector used by URL resolvers.
+# Supported: demo, prod, local, or test DNS token (hostname label).
 server_name = "weryfikacja.alfa"
 
 # Optional reference environment selector for visual dual-pass.

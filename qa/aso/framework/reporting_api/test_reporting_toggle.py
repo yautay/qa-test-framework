@@ -76,6 +76,14 @@ def test_load_env_reads_reporting_enabled_from_environment(monkeypatch: pytest.M
     assert env.reporting_enabled is True
 
 
+def test_load_env_reads_reporting_api_log_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("REPORTING_API_LOG_ENDPOINT", "/custom/log-endpoint")
+    monkeypatch.setenv("REPORTING_API_LOG_LEVEL", "ERROR")
+    env = load_env()
+    assert env.reporting_api_log_endpoint == "/custom/log-endpoint"
+    assert env.reporting_api_log_level == "ERROR"
+
+
 def test_reporting_client_uploads_screenshots_for_artifacts_list_payload(tmp_path: Path) -> None:
     calls: list[tuple[str, dict]] = []
 
@@ -119,3 +127,42 @@ def test_reporting_client_uploads_screenshots_for_artifacts_list_payload(tmp_pat
     files = request_kwargs["files"]
     assert isinstance(files, list)
     assert len(files) == 2
+
+
+def test_reporting_client_log_event_respects_level_threshold() -> None:
+    calls: list[tuple[str, dict]] = []
+
+    class _FakeSession:
+        def __init__(self, sink: list[tuple[str, dict]]) -> None:
+            self._sink = sink
+
+        def post(self, url: str, **kwargs: object) -> _OkResponse:
+            self._sink.append((url, cast(dict, kwargs)))
+            return _OkResponse()
+
+    client = ReportingClient(
+        enabled=True,
+        base_url="http://127.0.0.1:58473",
+        token="",
+        log_endpoint="/test-run/log",
+        log_level="WARNING",
+    )
+    cast(Any, client).session = _FakeSession(calls)
+
+    ignored = client.log_event(
+        level="INFO",
+        message="this should be ignored",
+        run_id="example",
+        nodeid="qa/test.py::test_case",
+    )
+    sent = client.log_event(
+        level="ERROR",
+        message="this should be sent",
+        run_id="example",
+        nodeid="qa/test.py::test_case",
+    )
+
+    assert ignored is False
+    assert sent is True
+    assert len(calls) == 1
+    assert calls[0][0] == "http://127.0.0.1:58473/test-run/log"

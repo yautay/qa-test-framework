@@ -17,7 +17,7 @@ import settings_cli
 from framework.artifacts import RunArtifacts, build_run_artifacts, resolve_artifacts_base_dir
 from framework.env import RuntimeEnv, load_env
 from framework.git_info import get_git_metadata
-from framework.logger import configure_logging
+from framework.logger import add_reporting_api_sink, bind_test_context, configure_logging
 from framework.reporting_client import ReportingClient
 from framework.timing_monitor import (
     detect_slow_regressions,
@@ -100,32 +100,30 @@ def _normalize_run_note(raw: object, source: str) -> str:
 _ENV_ALIAS_TOKENS = {"demo", "prod", "local"}
 
 
-def _normalize_target_selector(server_type: str, server_name: str) -> tuple[str, str, str]:
-    """Resolve effective target selector while preserving legacy compatibility.
+def _normalize_target_selector(server_name: str) -> tuple[str, str]:
+    """Resolve effective target selector from server_name.
 
-    Returns: (resolved_server_type, resolved_server_name, source_kind)
-    source_kind is either "legacy_server_type" or "server_name_alias".
+    Returns: (resolved_server_name, source_kind)
+    source_kind is either "server_name_alias" or "server_name".
     """
 
-    env_type = str(server_type or "").strip().lower()
-    host_token = str(server_name or "").strip().lower()
-
-    if host_token in _ENV_ALIAS_TOKENS:
-        return host_token, "", "server_name_alias"
-    return env_type, host_token, "legacy_server_type"
+    token = str(server_name or "").strip().lower()
+    if token in _ENV_ALIAS_TOKENS:
+        return token, "server_name_alias"
+    return token, "server_name"
 
 
-def _normalize_reference_selector(reference_host: str) -> tuple[str, str, str]:
+def _normalize_reference_selector(reference_host: str) -> tuple[str, str]:
     """Resolve reference selector from a token used by visual dual-pass.
 
-    Returns: (resolved_server_type, resolved_server_name, source_kind)
+    Returns: (resolved_reference_host, source_kind)
     source_kind is either "reference_alias" or "reference_host".
     """
 
     token = str(reference_host or "").strip().lower()
     if token in _ENV_ALIAS_TOKENS:
-        return token, "", "reference_alias"
-    return "test", token, "reference_host"
+        return token, "reference_alias"
+    return token, "reference_host"
 
 
 def _resolve_run_metadata(config: pytest.Config) -> dict[str, str]:
@@ -210,46 +208,36 @@ def _base_url_resolver(config: pytest.Config):
     if env is None:
         return
 
-    cli_server_type = (config.getoption("--server-type") or "").strip()
     cli_server_name = (config.getoption("--server-name") or "").strip()
     cli_base_url = (config.getoption("--base-url") or "").strip()
     cli_reference_host = (config.getoption("--reference-host") or "").strip()
 
-    if cli_server_type:
-        env = replace(env, server_type=cli_server_type)
     if cli_server_name:
         env = replace(env, server_name=cli_server_name)
     if cli_reference_host:
         env = replace(env, reference_host=cli_reference_host)
 
-    normalized_server_type, normalized_server_name, target_source = _normalize_target_selector(
-        env.server_type,
-        env.server_name,
-    )
-    if normalized_server_type != env.server_type or normalized_server_name != env.server_name:
+    normalized_server_name, target_source = _normalize_target_selector(env.server_name)
+    if normalized_server_name != env.server_name:
         logger.info(
             "runtime_target_resolved",
             source=target_source,
-            requested_server_type=env.server_type,
             requested_server_name=env.server_name,
-            resolved_server_type=normalized_server_type,
             resolved_server_name=normalized_server_name,
         )
         env = replace(
             env,
-            server_type=normalized_server_type,
             server_name=normalized_server_name,
         )
 
     reference_host = str(getattr(env, "reference_host", "") or "").strip()
     if reference_host:
-        ref_server_type, ref_server_name, ref_source = _normalize_reference_selector(reference_host)
+        resolved_reference_host, ref_source = _normalize_reference_selector(reference_host)
         logger.info(
             "runtime_reference_resolved",
             source=ref_source,
             reference_host=reference_host,
-            resolved_server_type=ref_server_type,
-            resolved_server_name=ref_server_name,
+            resolved_reference_host=resolved_reference_host,
         )
 
     if cli_base_url:
@@ -297,9 +285,12 @@ def pytest_configure(config: pytest.Config) -> None:
         run_start_endpoint=env.reporting_api_run_start_endpoint,
         test_result_endpoint=env.reporting_api_test_result_endpoint,
         run_finish_endpoint=env.reporting_api_run_finish_endpoint,
+        log_endpoint=env.reporting_api_log_endpoint,
+        log_level=env.reporting_api_log_level,
         timeout_seconds=env.reporting_api_timeout_seconds,
         retries=env.reporting_api_retries,
     )
+    add_reporting_api_sink(config._reporting_client, env.reporting_api_log_level)
     config._test_case_timings = {}
     config._test_case_started_at = {}
     config._test_case_emitted = set()
@@ -362,7 +353,6 @@ def pytest_sessionstart(session: pytest.Session) -> None:
             "profile": _resolve_run_profile(session.config),
         },
         "target": {
-            "server_type": env.server_type,
             "server_name": env.server_name,
             "base_url": env.base_url,
         },
@@ -444,7 +434,8 @@ def pytest_runtest_protocol(item: pytest.Item, nextitem: pytest.Item | None):
     status = "unknown"
     if report is not None:
         status = report.outcome
-    logger.info(
+    test_logger = bind_test_context(item.nodeid)
+    test_logger.info(
         "test_case_timing",
         nodeid=item.nodeid,
         duration_seconds=duration_seconds,
@@ -530,7 +521,8 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
         payload["visual"] = visual_payload
 
     if not getattr(item.config, "_reporting_suspended", False):
-        logger.info(
+        test_logger = bind_test_context(item.nodeid)
+        test_logger.info(
             "reporting_test_result",
             run_id=run_artifacts.run_id,
             nodeid=item.nodeid,

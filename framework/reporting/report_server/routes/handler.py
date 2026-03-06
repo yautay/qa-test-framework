@@ -62,8 +62,13 @@ def _build_handler(context: ReportServerContext):
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
-            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError) as e:
-                logger.debug(f"Client disconnected before response sent: {e}")
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError) as exc:
+                logger.debug(
+                    "reporting_client_disconnected_before_response",
+                    status=status,
+                    error=str(exc),
+                    error_type=type(exc).__name__,
+                )
                 return
 
         def _read_json_body(self) -> dict[str, Any]:

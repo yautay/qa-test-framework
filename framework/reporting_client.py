@@ -7,8 +7,9 @@ import json
 import threading
 import time
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import BinaryIO
+from typing import Any, BinaryIO
 
 import requests
 from loguru import logger
@@ -24,12 +25,39 @@ class ReportingClient:
     run_start_endpoint: str = "/test-run/start"
     test_result_endpoint: str = "/test-run/test-result"
     run_finish_endpoint: str = "/test-run/finish"
+    log_endpoint: str = "/test-run/log"
+    log_level: str = "WARNING"
     timeout_seconds: int = 5
     retries: int = 2
 
     # Reuse TCP connections
     session: requests.Session = field(default_factory=requests.Session, repr=False)
     _thread_local: threading.local = field(default_factory=threading.local, repr=False)
+
+    _LOG_LEVEL_TO_NO = {
+        "TRACE": 5,
+        "DEBUG": 10,
+        "INFO": 20,
+        "SUCCESS": 25,
+        "WARNING": 30,
+        "ERROR": 40,
+        "CRITICAL": 50,
+    }
+
+    @classmethod
+    def _normalize_level_name(cls, value: str, default: str = "WARNING") -> str:
+        token = str(value or "").strip().upper()
+        if token == "WARN":
+            token = "WARNING"
+        return token if token in cls._LOG_LEVEL_TO_NO else default
+
+    @classmethod
+    def _level_no(cls, value: str) -> int:
+        return cls._LOG_LEVEL_TO_NO[cls._normalize_level_name(value)]
+
+    def _should_send_log_level(self, level: str) -> bool:
+        threshold = self._level_no(self.log_level)
+        return self._level_no(level) >= threshold
 
     def _session(self) -> requests.Session:
         existing = getattr(self._thread_local, "session", None)
@@ -122,6 +150,7 @@ class ReportingClient:
                     timeout_seconds=self.timeout_seconds,
                     payload_hash=payload_hash,
                     payload_size=len(json.dumps(payload, default=str)),
+                    _skip_remote_log=True,
                     **context,
                 )
                 response = self._session().post(url, json=payload, headers=headers, timeout=self.timeout_seconds)
@@ -135,6 +164,7 @@ class ReportingClient:
                     error=str(e),
                     error_type=type(e).__name__,
                     payload_hash=payload_hash,
+                    _skip_remote_log=True,
                     **context,
                 )
                 if attempt < self.retries:
@@ -149,6 +179,7 @@ class ReportingClient:
                     method="POST",
                     status=response.status_code,
                     payload_hash=payload_hash,
+                    _skip_remote_log=True,
                     **context,
                 )
                 return True
@@ -165,6 +196,7 @@ class ReportingClient:
                 method="POST",
                 payload_hash=payload_hash,
                 response_preview=preview,
+                _skip_remote_log=True,
                 **context,
             )
 
@@ -180,6 +212,7 @@ class ReportingClient:
                 status=response.status_code,
                 payload_hash=payload_hash,
                 response_preview=preview,
+                _skip_remote_log=True,
                 **context,
             )
             return False  # do not retry non-retriable status codes
@@ -191,6 +224,7 @@ class ReportingClient:
             method="POST",
             total_attempts=self.retries + 1,
             payload_hash=payload_hash,
+            _skip_remote_log=True,
             **context,
         )
         return False
@@ -221,6 +255,7 @@ class ReportingClient:
                     timeout_seconds=self.timeout_seconds,
                     payload_hash=payload_hash,
                     file_count=len(existing_paths),
+                    _skip_remote_log=True,
                     **context,
                 )
                 files = []
@@ -246,6 +281,7 @@ class ReportingClient:
                         method="POST",
                         status=response.status_code,
                         payload_hash=payload_hash,
+                        _skip_remote_log=True,
                         **context,
                     )
                     return True
@@ -262,6 +298,7 @@ class ReportingClient:
                     method="POST",
                     payload_hash=payload_hash,
                     response_preview=preview,
+                    _skip_remote_log=True,
                     **context,
                 )
 
@@ -277,6 +314,7 @@ class ReportingClient:
                     status=response.status_code,
                     payload_hash=payload_hash,
                     response_preview=preview,
+                    _skip_remote_log=True,
                     **context,
                 )
                 return False  # do not retry non-retriable status codes
@@ -291,6 +329,7 @@ class ReportingClient:
                     error=str(e),
                     error_type=type(e).__name__,
                     payload_hash=payload_hash,
+                    _skip_remote_log=True,
                     **context,
                 )
                 if attempt < self.retries:
@@ -310,6 +349,7 @@ class ReportingClient:
             method="POST",
             total_attempts=self.retries + 1,
             payload_hash=payload_hash,
+            _skip_remote_log=True,
             **context,
         )
         # Final fallback: JSON-only
@@ -326,6 +366,37 @@ class ReportingClient:
 
     def run_finish(self, payload: dict) -> None:
         self._post(self.run_finish_endpoint, payload)
+
+    def log_event(
+        self,
+        *,
+        level: str,
+        message: str,
+        run_id: str,
+        nodeid: str,
+        metadata: dict[str, str] | None = None,
+        timestamp: str = "",
+        extra: dict[str, Any] | None = None,
+    ) -> bool:
+        if not self.enabled or not self.base_url:
+            return False
+
+        normalized_level = self._normalize_level_name(level)
+        if not self._should_send_log_level(normalized_level):
+            return False
+
+        payload: dict[str, Any] = {
+            "event_type": "log",
+            "timestamp": timestamp or datetime.now(UTC).isoformat(),
+            "level": normalized_level,
+            "message": str(message or ""),
+            "run_id": str(run_id or ""),
+            "nodeid": str(nodeid or ""),
+            "metadata": metadata or {},
+        }
+        if isinstance(extra, dict) and extra:
+            payload["extra"] = extra
+        return self._post(self.log_endpoint, payload)
 
     def send_payload(self, endpoint: str, payload: dict) -> bool:
         return self._post(endpoint, payload)

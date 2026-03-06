@@ -17,7 +17,7 @@ def _config_with_env(env: RuntimeEnv) -> SimpleNamespace:
 
 
 def test_pl_runtime_env_fixture_resolves_pl_base_url_without_global_mutation() -> None:
-    source_env = replace(load_env(), base_url="", server_type="test", server_name="weryfikacja.alfa")
+    source_env = replace(load_env(), base_url="", server_name="weryfikacja.alfa")
     config = _config_with_env(source_env)
 
     resolved_env = pl_conftest.runtime_env.__wrapped__(config)
@@ -27,7 +27,7 @@ def test_pl_runtime_env_fixture_resolves_pl_base_url_without_global_mutation() -
 
 
 def test_b2b_runtime_env_fixture_resolves_b2b_base_url_without_global_mutation() -> None:
-    source_env = replace(load_env(), base_url="", server_type="test", server_name="weryfikacja.alfa")
+    source_env = replace(load_env(), base_url="", server_name="weryfikacja.alfa")
     config = _config_with_env(source_env)
 
     resolved_env = b2b_conftest.runtime_env.__wrapped__(config)
@@ -47,7 +47,7 @@ def test_suite_runtime_env_fixtures_preserve_explicit_base_url(
     fixture_func,
     existing_base_url: str,
 ) -> None:
-    source_env = replace(load_env(), base_url=existing_base_url, server_type="test", server_name="weryfikacja.alfa")
+    source_env = replace(load_env(), base_url=existing_base_url, server_name="weryfikacja.alfa")
     config = _config_with_env(source_env)
 
     resolved_env = fixture_func(config)

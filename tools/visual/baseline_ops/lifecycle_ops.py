@@ -152,16 +152,16 @@ def clean_local_versions(
         source_objects = scan_minio_version(ops, profile=profile, version=tag, suites=suites)
         for object_key in sorted(source_objects.keys()):
             if dry_run:
-                logger.debug(f"MINIO RM {object_key}")
+                logger.debug("baseline_minio_remove_dry_run", object_key=object_key)
                 minio_removed += 1
                 continue
             try:
                 ops.remove_object(object_key)
-                logger.debug(f"MINIO RM {object_key}")
+                logger.debug("baseline_minio_remove_done", object_key=object_key)
                 minio_removed += 1
             except Exception as exc:
                 minio_failed += 1
-                logger.debug(f"MINIO FAIL {object_key}: {exc}")
+                logger.warning("baseline_minio_remove_failed", object_key=object_key, error=str(exc))
         print(f"done ({'dry-run' if dry_run else 'apply'}): removed={minio_removed}, failed={minio_failed}")
 
     return CleanResult(
@@ -376,22 +376,22 @@ def _sync_minio_to_local_root(
         target_path = target_root / object_key
         target_size = _safe_size(target_path)
         if target_path.is_file() and target_size == source_object.size_bytes:
-            logger.debug(f"SKIP  {object_key} (unchanged)")
+            logger.debug("baseline_sync_skip", object_key=object_key, reason="unchanged")
             skipped += 1
             continue
         if dry_run:
-            logger.debug(f"COPY  {object_key}")
+            logger.debug("baseline_sync_copy_dry_run", object_key=object_key)
             copied += 1
             copied_bytes += source_object.size_bytes
             continue
         try:
             ops.download_file(object_key, target_path)
-            logger.debug(f"COPY  {object_key}")
+            logger.debug("baseline_sync_copy_done", object_key=object_key)
             copied += 1
             copied_bytes += source_object.size_bytes
         except Exception as exc:
             failed += 1
-            logger.debug(f"FAIL  {object_key}: {exc}")
+            logger.warning("baseline_sync_copy_failed", object_key=object_key, error=str(exc))
 
     if is_tty:
         print()
@@ -412,18 +412,18 @@ def _prune_local_keys(existing_paths: dict[str, Path], *, expected_keys: set[str
         target = existing_paths[object_key]
         target_size = _safe_size(target)
         if dry_run:
-            logger.debug(f"RM    {object_key}")
+            logger.debug("baseline_sync_remove_dry_run", object_key=object_key)
             removed += 1
             removed_bytes += target_size
             continue
         try:
             target.unlink(missing_ok=True)
-            logger.debug(f"RM    {object_key}")
+            logger.debug("baseline_sync_remove_done", object_key=object_key)
             removed += 1
             removed_bytes += target_size
         except Exception as exc:
             failed += 1
-            logger.debug(f"FAIL  {object_key}: {exc}")
+            logger.warning("baseline_sync_remove_failed", object_key=object_key, error=str(exc))
     return OperationSummary(
         copied=0,
         skipped=0,

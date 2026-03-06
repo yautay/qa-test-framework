@@ -68,7 +68,6 @@ class RuntimeEnv:
     headless: bool
     ignore_https_errors: bool
     base_url: str
-    server_type: str
     server_name: str
     reference_host: str
     record_video: bool
@@ -85,7 +84,8 @@ class RuntimeEnv:
     reporting_api_run_finish_endpoint: str
     reporting_api_bug_endpoint: str
     reporting_api_aso_endpoint: str
-    reporting_api_note_endpoint: str
+    reporting_api_log_endpoint: str
+    reporting_api_log_level: str
     reporting_api_timeout_seconds: int
     reporting_api_retries: int
     artifacts_dir: str
@@ -175,9 +175,6 @@ def load_env() -> RuntimeEnv:
     if not reporting_source_origin:
         reporting_source_origin = "ci" if os.getenv("CI") else "local"
 
-    # Legacy compatibility split used by URL resolvers.
-    # New flows may derive environment selection from server_name/reference_host aliases.
-    server_type = settings_cli.server_type
     server_name = settings_cli.server_name
     reference_host = env_str("REFERENCE_HOST", str(getattr(settings_cli, "reference_host", "")))
 
@@ -197,11 +194,10 @@ def load_env() -> RuntimeEnv:
             settings.ignore_https_errors,
         ),
         base_url=base_url,
-        server_type=server_type,
         server_name=server_name,
         reference_host=reference_host,
-        record_video=env_bool("RECORD_VIDEO", True),
-        video_min_seconds=env_int("VIDEO_MIN_SECONDS", 30),
+        record_video=env_bool("RECORD_VIDEO", bool(settings.record_video)),
+        video_min_seconds=env_int("VIDEO_MIN_SECONDS", int(settings.video_min_seconds)),
         reporting_enabled=env_bool("REPORTING_ENABLED", settings.reporting_enabled),
         reporting_schema_version=env_str(
             "REPORTING_SCHEMA_VERSION",
@@ -235,9 +231,13 @@ def load_env() -> RuntimeEnv:
             "REPORTING_API_ASO_ENDPOINT",
             settings.reporting_api_aso_endpoint,
         ),
-        reporting_api_note_endpoint=env_str(
-            "REPORTING_API_NOTE_ENDPOINT",
-            settings.reporting_api_note_endpoint,
+        reporting_api_log_endpoint=env_str(
+            "REPORTING_API_LOG_ENDPOINT",
+            settings.reporting_api_log_endpoint,
+        ),
+        reporting_api_log_level=env_str(
+            "REPORTING_API_LOG_LEVEL",
+            settings.reporting_api_log_level,
         ),
         reporting_api_timeout_seconds=env_int(
             "REPORTING_API_TIMEOUT_SECONDS",

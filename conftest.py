@@ -64,9 +64,7 @@ def _resolve_report_toggles(config: pytest.Config, env: RuntimeEnv) -> tuple[boo
     cli_allure_enabled = getattr(config.option, "allure_enabled", None)
     cli_pytest_html_enabled = getattr(config.option, "pytest_html_enabled", None)
     allure_enabled = env.allure_enabled if cli_allure_enabled is None else bool(cli_allure_enabled)
-    pytest_html_enabled = (
-        env.pytest_html_enabled if cli_pytest_html_enabled is None else bool(cli_pytest_html_enabled)
-    )
+    pytest_html_enabled = env.pytest_html_enabled if cli_pytest_html_enabled is None else bool(cli_pytest_html_enabled)
     return allure_enabled, pytest_html_enabled
 
 
@@ -160,19 +158,11 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         Example:
             pytest --visual-viewports=mobile,tablet,fhd
 
-    --server-type
-        Target environment type.
-        Typical values:
-            - test
-            - demo
-            - prod
-            - local
-
-        Example:
-            pytest --server-type=test
-
     --server-name
-        Optional server identifier within the environment.
+        Target selector for environment routing.
+        Values:
+            - demo / prod / local
+            - DNS hostname token (e.g. weryfikacja.alfa)
 
         Example:
             pytest --server-name=qa01
@@ -206,17 +196,10 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         help="Viewport preset for browser context",
     )
     parser.addoption(
-        "--server-type",
-        action="store",
-        default=None,
-        choices=("test", "demo", "prod", "local"),
-        help="Target environment type",
-    )
-    parser.addoption(
         "--server-name",
         action="store",
         default=None,
-        help="Server name for test env",
+        help="Target selector (demo/prod/local or DNS hostname)",
     )
     parser.addoption(
         "--reference-host",
