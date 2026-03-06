@@ -26,8 +26,7 @@
         "[data-name='TimeCounterSeconds']",
         ".cookie-banner",
         "[data-testid='dynamic-banner']"
-      ],
-      "color": "#DDF527"
+      ]
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -49,8 +48,7 @@
       "selectors": [
         ".swiper-wrapper",
         "[data-name='sliderAutoplayContainer']"
-      ],
-      "color": "#DDF527"
+      ]
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -74,8 +72,7 @@
         "[data-name='TimeCounterHours']",
         "[data-name='TimeCounterMinutes']",
         "[data-name='TimeCounterSeconds']"
-      ],
-      "color": "#DDF527"
+      ]
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -127,8 +124,7 @@
         "[data-name='cardPhoto']",
         "[data-name='productPrice']",
         "[data-name='badge']"
-      ],
-      "color": "#DDF527"
+      ]
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -164,8 +160,7 @@
         "[data-name='cardPhoto']",
         "[data-name='productPrice']",
         "[data-name='badge']"
-      ],
-      "color": "#DDF527"
+      ]
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -187,8 +182,7 @@
       "selectors": [
         ".swiper-wrapper",
         "[data-name='sliderAutoplayContainer']"
-      ],
-      "color": "#DDF527"
+      ]
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -210,8 +204,7 @@
       "selectors": [
         ".swiper-wrapper",
         "[data-name='sliderAutoplayContainer']"
-      ],
-      "color": "#DDF527"
+      ]
     },
     "thresholds": {
       "pixel_max": 0.01,
@@ -260,8 +253,7 @@
       "selectors": [
         ".swiper-wrapper",
         "[data-name='sliderAutoplayContainer']"
-      ],
-      "color": "#DDF527"
+      ]
     },
     "thresholds": {
       "pixel_max": 0.01,

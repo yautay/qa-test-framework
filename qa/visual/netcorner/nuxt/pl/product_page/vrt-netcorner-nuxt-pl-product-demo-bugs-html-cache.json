@@ -15,8 +15,7 @@
         ".cookie-banner",
         "[data-testid='dynamic-banner']",
         "[data-name='replace-mask-selector']"
-      ],
-      "color": "#DDF527"
+      ]
     },
     "thresholds": {
       "pixel_max": 0.01,

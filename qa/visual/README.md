@@ -67,7 +67,7 @@ Minimalny przyklad:
     - `dists_uncertain_delta`
 - `mask` (opcjonalne, obiekt)
   - `selectors`: lista CSS selectorow do zamaskowania
-  - `color`: `#RRGGBB` (np. `#00FF00`)
+  - `color`: `#RRGGBB` (domyslnie `#DDF527`)
 - `steps` (opcjonalne, lista)
   - Kroki funkcjonalne wykonywane po wejsciu na `target_url`, przed screenshotem.
 - `perceptual_required` (opcjonalne, bool)
