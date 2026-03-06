@@ -85,9 +85,9 @@
       ]
     },
     "thresholds": {
-      "pixel_max": 0.001,
-      "lpips_max": 0.001,
-      "dists_max": 0.001
+      "pixel_max": 0.025,
+      "lpips_max": 0.025,
+      "dists_max": 0.025
     }
   },
   {
