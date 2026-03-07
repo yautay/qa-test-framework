@@ -618,6 +618,8 @@ def _load_active_scenarios(repo: Path, *, suites: set[str] | None) -> dict[str, 
     if not scenario_dirs:
         raise ValueError("no visual scenario JSON files found under qa/visual (expected vrt-*.json)")
 
+    normalized_suites = {_safe_segment(item) for item in suites} if suites else None
+
     scenario_map: dict[str, set[str]] = {}
     load_errors: list[str] = []
     for scenarios_dir in scenario_dirs:
@@ -626,10 +628,11 @@ def _load_active_scenarios(repo: Path, *, suites: set[str] | None) -> dict[str, 
             load_errors.append(format_load_errors(errors))
             continue
         for scenario in loaded:
-            suite_id = str(scenario.suite_id).strip()
-            if not suite_id:
+            suite_id_raw = str(scenario.suite_id).strip()
+            if not suite_id_raw:
                 continue
-            if suites and suite_id not in suites:
+            suite_id = _safe_segment(suite_id_raw)
+            if normalized_suites and suite_id not in normalized_suites:
                 continue
             scenario_id = _safe_segment(str(scenario.scenario_id))
             scenario_map.setdefault(suite_id, set()).add(scenario_id)
@@ -654,7 +657,7 @@ def _collect_orphans(
         if scenario_id is None:
             parse_errors.append(f"{store_label}:{object_key}: invalid PNG name format")
             continue
-        suite_id = str(entry.suite_id).strip()
+        suite_id = _safe_segment(str(entry.suite_id).strip())
         if scenario_id in valid_scenarios.get(suite_id, set()):
             continue
         orphan_labels.append(object_key)
@@ -680,6 +683,7 @@ def _collect_orphans_minio(
         except ValueError:
             parse_errors.append(f"minio:{object_key}: invalid object key format")
             continue
+        suite_id = _safe_segment(suite_id)
         if scenario_id in valid_scenarios.get(suite_id, set()):
             continue
         orphan_labels.append(object_key)
