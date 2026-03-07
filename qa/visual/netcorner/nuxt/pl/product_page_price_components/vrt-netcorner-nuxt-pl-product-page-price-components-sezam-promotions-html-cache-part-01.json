@@ -1,9 +1,9 @@
 [
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-sezam-promotions-products-54244143",
-    "name": "Product 54244143 tests-sezam-promotions-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-sezam-promotions-products-54244143",
+    "name": "Product 54244143 tests-price-components-sezam-promotions-products html-cache",
     "target_url": "/product/54244143",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
@@ -16,10 +16,10 @@
     }
   },
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-sezam-promotions-products-54244145",
-    "name": "Product 54244145 tests-sezam-promotions-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-sezam-promotions-products-54244145",
+    "name": "Product 54244145 tests-price-components-sezam-promotions-products html-cache",
     "target_url": "/product/54244145",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
@@ -32,10 +32,10 @@
     }
   },
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-sezam-promotions-products-54244146",
-    "name": "Product 54244146 tests-sezam-promotions-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-sezam-promotions-products-54244146",
+    "name": "Product 54244146 tests-price-components-sezam-promotions-products html-cache",
     "target_url": "/product/54244146",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
@@ -48,10 +48,10 @@
     }
   },
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-sezam-promotions-products-54244150",
-    "name": "Product 54244150 tests-sezam-promotions-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-sezam-promotions-products-54244150",
+    "name": "Product 54244150 tests-price-components-sezam-promotions-products html-cache",
     "target_url": "/product/54244150",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
@@ -64,10 +64,10 @@
     }
   },
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-sezam-promotions-products-54244151",
-    "name": "Product 54244151 tests-sezam-promotions-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-sezam-promotions-products-54244151",
+    "name": "Product 54244151 tests-price-components-sezam-promotions-products html-cache",
     "target_url": "/product/54244151",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
@@ -80,10 +80,10 @@
     }
   },
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-sezam-promotions-products-54244152",
-    "name": "Product 54244152 tests-sezam-promotions-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-sezam-promotions-products-54244152",
+    "name": "Product 54244152 tests-price-components-sezam-promotions-products html-cache",
     "target_url": "/product/54244152",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
@@ -96,10 +96,10 @@
     }
   },
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-sezam-promotions-products-54244153",
-    "name": "Product 54244153 tests-sezam-promotions-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-sezam-promotions-products-54244153",
+    "name": "Product 54244153 tests-price-components-sezam-promotions-products html-cache",
     "target_url": "/product/54244153",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
@@ -112,10 +112,10 @@
     }
   },
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-sezam-promotions-products-54244154",
-    "name": "Product 54244154 tests-sezam-promotions-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-sezam-promotions-products-54244154",
+    "name": "Product 54244154 tests-price-components-sezam-promotions-products html-cache",
     "target_url": "/product/54244154",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
@@ -128,10 +128,10 @@
     }
   },
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-sezam-promotions-products-54244155",
-    "name": "Product 54244155 tests-sezam-promotions-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-sezam-promotions-products-54244155",
+    "name": "Product 54244155 tests-price-components-sezam-promotions-products html-cache",
     "target_url": "/product/54244155",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
@@ -144,10 +144,10 @@
     }
   },
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-sezam-promotions-products-54244156",
-    "name": "Product 54244156 tests-sezam-promotions-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-sezam-promotions-products-54244156",
+    "name": "Product 54244156 tests-price-components-sezam-promotions-products html-cache",
     "target_url": "/product/54244156",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",

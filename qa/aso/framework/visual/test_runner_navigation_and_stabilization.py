@@ -3,12 +3,13 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any, cast
 
 import pytest
 
 from framework.env import load_env
 from framework.visual.models import VisualScenario
-from framework.visual.runner import VisualRunner
+from framework.visual.runner import VisualRunner, _first_visible_locator
 
 pytestmark = [pytest.mark.aso]
 
@@ -77,12 +78,51 @@ class _CapturePage:
         self.screenshot_calls.append(full_page)
 
 
+class _FakeLocatorItem:
+    def __init__(self, visible: bool, name: str):
+        self._visible = visible
+        self.name = name
+        self.screenshot_calls: list[str] = []
+
+    def is_visible(self) -> bool:
+        return self._visible
+
+    def screenshot(self, *, path: str):
+        self.screenshot_calls.append(path)
+
+
+class _FakeLocatorGroup:
+    def __init__(self, items: list[_FakeLocatorItem]):
+        self._items = items
+
+    def count(self) -> int:
+        return len(self._items)
+
+    def nth(self, index: int) -> _FakeLocatorItem:
+        return self._items[index]
+
+    @property
+    def first(self) -> _FakeLocatorItem:
+        return self._items[0]
+
+
+class _ElementCapturePage(_CapturePage):
+    def __init__(self, locator_group: _FakeLocatorGroup):
+        super().__init__()
+        self.locator_group = locator_group
+        self.locator_calls: list[str] = []
+
+    def locator(self, selector: str) -> _FakeLocatorGroup:
+        self.locator_calls.append(selector)
+        return self.locator_group
+
+
 def test_navigate_fails_on_http_404(tmp_path: Path) -> None:
     runner = _runner(tmp_path)
     page = _NavPage([404])
 
     with pytest.raises(ValueError, match=r"HTTP 404"):
-        runner._navigate(page, _scenario(target_url="/missing"))
+        runner._navigate(cast(Any, page), _scenario(target_url="/missing"))
 
 
 def test_step_goto_fails_on_http_404(tmp_path: Path) -> None:
@@ -90,18 +130,51 @@ def test_step_goto_fails_on_http_404(tmp_path: Path) -> None:
     page = _NavPage([404])
 
     with pytest.raises(ValueError, match=r"HTTP 404"):
-        runner._run_step(page, "goto", "", "https://example.test/missing", 5000, "")
+        runner._run_step(cast(Any, page), "goto", "", "https://example.test/missing", 5000, "")
 
 
 def test_capture_stabilizes_only_for_full_page(tmp_path: Path) -> None:
     runner = _runner(tmp_path)
 
     page_full = _CapturePage()
-    runner._capture(page_full, _scenario(full_page=True), tmp_path / "full.png")
+    runner._capture(cast(Any, page_full), _scenario(full_page=True), tmp_path / "full.png")
     assert page_full.wait_for_load_state_calls
     assert page_full.screenshot_calls == [True]
 
     page_viewport = _CapturePage()
-    runner._capture(page_viewport, _scenario(full_page=False), tmp_path / "viewport.png")
+    runner._capture(cast(Any, page_viewport), _scenario(full_page=False), tmp_path / "viewport.png")
     assert page_viewport.wait_for_load_state_calls == []
     assert page_viewport.screenshot_calls == [False]
+
+
+def test_first_visible_locator_prefers_visible_match() -> None:
+    hidden = _FakeLocatorItem(visible=False, name="hidden")
+    visible = _FakeLocatorItem(visible=True, name="visible")
+
+    selected = _first_visible_locator(cast(Any, _FakeLocatorGroup([hidden, visible])))
+
+    assert selected is visible
+
+
+def test_capture_element_uses_first_visible_match(tmp_path: Path) -> None:
+    runner = _runner(tmp_path)
+    hidden = _FakeLocatorItem(visible=False, name="hidden")
+    visible = _FakeLocatorItem(visible=True, name="visible")
+    page = _ElementCapturePage(_FakeLocatorGroup([hidden, visible]))
+    scenario = VisualScenario.from_dict(
+        {
+            "id": "scenario-element",
+            "name": "Scenario element",
+            "target_url": "/",
+            "suite_id": "suite-1",
+            "compare_mode": "pixel",
+            "capture": {"type": "element", "selector": "[data-name='addToCartWrapper']"},
+            "thresholds": {"pixel_max": 0.01, "lpips_max": 0.1, "dists_max": 0.1},
+        }
+    )
+
+    runner._capture(cast(Any, page), scenario, tmp_path / "element.png")
+
+    assert page.locator_calls == ["[data-name='addToCartWrapper']"]
+    assert hidden.screenshot_calls == []
+    assert visible.screenshot_calls == [str(tmp_path / "element.png")]

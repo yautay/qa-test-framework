@@ -1,9 +1,9 @@
 [
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-product-labels-products-530000001",
-    "name": "Product 530000001 tests-product-labels-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-product-labels-products-530000001",
+    "name": "Product 530000001 tests-price-components-product-labels-products html-cache",
     "target_url": "/product/530000001",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
@@ -16,10 +16,10 @@
     }
   },
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-product-labels-products-530000002",
-    "name": "Product 530000002 tests-product-labels-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-product-labels-products-530000002",
+    "name": "Product 530000002 tests-price-components-product-labels-products html-cache",
     "target_url": "/product/530000002",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",

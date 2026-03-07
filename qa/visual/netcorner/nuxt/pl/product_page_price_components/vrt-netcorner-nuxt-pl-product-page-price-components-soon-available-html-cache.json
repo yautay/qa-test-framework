@@ -1,9 +1,9 @@
 [
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000201",
-    "name": "Product 500000201 tests-soon-available-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-soon-available-products-500000201",
+    "name": "Product 500000201 tests-price-components-soon-available-products html-cache",
     "target_url": "/product/500000201",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
@@ -16,10 +16,10 @@
     }
   },
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000202",
-    "name": "Product 500000202 tests-soon-available-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-soon-available-products-500000202",
+    "name": "Product 500000202 tests-price-components-soon-available-products html-cache",
     "target_url": "/product/500000202",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
@@ -32,10 +32,10 @@
     }
   },
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000203",
-    "name": "Product 500000203 tests-soon-available-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-soon-available-products-500000203",
+    "name": "Product 500000203 tests-price-components-soon-available-products html-cache",
     "target_url": "/product/500000203",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
@@ -48,10 +48,10 @@
     }
   },
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000204",
-    "name": "Product 500000204 tests-soon-available-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-soon-available-products-500000204",
+    "name": "Product 500000204 tests-price-components-soon-available-products html-cache",
     "target_url": "/product/500000204",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
@@ -64,10 +64,10 @@
     }
   },
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000205",
-    "name": "Product 500000205 tests-soon-available-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-soon-available-products-500000205",
+    "name": "Product 500000205 tests-price-components-soon-available-products html-cache",
     "target_url": "/product/500000205",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
@@ -80,10 +80,10 @@
     }
   },
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000206",
-    "name": "Product 500000206 tests-soon-available-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-soon-available-products-500000206",
+    "name": "Product 500000206 tests-price-components-soon-available-products html-cache",
     "target_url": "/product/500000206",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
@@ -96,10 +96,10 @@
     }
   },
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000207",
-    "name": "Product 500000207 tests-soon-available-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-soon-available-products-500000207",
+    "name": "Product 500000207 tests-price-components-soon-available-products html-cache",
     "target_url": "/product/500000207",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
@@ -112,10 +112,10 @@
     }
   },
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000208",
-    "name": "Product 500000208 tests-soon-available-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-soon-available-products-500000208",
+    "name": "Product 500000208 tests-price-components-soon-available-products html-cache",
     "target_url": "/product/500000208",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
@@ -128,10 +128,10 @@
     }
   },
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000209",
-    "name": "Product 500000209 tests-soon-available-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-soon-available-products-500000209",
+    "name": "Product 500000209 tests-price-components-soon-available-products html-cache",
     "target_url": "/product/500000209",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
@@ -144,10 +144,10 @@
     }
   },
   {
-    "id": "vrt-netcorner-nuxt-pl-product-tests-soon-available-products-500000210",
-    "name": "Product 500000210 tests-soon-available-products html-cache",
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-soon-available-products-500000210",
+    "name": "Product 500000210 tests-price-components-soon-available-products html-cache",
     "target_url": "/product/500000210",
-    "suite_id": "netcorner/nuxt/pl/product_page",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
