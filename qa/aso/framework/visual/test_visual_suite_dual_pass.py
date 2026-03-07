@@ -8,7 +8,8 @@ import pytest
 
 from framework.env import load_env
 from framework.visual.models import VisualResult, VisualScenario
-from qa.visual.netcorner.nuxt.pl import visual_suite
+from framework.visual import visual_suite
+from qa.visual.netcorner.nuxt.pl.url_config import resolve_reference_base_url
 
 pytestmark = [pytest.mark.aso]
 
@@ -35,6 +36,7 @@ def _make_pytestconfig(tmp_path: Path) -> SimpleNamespace:
     run_root = tmp_path / "artifacts" / "run-1"
     run_root.mkdir(parents=True, exist_ok=True)
     return SimpleNamespace(
+        rootpath=tmp_path,
         _run_metadata={"tester": "qa", "run_note": "dual"},
         _run_artifacts=SimpleNamespace(root=run_root, run_id="run-1"),
     )
@@ -107,6 +109,7 @@ def test_execute_visual_scenario_uses_dual_pass_when_reference_host_is_set(monke
         visual_output_dir=tmp_path / "visual",
         visual_results=visual_results,
         pytestconfig=pytestconfig,
+        resolve_reference_base_url=resolve_reference_base_url,
     )
 
     assert len(calls) == 2

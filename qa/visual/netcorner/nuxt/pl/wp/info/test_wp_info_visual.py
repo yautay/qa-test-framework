@@ -5,8 +5,9 @@ from pathlib import Path
 import pytest
 
 from framework.env import RuntimeEnv
+from framework.visual.visual_suite import apply_parametrization, execute_visual_scenario
 from framework.visual.models import VisualScenario
-from qa.visual.netcorner.nuxt.pl.visual_suite import apply_parametrization, execute_visual_scenario
+from qa.visual.netcorner.nuxt.pl.url_config import resolve_reference_base_url
 
 SCENARIOS_DIR = Path(__file__).resolve().parent
 
@@ -36,4 +37,5 @@ def test_wp_info_visual(
         visual_output_dir=visual_output_dir,
         visual_results=visual_results,
         pytestconfig=pytestconfig,
+        resolve_reference_base_url=resolve_reference_base_url,
     )
