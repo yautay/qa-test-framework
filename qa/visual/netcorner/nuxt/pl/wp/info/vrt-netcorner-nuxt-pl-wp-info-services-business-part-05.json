@@ -10,9 +10,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
-        "img"
-      ]
+      "selectors": []
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -31,9 +29,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
-        "img"
-      ]
+      "selectors": []
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -52,9 +48,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
-        "img"
-      ]
+      "selectors": []
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -73,9 +67,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
-        "img"
-      ]
+      "selectors": []
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -94,30 +86,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
-        "img"
-      ]
-    },
-    "thresholds": {
-      "pixel_max": 0.001,
-      "lpips_max": 0.001,
-      "dists_max": 0.001
-    }
-  },
-  {
-    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-uslugi-wsparcie-komputronik-helpdesk-howto",
-    "name": "WP info /informacje/uslugi/wsparcie-komputronik/helpdesk/#howTo",
-    "suite_id": "netcorner/nuxt/pl/wp/info",
-    "target_url": "/informacje/uslugi/wsparcie-komputronik/helpdesk/#howTo",
-    "compare_mode": "hybrid",
-    "capture": {
-      "type": "page",
-      "full_page": true
-    },
-    "mask": {
-      "selectors": [
-        "img"
-      ]
+      "selectors": []
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -136,9 +105,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
-        "img"
-      ]
+      "selectors": []
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -148,18 +115,16 @@
   },
   {
     "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-uslugi-pl",
-    "name": "WP info /informacje/usługi",
+    "name": "WP info /informacje/uslugi",
     "suite_id": "netcorner/nuxt/pl/wp/info",
-    "target_url": "/informacje/usługi",
+    "target_url": "/informacje/uslugi",
     "compare_mode": "hybrid",
     "capture": {
       "type": "page",
       "full_page": true
     },
     "mask": {
-      "selectors": [
-        "img"
-      ]
+      "selectors": []
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -169,18 +134,16 @@
   },
   {
     "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-uslugi-raty-pl",
-    "name": "WP info /informacje/usługi/raty",
+    "name": "WP info /informacje/uslugi/raty",
     "suite_id": "netcorner/nuxt/pl/wp/info",
-    "target_url": "/informacje/usługi/raty",
+    "target_url": "/informacje/uslugi/raty",
     "compare_mode": "hybrid",
     "capture": {
       "type": "page",
       "full_page": true
     },
     "mask": {
-      "selectors": [
-        "img"
-      ]
+      "selectors": []
     },
     "thresholds": {
       "pixel_max": 0.001,

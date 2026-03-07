@@ -6,15 +6,8 @@
     "suite_id": "netcorner/nuxt/pl/product_page",
     "compare_mode": "hybrid",
     "capture": {
-      "type": "page",
-      "full_page": true,
-      "selector": "[data-name='replace-capture-selector']"
-    },
-    "mask": {
-      "selectors": [
-        "[data-role='productSlider']",
-        "[data-testid='dynamic-banner']"
-      ]
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -29,15 +22,8 @@
     "suite_id": "netcorner/nuxt/pl/product_page",
     "compare_mode": "hybrid",
     "capture": {
-      "type": "page",
-      "full_page": true,
-      "selector": "[data-name='replace-capture-selector']"
-    },
-    "mask": {
-      "selectors": [
-        "[data-role='productSlider']",
-        "[data-testid='dynamic-banner']"
-      ]
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -52,15 +38,8 @@
     "suite_id": "netcorner/nuxt/pl/product_page",
     "compare_mode": "hybrid",
     "capture": {
-      "type": "page",
-      "full_page": true,
-      "selector": "[data-name='replace-capture-selector']"
-    },
-    "mask": {
-      "selectors": [
-        "[data-role='productSlider']",
-        "[data-testid='dynamic-banner']"
-      ]
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
     },
     "thresholds": {
       "pixel_max": 0.001,

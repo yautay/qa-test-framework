@@ -12,10 +12,8 @@
     },
     "mask": {
       "selectors": [
-        "img",
-        ".cookie-banner",
-        "[data-testid='dynamic-banner']",
-        "[data-name='replace-mask-selector']"
+        "[data-role='productSlider']",
+        "[data-testid='dynamic-banner']"
       ]
     },
     "thresholds": {
@@ -37,10 +35,8 @@
     },
     "mask": {
       "selectors": [
-        "img",
-        ".cookie-banner",
-        "[data-testid='dynamic-banner']",
-        "[data-name='replace-mask-selector']"
+        "[data-role='productSlider']",
+        "[data-testid='dynamic-banner']"
       ]
     },
     "thresholds": {
@@ -62,10 +58,8 @@
     },
     "mask": {
       "selectors": [
-        "img",
-        ".cookie-banner",
-        "[data-testid='dynamic-banner']",
-        "[data-name='replace-mask-selector']"
+        "[data-role='productSlider']",
+        "[data-testid='dynamic-banner']"
       ]
     },
     "thresholds": {
@@ -87,10 +81,8 @@
     },
     "mask": {
       "selectors": [
-        "img",
-        ".cookie-banner",
-        "[data-testid='dynamic-banner']",
-        "[data-name='replace-mask-selector']"
+        "[data-role='productSlider']",
+        "[data-testid='dynamic-banner']"
       ]
     },
     "thresholds": {
@@ -112,10 +104,8 @@
     },
     "mask": {
       "selectors": [
-        "img",
-        ".cookie-banner",
-        "[data-testid='dynamic-banner']",
-        "[data-name='replace-mask-selector']"
+        "[data-role='productSlider']",
+        "[data-testid='dynamic-banner']"
       ]
     },
     "thresholds": {
@@ -137,10 +127,8 @@
     },
     "mask": {
       "selectors": [
-        "img",
-        ".cookie-banner",
-        "[data-testid='dynamic-banner']",
-        "[data-name='replace-mask-selector']"
+        "[data-role='productSlider']",
+        "[data-testid='dynamic-banner']"
       ]
     },
     "thresholds": {
@@ -162,10 +150,8 @@
     },
     "mask": {
       "selectors": [
-        "img",
-        ".cookie-banner",
-        "[data-testid='dynamic-banner']",
-        "[data-name='replace-mask-selector']"
+        "[data-role='productSlider']",
+        "[data-testid='dynamic-banner']"
       ]
     },
     "thresholds": {
@@ -187,10 +173,8 @@
     },
     "mask": {
       "selectors": [
-        "img",
-        ".cookie-banner",
-        "[data-testid='dynamic-banner']",
-        "[data-name='replace-mask-selector']"
+        "[data-role='productSlider']",
+        "[data-testid='dynamic-banner']"
       ]
     },
     "thresholds": {
@@ -212,10 +196,8 @@
     },
     "mask": {
       "selectors": [
-        "img",
-        ".cookie-banner",
-        "[data-testid='dynamic-banner']",
-        "[data-name='replace-mask-selector']"
+        "[data-role='productSlider']",
+        "[data-testid='dynamic-banner']"
       ]
     },
     "thresholds": {
@@ -237,10 +219,8 @@
     },
     "mask": {
       "selectors": [
-        "img",
-        ".cookie-banner",
-        "[data-testid='dynamic-banner']",
-        "[data-name='replace-mask-selector']"
+        "[data-role='productSlider']",
+        "[data-testid='dynamic-banner']"
       ]
     },
     "thresholds": {
