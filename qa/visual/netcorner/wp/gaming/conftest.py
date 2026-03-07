@@ -5,11 +5,11 @@ import pytest
 from framework.env import RuntimeEnv
 from framework.url_resolver.url_resolver import EnvUrls, url_resolver
 
-resolve_pl = url_resolver(
+resolve_gaming = url_resolver(
     EnvUrls(
-        prod="https://komputronik.pl",
-        demo="https://sklep3-demo.komputronik.dev",
-        test_template="https://komputronik-{host}.netcorner.pl",
+        prod="https://gaming.komputronik.pl/",
+        demo="https://gaming-demo.ktr.pl",
+        test_template="https://wp-komputronik-gaming{host}.netcorner.pl",
     )
 )
 
@@ -26,7 +26,7 @@ def pytest_configure(config: pytest.Config) -> None:
     # Legacy compatibility: env.server_type + env.server_name split is resolved
     # centrally in qa/conftest.py (including server_name aliases demo/prod/local).
     try:
-        resolved = resolve_pl(env.server_type, env.server_name).rstrip("/")
+        resolved = resolve_gaming(env.server_type, env.server_name).rstrip("/")
     except ValueError as e:
         raise pytest.UsageError(f"Cannot resolve base_url for env={env!r}: {e}") from e
 

@@ -18,7 +18,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     apply_parametrization(metafunc, scenarios_dir=SCENARIOS_DIR)
 
 
-def test_wp_promotion_visual(
+def test_wp_carrer_visual(
     request: pytest.FixtureRequest,
     page,
     scenario: VisualScenario,
