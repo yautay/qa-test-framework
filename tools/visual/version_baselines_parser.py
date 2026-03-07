@@ -24,9 +24,9 @@ def build_parser() -> ArgumentParser:
     create.add_argument("--to-version", required=True, help="Target version")
     create.add_argument(
         "--source",
-        choices=("auto", "baseline", "cache"),
+        choices=("auto", "baseline", "cache", "remote"),
         default="auto",
-        help="Source store for --from-version (default: auto, baseline->cache fallback)",
+        help="Source store for --from-version (default: auto, baseline->cache fallback; remote=MinIO)",
     )
     create.add_argument("--prune-missing", action="store_true", help="Prune target files not present in source")
     create.add_argument("--with-minio", action="store_true", help="Also copy objects inside MinIO")
@@ -42,9 +42,9 @@ def build_parser() -> ArgumentParser:
     promote.add_argument("--from-version", required=True, help="Source version")
     promote.add_argument(
         "--source",
-        choices=("auto", "baseline", "cache"),
+        choices=("auto", "baseline", "cache", "remote"),
         default="auto",
-        help="Source store for --from-version (default: auto, baseline->cache fallback)",
+        help="Source store for --from-version (default: auto, baseline->cache fallback; remote=MinIO)",
     )
     promote.add_argument("--prune-missing", action="store_true", help="Prune latest files not present in source")
     promote.add_argument("--with-minio", action="store_true", help="Also copy objects inside MinIO")

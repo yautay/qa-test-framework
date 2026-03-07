@@ -163,6 +163,7 @@ Add `--with-minio` to `create` or `promote` to copy object keys in MinIO bucket 
 - `auto` (default): use local baseline store, fallback to cache mirror when baseline source is missing,
 - `baseline`: require source files in `qa/visual/baselines`,
 - `cache`: use source files from local cache mirror.
+- `remote`: use MinIO as source (download to local baseline/cache; with `--with-minio` copy MinIO tag->tag).
 
 For `clean` with MinIO:
 
