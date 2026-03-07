@@ -116,6 +116,7 @@ def test_execute_visual_scenario_uses_dual_pass_when_reference_host_is_set(monke
     assert calls[0]["base_url"] == "https://sklep3-demo.komputronik.dev"
     assert calls[1]["base_url"] == "https://target.example"
     assert len(visual_results) == 1
+    assert visual_results[0].test_metadata["execution"]["target_base_url"] == "https://target.example"
     payload = request.node._visual_payload
     assert payload["execution"]["dual_pass"] is True
     assert payload["execution"]["reference_host"] == "demo"
@@ -177,6 +178,7 @@ def test_execute_visual_scenario_uses_single_pass_when_reference_host_is_empty(m
 
     assert calls == ["https://target.example"]
     assert len(visual_results) == 1
+    assert visual_results[0].test_metadata["execution"]["target_base_url"] == "https://target.example"
     payload = request.node._visual_payload
     assert payload["execution"]["dual_pass"] is False
     assert "visual_reference_actual" not in request.node._artifacts_payload

@@ -10,9 +10,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
-        "img"
-      ]
+      "selectors": []
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -31,9 +29,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
-        "img"
-      ]
+      "selectors": []
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -52,9 +48,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
-        "img"
-      ]
+      "selectors": []
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -73,9 +67,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
-        "img"
-      ]
+      "selectors": []
     },
     "thresholds": {
       "pixel_max": 0.001,

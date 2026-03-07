@@ -10,7 +10,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": []
+      "selectors": ["img"]
     },
     "thresholds": {
       "pixel_max": 0.001,

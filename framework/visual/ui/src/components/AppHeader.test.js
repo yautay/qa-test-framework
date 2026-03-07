@@ -3,6 +3,7 @@ import { mount } from "@vue/test-utils";
 import { ref } from "vue";
 
 import AppHeader from "./AppHeader.vue";
+import { fetchAppInfo } from "../lib/api/appInfoApi";
 import { fetchPerceptualHealth } from "../lib/api/perceptualApi";
 
 vi.mock("../lib/api/appInfoApi", () => ({
@@ -154,6 +155,25 @@ describe("AppHeader", () => {
     expect(tooltip.text()).toContain("device: cpu");
     expect(tooltip.text()).toContain("job store: redis (available)");
     expect(tooltip.text()).toContain("git: v1.3-1-g951d06b");
+  });
+
+  it("renders Polish codename with diacritics in tooltip", async () => {
+    fetchAppInfo.mockResolvedValueOnce({
+      runtime: { version: "1.2.3", codename: "Łódź Bałuty", commit: "abc1234" },
+      ui_build: {
+        version: "1.2.2",
+        codename: "Łódź Bałuty",
+        ui_src_version: "1.0.0",
+        commit: "def5678",
+        built_at: "2026-02-22T10:00:00Z",
+      },
+    });
+
+    const wrapper = mount(AppHeader);
+    await flushPromises();
+
+    const tooltip = wrapper.find(".app-info-tooltip").text();
+    expect(tooltip).toContain("codename: Łódź Bałuty");
   });
 
   it("marks app info icon red when PMS health fails", async () => {
