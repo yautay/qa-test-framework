@@ -80,6 +80,31 @@ def build_parser() -> ArgumentParser:
     check.add_argument("--fast", action="store_true", help="Skip checksum and compare only presence + file size")
     check.add_argument("--no-progress", action="store_true", help="Disable progress output during check")
     check.add_argument("--limit", type=int, default=20, help="Maximum mismatch examples per category")
+    check.add_argument(
+        "--sync-tests",
+        action="store_true",
+        help="Validate/remove orphan baselines not linked to existing visual scenarios",
+    )
+    check.add_argument(
+        "--with-minio",
+        action="store_true",
+        help="For --sync-tests: include MinIO objects in verification/cleanup",
+    )
+    check.add_argument(
+        "--ask-release-credentials",
+        action="store_true",
+        help="Prompt for MinIO release credentials (for --sync-tests --with-minio --force)",
+    )
+    check.add_argument(
+        "--minio-access-key",
+        default="",
+        help="MinIO access key used with --ask-release-credentials",
+    )
+    check.add_argument(
+        "--force",
+        action="store_true",
+        help="For --sync-tests: execute deletions. Default mode is dry-run",
+    )
 
     clean = sub.add_parser("clean", help="Clean local baselines/cache for selected tag or all tags")
     clean.add_argument("--tag", dest="tag", default="latest", help="Tag/version to clean (default: latest)")

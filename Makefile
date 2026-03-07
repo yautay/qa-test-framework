@@ -80,16 +80,3 @@ clean-artifacts: ## Usuń wszystkie artefakty
 clean-artifacts-older: ## Usuń artefakty starsze niż DAYS (domyślnie 14)
 	$(PYTHON) tools/artifacts/cleanup.py --days $(if $(DAYS),$(DAYS),14)
 
-##@ Debug
-
-debug-remote-grid-up: ## Start grid remote (docker)
-	docker compose -f tools/remote/docker-compose.yml up -d
-
-debug-remote-grid-down: ## Stop grid remote (docker)
-	docker compose -f tools/remote/docker-compose.yml down
-
-debug-minio-up: ## Start MinIO
-	docker compose -f tools/minio/docker-compose.yml up -d
-
-debug-minio-down: ## Stop MinIO
-	docker compose -f tools/minio/docker-compose.yml down
