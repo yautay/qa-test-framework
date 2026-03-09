@@ -1,14 +1,14 @@
 # Logging
 console_log_level = "WARNING"
-tools_logs_dir = "tools/logs"
 tools_file_log_level = "DEBUG"
+tools_logs_dir = "tools/logs"
 log_rotation = "50 MB"
 log_retention = "7 days"
 log_compression = "zip"
 
 # Runtime
-ignore_https_errors = True
 artifacts_dir = "artifacts"
+ignore_https_errors = True
 allure_enabled = False
 pytest_html_enabled = True
 record_video = True
@@ -22,8 +22,8 @@ grid_connect_timeout_ms = 30000
 
 # Visual
 visual_enabled = True
-visual_compare_mode = "hybrid"  # pixel|perceptual|hybrid
-visual_baseline_provider = "minio"  # minio|local
+visual_compare_mode = "hybrid"
+visual_baseline_provider = "minio"
 visual_baseline_profile = "test-ref"
 visual_baseline_version = "latest"
 visual_cache_dir = ".visual_cache"
@@ -42,17 +42,17 @@ visual_viewport_presets = {
     "4k": (3840, 2160),
 }
 
-# MinIO baseline storage
+# Visual MinIO
 visual_minio_endpoint = "s3.cpt-sztos.com"
 visual_minio_access_key = "release"
 visual_minio_secret_key = "Bytniebytodbyt"
 visual_minio_bucket = "visual-baselines"
 visual_minio_secure = True
 
-# Perceptual Metrics Service
+# PMS
 pms_enabled = True
 pms_base_url = "https://pms.cpt-sztos.com"
-pms_metric = "both"  # lpips|dists|both
+pms_metric = "both"
 pms_model = "alex"
 pms_normalize = True
 pms_submit_rps = 4.0
@@ -65,7 +65,7 @@ pms_health_timeout_seconds = 5
 pms_poll_interval_ms = 2500
 pms_poll_idle_multiplier = 10.0
 
-# Reporting API
+# Reporting
 reporting_enabled = False
 reporting_schema_version = "2.1"
 reporting_source_project = "netQArner"
