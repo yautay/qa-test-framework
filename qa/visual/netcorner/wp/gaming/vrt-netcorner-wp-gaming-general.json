@@ -1,0 +1,154 @@
+[
+  {
+    "id": "vrt-netcorner-wp-gaming-general",
+    "name": "WP gaming",
+    "suite_id": "netcorner/wp/gaming",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-wp-gaming-general-hq",
+    "name": "WP gaming / redakcja",
+    "suite_id": "netcorner/wp/gaming",
+    "target_url": "/redakcja",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-wp-gaming-general-contact",
+    "name": "WP gaming / kontakt",
+    "suite_id": "netcorner/wp/gaming",
+    "target_url": "/kontakt",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-wp-gaming-general-news",
+    "name": "WP gaming / news",
+    "suite_id": "netcorner/wp/gaming",
+    "target_url": "/kategoria/newsy",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-wp-gaming-general-articles",
+    "name": "WP gaming / poradniki",
+    "suite_id": "netcorner/wp/gaming",
+    "target_url": "/kategoria/poradniki",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-wp-gaming-general-best_games",
+    "name": "WP gaming / najlepsze-gry",
+    "suite_id": "netcorner/wp/gaming",
+    "target_url": "/kategoria/najlepsze-gry",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-wp-gaming-general-cheats",
+    "name": "WP gaming / kody-do-gier",
+    "suite_id": "netcorner/wp/gaming",
+    "target_url": "/kategoria/kody-do-gier",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-wp-gaming-general-games",
+    "name": "WP gaming / gry",
+    "suite_id": "netcorner/wp/gaming",
+    "target_url": "/kategoria/gry",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  }
+]

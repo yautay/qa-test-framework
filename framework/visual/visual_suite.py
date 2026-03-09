@@ -4,48 +4,20 @@ import os
 import time
 from dataclasses import replace
 from pathlib import Path
+from typing import Callable
 
 import pytest
 from loguru import logger
 
 from framework.env import RuntimeEnv
-from framework.url_resolver.url_resolver import EnvUrls, url_resolver
 from framework.visual.baseline_store import BaselineStore
 from framework.visual.models import VisualResult, VisualScenario
 from framework.visual.runner import VisualRunner
 from framework.visual.scenario_loader import format_load_errors, load_scenarios_with_errors
 
-resolve_pl = url_resolver(
-    EnvUrls(
-        prod="https://komputronik.pl",
-        demo="https://sklep3-demo.komputronik.dev",
-        test_template="https://komputronik-{host}.netcorner.pl",
-        local="https://komputronik.local",
-    )
-)
-
-_REFERENCE_ENV_ALIASES = {"demo", "prod", "local"}
-
-
-def _repo_root_from(test_file: Path) -> Path:
-    resolved = test_file.resolve()
-    for parent in resolved.parents:
-        if parent.name == "qa":
-            return parent.parent
-    return resolved.parents[-1]
-
 
 def _worker_id() -> str:
     return str(os.getenv("PYTEST_XDIST_WORKER") or "master")
-
-
-def _resolve_reference_base_url(reference_host: str) -> tuple[str, str, str]:
-    token = str(reference_host or "").strip().lower()
-    if not token:
-        raise ValueError("reference_host is required for reference pass")
-    if token in _REFERENCE_ENV_ALIASES:
-        return resolve_pl(token).rstrip("/"), token, "reference_alias"
-    return resolve_pl(token).rstrip("/"), token, "reference_host"
 
 
 def _attach_result_metadata(
@@ -56,6 +28,7 @@ def _attach_result_metadata(
     tester: str,
     run_note: str,
     dual_pass: bool,
+    target_base_url: str,
     reference_host: str,
     reference_url: str,
     reference_pass_duration_ms: int | None,
@@ -108,6 +81,7 @@ def _attach_result_metadata(
         },
         "execution": {
             "dual_pass": dual_pass,
+            "target_base_url": target_base_url,
             "reference_host": reference_host,
             "reference_url": reference_url,
             "reference_pass_duration_ms": reference_pass_duration_ms,
@@ -210,11 +184,12 @@ def execute_visual_scenario(
     visual_output_dir: Path,
     visual_results: list,
     pytestconfig: pytest.Config,
+    resolve_reference_base_url: Callable[[str], tuple[str, str, str]] | None = None,
 ) -> None:
     if not runtime_env.base_url and not scenario.target_url.startswith(("http://", "https://")):
         pytest.skip("BASE_URL is not configured for relative visual target_url")
 
-    repo_root = _repo_root_from(Path(__file__))
+    repo_root = Path(pytestconfig.rootpath).resolve()
     run_metadata = getattr(pytestconfig, "_run_metadata", {})
     tester = ""
     run_note = ""
@@ -247,6 +222,7 @@ def execute_visual_scenario(
             tester=tester,
             run_note=run_note,
             dual_pass=False,
+            target_base_url=runtime_env.base_url,
             reference_host="",
             reference_url="",
             reference_pass_duration_ms=None,
@@ -277,8 +253,13 @@ def execute_visual_scenario(
             reference_host=reference_host,
             worker_id=worker_id,
         )
+
+        if resolve_reference_base_url is None:
+            pytest.fail("reference_host resolve callback is required for visual dual pass")
+            return
+
         try:
-            reference_url, _, reference_source = _resolve_reference_base_url(reference_host)
+            reference_url, _, reference_source = resolve_reference_base_url(reference_host)
         except ValueError as exc:
             logger.error(
                 "visual_reference_resolve_failed",
@@ -391,6 +372,7 @@ def execute_visual_scenario(
             tester=tester,
             run_note=run_note,
             dual_pass=True,
+            target_base_url=runtime_env.base_url,
             reference_host=reference_host,
             reference_url=reference_url,
             reference_pass_duration_ms=reference_pass_duration_ms,

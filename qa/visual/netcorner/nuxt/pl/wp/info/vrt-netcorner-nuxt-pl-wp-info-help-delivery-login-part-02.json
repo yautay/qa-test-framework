@@ -1,0 +1,40 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-dostawa",
+    "name": "WP info /informacje/pomoc/dostawa",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/dostawa",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-info-informacje-pomoc-logowanie-i-rejestracja",
+    "name": "WP info /informacje/pomoc/logowanie-i-rejestracja",
+    "suite_id": "netcorner/nuxt/pl/wp/info",
+    "target_url": "/informacje/pomoc/logowanie-i-rejestracja",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  }
+]

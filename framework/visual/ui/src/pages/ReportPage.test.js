@@ -970,6 +970,40 @@ describe("ReportPage", () => {
     wrapper.unmount();
   });
 
+  it("passes resolved test case URL to modal header", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const store = useResultsStore();
+    const row = {
+      scenario_id: "s1",
+      status: "failed",
+      message: "ok",
+      viewport: "fhd",
+      browser: "chromium",
+      test_metadata: {
+        scenario: {
+          target_url: "/product/123",
+        },
+        execution: {
+          target_base_url: "https://shop.example.com",
+        },
+      },
+    };
+
+    store.openViewer(row, "test", 0);
+    await nextTick();
+
+    const modal = wrapper.findComponent({ name: "ViewerModal" });
+    expect(modal.props("viewer").modalCaseUrl).toBe("https://shop.example.com/product/123");
+
+    wrapper.unmount();
+  });
+
   it("includes reference_host in metadata when present", async () => {
     const wrapper = mount(ReportPage, {
       props: { runId: "run-1" },
@@ -985,8 +1019,12 @@ describe("ReportPage", () => {
       viewport: "fhd",
       browser: "chromium",
       test_metadata: {
+        scenario: {
+          target_url: "/product/123",
+        },
         execution: {
           reference_host: "demo",
+          target_base_url: "https://shop.example.com",
         },
       },
     };
@@ -998,6 +1036,7 @@ describe("ReportPage", () => {
     const metadataPanel = wrapper.findComponent({ name: "TestMetadataPanel" });
     expect(metadataPanel.props("metadata").run.reference_host).toBe("demo");
     expect(metadataPanel.props("metadata").execution.reference_host).toBe("demo");
+    expect(metadataPanel.props("metadata").execution.target_full_url).toBe("https://shop.example.com/product/123");
 
     wrapper.unmount();
   });

@@ -1,0 +1,146 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-sezam-promotions-products-54244167",
+    "name": "Product 54244167 tests-price-components-sezam-promotions-products html-cache",
+    "target_url": "/product/54244167",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-sezam-promotions-products-54244168",
+    "name": "Product 54244168 tests-price-components-sezam-promotions-products html-cache",
+    "target_url": "/product/54244168",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-sezam-promotions-products-54244169",
+    "name": "Product 54244169 tests-price-components-sezam-promotions-products html-cache",
+    "target_url": "/product/54244169",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-sezam-promotions-products-54244170",
+    "name": "Product 54244170 tests-price-components-sezam-promotions-products html-cache",
+    "target_url": "/product/54244170",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-sezam-promotions-products-54244171",
+    "name": "Product 54244171 tests-price-components-sezam-promotions-products html-cache",
+    "target_url": "/product/54244171",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-sezam-promotions-products-54244172",
+    "name": "Product 54244172 tests-price-components-sezam-promotions-products html-cache",
+    "target_url": "/product/54244172",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-sezam-promotions-products-54244173",
+    "name": "Product 54244173 tests-price-components-sezam-promotions-products html-cache",
+    "target_url": "/product/54244173",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-sezam-promotions-products-54244174",
+    "name": "Product 54244174 tests-price-components-sezam-promotions-products html-cache",
+    "target_url": "/product/54244174",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-sezam-promotions-products-54244175",
+    "name": "Product 54244175 tests-price-components-sezam-promotions-products html-cache",
+    "target_url": "/product/54244175",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  }
+]

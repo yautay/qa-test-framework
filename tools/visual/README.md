@@ -37,10 +37,10 @@ Operator quick procedure: `tools/visual/OPERATOR_RUNBOOK.md`
 
 - `versioning.py` - compatibility re-export used by existing imports.
 - `version_copy.py` - create/promote copy flows + optional MinIO sync.
-- `lifecycle_ops.py` - recreate, clean, and consistency check flows.
-- `listing_ops.py` - list local and MinIO versions.
+- `lifecycle_ops.py` - recreate, clean, consistency check, and scenario-sync cleanup flows.
+- `listing_ops.py` - list local and MinIO versions with per-tag size stats.
 - `scan_ops.py` - local/cache/MinIO scanning helpers.
-- `models.py` - result dataclasses (`VersioningResult`, `CleanResult`, `CheckResult`).
+- `models.py` - result dataclasses (`VersioningResult`, `CleanResult`, `CheckResult`, `SyncTestsResult`, `VersionStats`).
 - existing low-level modules remain in place (`executor.py`, `manifest.py`, `minio_ops.py`, `paths.py`, `scanner.py`, `retention.py`, `types.py`).
 
 ## Safety model
@@ -101,12 +101,17 @@ python tools/visual/version_baselines.py promote --from-version 2026-03-03_1
 python tools/visual/version_baselines.py promote --from-version 2026-03-03_1 --force
 ```
 
-List available versions:
+List available versions and size stats:
 
 ```bash
 python tools/visual/version_baselines.py list
 python tools/visual/version_baselines.py list --with-minio
 ```
+
+Output includes:
+
+- per tag: `files=<count>, size=<bytes> (<human-readable>)`,
+- `TOTAL` row: sum across all tags.
 
 Clean local baseline files:
 
@@ -131,6 +136,15 @@ python tools/visual/version_baselines.py check --tag 2026-03-03_1
 
 # Faster verify (presence + size only)
 python tools/visual/version_baselines.py check --tag 2026-03-03_1 --fast
+
+# Verify orphan baselines against existing visual scenarios (dry-run)
+python tools/visual/version_baselines.py check --tag 2026-03-03_1 --sync-tests
+
+# Verify orphan baselines in local+cache+MinIO (dry-run)
+python tools/visual/version_baselines.py check --tag 2026-03-03_1 --sync-tests --with-minio
+
+# Apply orphan cleanup in local+cache+MinIO
+python tools/visual/version_baselines.py check --tag 2026-03-03_1 --sync-tests --with-minio --force --ask-release-credentials
 ```
 
 Make helper:
@@ -149,11 +163,15 @@ Add `--with-minio` to `create` or `promote` to copy object keys in MinIO bucket 
 - `auto` (default): use local baseline store, fallback to cache mirror when baseline source is missing,
 - `baseline`: require source files in `qa/visual/baselines`,
 - `cache`: use source files from local cache mirror.
+- `remote`: use MinIO as source (download to local baseline/cache; with `--with-minio` copy MinIO tag->tag).
 
 For `clean` with MinIO:
 
 - `--with-minio --all` is blocked for safety.
 - deleting MinIO `latest` requires explicit `--allow-latest-minio-delete`.
+
+`clean` also removes empty directories in local baseline and cache trees,
+including directories that were already empty before the command started.
 
 Use `recreate` to initialize local tester environment from MinIO for a selected tag (or `latest` by default).
 `--from-version` is supported as an alias to `--tag`.

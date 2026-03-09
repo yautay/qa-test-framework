@@ -11,14 +11,45 @@ from ..context import ReportServerContext
 try:
     import reportlab.lib.pagesizes as _r_pagesizes
     from reportlab.lib.utils import ImageReader
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
     from reportlab.pdfgen import canvas
 
     _REPORTLAB_AVAILABLE = True
 except Exception:  # pragma: no cover - optional dependency
     _r_pagesizes = None
     ImageReader = None  # type: ignore[assignment]
+    pdfmetrics = None  # type: ignore[assignment]
+    TTFont = None  # type: ignore[assignment]
     canvas = None  # type: ignore[assignment]
     _REPORTLAB_AVAILABLE = False
+
+
+_PDF_FONT_REGULAR = "Helvetica"
+_PDF_FONT_BOLD = "Helvetica-Bold"
+
+
+def _configure_pdf_fonts() -> tuple[str, str]:
+    if not _REPORTLAB_AVAILABLE or pdfmetrics is None or TTFont is None:
+        return _PDF_FONT_REGULAR, _PDF_FONT_BOLD
+
+    regular_name = "VRTDejaVuSans"
+    bold_name = "VRTDejaVuSansBold"
+    regular_path = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf")
+    bold_path = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
+    if not regular_path.is_file() or not bold_path.is_file():
+        return _PDF_FONT_REGULAR, _PDF_FONT_BOLD
+
+    try:
+        registered = set(pdfmetrics.getRegisteredFontNames())
+        if regular_name not in registered:
+            pdfmetrics.registerFont(TTFont(regular_name, str(regular_path)))
+        if bold_name not in registered:
+            pdfmetrics.registerFont(TTFont(bold_name, str(bold_path)))
+        return regular_name, bold_name
+    except Exception:
+        logger.opt(exception=True).warning("unable to register unicode pdf fonts")
+        return _PDF_FONT_REGULAR, _PDF_FONT_BOLD
 
 
 def _as_dict(value: Any) -> dict[str, Any]:
@@ -145,6 +176,7 @@ def _generate_bug_pdf(
     page_w, page_h = _r_pagesizes.landscape(_r_pagesizes.A4)
     output = report_dir / f"{run_id}.pdf"
     pdf = canvas.Canvas(str(output), pagesize=(page_w, page_h))
+    font_regular, font_bold = _configure_pdf_fonts()
 
     raw_fields = config.get("fields")
     fields: list[Any] = raw_fields if isinstance(raw_fields, list) else []
@@ -179,10 +211,10 @@ def _generate_bug_pdf(
             },
         }
 
-        pdf.setFont("Helvetica-Bold", 14)
+        pdf.setFont(font_bold, 14)
         pdf.drawString(24, page_h - 28, f"BUG report | run={run_id} | scenario={row.get('scenario_id', '')}")
         y = page_h - 52
-        pdf.setFont("Helvetica", 9)
+        pdf.setFont(font_regular, 9)
         for field_def in fields:
             if not isinstance(field_def, dict):
                 continue
@@ -233,7 +265,7 @@ def _generate_bug_pdf(
             path = str(image_def.get("path", "") or "").strip()
             gx, gy = grid[idx]
             pdf.rect(gx, gy, col_width, row_height)
-            pdf.setFont("Helvetica-Bold", 8)
+            pdf.setFont(font_bold, 8)
             pdf.drawString(gx + 4, gy + row_height - 11, label.upper())
             candidate: Path | None = None
             if path == "image.baseline" and baseline_resolved is not None:
@@ -244,7 +276,7 @@ def _generate_bug_pdf(
             if candidate is not None:
                 _draw_image_on_page(pdf, candidate, gx + 4, gy + 4, col_width - 8, row_height - 18)
             else:
-                pdf.setFont("Helvetica", 8)
+                pdf.setFont(font_regular, 8)
                 pdf.drawString(gx + 6, gy + 8, "image unavailable")
 
         pdf.showPage()

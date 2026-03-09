@@ -30,3 +30,19 @@ export function buildRefApiSrc(runId, row) {
   return `/api/reports/${id}/image/ref?${query.toString()}`;
 }
 
+export function buildScenarioTargetUrl(baseUrl, endpoint) {
+  const rawEndpoint = String(endpoint || "").trim();
+  if (!rawEndpoint) return "";
+  if (isAbsoluteUrl(rawEndpoint)) return rawEndpoint;
+
+  const rawBaseUrl = String(baseUrl || "").trim();
+  if (!rawBaseUrl) return "";
+
+  try {
+    const base = `${rawBaseUrl.replace(/\/+$/, "")}/`;
+    return new URL(rawEndpoint, base).toString();
+  } catch (_error) {
+    return "";
+  }
+}
+
