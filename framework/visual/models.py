@@ -418,6 +418,7 @@ class VisualResult:
     suite_id: str = ""
     viewport: str = ""
     browser: str = ""
+    nodeid: str = ""
 
     pixel_changed_ratio: float | None = None
     lpips: float | None = None
@@ -438,6 +439,7 @@ class VisualResult:
             "suite_id": self.suite_id,
             "viewport": self.viewport,
             "browser": self.browser,
+            "nodeid": self.nodeid,
             "baseline_path": self.baseline_path,
             "actual_path": self.actual_path,
             "diff_path": self.diff_path,

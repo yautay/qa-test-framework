@@ -117,6 +117,7 @@ def _finalize_result(
     reference_actual_path: str = "",
     reference_baseline_path: str = "",
 ) -> None:
+    result.nodeid = str(getattr(request.node, "nodeid", "") or "")
     visual_results.append(result)
     artifacts_payload = {
         "visual_baseline": result.baseline_path,

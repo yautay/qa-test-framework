@@ -184,3 +184,71 @@ def test_pytest_sessionfinish_writes_visual_report_for_controller(
     assert captured["report_dir"] == run_root / "visual"
     assert captured["results_len"] == 1
     assert captured["write_calls"] == 2
+
+
+def test_send_test_result_updates_uses_worker_payload_snapshot(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    run_root = tmp_path / "artifacts" / "run"
+    workers = run_root / "workers" / "gw0"
+    workers.mkdir(parents=True)
+    nodeid = "qa/visual/test_sample.py::test_flow[a]"
+    (workers / "test_result_payloads.json").write_text(
+        json.dumps(
+            {
+                nodeid: {
+                    "event_type": "test_result",
+                    "run_uid": "run-uid-1",
+                    "attempt": 1,
+                    "nodeid": nodeid,
+                    "test_id": nodeid,
+                    "status": "passed",
+                    "visual": {
+                        "verdict": "analysis",
+                        "execution": {"pms_usage_state": "deferred"},
+                    },
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    class _Client:
+        enabled = True
+
+        def __init__(self) -> None:
+            self.calls: list[dict[str, object]] = []
+
+        def test_result(self, payload: dict[str, object]) -> None:
+            self.calls.append(payload)
+
+    client = _Client()
+    config = _config(root=tmp_path)
+    config._run_uid = "run-uid-1"
+    config._run_artifacts = SimpleNamespace(run_id="run")
+    config._reporting_client = client
+
+    monkeypatch.setattr(
+        plugin,
+        "load_env",
+        lambda: SimpleNamespace(
+            reporting_source_project="proj",
+            framework_version="0.1.0",
+            reporting_source_producer_id="",
+            reporting_source_origin="local",
+        ),
+    )
+
+    result = plugin.VisualResult(
+        scenario_id="s-1",
+        status="passed",
+        message="ok",
+        compare_mode="hybrid",
+        baseline_path="b.png",
+        actual_path="a.png",
+        nodeid=nodeid,
+    )
+    plugin._send_test_result_updates(config, run_root, [result])
+
+    assert len(client.calls) == 1
+    payload = client.calls[0]
+    assert payload["attempt"] == 2
+    assert payload["idempotency_key"] == f"test_result:run-uid-1:{nodeid}:2"

@@ -284,6 +284,7 @@ def _artifact_entry(kind: str, path: str) -> dict[str, object]:
     path_token = str(path or "").strip()
     available = False
     size_bytes = 0
+    size_mib = 0.0
     sha256 = ""
     if path_token:
         artifact_path = Path(path_token)
@@ -291,8 +292,10 @@ def _artifact_entry(kind: str, path: str) -> dict[str, object]:
             available = True
             try:
                 size_bytes = int(artifact_path.stat().st_size)
+                size_mib = round(size_bytes / (1024 * 1024), 3)
             except OSError:
                 size_bytes = 0
+                size_mib = 0.0
             try:
                 sha256 = _sha256_for_file(artifact_path)
             except OSError:
@@ -303,8 +306,32 @@ def _artifact_entry(kind: str, path: str) -> dict[str, object]:
         "uri": "",
         "sha256": sha256,
         "size_bytes": size_bytes,
+        "size_mib": size_mib,
         "available": available,
     }
+
+
+def _test_result_payloads_path(run_artifacts: RunArtifacts, worker_id: str) -> Path:
+    return run_artifacts.root / "workers" / worker_id / "test_result_payloads.json"
+
+
+def _persist_test_result_payload(config: pytest.Config, nodeid: str, payload: dict[str, object]) -> None:
+    payloads = getattr(config, "_test_result_payloads", None)
+    if not isinstance(payloads, dict):
+        payloads = {}
+        config._test_result_payloads = payloads
+    payloads[nodeid] = payload
+
+    run_artifacts = getattr(config, "_run_artifacts", None)
+    if not isinstance(run_artifacts, RunArtifacts):
+        return
+
+    worker_id = _current_worker_id()
+    target = _test_result_payloads_path(run_artifacts, worker_id)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temp = target.with_suffix(".json.tmp")
+    temp.write_text(json.dumps(payloads, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temp.replace(target)
 
 
 def _deduplicated_markers(item: pytest.Item) -> list[str]:
@@ -449,6 +476,7 @@ def pytest_configure(config: pytest.Config) -> None:
     config._test_case_started_at = {}
     config._test_case_started_perf = {}
     config._test_case_emitted = set()
+    config._test_result_payloads = {}
     config._result_counters = {
         "total": 0,
         "passed": 0,
@@ -676,6 +704,8 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
     visual_payload = getattr(item, "_visual_payload", None)
     if isinstance(visual_payload, dict):
         payload["visual"] = visual_payload
+
+    _persist_test_result_payload(item.config, item.nodeid, payload)
 
     if not getattr(item.config, "_reporting_suspended", False):
         test_logger = bind_test_context(item.nodeid)

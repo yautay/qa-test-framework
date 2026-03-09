@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import os
+import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -78,6 +80,81 @@ def _dump_worker_visual_results(run_artifacts: RunArtifacts, worker_id: str, res
     temp.replace(target)
 
 
+def _build_update_visual_payload(result: VisualResult, existing_visual: object) -> dict[str, object]:
+    thresholds = getattr(result, "thresholds", None)
+    execution: dict[str, object] = {}
+    if isinstance(existing_visual, dict):
+        execution_value = existing_visual.get("execution")
+        if isinstance(execution_value, dict):
+            execution = dict(execution_value)
+    return {
+        "threshold_scope": "scenario+viewport+browser",
+        "thresholds_used": {
+            "pixel_max": thresholds.pixel_max if thresholds else None,
+            "lpips_max": thresholds.lpips_max if thresholds else None,
+            "dists_max": thresholds.dists_max if thresholds else None,
+        },
+        "scores": {
+            "pixel_changed_ratio": result.pixel_changed_ratio,
+            "lpips": result.lpips,
+            "dists": result.dists,
+        },
+        "execution": execution,
+        "verdict": result.status,
+    }
+
+
+def _send_test_result_updates(
+    pytestconfig: pytest.Config, run_artifacts: RunArtifacts, results: list[VisualResult]
+) -> None:
+    reporting_client = getattr(pytestconfig, "_reporting_client", None)
+    if reporting_client is None or not bool(getattr(reporting_client, "enabled", False)):
+        return
+
+    payloads_by_nodeid = getattr(pytestconfig, "_test_result_payloads", None)
+    if not isinstance(payloads_by_nodeid, dict):
+        return
+
+    run_uid = str(getattr(pytestconfig, "_run_uid", "") or "")
+    if not run_uid:
+        return
+
+    for result in results:
+        nodeid = str(getattr(result, "nodeid", "") or "").strip()
+        if not nodeid:
+            continue
+        base_payload = payloads_by_nodeid.get(nodeid)
+        if not isinstance(base_payload, dict):
+            continue
+        base_visual = base_payload.get("visual")
+        if not isinstance(base_visual, dict) or str(base_visual.get("verdict", "")).strip().lower() != "analysis":
+            continue
+        status = str(getattr(result, "status", "") or "").strip().lower()
+        if status == "analysis":
+            continue
+
+        update = dict(base_payload)
+        attempt = 2
+        update["event_id"] = str(uuid.uuid4())
+        update["event_type"] = "test_result"
+        update["event_time_utc"] = datetime.now(UTC).isoformat()
+        update["idempotency_key"] = f"test_result:{run_uid}:{nodeid}:{attempt}"
+        update["run_id"] = run_artifacts.run_id
+        update["run_uid"] = run_uid
+        metadata = base_payload.get("metadata")
+        metadata_out = dict(metadata) if isinstance(metadata, dict) else {}
+        metadata_out["update_reason"] = "pms_postprocess_finalized"
+        update["metadata"] = metadata_out
+        update["attempt"] = attempt
+        update["test_id"] = nodeid
+        update["nodeid"] = nodeid
+        update["status"] = status
+        update["visual"] = _build_update_visual_payload(result, base_visual)
+
+        logger.info("reporting_test_result_update", run_id=run_artifacts.run_id, nodeid=nodeid, status=status)
+        reporting_client.test_result(update)
+
+
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
     visual_root = Path(__file__).resolve().parent
     visual_items: list[pytest.Item] = []
@@ -127,6 +204,10 @@ def visual_results(pytestconfig: pytest.Config) -> list:
             )
         except Exception as exc:
             logger.exception("perceptual_postprocess_failed", run_id=str(run_artifacts.run_id), error=str(exc))
+        try:
+            _send_test_result_updates(pytestconfig, run_artifacts, results)
+        except Exception as exc:
+            logger.exception("reporting_test_result_updates_failed", run_id=str(run_artifacts.run_id), error=str(exc))
         write_visual_report(report_dir, results)
 
 

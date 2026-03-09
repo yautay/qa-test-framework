@@ -91,6 +91,9 @@ Every event includes common envelope fields:
 - `test_result:{run_uid}:{nodeid}:{attempt}`
 - `run_finish:{run_uid}:{worker_id}`
 
+For visual hybrid PMS flow, framework can emit a follow-up `test_result` update with `attempt=2`
+after perceptual postprocess finalizes verdict previously reported as `analysis`.
+
 `source.framework_version` is resolved automatically from installed package metadata.
 If metadata is unavailable (for example, running from source without installed distribution), value is set to `unknown`.
 
@@ -110,6 +113,7 @@ Test result payload includes:
 - `scenario`
 - `markers`
 - `artifacts` (trace/video/screenshot metadata list)
+  - each artifact includes `size_bytes` and `size_mib`
 - optional `visual`
 
 When `visual` is present, `visual.execution` includes runtime PMS intent fields:

@@ -18,6 +18,7 @@ def test_artifact_entry_reads_real_file_stats(tmp_path: Path) -> None:
 
     assert payload["available"] is True
     assert payload["size_bytes"] == 3
+    assert payload["size_mib"] == 0.0
     assert payload["sha256"] == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
 
 
@@ -26,6 +27,7 @@ def test_artifact_entry_marks_missing_as_unavailable() -> None:
 
     assert payload["available"] is False
     assert payload["size_bytes"] == 0
+    assert payload["size_mib"] == 0.0
     assert payload["sha256"] == ""
 
 
