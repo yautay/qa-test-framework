@@ -8,7 +8,7 @@ PYTEST ?= $(PYTHON) -m pytest
 
 .DEFAULT_GOAL := help
 
-.PHONY: help report-serve test test-api test-visual test-e2e test-aso test-smoke check collect lint format format-check typecheck security verify-discovery verify-scenarios scenario-report clean-artifacts clean-artifacts-older debug-remote-grid-up debug-remote-grid-down debug-minio-up debug-minio-down
+.PHONY: help report-serve test test-api test-visual test-e2e test-aso test-smoke check collect lint format format-check typecheck security verify-discovery verify-scenarios clean-artifacts clean-artifacts-older debug-remote-grid-up debug-remote-grid-down debug-minio-up debug-minio-down
 
 help: ## Show this help
 	$(PYTHON) tools/make/make_help.py
@@ -67,9 +67,6 @@ verify-discovery: ## Guard dla pytest discovery
 
 verify-scenarios: ## Weryfikacja scenariuszy
 	$(PYTHON) tools/scenarios/verify_scenarios.py
-
-scenario-report: ## Raport scenariuszy
-	$(PYTHON) tools/scenarios/scenario_report.py
 
 
 ##@ Helpers
