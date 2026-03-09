@@ -1,0 +1,18 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-demo-bugs-914916",
+    "name": "Product 914916 tests-price-components-demo-bugs html-cache",
+    "target_url": "/product/914916",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  }
+]

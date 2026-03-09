@@ -12,15 +12,14 @@
     },
     "mask": {
       "selectors": [
-        ".cookie-banner",
-        "[data-testid='dynamic-banner']",
-        "[data-name='replace-mask-selector']"
+        "[data-role='productSlider']",
+        "[data-testid='dynamic-banner']"
       ]
     },
     "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
     }
   }
 ]

@@ -22,6 +22,7 @@ describe("ViewerModal", () => {
     },
     modalTitle: "test-scenario",
     modalSubtitle: "status=failed mode=test",
+    modalCaseUrl: "",
     slots: [
       { id: 1, mode: "ref" },
       { id: 2, mode: "test" },
@@ -399,6 +400,25 @@ describe("ViewerModal", () => {
       expect(icon).toBeFalsy();
     });
 
+  });
+
+  describe("header link", () => {
+    it("renders test case URL link in modal header and opens it in new tab", () => {
+      const viewer = {
+        ...defaultViewer,
+        modalCaseUrl: "https://shop.example.com/product/123",
+      };
+      const wrapper = mount(ViewerModal, {
+        props: { ...defaultProps, viewer },
+      });
+
+      const link = wrapper.find(".modal-case-url");
+      expect(link.exists()).toBe(true);
+      expect(link.attributes("href")).toBe("https://shop.example.com/product/123");
+      expect(link.attributes("target")).toBe("_blank");
+      expect(link.attributes("rel")).toContain("noopener");
+      expect(link.attributes("rel")).toContain("noreferrer");
+    });
   });
 
   describe("scoringText", () => {

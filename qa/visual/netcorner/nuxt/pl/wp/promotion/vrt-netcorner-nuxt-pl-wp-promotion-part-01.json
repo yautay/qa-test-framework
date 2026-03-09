@@ -1,0 +1,23 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-wp-promotion-promocje-najlepsze-wyprzedaze",
+    "name": "WP promotion /promocje/najlepsze-wyprzedaże",
+    "suite_id": "netcorner/nuxt/pl/wp/promotion",
+    "target_url": "/promocje/najlepsze-wyprzedaże",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "img"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  }
+]

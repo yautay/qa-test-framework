@@ -7,6 +7,16 @@
               <div class="modal-header-main">
                 <div class="mono fw-semibold run-id">{{ viewer.modalTitle }}</div>
                 <div class="text-muted small mono">{{ viewer.modalSubtitle }}</div>
+                <a
+                  v-if="viewer.modalCaseUrl"
+                  class="small mono modal-case-url"
+                  :href="viewer.modalCaseUrl"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  :title="viewer.modalCaseUrl"
+                >
+                  {{ viewer.modalCaseUrl }}
+                </a>
               </div>
               <div class="modal-header-meta">
                 <div
@@ -410,6 +420,15 @@ export default {
 
 .run-id {
   color: var(--run-id-color, var(--body-color));
+}
+
+.modal-case-url {
+  display: inline-block;
+  max-width: min(76vw, 1100px);
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 0.12rem;
+  word-break: break-all;
 }
 
 .slot-grid {

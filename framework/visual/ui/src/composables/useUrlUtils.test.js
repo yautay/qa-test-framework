@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { isAbsoluteUrl, buildReportAssetSrc, buildRefApiSrc } from "../../src/composables/useUrlUtils";
+import {
+  isAbsoluteUrl,
+  buildReportAssetSrc,
+  buildRefApiSrc,
+  buildScenarioTargetUrl,
+} from "../../src/composables/useUrlUtils";
 
 describe("useUrlUtils", () => {
   describe("isAbsoluteUrl", () => {
@@ -118,6 +123,33 @@ describe("useUrlUtils", () => {
     it("handles empty string values in row", () => {
       const row = { suite_id: "", scenario_id: "sc1", viewport: "1920x1080", browser: "chrome" };
       expect(buildRefApiSrc("run-1", row)).toBe("");
+    });
+  });
+
+  describe("buildScenarioTargetUrl", () => {
+    it("returns absolute endpoint unchanged", () => {
+      const result = buildScenarioTargetUrl("https://example.com", "https://shop.example.com/product/123");
+      expect(result).toBe("https://shop.example.com/product/123");
+    });
+
+    it("joins execution.target_base_url with relative endpoint", () => {
+      const result = buildScenarioTargetUrl("https://shop.example.com", "/product/123");
+      expect(result).toBe("https://shop.example.com/product/123");
+    });
+
+    it("supports relative endpoint without leading slash", () => {
+      const result = buildScenarioTargetUrl("https://shop.example.com", "product/123");
+      expect(result).toBe("https://shop.example.com/product/123");
+    });
+
+    it("returns empty string when base URL is missing for relative endpoint", () => {
+      const result = buildScenarioTargetUrl("", "/product/123");
+      expect(result).toBe("");
+    });
+
+    it("returns empty string when endpoint is missing", () => {
+      const result = buildScenarioTargetUrl("https://shop.example.com", "");
+      expect(result).toBe("");
     });
   });
 });

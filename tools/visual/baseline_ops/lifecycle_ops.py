@@ -1,20 +1,25 @@
 from __future__ import annotations
 
 import hashlib
+import re
 import sys
 from pathlib import Path
 
 from loguru import logger
 
 from framework.env import RuntimeEnv
+from framework.visual.scenario_loader import format_load_errors, load_scenarios_with_errors
 
 from .executor import execute_ops, plan_copy_ops, print_summary
 from .minio_ops import MinioCredentials, MinioObject, MinioOps
-from .models import CheckResult, CleanResult, VersioningResult
-from .paths import local_baseline_root, repo_root
+from .models import CheckResult, CleanResult, SyncTestsResult, VersioningResult
+from .paths import local_baseline_root, parse_object_key, repo_root
 from .scan_ops import scan_cache_version, scan_local_profile_files, scan_minio_version, to_file_entries
 from .scanner import scan_local_version
 from .types import FileEntry, OperationSummary
+
+
+_SAFE_SEGMENT = re.compile(r"[^a-zA-Z0-9._-]+")
 
 
 def recreate_from_minio(
@@ -114,6 +119,7 @@ def clean_local_versions(
         clean_cache = True
 
     local_summary = OperationSummary(copied=0, skipped=0, removed=0, failed=0, copied_bytes=0, removed_bytes=0)
+    local_dirs_removed = 0
     if clean_local:
         print("\n== Local baseline store ==")
         local_targets = scan_local_profile_files(
@@ -125,8 +131,21 @@ def clean_local_versions(
         local_ops = plan_copy_ops({}, local_targets, prune_missing=True)
         local_summary = execute_ops(local_ops, dry_run=dry_run)
         print_summary(local_summary, dry_run=dry_run)
+        local_dirs_removed, local_dirs_failed = _clean_empty_directories(
+            baseline_root,
+            profile=profile,
+            version=None if all_versions else tag,
+            suites=suites,
+            dry_run=dry_run,
+        )
+        if local_dirs_removed or local_dirs_failed:
+            print(
+                f"cleanup: removed_dirs={local_dirs_removed}, failed_dirs={local_dirs_failed} "
+                f"({'dry-run' if dry_run else 'apply'})"
+            )
 
     cache_summary = OperationSummary(copied=0, skipped=0, removed=0, failed=0, copied_bytes=0, removed_bytes=0)
+    cache_dirs_removed = 0
     if clean_cache:
         print("\n== Local cache mirror ==")
         cache_targets = scan_local_profile_files(
@@ -138,6 +157,18 @@ def clean_local_versions(
         cache_ops = plan_copy_ops({}, cache_targets, prune_missing=True)
         cache_summary = execute_ops(cache_ops, dry_run=dry_run)
         print_summary(cache_summary, dry_run=dry_run)
+        cache_dirs_removed, cache_dirs_failed = _clean_empty_directories(
+            cache_root,
+            profile=profile,
+            version=None if all_versions else tag,
+            suites=suites,
+            dry_run=dry_run,
+        )
+        if cache_dirs_removed or cache_dirs_failed:
+            print(
+                f"cleanup: removed_dirs={cache_dirs_removed}, failed_dirs={cache_dirs_failed} "
+                f"({'dry-run' if dry_run else 'apply'})"
+            )
 
     minio_removed = 0
     minio_failed = 0
@@ -264,6 +295,109 @@ def check_local_vs_minio(
         checksum_mismatch=[f"local:{item}" for item in local_result.checksum_mismatch]
         + [f"cache:{item}" for item in cache_result.checksum_mismatch],
         errors=[f"local:{item}" for item in local_result.errors] + [f"cache:{item}" for item in cache_result.errors],
+    )
+
+
+def sync_tests_with_baselines(
+    env: RuntimeEnv,
+    *,
+    profile: str,
+    tag: str,
+    suites: set[str] | None,
+    with_minio: bool,
+    dry_run: bool,
+    limit: int,
+    minio_credentials: MinioCredentials | None,
+) -> SyncTestsResult:
+    repo = repo_root()
+    baseline_root = local_baseline_root(repo)
+    cache_root = (repo / env.visual_cache_dir).resolve()
+    valid_scenarios = _load_active_scenarios(repo, suites=suites)
+
+    print("\n== Sync with visual scenarios ==")
+    print(f"profile={profile}")
+    print(f"tag={tag}")
+    print(f"suites={sorted(suites) if suites else 'ALL'}")
+    print(f"mode={'dry-run' if dry_run else 'apply'}")
+    print(f"with_minio={with_minio}")
+
+    local_entries = scan_local_version(
+        baseline_root,
+        profile=profile,
+        version=tag,
+        suites=suites,
+    )
+    cache_entries = to_file_entries(scan_cache_version(cache_root, profile=profile, version=tag, suites=suites))
+
+    parse_errors: list[str] = []
+    local_orphans, local_orphans_by_key = _collect_orphans(
+        "local",
+        local_entries,
+        valid_scenarios,
+        parse_errors=parse_errors,
+    )
+    cache_orphans, cache_orphans_by_key = _collect_orphans(
+        "cache",
+        cache_entries,
+        valid_scenarios,
+        parse_errors=parse_errors,
+    )
+
+    minio_orphans: list[str] = []
+    minio_orphans_by_key: list[MinioObject] = []
+    if with_minio:
+        ops = MinioOps(env, credentials=minio_credentials)
+        minio_entries = scan_minio_version(ops, profile=profile, version=tag, suites=suites)
+        minio_orphans, minio_orphans_by_key = _collect_orphans_minio(
+            minio_entries,
+            valid_scenarios,
+            parse_errors=parse_errors,
+        )
+
+    print("\n-- local --")
+    print(f"orphans={len(local_orphans)}")
+    _print_examples("orphans", local_orphans, limit=limit)
+
+    print("\n-- cache --")
+    print(f"orphans={len(cache_orphans)}")
+    _print_examples("orphans", cache_orphans, limit=limit)
+
+    if with_minio:
+        print("\n-- minio --")
+        print(f"orphans={len(minio_orphans)}")
+        _print_examples("orphans", minio_orphans, limit=limit)
+
+    if parse_errors:
+        print("\n-- parse errors --")
+        print(f"errors={len(parse_errors)}")
+        _print_examples("errors", parse_errors, limit=limit)
+
+    local_removed, local_failed = _remove_local_orphans(local_orphans_by_key, dry_run=dry_run)
+    cache_removed, cache_failed = _remove_local_orphans(cache_orphans_by_key, dry_run=dry_run)
+
+    minio_removed = 0
+    minio_failed = 0
+    if with_minio:
+        ops = MinioOps(env, credentials=minio_credentials)
+        minio_removed, minio_failed = _remove_minio_orphans(ops, minio_orphans_by_key, dry_run=dry_run)
+
+    print("\n-- cleanup summary --")
+    print(f"local: removed={local_removed}, failed={local_failed}")
+    print(f"cache: removed={cache_removed}, failed={cache_failed}")
+    if with_minio:
+        print(f"minio: removed={minio_removed}, failed={minio_failed}")
+
+    return SyncTestsResult(
+        local_orphans=local_orphans,
+        cache_orphans=cache_orphans,
+        minio_orphans=minio_orphans,
+        parse_errors=parse_errors,
+        local_removed=local_removed,
+        cache_removed=cache_removed,
+        minio_removed=minio_removed,
+        local_failed=local_failed,
+        cache_failed=cache_failed,
+        minio_failed=minio_failed,
     )
 
 
@@ -473,3 +607,231 @@ def _print_examples(label: str, items: list[str], *, limit: int) -> None:
     remaining = len(items) - shown
     if remaining > 0:
         print(f"- ... and {remaining} more")
+
+
+def _load_active_scenarios(repo: Path, *, suites: set[str] | None) -> dict[str, set[str]]:
+    qa_visual_root = (repo / "qa" / "visual").resolve()
+    if not qa_visual_root.is_dir():
+        raise ValueError("qa/visual directory not found")
+
+    scenario_dirs = sorted({file_path.parent for file_path in qa_visual_root.rglob("vrt-*.json")})
+    if not scenario_dirs:
+        raise ValueError("no visual scenario JSON files found under qa/visual (expected vrt-*.json)")
+
+    normalized_suites = {_safe_segment(item) for item in suites} if suites else None
+
+    scenario_map: dict[str, set[str]] = {}
+    load_errors: list[str] = []
+    for scenarios_dir in scenario_dirs:
+        loaded, errors = load_scenarios_with_errors(scenarios_dir)
+        if errors:
+            load_errors.append(format_load_errors(errors))
+            continue
+        for scenario in loaded:
+            suite_id_raw = str(scenario.suite_id).strip()
+            if not suite_id_raw:
+                continue
+            suite_id = _safe_segment(suite_id_raw)
+            if normalized_suites and suite_id not in normalized_suites:
+                continue
+            scenario_id = _safe_segment(str(scenario.scenario_id))
+            scenario_map.setdefault(suite_id, set()).add(scenario_id)
+
+    if load_errors:
+        details = "\n\n".join(msg for msg in load_errors if msg)
+        raise ValueError(f"visual scenario load errors:\n{details}")
+    return scenario_map
+
+
+def _collect_orphans(
+    store_label: str,
+    entries: dict[str, FileEntry],
+    valid_scenarios: dict[str, set[str]],
+    *,
+    parse_errors: list[str],
+) -> tuple[list[str], list[tuple[str, Path]]]:
+    orphan_labels: list[str] = []
+    orphan_entries: list[tuple[str, Path]] = []
+    for object_key, entry in sorted(entries.items()):
+        scenario_id = _scenario_id_from_object_key(object_key)
+        if scenario_id is None:
+            parse_errors.append(f"{store_label}:{object_key}: invalid PNG name format")
+            continue
+        suite_id = _safe_segment(str(entry.suite_id).strip())
+        if scenario_id in valid_scenarios.get(suite_id, set()):
+            continue
+        orphan_labels.append(object_key)
+        orphan_entries.append((object_key, entry.absolute_path))
+    return orphan_labels, orphan_entries
+
+
+def _collect_orphans_minio(
+    entries: dict[str, MinioObject],
+    valid_scenarios: dict[str, set[str]],
+    *,
+    parse_errors: list[str],
+) -> tuple[list[str], list[MinioObject]]:
+    orphan_labels: list[str] = []
+    orphan_entries: list[MinioObject] = []
+    for object_key, entry in sorted(entries.items()):
+        scenario_id = _scenario_id_from_object_key(object_key)
+        if scenario_id is None:
+            parse_errors.append(f"minio:{object_key}: invalid PNG name format")
+            continue
+        try:
+            suite_id, _profile, _version, _rest = parse_object_key(object_key)
+        except ValueError:
+            parse_errors.append(f"minio:{object_key}: invalid object key format")
+            continue
+        suite_id = _safe_segment(suite_id)
+        if scenario_id in valid_scenarios.get(suite_id, set()):
+            continue
+        orphan_labels.append(object_key)
+        orphan_entries.append(entry)
+    return orphan_labels, orphan_entries
+
+
+def _scenario_id_from_object_key(object_key: str) -> str | None:
+    try:
+        _suite, _profile, _version, rest = parse_object_key(object_key)
+    except ValueError:
+        return None
+
+    file_name = Path(rest).name
+    if not file_name.lower().endswith(".png"):
+        return None
+    stem = file_name[: -len(".png")]
+    parts = stem.rsplit("__", 2)
+    if len(parts) != 3:
+        return None
+    scenario_id = parts[0].strip()
+    return scenario_id or None
+
+
+def _safe_segment(value: str) -> str:
+    sanitized = _SAFE_SEGMENT.sub("_", str(value).strip().replace("\\", "/").strip("/"))
+    return sanitized or "_"
+
+
+def _remove_local_orphans(orphan_entries: list[tuple[str, Path]], *, dry_run: bool) -> tuple[int, int]:
+    removed = 0
+    failed = 0
+    for object_key, path in orphan_entries:
+        if dry_run:
+            logger.debug(f"RM    {object_key}")
+            removed += 1
+            continue
+        try:
+            path.unlink(missing_ok=True)
+            logger.debug(f"RM    {object_key}")
+            removed += 1
+        except Exception as exc:
+            failed += 1
+            logger.debug(f"FAIL  {object_key}: {exc}")
+    return removed, failed
+
+
+def _remove_minio_orphans(ops: MinioOps, orphan_entries: list[MinioObject], *, dry_run: bool) -> tuple[int, int]:
+    removed = 0
+    failed = 0
+    for entry in orphan_entries:
+        object_key = entry.object_key
+        if dry_run:
+            logger.debug(f"MINIO RM {object_key}")
+            removed += 1
+            continue
+        try:
+            ops.remove_object(object_key)
+            logger.debug(f"MINIO RM {object_key}")
+            removed += 1
+        except Exception as exc:
+            failed += 1
+            logger.debug(f"MINIO FAIL {object_key}: {exc}")
+    return removed, failed
+
+
+def _clean_empty_directories(
+    root: Path,
+    *,
+    profile: str,
+    version: str | None,
+    suites: set[str] | None,
+    dry_run: bool,
+) -> tuple[int, int]:
+    candidate_dirs = _clean_empty_candidates(root, profile=profile, version=version, suites=suites)
+    if not candidate_dirs:
+        return 0, 0
+
+    removed_dirs = 0
+    failed_dirs = 0
+    to_check: set[Path] = set()
+    for candidate in candidate_dirs:
+        resolved = candidate.resolve()
+        if not resolved.is_dir():
+            continue
+        to_check.add(resolved)
+        for descendant in resolved.rglob("*"):
+            if descendant.is_dir():
+                to_check.add(descendant)
+
+    for directory in sorted(to_check, key=lambda path: len(path.parts), reverse=True):
+        if directory == root:
+            continue
+        if not _is_empty_directory(directory):
+            continue
+        rel = directory.relative_to(root)
+        if dry_run:
+            logger.debug(f"RMDR  {rel}")
+            removed_dirs += 1
+            continue
+        try:
+            directory.rmdir()
+            logger.debug(f"RMDR  {rel}")
+            removed_dirs += 1
+        except OSError:
+            failed_dirs += 1
+
+    return removed_dirs, failed_dirs
+
+
+def _clean_empty_candidates(
+    root: Path,
+    *,
+    profile: str,
+    version: str | None,
+    suites: set[str] | None,
+) -> list[Path]:
+    if not root.is_dir():
+        return []
+
+    candidates: set[Path] = set()
+    suite_dirs = sorted(path for path in root.iterdir() if path.is_dir())
+    for suite_dir in suite_dirs:
+        suite_id = suite_dir.name
+        if suites and suite_id not in suites:
+            continue
+        profile_dir = suite_dir / profile
+        if version is None:
+            if profile_dir.is_dir():
+                candidates.add(profile_dir)
+            candidates.add(suite_dir)
+            continue
+
+        version_dir = profile_dir / version
+        if version_dir.is_dir():
+            candidates.add(version_dir)
+        if profile_dir.is_dir():
+            candidates.add(profile_dir)
+        candidates.add(suite_dir)
+
+    return sorted(candidates)
+
+
+def _is_empty_directory(path: Path) -> bool:
+    if not path.is_dir():
+        return False
+    try:
+        next(path.iterdir())
+        return False
+    except StopIteration:
+        return True

@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 from typing import Any, cast
 
-from playwright.sync_api import Page
+from playwright.sync_api import Locator, Page
 
 from framework.env import RuntimeEnv
 from framework.visual.baseline_store import BaselineStore
@@ -210,11 +210,28 @@ class VisualRunner:
         cleanup_ids = _inject_masks(page, list(scenario.mask.selectors), scenario.mask.color)
         try:
             if scenario.capture.capture_type == "element" and scenario.capture.selector:
-                page.locator(scenario.capture.selector).first.screenshot(path=str(output_path))
+                _first_visible_locator(page.locator(scenario.capture.selector)).screenshot(path=str(output_path))
                 return
             page.screenshot(path=str(output_path), full_page=scenario.capture.full_page)
         finally:
             _remove_masks(page, cleanup_ids)
+
+
+def _first_visible_locator(locator: Locator) -> Locator:
+    """Return the first visible match, falling back to the first locator."""
+    try:
+        count = locator.count()
+    except Exception:
+        return locator.first
+
+    for index in range(count):
+        candidate = locator.nth(index)
+        try:
+            if candidate.is_visible():
+                return candidate
+        except Exception:
+            continue
+    return locator.first
 
 
 def _hex_to_rgba(hex_color: str, alpha: float) -> str:

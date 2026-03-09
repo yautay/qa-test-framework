@@ -1,0 +1,40 @@
+[
+  {
+    "id": "vrt-netcorner-wp-carrer-general",
+    "name": "WP kariera",
+    "suite_id": "netcorner/wp/carrer",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-wp-carrer-general-vacancies",
+    "name": "WP kariera / vacancies",
+    "suite_id": "netcorner/wp/carrer",
+    "target_url": "/oferty-pracy",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  }
+]

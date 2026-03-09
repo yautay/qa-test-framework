@@ -8,6 +8,7 @@ from typing import Any, cast
 import pytest
 
 from tools.visual.baseline_ops.executor import execute_ops, plan_copy_ops
+from tools.visual.baseline_ops.lifecycle_ops import _clean_empty_directories, _is_empty_directory
 from tools.visual.baseline_ops.manifest import write_manifest
 from tools.visual.baseline_ops.types import FileEntry
 from tools.visual.baseline_ops.version_copy import apply_version_copy
@@ -346,3 +347,142 @@ def test_sync_minio_does_not_fallback_upload_for_non_missing_source_errors(
 
     assert copied == 0
     assert upload_calls == []
+
+
+def test_is_empty_directory_returns_true_for_empty_dir(tmp_path: Path) -> None:
+    empty_dir = tmp_path / "empty"
+    empty_dir.mkdir()
+    assert _is_empty_directory(empty_dir) is True
+
+
+def test_is_empty_directory_returns_false_for_non_empty_dir(tmp_path: Path) -> None:
+    non_empty_dir = tmp_path / "non_empty"
+    non_empty_dir.mkdir()
+    (non_empty_dir / "file.txt").write_text("content")
+    assert _is_empty_directory(non_empty_dir) is False
+
+
+def test_is_empty_directory_returns_false_for_non_existent_path(tmp_path: Path) -> None:
+    assert _is_empty_directory(tmp_path / "does_not_exist") is False
+
+
+def test_is_empty_directory_returns_false_for_file(tmp_path: Path) -> None:
+    file_path = tmp_path / "file.txt"
+    file_path.write_text("content")
+    assert _is_empty_directory(file_path) is False
+
+
+def test_clean_empty_directories_removes_empty_version_dirs(tmp_path: Path) -> None:
+    root = tmp_path / "baselines"
+    version_dir = root / "suite-1" / "test-ref" / "v1"
+    version_dir.mkdir(parents=True)
+
+    removed, failed = _clean_empty_directories(
+        root,
+        profile="test-ref",
+        version="v1",
+        suites={"suite-1"},
+        dry_run=False,
+    )
+
+    assert removed >= 1
+    assert failed == 0
+    assert not version_dir.exists()
+
+
+def test_clean_empty_directories_removes_empty_profile_dir(tmp_path: Path) -> None:
+    root = tmp_path / "baselines"
+    version_dir = root / "suite-1" / "test-ref" / "v1"
+    version_dir.mkdir(parents=True)
+
+    removed, failed = _clean_empty_directories(
+        root,
+        profile="test-ref",
+        version="v1",
+        suites={"suite-1"},
+        dry_run=False,
+    )
+
+    profile_dir = root / "suite-1" / "test-ref"
+    assert removed >= 1
+    assert failed == 0
+    assert not profile_dir.exists()
+
+
+def test_clean_empty_directories_preserves_non_empty_dirs(tmp_path: Path) -> None:
+    root = tmp_path / "baselines"
+    version_dir = root / "suite-1" / "test-ref" / "v1"
+    version_dir.mkdir(parents=True)
+    (version_dir / "keep.png").write_bytes(b"png")
+
+    removed, failed = _clean_empty_directories(
+        root,
+        profile="test-ref",
+        version="v1",
+        suites={"suite-1"},
+        dry_run=False,
+    )
+
+    assert removed == 0
+    assert failed == 0
+    assert version_dir.exists()
+
+
+def test_clean_empty_directories_dry_run_does_not_remove(tmp_path: Path) -> None:
+    root = tmp_path / "baselines"
+    version_dir = root / "suite-1" / "test-ref" / "v1"
+    version_dir.mkdir(parents=True)
+
+    removed, failed = _clean_empty_directories(
+        root,
+        profile="test-ref",
+        version="v1",
+        suites={"suite-1"},
+        dry_run=True,
+    )
+
+    assert removed == 1
+    assert failed == 0
+    assert version_dir.exists()
+
+
+def test_clean_empty_directories_handles_all_versions(tmp_path: Path) -> None:
+    root = tmp_path / "baselines"
+    v1_dir = root / "suite-1" / "test-ref" / "v1"
+    v2_dir = root / "suite-1" / "test-ref" / "v2"
+    v1_dir.mkdir(parents=True)
+    v2_dir.mkdir(parents=True)
+
+    removed, failed = _clean_empty_directories(
+        root,
+        profile="test-ref",
+        version=None,
+        suites={"suite-1"},
+        dry_run=False,
+    )
+
+    assert removed >= 2
+    assert failed == 0
+    assert not v1_dir.exists()
+    assert not v2_dir.exists()
+
+
+def test_clean_empty_directories_filters_by_suite(tmp_path: Path) -> None:
+    root = tmp_path / "baselines"
+    suite1_dir = root / "suite-1" / "test-ref" / "v1"
+    suite2_dir = root / "suite-2" / "test-ref" / "v1"
+    suite1_dir.mkdir(parents=True)
+    suite2_dir.mkdir(parents=True)
+
+    removed, failed = _clean_empty_directories(
+        root,
+        profile="test-ref",
+        version="v1",
+        suites={"suite-1"},
+        dry_run=False,
+    )
+
+    assert removed >= 1
+    assert failed == 0
+    assert not suite1_dir.exists()
+    assert suite2_dir.exists()

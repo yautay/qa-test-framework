@@ -13,16 +13,17 @@ python tools/visual/debug.py --check-profile release --ask-release-credentials -
 python tools/visual/promote_candidates_local.py --apply
 
 # 2) Create immutable snapshot version
-python tools/visual/version_baselines.py create --from-version latest --to-version 2026-03-03_1 --with-minio --apply --ask-release-credentials
+python tools/visual/version_baselines.py create --from-version latest --to-version 2026-03-03_1 --with-minio --force --ask-release-credentials
 
 # 3) Promote snapshot -> latest (with cleanup)
-python tools/visual/version_baselines.py promote --from-version 2026-03-03_1 --with-minio --prune-missing --apply --ask-release-credentials
+python tools/visual/version_baselines.py promote --from-version 2026-03-03_1 --with-minio --prune-missing --force --ask-release-credentials
 
 # 4) Retention (TTL candidates=7 days, keep 5 versions)
 python tools/visual/retention_baselines.py --with-minio --apply --ask-release-credentials
 
 # 5) Verify
 python tools/visual/version_baselines.py list --with-minio
+python tools/visual/version_baselines.py check --sync-tests --with-minio
 ```
 
 ## 0) Prerequisites
@@ -104,7 +105,7 @@ python tools/visual/version_baselines.py create \
   --from-version latest \
   --to-version 2026-03-03_1 \
   --with-minio \
-  --apply \
+  --force \
   --ask-release-credentials
 ```
 
@@ -125,7 +126,7 @@ python tools/visual/version_baselines.py promote \
   --from-version 2026-03-03_1 \
   --with-minio \
   --prune-missing \
-  --apply \
+  --force \
   --ask-release-credentials
 ```
 
@@ -155,8 +156,13 @@ python tools/visual/retention_baselines.py \
 ## 7) Verify state
 
 ```bash
+# list output now contains per-tag file/size stats and TOTAL
 python tools/visual/version_baselines.py list
 python tools/visual/version_baselines.py list --with-minio
+
+# detect stale baseline PNGs no longer mapped to active scenarios (dry-run)
+python tools/visual/version_baselines.py check --sync-tests
+python tools/visual/version_baselines.py check --sync-tests --with-minio
 ```
 
 Check manifest for promoted version:

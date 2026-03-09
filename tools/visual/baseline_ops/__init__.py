@@ -4,8 +4,11 @@ from .versioning import (
     clean_local_versions,
     list_local_versions,
     list_minio_versions,
+    local_version_stats,
+    minio_version_stats,
     promote_candidates_local,
     recreate_from_minio,
+    sync_tests_with_baselines,
 )
 
 __all__ = [
@@ -14,6 +17,9 @@ __all__ = [
     "clean_local_versions",
     "list_local_versions",
     "list_minio_versions",
+    "local_version_stats",
+    "minio_version_stats",
     "promote_candidates_local",
     "recreate_from_minio",
+    "sync_tests_with_baselines",
 ]

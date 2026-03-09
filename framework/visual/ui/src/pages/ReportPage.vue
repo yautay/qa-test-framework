@@ -93,7 +93,7 @@ import {
   sendBuildReport,
 } from "../lib/api/reportsApi";
 import { NOTE_MAX_LENGTH, normalizeNoteDraft, sanitizeNoteText } from "../lib/notes";
-import { buildReportAssetSrc, buildRefApiSrc } from "../composables/useUrlUtils";
+import { buildReportAssetSrc, buildRefApiSrc, buildScenarioTargetUrl } from "../composables/useUrlUtils";
 import { useSyncAlerts } from "../composables/useSyncAlerts";
 import { fetchAppInfo } from "../lib/api/appInfoApi";
 import { SYNC_POLL_INTERVAL_MS } from "../config/syncConfig";
@@ -133,6 +133,27 @@ function rowKey(row) {
     String(row.viewport || ""),
     String(row.browser || ""),
   ].join("::");
+}
+
+function scenarioTargetEndpoint(row) {
+  if (!row || typeof row !== "object") return "";
+  const metadata = row.test_metadata;
+  if (!metadata || typeof metadata !== "object") return "";
+  const scenario = metadata.scenario;
+  if (!scenario || typeof scenario !== "object") return "";
+  return String(scenario.target_url || "").trim();
+}
+
+function scenarioTargetUrl(row) {
+  if (!row || typeof row !== "object") return "";
+  const metadata = row.test_metadata;
+  if (!metadata || typeof metadata !== "object") return "";
+  const execution = metadata.execution;
+  const baseUrl = execution && typeof execution === "object"
+    ? String(execution.target_base_url || "").trim()
+    : "";
+  const endpoint = scenarioTargetEndpoint(row);
+  return buildScenarioTargetUrl(baseUrl, endpoint);
 }
 
 function resolvePmsPollingConfig(payload) {
@@ -194,6 +215,7 @@ const viewerForModal = computed(() => ({
   modalRow: store.modalRow,
   modalTitle: store.modalTitle,
   modalSubtitle: store.modalSubtitle,
+  modalCaseUrl: store.modalRow ? scenarioTargetUrl(store.modalRow) : "",
   modalRefSrc: store.modalRow ? buildRefApiSrc(props.runId, store.modalRow) : "",
   modalTestSrc: store.modalRow ? buildReportAssetSrc(props.runId, store.modalRow.actual_path) : "",
   modalDiffSrc: store.modalRow ? buildReportAssetSrc(props.runId, store.modalRow.diff_path) : "",
@@ -508,6 +530,10 @@ function buildMetadataPayload(row) {
       ? { ...metadata.execution }
       : {};
   metadata.execution = executionSection;
+  const resolvedTargetUrl = scenarioTargetUrl(source);
+  if (resolvedTargetUrl) {
+    executionSection.target_full_url = resolvedTargetUrl;
+  }
   const runSection = metadata.run && typeof metadata.run === "object" ? { ...metadata.run } : {};
   runSection.run_id = runSection.run_id || props.runId || "";
   runSection.tester = runSection.tester || source.tester || "";

@@ -7,9 +7,39 @@
     "compare_mode": "hybrid",
     "viewport": [
       "fhd",
-      "2k",
-      "4k",
-      "tablet",
+      "tablet"
+    ],
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "[data-name='heroSlider']",
+        "[data-name='offerSection']",
+        "[data-name='newsSlider']",
+        "[data-name='adviceSlider']",
+        "[data-name='TimeCounterDays']",
+        "[data-name='TimeCounterHours']",
+        "[data-name='TimeCounterMinutes']",
+        "[data-name='TimeCounterSeconds']",
+        ".deal-active",
+        "[data-testid='dynamic-banner']"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-full_page-mobile",
+    "name": "Homepage main visual",
+    "suite_id": "netcorner/nuxt/pl/hero_page",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "viewport": [
       "mobile"
     ],
     "capture": {
@@ -19,41 +49,21 @@
     "mask": {
       "selectors": [
         "[data-name='heroSlider']",
-        "[data-name='dailyDeal']",
+        "[data-name='offerSection']",
+        "[data-name='newsSlider']",
+        "[data-name='adviceSlider']",
         "[data-name='TimeCounterDays']",
         "[data-name='TimeCounterHours']",
         "[data-name='TimeCounterMinutes']",
         "[data-name='TimeCounterSeconds']",
-        ".cookie-banner",
+        ".deal-active",
         "[data-testid='dynamic-banner']"
       ]
     },
     "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
-    }
-  },
-  {
-    "id": "vrt-netcorner-nuxt-pl-hero-homepage-hero_slider",
-    "name": "Hero Slider Component",
-    "suite_id": "netcorner/nuxt/pl/hero_page",
-    "target_url": "/",
-    "compare_mode": "hybrid",
-    "capture": {
-      "type": "element",
-      "selector": "[data-name='heroSlider']"
-    },
-    "mask": {
-      "selectors": [
-        ".swiper-wrapper",
-        "[data-name='sliderAutoplayContainer']"
-      ]
-    },
-    "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
     }
   },
   {
@@ -75,9 +85,9 @@
       ]
     },
     "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
+      "pixel_max": 0.025,
+      "lpips_max": 0.025,
+      "dists_max": 0.025
     }
   },
   {
@@ -85,10 +95,15 @@
     "name": "Header Component",
     "suite_id": "netcorner/nuxt/pl/hero_page",
     "target_url": "/",
-    "compare_mode": "pixel",
+    "compare_mode": "hybrid",
     "capture": {
       "type": "element",
       "selector": "[data-name='headerBar']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
     }
   },
   {
@@ -102,34 +117,9 @@
       "selector": "[data-name='navigationBar']"
     },
     "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
-    }
-  },
-  {
-    "id": "vrt-netcorner-nuxt-pl-hero-homepage-recommendations",
-    "name": "Recommendations Component",
-    "suite_id": "netcorner/nuxt/pl/hero_page",
-    "target_url": "/",
-    "compare_mode": "hybrid",
-    "capture": {
-      "type": "element",
-      "selector": "[data-name='recommendations']"
-    },
-    "mask": {
-      "selectors": [
-        ".swiper-wrapper",
-        "[data-name='sliderAutoplayContainer']",
-        "[data-name='cardPhoto']",
-        "[data-name='productPrice']",
-        "[data-name='badge']"
-      ]
-    },
-    "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
     }
   },
   {
@@ -141,75 +131,11 @@
     "capture": {
       "type": "element",
       "selector": "[data-name='subsidiaryBanner']"
-    }
-  },
-  {
-    "id": "vrt-netcorner-nuxt-pl-hero-homepage-offer_section",
-    "name": "Offer Section Component",
-    "suite_id": "netcorner/nuxt/pl/hero_page",
-    "target_url": "/",
-    "compare_mode": "hybrid",
-    "capture": {
-      "type": "element",
-      "selector": "[data-name='offerSection']"
-    },
-    "mask": {
-      "selectors": [
-        ".swiper-wrapper",
-        "[data-name='sliderAutoplayContainer']",
-        "[data-name='cardPhoto']",
-        "[data-name='productPrice']",
-        "[data-name='badge']"
-      ]
     },
     "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
-    }
-  },
-  {
-    "id": "vrt-netcorner-nuxt-pl-hero-homepage-promotions_slider",
-    "name": "Promotions Slider Component",
-    "suite_id": "netcorner/nuxt/pl/hero_page",
-    "target_url": "/",
-    "compare_mode": "hybrid",
-    "capture": {
-      "type": "element",
-      "selector": "[data-name='promotionsSlider']"
-    },
-    "mask": {
-      "selectors": [
-        ".swiper-wrapper",
-        "[data-name='sliderAutoplayContainer']"
-      ]
-    },
-    "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
-    }
-  },
-  {
-    "id": "vrt-netcorner-nuxt-pl-hero-homepage-news_slider",
-    "name": "News Slider Component",
-    "suite_id": "netcorner/nuxt/pl/hero_page",
-    "target_url": "/",
-    "compare_mode": "hybrid",
-    "capture": {
-      "type": "element",
-      "selector": "[data-name='newsSlider']"
-    },
-    "mask": {
-      "selectors": [
-        ".swiper-wrapper",
-        "[data-name='sliderAutoplayContainer']"
-      ]
-    },
-    "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
+      "pixel_max": 0.035,
+      "lpips_max": 0.065,
+      "dists_max": 0.035
     }
   },
   {
@@ -221,6 +147,11 @@
     "capture": {
       "type": "element",
       "selector": "[data-name='services']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
     }
   },
   {
@@ -234,31 +165,9 @@
       "selector": "[data-name='categoryListDesktop']"
     },
     "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
-    }
-  },
-  {
-    "id": "vrt-netcorner-nuxt-pl-hero-homepage-advice_slider",
-    "name": "Advice Slider Component",
-    "suite_id": "netcorner/nuxt/pl/hero_page",
-    "target_url": "/",
-    "compare_mode": "hybrid",
-    "capture": {
-      "type": "element",
-      "selector": "[data-name='adviceSlider']"
-    },
-    "mask": {
-      "selectors": [
-        ".swiper-wrapper",
-        "[data-name='sliderAutoplayContainer']"
-      ]
-    },
-    "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
     }
   },
   {
@@ -272,9 +181,9 @@
       "selector": "[data-name='brandZone']"
     },
     "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
     }
   },
   {
@@ -288,9 +197,9 @@
       "selector": "[data-name='contactUs']"
     },
     "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
+      "pixel_max": 0.025,
+      "lpips_max": 0.008,
+      "dists_max": 0.01
     }
   },
   {
@@ -304,9 +213,9 @@
       "selector": "[data-name='visitUs']"
     },
     "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
     }
   },
   {
@@ -320,9 +229,9 @@
       "selector": "[data-name='newsletterSignup']"
     },
     "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
     }
   },
   {
@@ -336,9 +245,9 @@
       "selector": "[data-name='linksCloud']"
     },
     "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
     }
   },
   {
@@ -352,9 +261,9 @@
       "selector": "[data-name='aboutUs']"
     },
     "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
     }
   },
   {
@@ -368,9 +277,9 @@
       "selector": "[data-name='footer']"
     },
     "thresholds": {
-      "pixel_max": 0.01,
-      "lpips_max": 0.12,
-      "dists_max": 0.12
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
     }
   }
 ]

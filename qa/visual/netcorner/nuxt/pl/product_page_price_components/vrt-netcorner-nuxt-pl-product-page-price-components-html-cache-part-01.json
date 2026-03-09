@@ -1,0 +1,162 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-price-component-products-500000501",
+    "name": "Product 500000501 tests-price-components-price-component-products html-cache",
+    "target_url": "/product/500000501",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-price-component-products-500000502",
+    "name": "Product 500000502 tests-price-components-price-component-products html-cache",
+    "target_url": "/product/500000502",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-price-component-products-500000503",
+    "name": "Product 500000503 tests-price-components-price-component-products html-cache",
+    "target_url": "/product/500000503",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-price-component-products-500000504",
+    "name": "Product 500000504 tests-price-components-price-component-products html-cache",
+    "target_url": "/product/500000504",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-price-component-products-500000505",
+    "name": "Product 500000505 tests-price-components-price-component-products html-cache",
+    "target_url": "/product/500000505",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-price-component-products-500000506",
+    "name": "Product 500000506 tests-price-components-price-component-products html-cache",
+    "target_url": "/product/500000506",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-price-component-products-500000507",
+    "name": "Product 500000507 tests-price-components-price-component-products html-cache",
+    "target_url": "/product/500000507",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-price-component-products-500000508",
+    "name": "Product 500000508 tests-price-components-price-component-products html-cache",
+    "target_url": "/product/500000508",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-price-component-products-500000509",
+    "name": "Product 500000509 tests-price-components-price-component-products html-cache",
+    "target_url": "/product/500000509",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-product-tests-price-components-price-component-products-500000510",
+    "name": "Product 500000510 tests-price-components-price-component-products html-cache",
+    "target_url": "/product/500000510",
+    "suite_id": "netcorner/nuxt/pl/product_page_price_components",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "element",
+      "selector": "[data-name='addToCartWrapper']"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  }
+]

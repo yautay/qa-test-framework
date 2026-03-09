@@ -1,0 +1,154 @@
+[
+  {
+    "id": "vrt-netcorner-wp-nano-general",
+    "name": "WP nano",
+    "suite_id": "netcorner/wp/nano",
+    "target_url": "/",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-wp-nano-general-news",
+    "name": "WP nano / newsy",
+    "suite_id": "netcorner/wp/nano",
+    "target_url": "/newsy",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-wp-nano-general-entertainment",
+    "name": "WP nano / rozrywka",
+    "suite_id": "netcorner/wp/nano",
+    "target_url": "/rozrywka",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-wp-nano-general-guides",
+    "name": "WP nano / poradnik",
+    "suite_id": "netcorner/wp/nano",
+    "target_url": "/poradnik",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-wp-nano-general-ranks",
+    "name": "WP nano / rankingi",
+    "suite_id": "netcorner/wp/nano",
+    "target_url": "/rankingi",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-wp-nano-general-reviews",
+    "name": "WP nano / recenzje",
+    "suite_id": "netcorner/wp/nano",
+    "target_url": "/recenzje",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-wp-nano-general-team",
+    "name": "WP nano / redakcja",
+    "suite_id": "netcorner/wp/nano",
+    "target_url": "/redakcja",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-wp-nano-general-contact",
+    "name": "WP nano / kontakt",
+    "suite_id": "netcorner/wp/nano",
+    "target_url": "/kontakt",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": []
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  }
+]
