@@ -66,7 +66,7 @@ Optional overrides: copy `.env.example` to `.env`.
 
 Key values for regular execution:
 - `BASE_URL` or `BASE_URL_OVERRIDE`
-- `server_type`, `server_name` (in `settings_cli.py`)
+- `server_name` (in `settings_cli.py`)
 - `BROWSER`, `HEADLESS`
 - `VISUAL_ENABLED`
 - `PMS_ENABLED`, `PMS_BASE_URL` (+ throttling knobs in `.env.example`)

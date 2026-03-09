@@ -13,8 +13,8 @@ resolve_pl = url_resolver(
 _REFERENCE_ENV_ALIASES = {"demo", "prod", "local"}
 
 
-def resolve_runtime_base_url(server_type: str, server_name: str) -> str:
-    return resolve_pl(server_type, server_name).rstrip("/")
+def resolve_runtime_base_url(server_name: str) -> str:
+    return resolve_pl(server_name).rstrip("/")
 
 
 def resolve_reference_base_url(reference_host: str) -> tuple[str, str, str]:
@@ -22,5 +22,5 @@ def resolve_reference_base_url(reference_host: str) -> tuple[str, str, str]:
     if not token:
         raise ValueError("reference_host is required for reference pass")
     if token in _REFERENCE_ENV_ALIASES:
-        return resolve_pl(token, "").rstrip("/"), token, "reference_alias"
-    return resolve_pl("test", token).rstrip("/"), token, "reference_host"
+        return resolve_pl(token).rstrip("/"), token, "reference_alias"
+    return resolve_pl(token).rstrip("/"), token, "reference_host"

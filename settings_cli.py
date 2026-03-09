@@ -8,7 +8,6 @@ browser = "chromium"
 is_session_headless = True
 
 # Environment
-server_type = "test"
 server_name = "selenium.alfa"
 reference_host = ""
 base_url_override = ""
