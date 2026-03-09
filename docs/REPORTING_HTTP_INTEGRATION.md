@@ -15,9 +15,10 @@ Use `.env` (recommended for local setup) or system environment variables.
 
 Supported variables:
 - `REPORTING_ENABLED` (`0|1`)
-- `REPORTING_SCHEMA_VERSION` (default `2.0`)
+- `REPORTING_SCHEMA_VERSION` (default `2.1`)
 - `REPORTING_SOURCE_PROJECT`
 - `REPORTING_SOURCE_ORIGIN` (optional override; when empty, framework auto-sets `ci` if `CI` is present, otherwise `local`)
+- `REPORTING_SOURCE_PRODUCER_ID` (optional stable producer/agent id, e.g. hostname)
 - `REPORTING_API_URL`
 - `REPORTING_API_TOKEN` (optional)
 - `REPORTING_API_RUN_START_ENDPOINT`
@@ -33,10 +34,12 @@ Example:
 
 ```env
 REPORTING_ENABLED=1
-REPORTING_SCHEMA_VERSION=2.0
+REPORTING_SCHEMA_VERSION=2.1
 REPORTING_SOURCE_PROJECT=nc-functional-tests-py
 # empty = auto (`ci` when CI env exists, otherwise `local`)
 REPORTING_SOURCE_ORIGIN=
+# empty = fallback to host name
+REPORTING_SOURCE_PRODUCER_ID=
 REPORTING_API_URL=http://127.0.0.1:8080
 REPORTING_API_TOKEN=
 REPORTING_API_RUN_START_ENDPOINT=/test-run/start
@@ -70,7 +73,7 @@ Example:
 - Non-2xx or transport errors are logged as warnings.
 - Retries and timeout are configurable.
 
-## Payload shape (v2)
+## Payload shape (v2.1)
 
 Every event includes common envelope fields:
 - `schema_version`
@@ -78,28 +81,36 @@ Every event includes common envelope fields:
 - `event_type`
 - `event_time_utc`
 - `idempotency_key`
-- `source` (`project`, `framework_version`, `instance_id`, `host`, `user`, `worker_id`, `origin`)
+- `source` (`project`, `framework_version`, `producer_id`, `instance_id`, `host`, `user`, `worker_id`, `origin`)
+- `run_id`
+- `run_uid`
+- `metadata` (`tester`, `run_note`)
+
+`idempotency_key` is stable per semantic event and uses `run_uid` to avoid collisions in multi-device runs:
+- `run_start:{run_uid}:{worker_id}`
+- `test_result:{run_uid}:{nodeid}:{attempt}`
+- `run_finish:{run_uid}:{worker_id}`
 
 `source.framework_version` is resolved automatically from installed package metadata.
 If metadata is unavailable (for example, running from source without installed distribution), value is set to `unknown`.
 
 Run start payload includes:
-- `run_id`
 - `run_started_at`
 - `execution` (`browser`, `headless`, `grid_enabled`, `grid_endpoint`, `viewport`, `profile`)
-- `target` (`server_type`, `server_name`, `base_url`)
+- `target` (`server_name`, `base_url`)
 - `git` (`repo`, `commit`, `branch`, `author_name`, `author_email`)
 
 Test result payload includes:
-- `run_id`
 - `test_id`
 - `nodeid`
 - `status` (`passed|failed|skipped|xfailed|xpassed|error`)
 - `attempt`
+- `is_flaky`
 - `timing` (`started_at`, `finished_at`, `duration_ms`)
 - `scenario`
 - `markers`
 - `artifacts` (trace/video/screenshot metadata list)
+- optional `visual`
 
 On failed tests with screenshot artifacts:
 - client sends `multipart/form-data` to test-result endpoint,
@@ -109,11 +120,11 @@ On failed tests with screenshot artifacts:
 If multipart upload fails, client falls back to plain JSON request.
 
 Run finish payload includes:
-- `run_id`
 - `run_finished_at`
 - `exit_status`
 - `duration_ms`
 - `summary` (`total`, `passed`, `failed`, `skipped`, `xfailed`, `xpassed`, `error`)
+- `quality_signals` (`retry_count`, `flaky_count`, `slow_regression_count`)
 
 ## Variable precedence
 

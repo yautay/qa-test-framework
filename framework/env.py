@@ -76,6 +76,7 @@ class RuntimeEnv:
     reporting_schema_version: str
     reporting_source_project: str
     reporting_source_origin: str
+    reporting_source_producer_id: str
     framework_version: str
     reporting_api_url: str
     reporting_api_token: str
@@ -208,6 +209,10 @@ def load_env() -> RuntimeEnv:
             str(settings.reporting_source_project),
         ),
         reporting_source_origin=reporting_source_origin,
+        reporting_source_producer_id=env_str(
+            "REPORTING_SOURCE_PRODUCER_ID",
+            str(getattr(settings, "reporting_source_producer_id", "")),
+        ).strip(),
         framework_version=_resolve_framework_version(),
         reporting_api_url=env_str("REPORTING_API_URL", settings.reporting_api_url),
         reporting_api_token=env_str("REPORTING_API_TOKEN", settings.reporting_api_token),

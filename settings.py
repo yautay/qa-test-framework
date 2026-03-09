@@ -67,8 +67,9 @@ pms_poll_idle_multiplier = 10.0
 
 # Reporting API
 reporting_enabled = False
-reporting_schema_version = "2.0"
+reporting_schema_version = "2.1"
 reporting_source_project = "netQArner"
+reporting_source_producer_id = ""
 reporting_api_url = "https://toc.cpt-sztos.com"
 reporting_api_token = ""
 reporting_api_run_start_endpoint = "/test-run/start"

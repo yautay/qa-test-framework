@@ -393,6 +393,7 @@ class ReportingClient:
     @staticmethod
     def _log_context_from_payload(payload: dict) -> dict[str, str]:
         run_id = str(payload.get("run_id", "") or "")
+        run_uid = str(payload.get("run_uid", "") or "")
         test_id = str(payload.get("test_id", "") or "")
         event_type = str(payload.get("event_type", "") or "")
 
@@ -403,18 +404,9 @@ class ReportingClient:
         tester = str(metadata.get("tester", "") or "")
         run_note = str(metadata.get("run_note", "") or "")
 
-        if not tester or not run_note:
-            run_context = payload.get("run_context")
-            if isinstance(run_context, dict):
-                run_start = run_context.get("run_start")
-                if isinstance(run_start, dict):
-                    run_meta = run_start.get("metadata")
-                    if isinstance(run_meta, dict):
-                        tester = tester or str(run_meta.get("tester", "") or "")
-                        run_note = run_note or str(run_meta.get("run_note", "") or "")
-
         return {
             "run_id": run_id,
+            "run_uid": run_uid,
             "test_id": test_id,
             "event_type": event_type,
             "tester": tester,

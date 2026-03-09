@@ -70,6 +70,20 @@ def _resolve_shared_run_id(config: pytest.Config) -> str | None:
     return None
 
 
+def _resolve_shared_run_uid(config: pytest.Config) -> str | None:
+    worker_input = getattr(config, "workerinput", None)
+    if isinstance(worker_input, dict):
+        token = str(worker_input.get("run_uid") or "").strip()
+        if token:
+            return token
+    shared_run_uid = str(getattr(config, "_shared_run_uid", "") or "").strip()
+    if shared_run_uid:
+        return shared_run_uid
+    if _is_xdist_worker(config):
+        raise pytest.UsageError("xdist worker missing shared run_uid in workerinput")
+    return None
+
+
 def _load_worker_timing_files(logs_dir: Path) -> dict[str, float]:
     merged: dict[str, float] = {}
     for path in sorted(logs_dir.glob("test_durations_*.json")):
@@ -170,14 +184,64 @@ def _build_source_context(env: RuntimeEnv, worker_id: str) -> dict[str, str]:
     host = socket.gethostname()
     user = os.getenv("USER") or os.getenv("USERNAME") or getpass.getuser()
     instance_id = f"{host}-{user}-{os.getpid()}"
+    producer_id = str(getattr(env, "reporting_source_producer_id", "") or "").strip() or host
     return {
         "project": env.reporting_source_project,
         "framework_version": env.framework_version,
+        "producer_id": producer_id,
         "instance_id": instance_id,
         "host": host,
         "user": user,
         "worker_id": worker_id,
         "origin": env.reporting_source_origin,
+    }
+
+
+def _build_idempotency_key(
+    *,
+    event_type: str,
+    run_uid: str,
+    worker_id: str,
+    test_id: str = "",
+    attempt: int = 1,
+) -> str:
+    token = str(event_type or "").strip().lower()
+    if token == "test_result":
+        return f"test_result:{run_uid}:{test_id}:{int(attempt)}"
+    if token in {"run_start", "run_finish"}:
+        return f"{token}:{run_uid}:{worker_id}"
+    return f"{token}:{run_uid}:{worker_id}"
+
+
+def _build_event_envelope(
+    *,
+    env: RuntimeEnv,
+    run_id: str,
+    run_uid: str,
+    event_type: str,
+    worker_id: str,
+    metadata: dict[str, str],
+    event_time: str | None = None,
+    test_id: str = "",
+    attempt: int = 1,
+) -> dict[str, object]:
+    event_time_utc = str(event_time or _utc_now())
+    return {
+        "schema_version": env.reporting_schema_version,
+        "event_id": str(uuid.uuid4()),
+        "event_type": event_type,
+        "event_time_utc": event_time_utc,
+        "idempotency_key": _build_idempotency_key(
+            event_type=event_type,
+            run_uid=run_uid,
+            worker_id=worker_id,
+            test_id=test_id,
+            attempt=attempt,
+        ),
+        "source": _build_source_context(env, worker_id),
+        "run_id": run_id,
+        "run_uid": run_uid,
+        "metadata": metadata,
     }
 
 
@@ -258,6 +322,10 @@ def pytest_configure(config: pytest.Config) -> None:
     env = replace(load_env(), ignore_https_errors=True)
     artifacts_base_dir = resolve_artifacts_base_dir(env.artifacts_dir, config.rootpath)
     artifacts = build_run_artifacts(str(artifacts_base_dir), run_id=_resolve_shared_run_id(config))
+    run_uid = _resolve_shared_run_uid(config) or str(uuid.uuid4())
+    config._shared_run_uid = run_uid
+    config._run_uid = run_uid
+    os.environ.setdefault("PYTEST_XDIST_RUN_UID", run_uid)
     worker_id = _current_worker_id()
     git_metadata = get_git_metadata()
     run_metadata = _resolve_run_metadata(config)
@@ -303,8 +371,6 @@ def pytest_configure(config: pytest.Config) -> None:
         "xpassed": 0,
         "error": 0,
     }
-    config._run_start_payload = {}
-    config._run_finish_payload = {"finished_at": None, "exit_status": None}
     config._session_started = time.time()
     config._reporting_suspended = any(
         bool(getattr(config.option, attr, False))
@@ -326,6 +392,7 @@ def pytest_configure_node(node) -> None:
     if artifacts is None:
         return
     node.workerinput["run_id"] = artifacts.run_id
+    node.workerinput["run_uid"] = str(getattr(node.config, "_run_uid", "") or "")
 
 
 def pytest_sessionstart(session: pytest.Session) -> None:
@@ -334,15 +401,18 @@ def pytest_sessionstart(session: pytest.Session) -> None:
 
     env: RuntimeEnv = session.config._runtime_env
     artifacts: RunArtifacts = session.config._run_artifacts
+    run_uid = str(getattr(session.config, "_run_uid", "") or "")
+    worker_id = os.getenv("PYTEST_XDIST_WORKER", "master")
     metadata = session.config._git_metadata
     run_start_payload = {
-        "schema_version": env.reporting_schema_version,
-        "event_id": str(uuid.uuid4()),
-        "event_type": "run_start",
-        "event_time_utc": _utc_now(),
-        "idempotency_key": f"run_start:{artifacts.run_id}:{os.getenv('PYTEST_XDIST_WORKER', 'master')}",
-        "source": _build_source_context(env, os.getenv("PYTEST_XDIST_WORKER", "master")),
-        "run_id": artifacts.run_id,
+        **_build_event_envelope(
+            env=env,
+            run_id=artifacts.run_id,
+            run_uid=run_uid,
+            event_type="run_start",
+            worker_id=worker_id,
+            metadata=session.config._run_metadata,
+        ),
         "run_started_at": _utc_now(),
         "execution": {
             "browser": env.browser,
@@ -363,15 +433,14 @@ def pytest_sessionstart(session: pytest.Session) -> None:
             "author_name": metadata.user,
             "author_email": metadata.email,
         },
-        "metadata": session.config._run_metadata,
     }
-    session.config._run_start_payload = run_start_payload
     logger.info("reporting_run_start", run_id=artifacts.run_id, **session.config._run_metadata)
     session.config._reporting_client.run_start(run_start_payload)
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     artifacts: RunArtifacts = session.config._run_artifacts
+    run_uid = str(getattr(session.config, "_run_uid", "") or "")
     timings: dict[str, float] = session.config._test_case_timings
     worker_id = _current_worker_id()
     if _is_xdist_worker(session.config):
@@ -391,16 +460,14 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         logger.warning("test_case_slow_regression", **regression)
 
     run_finish_payload = {
-        "schema_version": session.config._runtime_env.reporting_schema_version,
-        "event_id": str(uuid.uuid4()),
-        "event_type": "run_finish",
-        "event_time_utc": _utc_now(),
-        "idempotency_key": f"run_finish:{artifacts.run_id}:{os.getenv('PYTEST_XDIST_WORKER', 'master')}",
-        "source": _build_source_context(
-            session.config._runtime_env,
-            os.getenv("PYTEST_XDIST_WORKER", "master"),
+        **_build_event_envelope(
+            env=session.config._runtime_env,
+            run_id=artifacts.run_id,
+            run_uid=run_uid,
+            event_type="run_finish",
+            worker_id=os.getenv("PYTEST_XDIST_WORKER", "master"),
+            metadata=session.config._run_metadata,
         ),
-        "run_id": artifacts.run_id,
         "run_finished_at": _utc_now(),
         "exit_status": exitstatus,
         "duration_ms": int(
@@ -412,9 +479,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
             "flaky_count": 0,
             "slow_regression_count": 0,
         },
-        "metadata": session.config._run_metadata,
     }
-    session.config._run_finish_payload = run_finish_payload
     if not getattr(session.config, "_reporting_suspended", False):
         logger.info("reporting_run_finish", run_id=artifacts.run_id, **session.config._run_metadata)
         session.config._reporting_client.run_finish(run_finish_payload)
@@ -452,6 +517,7 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
 
     env: RuntimeEnv = item.config._runtime_env
     run_artifacts: RunArtifacts = item.config._run_artifacts
+    run_uid = str(getattr(item.config, "_run_uid", "") or "")
     status = _derive_test_status(item)
     started_at = item.config._test_case_started_at.get(item.nodeid)
     finished_at = _utc_now()
@@ -489,13 +555,17 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
         )
 
     payload = {
-        "schema_version": env.reporting_schema_version,
-        "event_id": str(uuid.uuid4()),
-        "event_type": "test_result",
-        "event_time_utc": finished_at,
-        "idempotency_key": f"test_result:{run_artifacts.run_id}:{item.nodeid}:1",
-        "source": _build_source_context(env, os.getenv("PYTEST_XDIST_WORKER", "master")),
-        "run_id": run_artifacts.run_id,
+        **_build_event_envelope(
+            env=env,
+            run_id=run_artifacts.run_id,
+            run_uid=run_uid,
+            event_type="test_result",
+            worker_id=os.getenv("PYTEST_XDIST_WORKER", "master"),
+            metadata=item.config._run_metadata,
+            event_time=finished_at,
+            test_id=item.nodeid,
+            attempt=1,
+        ),
         "test_id": item.nodeid,
         "nodeid": item.nodeid,
         "status": status,
@@ -509,11 +579,6 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
         "scenario": scenario,
         "markers": [mark.name for mark in item.iter_markers()],
         "artifacts": artifact_list,
-        "run_context": {
-            "run_start": item.config._run_start_payload,
-            "run_finish": item.config._run_finish_payload,
-        },
-        "metadata": item.config._run_metadata,
     }
 
     visual_payload = getattr(item, "_visual_payload", None)
