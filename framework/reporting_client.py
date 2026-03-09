@@ -14,6 +14,8 @@ from typing import Any, BinaryIO
 import requests
 from loguru import logger
 
+from framework.log_levels import level_to_no, normalize_log_level
+
 
 @dataclass
 class ReportingClient:
@@ -34,26 +36,13 @@ class ReportingClient:
     session: requests.Session = field(default_factory=requests.Session, repr=False)
     _thread_local: threading.local = field(default_factory=threading.local, repr=False)
 
-    _LOG_LEVEL_TO_NO = {
-        "TRACE": 5,
-        "DEBUG": 10,
-        "INFO": 20,
-        "SUCCESS": 25,
-        "WARNING": 30,
-        "ERROR": 40,
-        "CRITICAL": 50,
-    }
-
     @classmethod
     def _normalize_level_name(cls, value: str, default: str = "WARNING") -> str:
-        token = str(value or "").strip().upper()
-        if token == "WARN":
-            token = "WARNING"
-        return token if token in cls._LOG_LEVEL_TO_NO else default
+        return normalize_log_level(value, default=default)
 
     @classmethod
     def _level_no(cls, value: str) -> int:
-        return cls._LOG_LEVEL_TO_NO[cls._normalize_level_name(value)]
+        return level_to_no(value, default="WARNING")
 
     def _should_send_log_level(self, level: str) -> bool:
         threshold = self._level_no(self.log_level)

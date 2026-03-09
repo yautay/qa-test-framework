@@ -48,7 +48,7 @@ def _configure_pdf_fonts() -> tuple[str, str]:
             pdfmetrics.registerFont(TTFont(bold_name, str(bold_path)))
         return regular_name, bold_name
     except Exception:
-        logger.opt(exception=True).warning("unable to register unicode pdf fonts")
+        logger.opt(exception=True).warning("pdf_unicode_fonts_register_failed")
         return _PDF_FONT_REGULAR, _PDF_FONT_BOLD
 
 
@@ -113,7 +113,7 @@ def _draw_image_on_page(pdf: Any, image_path: Path, x: float, y: float, w: float
         pdf.drawImage(reader, draw_x, draw_y, width=draw_w, height=draw_h, preserveAspectRatio=True, mask="auto")
         return True
     except Exception:
-        logger.opt(exception=True).warning("unable to draw image on pdf", image=str(image_path))
+        logger.opt(exception=True).warning("pdf_image_draw_failed", image=str(image_path))
         return False
 
 
@@ -147,7 +147,7 @@ def _load_bug_pdf_config(config_path: Path | None) -> dict[str, Any]:
     try:
         data = json.loads(config_path.read_text(encoding="utf-8"))
     except Exception:
-        logger.warning("bug pdf config invalid json", path=str(config_path))
+        logger.warning("bug_pdf_config_invalid_json", path=str(config_path))
         return cfg
     if not isinstance(data, dict):
         return cfg
@@ -169,7 +169,7 @@ def _generate_bug_pdf(
     if not bug_rows:
         return "", 0
     if not _REPORTLAB_AVAILABLE or canvas is None or _r_pagesizes is None:
-        logger.warning("reportlab not available; BUG pdf was skipped", run_id=run_id)
+        logger.warning("bug_pdf_generation_skipped_reportlab_unavailable", run_id=run_id)
         return "", 0
 
     config = _load_bug_pdf_config(context.bug_pdf_config_path)

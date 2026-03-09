@@ -19,17 +19,17 @@ def ensure_min_fail_video(raw_video: Path, target_video: Path, min_seconds: int)
     """Trim the raw sample to at least `min_seconds`, or keep the full capture if unavailable."""
 
     if not raw_video.is_file():
-        logger.warning("raw video missing; nothing to trim", path=str(raw_video))
+        logger.warning("video_trim_skipped_raw_missing", path=str(raw_video))
         return target_video
 
     if min_seconds <= 0:
-        logger.warning("min_seconds <= 0; preserving full video")
+        logger.warning("video_trim_skipped_invalid_min_seconds", min_seconds=int(min_seconds))
         _safe_move(raw_video, target_video)
         return target_video
 
     ffmpeg_bin = shutil.which("ffmpeg")
     if ffmpeg_bin is None:
-        logger.warning("ffmpeg not found; preserving full video")
+        logger.warning("video_trim_skipped_ffmpeg_missing")
         _safe_move(raw_video, target_video)
         return target_video
 
@@ -56,13 +56,13 @@ def ensure_min_fail_video(raw_video: Path, target_video: Path, min_seconds: int)
             timeout=60,
         )
     except (OSError, subprocess.SubprocessError):
-        logger.opt(exception=True).warning("ffmpeg execution failed; preserving full video")
+        logger.opt(exception=True).warning("video_trim_failed_ffmpeg_execution")
         _safe_move(raw_video, target_video)
         return target_video
 
     if result.returncode != 0:
         logger.warning(
-            "ffmpeg trim failed; preserving full video",
+            "video_trim_failed_non_zero_returncode",
             returncode=result.returncode,
             stderr=result.stderr[-500:] if result.stderr else "",
         )

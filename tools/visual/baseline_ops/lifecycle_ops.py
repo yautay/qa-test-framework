@@ -718,16 +718,16 @@ def _remove_local_orphans(orphan_entries: list[tuple[str, Path]], *, dry_run: bo
     failed = 0
     for object_key, path in orphan_entries:
         if dry_run:
-            logger.debug(f"RM    {object_key}")
+            logger.debug("baseline_orphan_remove_dry_run", object_key=object_key)
             removed += 1
             continue
         try:
             path.unlink(missing_ok=True)
-            logger.debug(f"RM    {object_key}")
+            logger.debug("baseline_orphan_remove_done", object_key=object_key)
             removed += 1
         except Exception as exc:
             failed += 1
-            logger.debug(f"FAIL  {object_key}: {exc}")
+            logger.warning("baseline_orphan_remove_failed", object_key=object_key, error=str(exc))
     return removed, failed
 
 
@@ -737,16 +737,16 @@ def _remove_minio_orphans(ops: MinioOps, orphan_entries: list[MinioObject], *, d
     for entry in orphan_entries:
         object_key = entry.object_key
         if dry_run:
-            logger.debug(f"MINIO RM {object_key}")
+            logger.debug("baseline_minio_orphan_remove_dry_run", object_key=object_key)
             removed += 1
             continue
         try:
             ops.remove_object(object_key)
-            logger.debug(f"MINIO RM {object_key}")
+            logger.debug("baseline_minio_orphan_remove_done", object_key=object_key)
             removed += 1
         except Exception as exc:
             failed += 1
-            logger.debug(f"MINIO FAIL {object_key}: {exc}")
+            logger.warning("baseline_minio_orphan_remove_failed", object_key=object_key, error=str(exc))
     return removed, failed
 
 
@@ -781,15 +781,16 @@ def _clean_empty_directories(
             continue
         rel = directory.relative_to(root)
         if dry_run:
-            logger.debug(f"RMDR  {rel}")
+            logger.debug("baseline_empty_dir_remove_dry_run", relative_path=str(rel))
             removed_dirs += 1
             continue
         try:
             directory.rmdir()
-            logger.debug(f"RMDR  {rel}")
+            logger.debug("baseline_empty_dir_remove_done", relative_path=str(rel))
             removed_dirs += 1
-        except OSError:
+        except OSError as exc:
             failed_dirs += 1
+            logger.warning("baseline_empty_dir_remove_failed", relative_path=str(rel), error=str(exc))
 
     return removed_dirs, failed_dirs
 

@@ -263,7 +263,7 @@ def _build_handler(context: ReportServerContext):
             except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
                 return
             except Exception:
-                logger.opt(exception=True).warning("report server GET failed", path=self.path)
+                logger.opt(exception=True).warning("report_server_get_failed", path=self.path)
                 try:
                     self._send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": "internal server error"})
                 except Exception:
@@ -644,7 +644,7 @@ def _build_handler(context: ReportServerContext):
             except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
                 return
             except Exception:
-                logger.opt(exception=True).warning("report server POST failed", path=self.path)
+                logger.opt(exception=True).warning("report_server_post_failed", path=self.path)
                 try:
                     self._send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": "internal server error"})
                 except Exception:

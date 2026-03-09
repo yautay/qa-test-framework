@@ -1,6 +1,6 @@
 # Audyt logowania (caly repo)
 
-Aktualizacja: 2026-03-06
+Aktualizacja: 2026-03-09
 
 ## 1) Jak dziala logowanie
 
@@ -67,9 +67,9 @@ Legenda destination:
 | `framework/reporting_client.py` | `reporting_api_call_failed` | blad koncowy dla requestu | `ERROR` | runtime sinki; oznaczone `_skip_remote_log` |
 | `framework/reporting_client.py` | `reporting_api_call_final_failure` | wyczerpane wszystkie retry | `CRITICAL` | runtime sinki; oznaczone `_skip_remote_log` |
 | `framework/reporting/report_server/cli.py` | `tools_log_file`, `reporting_config_missing_url` | startup report-server / bledna konfiguracja | `DEBUG/ERROR` | `STDOUT`, `TOOLS_FILE`, opcj. `REPORTING_API_LOG` |
-| `framework/reporting/report_server/routes/handler.py` | `reporting_client_disconnected_before_response`, `reporting_api_disabled_skipping_sync`, `reporting_sync_executor_unavailable`, `report server GET failed`, `report server POST failed` | obsluga HTTP i sync | `DEBUG/WARNING` | `STDOUT`, `TOOLS_FILE`, opcj. `REPORTING_API_LOG` |
+| `framework/reporting/report_server/routes/handler.py` | `reporting_client_disconnected_before_response`, `reporting_api_disabled_skipping_sync`, `reporting_sync_executor_unavailable`, `report_server_get_failed`, `report_server_post_failed` | obsluga HTTP i sync | `DEBUG/WARNING` | `STDOUT`, `TOOLS_FILE`, opcj. `REPORTING_API_LOG` |
 | `framework/reporting/report_server/services/sync.py` | `reporting_sync_skipped_reporting_disabled`, `reporting_outbox_worker_failed` | sync outbox eventow | `DEBUG/WARNING` | `STDOUT`, `TOOLS_FILE`, opcj. `REPORTING_API_LOG` |
-| `framework/reporting/report_server/services/pdf.py` | `bug_pdf_generated` + warningi dot. obrazow/ReportLab/config | generacja PDF BUG | `INFO/WARNING` | `STDOUT`, `TOOLS_FILE`, opcj. `REPORTING_API_LOG` |
+| `framework/reporting/report_server/services/pdf.py` | `bug_pdf_generated`, `bug_pdf_generation_skipped_reportlab_unavailable`, `bug_pdf_config_invalid_json`, `pdf_unicode_fonts_register_failed`, `pdf_image_draw_failed` | generacja PDF BUG | `INFO/WARNING` | `STDOUT`, `TOOLS_FILE`, opcj. `REPORTING_API_LOG` |
 
 ### C) Visual pipeline, PMS, baseline storage, video
 
@@ -80,8 +80,8 @@ Legenda destination:
 | `framework/visual/perceptual/postprocess.py` | `perceptual_incremental_results_flush_failed`, `perceptual_server_queue_snapshot_failed`, `perceptual_job_poll_failed`, `perceptual_job_error_details_failed`, `perceptual_postprocess_unavailable` | degradacja/fallback/retry | `WARNING` | `STDOUT`, `RUN_JSON`, opcj. `REPORTING_API_LOG` |
 | `framework/visual/perceptual/postprocess.py` | `perceptual_job_submit_failed`, `perceptual_job_timeout`, `perceptual_job_failed` | blad operacji joba | `ERROR` | `STDOUT`, `RUN_JSON`, opcj. `REPORTING_API_LOG` |
 | `framework/reporting/clients/pms/pms_client.py` | `pms_healthcheck`, `pms_submit_duplicate`, `pms_heatmap_unavailable`, `pms_healthcheck_failed`, `pms_retry` | klient PMS (submit/poll/retry/health) | `DEBUG/INFO/WARNING` | runtime sinki |
-| `framework/visual/baseline_store.py` | warningi MinIO: brak biblioteki, brak obiektu, download/upload fail | operacje baseline MinIO | `WARNING` | runtime sinki |
-| `framework/video_utils.py` | warningi fallback ffmpeg/video trim | postprocess video failow | `WARNING` | runtime sinki |
+| `framework/visual/baseline_store.py` | `baseline_minio_library_unavailable` + warningi MinIO: brak obiektu, download/upload fail | operacje baseline MinIO | `WARNING` | runtime sinki |
+| `framework/video_utils.py` | `video_trim_skipped_*`, `video_trim_failed_*` | postprocess video failow | `WARNING` | runtime sinki |
 | `qa/visual/netcorner/nuxt/pl/visual_suite.py` | `visual_dual_pass_*`, `runtime_reference_resolved`, `visual_reference_pass_*`, `visual_target_pass_*`, `visual_reference_resolve_failed` | przebieg dual-pass visual | `INFO/ERROR` | `STDOUT`, `RUN_JSON`, opcj. `REPORTING_API_LOG` |
 
 ### D) Narzedzia `tools/*`
@@ -95,8 +95,8 @@ Legenda destination:
 | `tools/visual/retention_baselines.py` | `tools_log_file` | startup skryptu | `DEBUG` | `STDOUT`, `TOOLS_FILE` |
 | `tools/visual/version_baselines.py` | `tools_log_file` | startup skryptu | `DEBUG` | `STDOUT`, `TOOLS_FILE` |
 | `tools/visual/baseline_ops/executor.py` | `baseline_copy_*`, `baseline_remove_*` | plan/execution copy-remove lokalnie | `DEBUG/WARNING` | `STDOUT`, `TOOLS_FILE` |
-| `tools/visual/baseline_ops/lifecycle_ops.py` | `baseline_minio_remove_*`, `baseline_sync_*` | sync/prune lokal+MinIO | `DEBUG/WARNING` | `STDOUT`, `TOOLS_FILE` |
-| `tools/visual/baseline_ops/version_copy.py` | `baseline_minio_copy_*`, `baseline_minio_upload_*`, `baseline_minio_remove_*` | kopiowanie wersji baseline w MinIO | `DEBUG/WARNING` | `STDOUT`, `TOOLS_FILE` |
+| `tools/visual/baseline_ops/lifecycle_ops.py` | `baseline_orphan_remove_*`, `baseline_minio_orphan_remove_*`, `baseline_empty_dir_remove_*`, `baseline_minio_remove_*`, `baseline_sync_*` | sync/prune lokal+MinIO | `DEBUG/WARNING` | `STDOUT`, `TOOLS_FILE` |
+| `tools/visual/baseline_ops/version_copy.py` | `baseline_sync_copy_*`, `baseline_sync_skip_unchanged`, `baseline_minio_copy_*`, `baseline_minio_upload_*`, `baseline_minio_remove_*` | kopiowanie wersji baseline lokalnie i w MinIO | `DEBUG/WARNING` | `STDOUT`, `TOOLS_FILE` |
 
 ## 5) Szybkie wnioski operacyjne
 
@@ -104,3 +104,10 @@ Legenda destination:
 - Najwiekszy wolumen eventow jest w warningach i debugach (transport API, perceptual polling, operacje tools).
 - `REPORTING_API_LOG_LEVEL` kontroluje ile logow trafia na endpoint `/test-run/log`.
 - Logi transportowe `reporting_client.py` sa celowo oznaczane `_skip_remote_log`, wiec nie robia petli zwrotnej przez sink API.
+
+## 6) Ujednolicony standard eventow (wdrozony)
+
+- Event name w `message` jest trzymany w formacie `snake_case` (bez spacji, bez prefiksow typu `COPY/RM/FAIL`).
+- Dane diagnostyczne sa przekazywane jako pola strukturalne (`extra`), np. `source_key`, `target_key`, `error`, `relative_path`.
+- W obszarach `tools/*`, report-server i fallbackach video/PDF usunieto ad-hoc komunikaty tekstowe na rzecz nazwanych eventow.
+- Normalizacja poziomow logow jest wspolna dla runtime i reporting-client (`WARN` -> `WARNING`, walidacja do dozwolonego zbioru).

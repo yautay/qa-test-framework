@@ -238,22 +238,22 @@ def _sync_minio_objects_to_root(
         target_path = target_root / target_key
         target_size = _safe_size(target_path)
         if target_path.is_file() and target_size == source_object.size_bytes:
-            logger.debug(f"SKIP  {target_key} (unchanged)")
+            logger.debug("baseline_sync_skip_unchanged", target_key=target_key)
             skipped += 1
             continue
         if dry_run:
-            logger.debug(f"COPY  {source_key} -> {target_key}")
+            logger.debug("baseline_sync_copy_dry_run", source_key=source_key, target_key=target_key)
             copied += 1
             copied_bytes += source_object.size_bytes
             continue
         try:
             ops.download_file(source_key, target_path)
-            logger.debug(f"COPY  {source_key} -> {target_key}")
+            logger.debug("baseline_sync_copy_done", source_key=source_key, target_key=target_key)
             copied += 1
             copied_bytes += source_object.size_bytes
         except Exception as exc:
             failed += 1
-            logger.debug(f"FAIL  {source_key} -> {target_key}: {exc}")
+            logger.warning("baseline_sync_copy_failed", source_key=source_key, target_key=target_key, error=str(exc))
 
     return OperationSummary(
         copied=copied,
@@ -308,16 +308,16 @@ def _sync_minio_remote(
     for source_key in sorted(source_keys):
         target_key = rewrite_object_key_version(source_key, to_version)
         if dry_run:
-            logger.debug(f"COPY  {source_key} -> {target_key}")
+            logger.debug("baseline_minio_copy_dry_run", source_key=source_key, target_key=target_key)
             copied += 1
             continue
         try:
             ops.copy_object(source_key, target_key)
-            logger.debug(f"COPY  {source_key} -> {target_key}")
+            logger.debug("baseline_minio_copy_done", source_key=source_key, target_key=target_key)
             copied += 1
         except Exception as exc:
             failed += 1
-            logger.debug(f"FAIL  {source_key} -> {target_key}: {exc}")
+            logger.warning("baseline_minio_copy_failed", source_key=source_key, target_key=target_key, error=str(exc))
     if prune_missing:
         target_prefixes = _minio_target_prefixes(profile=profile, version=to_version, suites=suites)
         existing_target_keys: set[str] = set()
@@ -327,16 +327,16 @@ def _sync_minio_remote(
         to_remove = sorted(existing_target_keys - expected_target_keys)
         for object_key in to_remove:
             if dry_run:
-                logger.debug(f"RM    {object_key}")
+                logger.debug("baseline_minio_remove_dry_run", object_key=object_key)
                 removed += 1
                 continue
             try:
                 ops.remove_object(object_key)
-                logger.debug(f"RM    {object_key}")
+                logger.debug("baseline_minio_remove_done", object_key=object_key)
                 removed += 1
             except Exception as exc:
                 failed += 1
-                logger.debug(f"FAIL  {object_key}: {exc}")
+                logger.warning("baseline_minio_remove_failed", object_key=object_key, error=str(exc))
 
     print(
         f"done ({'dry-run' if dry_run else 'apply'}): "

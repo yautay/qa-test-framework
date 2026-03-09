@@ -11,6 +11,7 @@ from typing import Any, cast
 from loguru import logger
 
 import settings
+from framework.log_levels import normalize_log_level
 
 
 _REDACTED = "***REDACTED***"
@@ -47,22 +48,13 @@ Best practices implemented:
 
 
 def _resolve_console_log_level() -> str:
-    """Normalize console log level from env/settings, falling back to INFO."""
-    value = os.getenv("CONSOLE_LOG_LEVEL", getattr(settings, "console_log_level", "INFO"))
-    normalized = str(value).strip().upper()
-    if normalized == "WARN":
-        normalized = "WARNING"
-
-    allowed = {"TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"}
-    return normalized if normalized in allowed else "INFO"
+    """Normalize console log level from env/settings, falling back to WARNING."""
+    value = os.getenv("CONSOLE_LOG_LEVEL", getattr(settings, "console_log_level", "WARNING"))
+    return normalize_log_level(str(value), default="WARNING")
 
 
 def _normalize_log_level(value: str, default: str = "WARNING") -> str:
-    normalized = str(value).strip().upper()
-    if normalized == "WARN":
-        normalized = "WARNING"
-    allowed = {"TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"}
-    return normalized if normalized in allowed else default
+    return normalize_log_level(value, default=default)
 
 
 def _is_sensitive_key(key: str) -> bool:
