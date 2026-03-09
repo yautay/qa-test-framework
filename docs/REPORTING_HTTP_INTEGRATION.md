@@ -112,6 +112,11 @@ Test result payload includes:
 - `artifacts` (trace/video/screenshot metadata list)
 - optional `visual`
 
+When `visual` is present, `visual.execution` includes runtime PMS intent fields:
+- `pms_requested` (hybrid mode + `PMS_ENABLED=1`)
+- `pms_configured` (`PMS_BASE_URL` is not empty)
+- `pms_usage_state` (`deferred|disabled|not_applicable`)
+
 On failed tests with screenshot artifacts:
 - client sends `multipart/form-data` to test-result endpoint,
 - field `payload` contains full JSON payload,
@@ -125,6 +130,14 @@ Run finish payload includes:
 - `duration_ms`
 - `summary` (`total`, `passed`, `failed`, `skipped`, `xfailed`, `xpassed`, `error`)
 - `quality_signals` (`retry_count`, `flaky_count`, `slow_regression_count`)
+
+`quality_signals` can additionally include aggregated PMS usage from perceptual postprocess:
+- `pms_used`
+- `pms_jobs_submitted`
+- `pms_jobs_done`
+- `pms_jobs_error`
+- `pms_jobs_skipped`
+- `pms_unavailable_reason`
 
 ## Variable precedence
 

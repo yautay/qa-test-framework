@@ -34,6 +34,9 @@ def _attach_result_metadata(
     reference_pass_duration_ms: int | None,
     target_pass_duration_ms: int | None,
     dual_pass_total_ms: int | None,
+    pms_requested: bool,
+    pms_configured: bool,
+    pms_usage_state: str,
 ) -> None:
     raw_definition = getattr(scenario, "raw_definition", {})
     if not isinstance(raw_definition, dict):
@@ -87,6 +90,9 @@ def _attach_result_metadata(
             "reference_pass_duration_ms": reference_pass_duration_ms,
             "target_pass_duration_ms": target_pass_duration_ms,
             "dual_pass_total_ms": dual_pass_total_ms,
+            "pms_requested": pms_requested,
+            "pms_configured": pms_configured,
+            "pms_usage_state": pms_usage_state,
         },
         "verdict": result.status,
         "message": result.message,
@@ -105,6 +111,9 @@ def _finalize_result(
     reference_pass_duration_ms: int | None,
     target_pass_duration_ms: int,
     dual_pass_total_ms: int,
+    pms_requested: bool,
+    pms_configured: bool,
+    pms_usage_state: str,
     reference_actual_path: str = "",
     reference_baseline_path: str = "",
 ) -> None:
@@ -139,6 +148,9 @@ def _finalize_result(
             "reference_pass_duration_ms": reference_pass_duration_ms,
             "target_pass_duration_ms": target_pass_duration_ms,
             "dual_pass_total_ms": dual_pass_total_ms,
+            "pms_requested": pms_requested,
+            "pms_configured": pms_configured,
+            "pms_usage_state": pms_usage_state,
         },
         "verdict": result.status,
     }
@@ -200,6 +212,15 @@ def execute_visual_scenario(
     reference_host = str(getattr(runtime_env, "reference_host", "") or "").strip()
     worker_id = _worker_id()
     run_id = str(getattr(getattr(pytestconfig, "_run_artifacts", None), "run_id", "") or "")
+    compare_mode_token = str(getattr(scenario, "compare_mode", "pixel") or "pixel").strip().lower()
+    pms_requested = compare_mode_token == "hybrid" and bool(runtime_env.pms_enabled)
+    pms_configured = bool(str(runtime_env.pms_base_url or "").strip())
+    if compare_mode_token != "hybrid":
+        pms_usage_state = "not_applicable"
+    elif pms_requested and pms_configured:
+        pms_usage_state = "deferred"
+    else:
+        pms_usage_state = "disabled"
 
     if not reference_host:
         logger.info(
@@ -228,6 +249,9 @@ def execute_visual_scenario(
             reference_pass_duration_ms=None,
             target_pass_duration_ms=target_pass_duration_ms,
             dual_pass_total_ms=target_pass_duration_ms,
+            pms_requested=pms_requested,
+            pms_configured=pms_configured,
+            pms_usage_state=pms_usage_state,
         )
         thresholds = result.thresholds
         _finalize_result(
@@ -241,6 +265,9 @@ def execute_visual_scenario(
             reference_pass_duration_ms=None,
             target_pass_duration_ms=target_pass_duration_ms,
             dual_pass_total_ms=target_pass_duration_ms,
+            pms_requested=pms_requested,
+            pms_configured=pms_configured,
+            pms_usage_state=pms_usage_state,
         )
     else:
         logger.info(
@@ -378,6 +405,9 @@ def execute_visual_scenario(
             reference_pass_duration_ms=reference_pass_duration_ms,
             target_pass_duration_ms=target_pass_duration_ms,
             dual_pass_total_ms=dual_pass_total_ms,
+            pms_requested=pms_requested,
+            pms_configured=pms_configured,
+            pms_usage_state=pms_usage_state,
         )
         thresholds = result.thresholds
         _finalize_result(
@@ -391,6 +421,9 @@ def execute_visual_scenario(
             reference_pass_duration_ms=reference_pass_duration_ms,
             target_pass_duration_ms=target_pass_duration_ms,
             dual_pass_total_ms=dual_pass_total_ms,
+            pms_requested=pms_requested,
+            pms_configured=pms_configured,
+            pms_usage_state=pms_usage_state,
             reference_actual_path=reference_result.actual_path,
             reference_baseline_path=str(stored_baseline),
         )

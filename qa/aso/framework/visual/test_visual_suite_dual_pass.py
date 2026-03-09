@@ -122,6 +122,9 @@ def test_execute_visual_scenario_uses_dual_pass_when_reference_host_is_set(monke
     assert payload["execution"]["reference_host"] == "demo"
     assert isinstance(payload["execution"]["reference_pass_duration_ms"], int)
     assert isinstance(payload["execution"]["target_pass_duration_ms"], int)
+    assert payload["execution"]["pms_requested"] is True
+    assert payload["execution"]["pms_configured"] is True
+    assert payload["execution"]["pms_usage_state"] == "deferred"
     assert "visual_reference_actual" in request.node._artifacts_payload
     assert "visual_reference_baseline" in request.node._artifacts_payload
 
@@ -181,4 +184,5 @@ def test_execute_visual_scenario_uses_single_pass_when_reference_host_is_empty(m
     assert visual_results[0].test_metadata["execution"]["target_base_url"] == "https://target.example"
     payload = request.node._visual_payload
     assert payload["execution"]["dual_pass"] is False
+    assert payload["execution"]["pms_usage_state"] in {"deferred", "disabled", "not_applicable"}
     assert "visual_reference_actual" not in request.node._artifacts_payload

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import getpass
+import hashlib
 import json
 import os
 import socket
@@ -9,6 +10,7 @@ import uuid
 from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 from loguru import logger
@@ -267,6 +269,90 @@ def _derive_test_status(item: pytest.Item) -> str:
     return "error"
 
 
+def _sha256_for_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while True:
+            chunk = handle.read(1024 * 1024)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _artifact_entry(kind: str, path: str) -> dict[str, object]:
+    path_token = str(path or "").strip()
+    available = False
+    size_bytes = 0
+    sha256 = ""
+    if path_token:
+        artifact_path = Path(path_token)
+        if artifact_path.is_file():
+            available = True
+            try:
+                size_bytes = int(artifact_path.stat().st_size)
+            except OSError:
+                size_bytes = 0
+            try:
+                sha256 = _sha256_for_file(artifact_path)
+            except OSError:
+                sha256 = ""
+    return {
+        "kind": kind,
+        "path": path_token,
+        "uri": "",
+        "sha256": sha256,
+        "size_bytes": size_bytes,
+        "available": available,
+    }
+
+
+def _deduplicated_markers(item: pytest.Item) -> list[str]:
+    markers = [str(mark.name) for mark in item.iter_markers() if str(mark.name or "").strip()]
+    return list(dict.fromkeys(markers))
+
+
+def _read_perceptual_quality_signals(run_root: Path) -> dict[str, object]:
+    default = {
+        "pms_used": False,
+        "pms_jobs_submitted": 0,
+        "pms_jobs_done": 0,
+        "pms_jobs_error": 0,
+        "pms_jobs_skipped": 0,
+        "pms_unavailable_reason": "",
+    }
+    status_path = run_root / "visual" / "perceptual-status.json"
+    if not status_path.is_file():
+        return default
+    try:
+        payload = json.loads(status_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return default
+    if not isinstance(payload, dict):
+        return default
+
+    def _as_int(value: object) -> int:
+        try:
+            return max(0, int(cast(Any, value)))
+        except (TypeError, ValueError):
+            return 0
+
+    done = _as_int(payload.get("done_count"))
+    error = _as_int(payload.get("error_count"))
+    submitted = _as_int(payload.get("submitted_count", done + error))
+    skipped = _as_int(payload.get("skipped_count"))
+    reason = str(payload.get("unavailable_reason", "") or "")
+    used = bool(payload.get("used", False)) or submitted > 0
+    return {
+        "pms_used": used,
+        "pms_jobs_submitted": submitted,
+        "pms_jobs_done": done,
+        "pms_jobs_error": error,
+        "pms_jobs_skipped": skipped,
+        "pms_unavailable_reason": reason,
+    }
+
+
 def _base_url_resolver(config: pytest.Config):
     env: RuntimeEnv | None = getattr(config, "_runtime_env", None)
     if env is None:
@@ -361,6 +447,7 @@ def pytest_configure(config: pytest.Config) -> None:
     add_reporting_api_sink(config._reporting_client, env.reporting_api_log_level)
     config._test_case_timings = {}
     config._test_case_started_at = {}
+    config._test_case_started_perf = {}
     config._test_case_emitted = set()
     config._result_counters = {
         "total": 0,
@@ -438,6 +525,14 @@ def pytest_sessionstart(session: pytest.Session) -> None:
     session.config._reporting_client.run_start(run_start_payload)
 
 
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item: pytest.Item, call):
+    outcome = yield
+    report = outcome.get_result()
+    setattr(item, f"rep_{report.when}", report)
+
+
+@pytest.hookimpl(trylast=True)
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     artifacts: RunArtifacts = session.config._run_artifacts
     run_uid = str(getattr(session.config, "_run_uid", "") or "")
@@ -478,6 +573,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
             "retry_count": 0,
             "flaky_count": 0,
             "slow_regression_count": 0,
+            **_read_perceptual_quality_signals(artifacts.root),
         },
     }
     if not getattr(session.config, "_reporting_suspended", False):
@@ -490,6 +586,7 @@ def pytest_runtest_protocol(item: pytest.Item, nextitem: pytest.Item | None):
     started = time.perf_counter()
     started_at = _utc_now()
     item.config._test_case_started_at[item.nodeid] = started_at
+    item.config._test_case_started_perf[item.nodeid] = started
     scenario = _get_scenario_description(item)
     item._scenario_description = scenario
     outcome = yield
@@ -522,6 +619,10 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
     started_at = item.config._test_case_started_at.get(item.nodeid)
     finished_at = _utc_now()
     duration_seconds = float(item.config._test_case_timings.get(item.nodeid, 0.0))
+    if duration_seconds <= 0:
+        started_perf = item.config._test_case_started_perf.get(item.nodeid)
+        if isinstance(started_perf, (int, float)):
+            duration_seconds = max(0.0, time.perf_counter() - float(started_perf))
     scenario = getattr(item, "_scenario_description", None)
     artifacts_payload = getattr(item, "_artifacts_payload", {})
     if not isinstance(artifacts_payload, dict):
@@ -543,16 +644,7 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
     for key, path in artifacts_payload.items():
         if not isinstance(path, str):
             continue
-        artifact_list.append(
-            {
-                "kind": kind_map.get(key, "other"),
-                "path": path,
-                "uri": "",
-                "sha256": "",
-                "size_bytes": 0,
-                "available": True,
-            }
-        )
+        artifact_list.append(_artifact_entry(kind_map.get(key, "other"), path))
 
     payload = {
         **_build_event_envelope(
@@ -577,7 +669,7 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
             "duration_ms": int(duration_seconds * 1000),
         },
         "scenario": scenario,
-        "markers": [mark.name for mark in item.iter_markers()],
+        "markers": _deduplicated_markers(item),
         "artifacts": artifact_list,
     }
 
