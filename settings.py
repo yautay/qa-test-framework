@@ -44,8 +44,8 @@ visual_viewport_presets = {
 
 # Visual MinIO
 visual_minio_endpoint = "s3.cpt-sztos.com"
-visual_minio_access_key = "release"
-visual_minio_secret_key = "Bytniebytodbyt"
+visual_minio_access_key = "user"
+visual_minio_secret_key = "nc12345678"
 visual_minio_bucket = "visual-baselines"
 visual_minio_secure = True
 
@@ -66,11 +66,11 @@ pms_poll_interval_ms = 2500
 pms_poll_idle_multiplier = 10.0
 
 # Reporting
-reporting_enabled = False
+reporting_enabled = True
 reporting_schema_version = "2.1"
-reporting_source_project = "netQArner"
+reporting_source_project = "netQArner-michau"
 reporting_source_producer_id = ""
-reporting_api_url = "https://toc.cpt-sztos.com"
+reporting_api_url = "https://127.0.0.1:3001"
 reporting_api_token = ""
 reporting_api_run_start_endpoint = "/test-run/start"
 reporting_api_test_result_endpoint = "/test-run/test-result"
@@ -78,6 +78,6 @@ reporting_api_run_finish_endpoint = "/test-run/finish"
 reporting_api_bug_endpoint = "/test-run/bug-report"
 reporting_api_aso_endpoint = "/test-run/aso-report"
 reporting_api_log_endpoint = "/test-run/log"
-reporting_api_log_level = "WARNING"
+reporting_api_log_level = "INFO"
 reporting_api_timeout_seconds = 5
 reporting_api_retries = 3
