@@ -1,6 +1,6 @@
 # Run metadata
-nn_ticket = "54654"
-run_note = "testy pms"
+nn_ticket = "none"
+run_note = "testy loger"
 tester = "Michal Pielaszkiewicz"
 
 # Execution
@@ -8,7 +8,7 @@ browser = "chromium"
 is_session_headless = True
 
 # Environment
-server_name = "selenium.alfa"
+server_name = "perpetum.gamma"
 reference_host = ""
 base_url_override = ""
 is_grid_available = False
