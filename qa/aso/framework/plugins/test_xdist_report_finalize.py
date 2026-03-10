@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any, cast
 
 import pytest
 
@@ -190,6 +191,12 @@ def test_send_test_result_updates_uses_worker_payload_snapshot(tmp_path: Path, m
     run_root = tmp_path / "artifacts" / "run"
     workers = run_root / "workers" / "gw0"
     workers.mkdir(parents=True)
+    report_dir = run_root / "visual"
+    report_dir.mkdir(parents=True)
+    heatmap_rel = "heatmap/case-a.png"
+    heatmap_file = report_dir / heatmap_rel
+    heatmap_file.parent.mkdir(parents=True, exist_ok=True)
+    heatmap_file.write_bytes(b"heat")
     nodeid = "qa/visual/test_sample.py::test_flow[a]"
     (workers / "test_result_payloads.json").write_text(
         json.dumps(
@@ -205,6 +212,9 @@ def test_send_test_result_updates_uses_worker_payload_snapshot(tmp_path: Path, m
                         "verdict": "analysis",
                         "execution": {"pms_usage_state": "deferred"},
                     },
+                    "artifacts": [
+                        {"kind": "trace", "path": "trace.zip", "available": True},
+                    ],
                 }
             }
         ),
@@ -244,6 +254,8 @@ def test_send_test_result_updates_uses_worker_payload_snapshot(tmp_path: Path, m
         compare_mode="hybrid",
         baseline_path="b.png",
         actual_path="a.png",
+        diff_path="d.png",
+        heatmap_path=heatmap_rel,
         nodeid=nodeid,
     )
     plugin._send_test_result_updates(config, run_root, [result])
@@ -252,3 +264,85 @@ def test_send_test_result_updates_uses_worker_payload_snapshot(tmp_path: Path, m
     payload = client.calls[0]
     assert payload["attempt"] == 2
     assert payload["idempotency_key"] == f"test_result:run-uid-1:{nodeid}:2"
+    artifacts = cast(list[dict[str, Any]], payload["artifacts"])
+    heatmap = next(item for item in artifacts if item.get("kind") == "visual_heatmap")
+    assert heatmap["path"] == heatmap_rel
+    assert heatmap["available"] is True
+    assert heatmap["size_bytes"] == 4
+    assert any(item.get("kind") == "trace" for item in artifacts)
+
+
+def test_send_test_result_updates_marks_missing_heatmap_as_unavailable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_root = tmp_path / "artifacts" / "run-missing"
+    workers = run_root / "workers" / "gw0"
+    workers.mkdir(parents=True)
+    nodeid = "qa/visual/test_sample.py::test_flow[b]"
+    heatmap_rel = "heatmap/missing.png"
+    (workers / "test_result_payloads.json").write_text(
+        json.dumps(
+            {
+                nodeid: {
+                    "event_type": "test_result",
+                    "run_uid": "run-uid-2",
+                    "attempt": 1,
+                    "nodeid": nodeid,
+                    "test_id": nodeid,
+                    "status": "passed",
+                    "visual": {
+                        "verdict": "analysis",
+                        "execution": {"pms_usage_state": "deferred"},
+                    },
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    class _Client:
+        enabled = True
+
+        def __init__(self) -> None:
+            self.calls: list[dict[str, object]] = []
+
+        def test_result(self, payload: dict[str, object]) -> None:
+            self.calls.append(payload)
+
+    client = _Client()
+    config = _config(root=tmp_path)
+    config._run_uid = "run-uid-2"
+    config._run_artifacts = SimpleNamespace(run_id="run-missing")
+    config._reporting_client = client
+
+    monkeypatch.setattr(
+        plugin,
+        "load_env",
+        lambda: SimpleNamespace(
+            reporting_source_project="proj",
+            framework_version="0.1.0",
+            reporting_source_producer_id="",
+            reporting_source_origin="local",
+        ),
+    )
+
+    result = plugin.VisualResult(
+        scenario_id="s-2",
+        status="passed",
+        message="ok",
+        compare_mode="hybrid",
+        baseline_path="b.png",
+        actual_path="a.png",
+        diff_path="d.png",
+        heatmap_path=heatmap_rel,
+        nodeid=nodeid,
+    )
+    plugin._send_test_result_updates(config, run_root, [result])
+
+    payload = client.calls[0]
+    artifacts = cast(list[dict[str, Any]], payload["artifacts"])
+    heatmap = next(item for item in artifacts if item.get("kind") == "visual_heatmap")
+    assert heatmap["path"] == heatmap_rel
+    assert heatmap["available"] is False
+    assert heatmap["size_bytes"] == 0
+    assert heatmap["sha256"] == ""

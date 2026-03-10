@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import socket
+import hashlib
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -18,6 +19,13 @@ from framework.visual.models import VisualResult, VisualThresholds
 from framework.visual.perceptual import prepare_perceptual_placeholders, run_perceptual_postprocess
 from framework.visual.build_metadata import build_visual_build_metadata, write_visual_build_metadata
 from framework.visual.report_builder import write_visual_report, write_visual_results_json
+
+_VISUAL_RESULT_ARTIFACT_KINDS = {
+    "visual_baseline": "baseline_path",
+    "visual_actual": "actual_path",
+    "visual_diff": "diff_path",
+    "visual_heatmap": "heatmap_path",
+}
 
 
 def _is_xdist_controller(config: pytest.Config) -> bool:
@@ -267,6 +275,69 @@ def _build_test_result_idempotency_key(run_uid: str, nodeid: str, attempt: int) 
     return f"test_result:{run_uid}:{nodeid}:{int(attempt)}"
 
 
+def _sha256_for_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while True:
+            chunk = handle.read(1024 * 1024)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _build_artifact_entry(kind: str, raw_path: str, report_dir: Path) -> dict[str, Any]:
+    path_token = str(raw_path or "").strip()
+    available = False
+    size_bytes = 0
+    size_mib = 0.0
+    sha256 = ""
+    if path_token:
+        artifact_path = Path(path_token)
+        if not artifact_path.is_absolute():
+            artifact_path = report_dir / artifact_path
+        if artifact_path.is_file():
+            available = True
+            try:
+                size_bytes = int(artifact_path.stat().st_size)
+                size_mib = round(size_bytes / (1024 * 1024), 3)
+            except OSError:
+                size_bytes = 0
+                size_mib = 0.0
+            try:
+                sha256 = _sha256_for_file(artifact_path)
+            except OSError:
+                sha256 = ""
+    return {
+        "kind": kind,
+        "path": path_token,
+        "uri": "",
+        "sha256": sha256,
+        "size_bytes": size_bytes,
+        "size_mib": size_mib,
+        "available": available,
+    }
+
+
+def _merge_visual_result_artifacts(
+    existing_artifacts: Any,
+    result: VisualResult,
+    report_dir: Path,
+) -> list[dict[str, Any]]:
+    merged: list[dict[str, Any]] = []
+    if isinstance(existing_artifacts, list):
+        for item in existing_artifacts:
+            if not isinstance(item, dict):
+                continue
+            kind = str(item.get("kind") or "").strip()
+            if kind in _VISUAL_RESULT_ARTIFACT_KINDS:
+                continue
+            merged.append(dict(item))
+    for kind, attr_name in _VISUAL_RESULT_ARTIFACT_KINDS.items():
+        merged.append(_build_artifact_entry(kind, str(getattr(result, attr_name, "") or ""), report_dir))
+    return merged
+
+
 def _build_visual_payload_from_result(result: VisualResult, existing_visual: Any) -> dict[str, Any]:
     thresholds = getattr(result, "thresholds", None)
     execution = {}
@@ -321,6 +392,7 @@ def _send_test_result_updates(config: pytest.Config, run_root: Path, results: li
             pass
 
     worker_id = os.getenv("PYTEST_XDIST_WORKER", "master")
+    report_dir = run_root / "visual"
     source = _build_source_context(env, worker_id)
     for result in results:
         nodeid = str(getattr(result, "nodeid", "") or "").strip()
@@ -353,6 +425,7 @@ def _send_test_result_updates(config: pytest.Config, run_root: Path, results: li
         update["nodeid"] = nodeid
         update["status"] = str(getattr(result, "status", "") or base_payload.get("status", "failed"))
         update["visual"] = _build_visual_payload_from_result(result, base_visual)
+        update["artifacts"] = _merge_visual_result_artifacts(base_payload.get("artifacts"), result, report_dir)
 
         logger.info("reporting_test_result_update", run_id=run_id, nodeid=nodeid, status=update["status"])
         reporting_client.test_result(update)
