@@ -81,6 +81,19 @@
     "sendBaseline": "НАДІСЛАТИ BASELINE",
     "sendReport": "ЗВІТ",
     "excludedVisualCases": "Виключені візуальні кейси",
+    "excludedReasons": "Причини виключення",
+    "excludedUnknownReason": "Невідома причина виключення",
+    "excludedRawReason": "Сирий pytest reason",
+    "excludedReasonCodes": {
+      "timeout": "Перевищено час виконання тесту",
+      "assertion_error": "Помилка асерту до візуального знімка",
+      "collection_error": "Помилка колекції тестів",
+      "fixture_teardown_error": "Помилка fixture у teardown",
+      "fixture_setup_error": "Помилка fixture у setup",
+      "test_failed": "Тест завершився помилкою до візуального знімка",
+      "execution_error": "Помилка виконання pytest",
+      "unknown": "Невідома причина виключення"
+    },
     "confirmSend": "Ви впевнені, що хочете надіслати BUG/ASO?",
     "summary": {
       "total": "усього",

@@ -175,6 +175,7 @@ export const useResultsStore = defineStore("results", {
     summary: summaryFor([]),
     buildMetadata: {},
     excludedVisualCases: [],
+    excludedVisualReasonsSummary: [],
 
     runId: "",
     modalOpen: false,
@@ -381,6 +382,9 @@ export const useResultsStore = defineStore("results", {
       this.buildMetadata = normalized;
       const visual = normalized.visual && typeof normalized.visual === "object" ? normalized.visual : {};
       const excluded = Array.isArray(visual.excluded_cases) ? visual.excluded_cases : [];
+      const reasonsSummary = Array.isArray(visual.excluded_reasons_summary)
+        ? visual.excluded_reasons_summary
+        : [];
       this.excludedVisualCases = excluded
         .map((entry) => {
           if (!entry || typeof entry !== "object") return null;
@@ -389,9 +393,23 @@ export const useResultsStore = defineStore("results", {
             status: String(entry.status || ""),
             phase: String(entry.phase || ""),
             reason: String(entry.reason || ""),
+            reasonCode: String(entry.reason_code || ""),
+            reasonTitle: String(entry.reason_title || ""),
+            reasonDetails: String(entry.reason_details || ""),
+            reasonRaw: String(entry.reason_raw || ""),
           };
         })
         .filter((entry) => entry && entry.nodeid);
+      this.excludedVisualReasonsSummary = reasonsSummary
+        .map((entry) => {
+          if (!entry || typeof entry !== "object") return null;
+          return {
+            reasonCode: String(entry.reason_code || ""),
+            reasonTitle: String(entry.reason_title || ""),
+            count: Number(entry.count || 0),
+          };
+        })
+        .filter((entry) => entry && entry.reasonTitle && entry.count > 0);
     },
 
     setFilter(key, value) {

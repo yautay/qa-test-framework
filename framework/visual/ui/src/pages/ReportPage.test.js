@@ -379,9 +379,20 @@ describe("ReportPage", () => {
           excluded_cases: [
             {
               nodeid: "tests/test_checkout.py::test_visual_checkout",
-              status: "skipped",
+              status: "failed",
               phase: "setup",
-              reason: "pytest setup failed",
+              reason: "browser_context fixture failed",
+              reason_code: "fixture_setup_error",
+              reason_title: "Fixture setup error",
+              reason_details: "browser_context fixture failed",
+              reason_raw: "request = <FixtureRequest for <Function test_visual_checkout>>\nbrowser_context fixture failed",
+            },
+          ],
+          excluded_reasons_summary: [
+            {
+              reason_code: "fixture_setup_error",
+              reason_title: "Fixture setup error",
+              count: 1,
             },
           ],
         },
@@ -399,7 +410,10 @@ describe("ReportPage", () => {
     expect(details.exists()).toBe(true);
     expect(details.attributes("open")).toBeUndefined();
     expect(details.find("summary").text()).toContain("Excluded visual cases: 1");
+    expect(details.text()).toContain("Exclusion reasons");
+    expect(details.text()).toContain("Fixture setup error");
     expect(details.text()).toContain("tests/test_checkout.py::test_visual_checkout");
+    expect(details.text()).toContain("Raw pytest reason");
 
     wrapper.unmount();
   });
@@ -432,6 +446,46 @@ describe("ReportPage", () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     expect(wrapper.text()).toContain("skipped: 1");
+
+    wrapper.unmount();
+  });
+
+  it("renders localized reason label from reason code when title is missing", async () => {
+    fetchReportResultsPayload.mockResolvedValueOnce({
+      results: [
+        { scenario_id: "s1", status: "failed", actual_path: "a.png", suite_id: "suite1", viewport: "1920x1080", browser: "chrome" },
+      ],
+      build_metadata: {
+        visual: {
+          excluded_cases: [
+            {
+              nodeid: "tests/test_timeout.py::test_visual_timeout",
+              status: "failed",
+              phase: "call",
+              reason: "timed out while waiting for page",
+              reason_code: "timeout",
+              reason_title: "",
+            },
+          ],
+          excluded_reasons_summary: [
+            {
+              reason_code: "timeout",
+              reason_title: "",
+              count: 1,
+            },
+          ],
+        },
+      },
+    });
+
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-reason-code" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(wrapper.text()).toContain("Timeout during test execution");
 
     wrapper.unmount();
   });

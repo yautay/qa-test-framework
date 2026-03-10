@@ -60,6 +60,17 @@ def test_report_server_endpoints_handle_listing_results_ref_tags_and_baseline_fl
                             "status": "failed",
                             "phase": "setup",
                             "reason": "fixture setup failed: timeout",
+                            "reason_code": "timeout",
+                            "reason_title": "Timeout during test execution",
+                            "reason_details": "fixture setup failed: timeout",
+                            "reason_raw": "fixture setup failed: timeout",
+                        }
+                    ],
+                    "excluded_reasons_summary": [
+                        {
+                            "reason_code": "timeout",
+                            "reason_title": "Timeout during test execution",
+                            "count": 1,
                         }
                     ],
                 }
@@ -101,6 +112,8 @@ def test_report_server_endpoints_handle_listing_results_ref_tags_and_baseline_fl
         status, payload = _http_json(base_url, f"/api/reports/{run_id}/results")
         assert status == 200
         assert payload["build_metadata"]["visual"]["excluded_count"] == 1
+        assert payload["build_metadata"]["visual"]["excluded_cases"][0]["reason_code"] == "timeout"
+        assert payload["build_metadata"]["visual"]["excluded_reasons_summary"][0]["count"] == 1
         assert payload["results"][0]["scenario_id"] == "scenario-1"
         assert payload["results"][0]["tester"] == "jan.k"
         assert payload["results"][0]["run_note"] == "manual smoke"
