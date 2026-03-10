@@ -8,7 +8,7 @@ PYTEST ?= $(PYTHON) -m pytest
 
 .DEFAULT_GOAL := help
 
-.PHONY: help report-serve test test-api test-visual test-e2e test-aso test-smoke check collect lint format format-check typecheck security verify-discovery verify-scenarios clean-artifacts clean-artifacts-older debug-remote-grid-up debug-remote-grid-down debug-minio-up debug-minio-down
+.PHONY: help report-serve test test-api test-visual test-e2e test-aso test-smoke check collect lint format format-check typecheck security verify-discovery verify-scenarios clean clean-artifacts clean-artifacts-older debug-remote-grid-up debug-remote-grid-down debug-minio-up debug-minio-down
 
 help: ## Show this help
 	$(PYTHON) tools/make/make_help.py
@@ -71,7 +71,10 @@ verify-scenarios: ## Weryfikacja scenariuszy
 
 ##@ Helpers
 
-clean-artifacts: ## Usuń wszystkie artefakty
+clean: ## Pelne sprzątanie lokalnych artefaktów i cache
+	$(PYTHON) tools/artifacts/cleanup.py --all
+
+clean-artifacts: ## Usuń artefakty runów, logi tools i common cache
 	$(PYTHON) tools/artifacts/cleanup.py --all
 
 clean-artifacts-older: ## Usuń artefakty starsze niż DAYS (domyślnie 14)

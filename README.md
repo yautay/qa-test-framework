@@ -122,5 +122,6 @@ Windows cleanup:
 - or `powershell -ExecutionPolicy Bypass -File .\tools\windows\cleanup_windows.ps1`
 
 Artifacts cleanup:
-- `make clean-artifacts` (remove all local run artifacts)
+- `make clean` (full local cleanup: run artifacts + tools logs + common caches)
+- `make clean-artifacts` (same as `make clean`)
 - `make clean-artifacts-older DAYS=14` (remove run artifacts older than N days)

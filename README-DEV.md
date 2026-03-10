@@ -98,6 +98,7 @@ Scenario JSON reference and authoring guide: `qa/visual/README.md`
 Artifact cleanup commands:
 
 ```bash
+make clean
 make clean-artifacts
 make clean-artifacts-older DAYS=14
 ```
