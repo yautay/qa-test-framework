@@ -12,12 +12,14 @@
     <div v-if="store.loadError" class="alert alert-danger py-2">{{ store.loadError }}</div>
 
     <div v-if="store.excludedVisualCases.length" class="alert alert-warning py-2">
-      <div class="fw-semibold">Excluded visual cases: {{ store.excludedVisualCases.length }}</div>
-      <ul class="mb-0 mt-1">
-        <li v-for="item in store.excludedVisualCases" :key="item.nodeid" class="small mono">
-          {{ item.nodeid }} - {{ item.reason || `pytest ${item.phase} ${item.status}` }}
-        </li>
-      </ul>
+      <details class="excluded-visual-cases">
+        <summary class="fw-semibold">{{ t('report.excludedVisualCases') }}: {{ store.excludedVisualCases.length }}</summary>
+        <ul class="mb-0 mt-1">
+          <li v-for="item in store.excludedVisualCases" :key="item.nodeid" class="small mono">
+            {{ item.nodeid }} - {{ item.reason || `pytest ${item.phase} ${item.status}` }}
+          </li>
+        </ul>
+      </details>
     </div>
 
     <FiltersPanel />
@@ -937,5 +939,15 @@ onBeforeUnmount(() => {
   padding: 0.5rem;
   background: var(--card-bg);
   border-radius: 0.25rem;
+}
+
+.excluded-visual-cases > summary {
+  cursor: pointer;
+  color: var(--report-excluded-text, var(--warning-emphasis));
+}
+
+.excluded-visual-cases {
+  border-left: 0.2rem solid var(--report-excluded-border, var(--warning));
+  padding-left: 0.5rem;
 }
 </style>

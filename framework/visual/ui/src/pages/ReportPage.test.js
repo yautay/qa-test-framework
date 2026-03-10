@@ -369,6 +369,73 @@ describe("ReportPage", () => {
     wrapper.unmount();
   });
 
+  it("renders excluded visual cases in collapsed details", async () => {
+    fetchReportResultsPayload.mockResolvedValueOnce({
+      results: [
+        { scenario_id: "s1", status: "failed", actual_path: "a.png", suite_id: "suite1", viewport: "1920x1080", browser: "chrome" },
+      ],
+      build_metadata: {
+        visual: {
+          excluded_cases: [
+            {
+              nodeid: "tests/test_checkout.py::test_visual_checkout",
+              status: "skipped",
+              phase: "setup",
+              reason: "pytest setup failed",
+            },
+          ],
+        },
+      },
+    });
+
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-excluded" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    const details = wrapper.find("details.excluded-visual-cases");
+    expect(details.exists()).toBe(true);
+    expect(details.attributes("open")).toBeUndefined();
+    expect(details.find("summary").text()).toContain("Excluded visual cases: 1");
+    expect(details.text()).toContain("tests/test_checkout.py::test_visual_checkout");
+
+    wrapper.unmount();
+  });
+
+  it("includes excluded visual cases in skipped summary count", async () => {
+    fetchReportResultsPayload.mockResolvedValueOnce({
+      results: [
+        { scenario_id: "s1", status: "failed", actual_path: "a.png", suite_id: "suite1", viewport: "1920x1080", browser: "chrome" },
+        { scenario_id: "s2", status: "passed", actual_path: "b.png", suite_id: "suite2", viewport: "1920x1080", browser: "chrome" },
+      ],
+      build_metadata: {
+        visual: {
+          excluded_cases: [
+            {
+              nodeid: "tests/test_home.py::test_visual_home",
+              status: "skipped",
+              phase: "call",
+              reason: "pytest call skipped",
+            },
+          ],
+        },
+      },
+    });
+
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-skipped-merge" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(wrapper.text()).toContain("skipped: 1");
+
+    wrapper.unmount();
+  });
+
   it("shows lock denied state when lock acquire is rejected", async () => {
     acquireBuildLock.mockResolvedValueOnce({ accepted: false, lock: { owner_client_id: "other-client" } });
 

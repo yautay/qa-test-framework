@@ -80,6 +80,7 @@
     "run": "Uruchomienie",
     "sendBaseline": "WYŚLIJ BASELINE",
     "sendReport": "RAPORT",
+    "excludedVisualCases": "Wykluczone przypadki wizualne",
     "confirmSend": "Czy jesteś pewien i chcesz zgłosić BUG/ASO?",
     "summary": {
       "total": "razem",

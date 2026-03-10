@@ -64,6 +64,8 @@ export default {
   --success-emphasis: #0f5132;
   --danger-emphasis: #842029;
   --warning-emphasis: #664d03;
+  --report-excluded-border: #ffc107;
+  --report-excluded-text: #664d03;
 }
 
 [data-theme="dark"] {

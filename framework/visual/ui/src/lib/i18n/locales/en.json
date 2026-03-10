@@ -80,6 +80,7 @@
     "run": "Run",
     "sendBaseline": "SEND BASELINE",
     "sendReport": "REPORT",
+    "excludedVisualCases": "Excluded visual cases",
     "confirmSend": "Are you sure you want to submit BUG/ASO?",
     "summary": {
       "total": "total",

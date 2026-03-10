@@ -80,6 +80,7 @@
     "run": "Запуск",
     "sendBaseline": "НАДІСЛАТИ BASELINE",
     "sendReport": "ЗВІТ",
+    "excludedVisualCases": "Виключені візуальні кейси",
     "confirmSend": "Ви впевнені, що хочете надіслати BUG/ASO?",
     "summary": {
       "total": "усього",
