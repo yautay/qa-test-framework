@@ -68,7 +68,7 @@ pms_poll_idle_multiplier = 10.0
 # Reporting
 reporting_enabled = True
 reporting_schema_version = "2.1"
-reporting_source_project = "netQArner-michau"
+reporting_source_project = "netQArner"
 reporting_source_producer_id = ""
 reporting_api_url = "http://127.0.0.1:3001"
 reporting_api_token = ""

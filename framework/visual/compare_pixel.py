@@ -11,9 +11,9 @@ def compare_images(
     actual_path: Path,
     diff_path: Path,
     *,
-    diff_threshold: int = 20,
-    blur_ksize: int = 5,
-    min_region_area: int = 50,
+    diff_threshold: int = 30,
+    blur_ksize: int = 10,
+    min_region_area: int = 40,
     dilate_iters: int = 1,
     return_bbox_count: bool = False,
 ) -> float | tuple[float, int]:
@@ -81,8 +81,8 @@ def compare_images(
         out = a * 0.35 + r * 0.65
         overlay[sel] = np.clip(out, 0, 255).astype(np.uint8)
 
-    for x, y, w, h in kept_boxes:
-        cv2.rectangle(overlay, (x, y), (x + w, y + h), (0, 0, 255), 2)
+    # for x, y, w, h in kept_boxes:
+    #     cv2.rectangle(overlay, (x, y), (x + w, y + h), (0, 0, 255), 2)
 
     diff_path.parent.mkdir(parents=True, exist_ok=True)
     cv2.imwrite(str(diff_path), overlay)
