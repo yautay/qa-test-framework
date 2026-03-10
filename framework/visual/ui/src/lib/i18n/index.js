@@ -7,12 +7,20 @@ const STORAGE_KEY = "visual-report-locale";
 
 const messages = { en, pl, uk };
 
-const savedLocale =
-  typeof window !== "undefined"
-    ? window.localStorage.getItem(STORAGE_KEY)
-    : null;
+function resolveLocaleFromStorage() {
+  const savedLocale =
+    typeof window !== "undefined"
+      ? window.localStorage.getItem(STORAGE_KEY)
+      : null;
 
-const locale = ref(messages[savedLocale] ? savedLocale : "en");
+  return messages[savedLocale] ? savedLocale : "en";
+}
+
+const locale = ref("en");
+
+export function syncLocaleFromStorage() {
+  locale.value = resolveLocaleFromStorage();
+}
 
 export function setLocale(lang) {
   if (messages[lang]) {
@@ -35,5 +43,7 @@ export function t(key) {
   }
   return value ?? key;
 }
+
+syncLocaleFromStorage();
 
 export { locale };
