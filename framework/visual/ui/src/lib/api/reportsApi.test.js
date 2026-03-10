@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   fetchReportResults,
+  fetchReportResultsPayload,
   fetchReportsList,
   fetchBuildTags,
   postBuildEvent,
@@ -82,6 +83,25 @@ describe("reportsApi", () => {
     const results = await fetchReportResults("run-1");
 
     expect(results).toEqual([]);
+  });
+
+  it("returns report results payload with build metadata", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        response({
+          run_id: "run-1",
+          results: [{ scenario_id: "s-1" }],
+          build_metadata: { visual: { excluded_count: 1 } },
+        })
+      )
+    );
+
+    const payload = await fetchReportResultsPayload("run-1");
+
+    expect(payload.run_id).toBe("run-1");
+    expect(payload.results).toEqual([{ scenario_id: "s-1" }]);
+    expect(payload.build_metadata.visual.excluded_count).toBe(1);
   });
 
   it("fetches build tags", async () => {

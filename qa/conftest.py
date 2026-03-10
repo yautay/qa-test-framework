@@ -269,6 +269,41 @@ def _derive_test_status(item: pytest.Item) -> str:
     return "error"
 
 
+def _extract_pytest_outcome(item: pytest.Item) -> dict[str, str]:
+    reports = {
+        "setup": getattr(item, "rep_setup", None),
+        "call": getattr(item, "rep_call", None),
+        "teardown": getattr(item, "rep_teardown", None),
+    }
+    for phase in ("setup", "call", "teardown"):
+        report = reports.get(phase)
+        if report is None:
+            continue
+        outcome = str(getattr(report, "outcome", "") or "").strip().lower()
+        if outcome in {"passed", ""}:
+            continue
+        longrepr_text = str(getattr(report, "longreprtext", "") or "").strip()
+        if not longrepr_text:
+            try:
+                longrepr_text = str(getattr(report, "longrepr", "") or "").strip()
+            except Exception:
+                longrepr_text = ""
+        first_line = ""
+        for line in longrepr_text.splitlines():
+            token = str(line or "").strip()
+            if token:
+                first_line = token
+                break
+        if not first_line:
+            first_line = f"pytest {phase} {outcome}"
+        return {
+            "phase": phase,
+            "outcome": outcome,
+            "message": first_line[:300],
+        }
+    return {}
+
+
 def _sha256_for_file(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -470,6 +505,11 @@ def pytest_configure(config: pytest.Config) -> None:
         log_level=env.reporting_api_log_level,
         timeout_seconds=env.reporting_api_timeout_seconds,
         retries=env.reporting_api_retries,
+        async_enabled=env.reporting_async_enabled,
+        async_queue_maxsize=env.reporting_async_queue_maxsize,
+        async_max_attempts=env.reporting_async_max_attempts,
+        async_max_retry_age_seconds=env.reporting_async_max_retry_age_seconds,
+        async_flush_timeout_seconds=env.reporting_async_flush_timeout_seconds,
     )
     add_reporting_api_sink(config._reporting_client, env.reporting_api_log_level)
     config._test_case_timings = {}
@@ -607,6 +647,12 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     if not getattr(session.config, "_reporting_suspended", False):
         logger.info("reporting_run_finish", run_id=artifacts.run_id, **session.config._run_metadata)
         session.config._reporting_client.run_finish(run_finish_payload)
+    session.config._reporting_client.flush(
+        timeout_seconds=session.config._runtime_env.reporting_async_flush_timeout_seconds
+    )
+    session.config._reporting_client.shutdown(
+        timeout_seconds=session.config._runtime_env.reporting_async_flush_timeout_seconds
+    )
 
 
 @pytest.hookimpl(hookwrapper=True)
@@ -700,6 +746,10 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
         "markers": _deduplicated_markers(item),
         "artifacts": artifact_list,
     }
+
+    pytest_outcome = _extract_pytest_outcome(item)
+    if pytest_outcome:
+        payload["pytest_outcome"] = pytest_outcome
 
     visual_payload = getattr(item, "_visual_payload", None)
     if isinstance(visual_payload, dict):

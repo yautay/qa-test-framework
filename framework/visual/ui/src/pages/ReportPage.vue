@@ -11,6 +11,15 @@
 
     <div v-if="store.loadError" class="alert alert-danger py-2">{{ store.loadError }}</div>
 
+    <div v-if="store.excludedVisualCases.length" class="alert alert-warning py-2">
+      <div class="fw-semibold">Excluded visual cases: {{ store.excludedVisualCases.length }}</div>
+      <ul class="mb-0 mt-1">
+        <li v-for="item in store.excludedVisualCases" :key="item.nodeid" class="small mono">
+          {{ item.nodeid }} - {{ item.reason || `pytest ${item.phase} ${item.status}` }}
+        </li>
+      </ul>
+    </div>
+
     <FiltersPanel />
     <ResultsTable 
       :rows="store.filteredSorted" 
@@ -84,7 +93,7 @@ import { Modal } from "bootstrap";
 import { getRowTagKey } from "../lib/viewer";
 import { requestBaselineChallengeForRun, sendBaselineSelectionForRun } from "../lib/baselineApi";
 import {
-  fetchReportResults,
+  fetchReportResultsPayload,
   fetchBuildTags,
   postBuildEvent,
   acquireBuildLock,
@@ -265,6 +274,7 @@ async function loadResults() {
   store.loadError = "";
   if (!props.runId) {
     store.setRows([]);
+    store.setBuildMetadata({});
     store.selectedIndex = -1;
     store.loadError = "Missing run id in URL";
     return;
@@ -276,8 +286,9 @@ async function loadResults() {
       : null;
   const selectedKey = rowKey(selectedRow);
   try {
-    const rows = await fetchReportResults(props.runId);
-    store.setRows(rows);
+    const payload = await fetchReportResultsPayload(props.runId);
+    store.setRows(payload.results);
+    store.setBuildMetadata(payload.build_metadata);
     if (store.filteredSorted.length === 0) {
       store.selectedIndex = -1;
       return;
@@ -294,6 +305,7 @@ async function loadResults() {
     }
   } catch (error) {
     store.setRows([]);
+    store.setBuildMetadata({});
     store.selectedIndex = -1;
     store.loadError = `Unable to load results: ${error?.message || "unknown error"}`;
   }

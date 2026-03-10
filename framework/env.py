@@ -89,6 +89,11 @@ class RuntimeEnv:
     reporting_api_log_level: str
     reporting_api_timeout_seconds: int
     reporting_api_retries: int
+    reporting_async_enabled: bool
+    reporting_async_queue_maxsize: int
+    reporting_async_max_attempts: int
+    reporting_async_max_retry_age_seconds: int
+    reporting_async_flush_timeout_seconds: int
     artifacts_dir: str
     allure_enabled: bool
     pytest_html_enabled: bool
@@ -251,6 +256,26 @@ def load_env() -> RuntimeEnv:
         reporting_api_retries=env_int(
             "REPORTING_API_RETRIES",
             settings.reporting_api_retries,
+        ),
+        reporting_async_enabled=env_bool(
+            "REPORTING_ASYNC_ENABLED",
+            bool(settings.reporting_async_enabled),
+        ),
+        reporting_async_queue_maxsize=env_int(
+            "REPORTING_ASYNC_QUEUE_MAXSIZE",
+            int(settings.reporting_async_queue_maxsize),
+        ),
+        reporting_async_max_attempts=env_int(
+            "REPORTING_ASYNC_MAX_ATTEMPTS",
+            int(settings.reporting_async_max_attempts),
+        ),
+        reporting_async_max_retry_age_seconds=env_int(
+            "REPORTING_ASYNC_MAX_RETRY_AGE_SECONDS",
+            int(settings.reporting_async_max_retry_age_seconds),
+        ),
+        reporting_async_flush_timeout_seconds=env_int(
+            "REPORTING_ASYNC_FLUSH_TIMEOUT_SECONDS",
+            int(settings.reporting_async_flush_timeout_seconds),
         ),
         artifacts_dir=env_str("ARTIFACTS_DIR", settings.artifacts_dir),
         allure_enabled=env_bool("ALLURE_ENABLED", bool(settings.allure_enabled)),

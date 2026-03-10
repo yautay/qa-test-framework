@@ -4,10 +4,13 @@ import { mount } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
 vi.mock("../lib/api/reportsApi", () => ({
-  fetchReportResults: vi.fn(async () => [
-    { scenario_id: "s1", status: "failed", actual_path: "a.png", suite_id: "suite1", viewport: "1920x1080", browser: "chrome" },
-    { scenario_id: "s2", status: "passed", actual_path: "b.png", suite_id: "suite2", viewport: "1920x1080", browser: "chrome" },
-  ]),
+  fetchReportResultsPayload: vi.fn(async () => ({
+    results: [
+      { scenario_id: "s1", status: "failed", actual_path: "a.png", suite_id: "suite1", viewport: "1920x1080", browser: "chrome" },
+      { scenario_id: "s2", status: "passed", actual_path: "b.png", suite_id: "suite2", viewport: "1920x1080", browser: "chrome" },
+    ],
+    build_metadata: {},
+  })),
   fetchBuildTags: vi.fn(async () => ({ tags: { test_cases: {} } })),
   postBuildEvent: vi.fn(async () => ({ accepted: true, test_cases: {} })),
   acquireBuildLock: vi.fn(async () => ({ accepted: true, lock: { lock_id: "lock-1" } })),
@@ -43,7 +46,7 @@ vi.mock("bootstrap", () => ({
 }));
 
 import ReportPage from "./ReportPage.vue";
-import { acquireBuildLock, fetchBuildTags, fetchReportResults, sendBuildReport } from "../lib/api/reportsApi";
+import { acquireBuildLock, fetchBuildTags, fetchReportResultsPayload, sendBuildReport } from "../lib/api/reportsApi";
 import { requestBaselineChallengeForRun, sendBaselineSelectionForRun } from "../lib/baselineApi";
 import { useResultsStore } from "../stores/resultsStore";
 import { getRowTagKey } from "../lib/viewer";
@@ -163,7 +166,7 @@ describe("ReportPage", () => {
     wrapper.unmount();
   });
 
-  it("calls fetchReportResults on mount", async () => {
+  it("calls fetchReportResultsPayload on mount", async () => {
     const wrapper = mount(ReportPage, {
       props: { runId: "run-test" },
       global: { plugins: [pinia] },
@@ -171,13 +174,13 @@ describe("ReportPage", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 10));
 
-    expect(fetchReportResults).toHaveBeenCalledWith("run-test");
+    expect(fetchReportResultsPayload).toHaveBeenCalledWith("run-test");
 
     wrapper.unmount();
   });
 
   it("shows empty state when no rows", async () => {
-    fetchReportResults.mockResolvedValueOnce([]);
+    fetchReportResultsPayload.mockResolvedValueOnce({ results: [], build_metadata: {} });
 
     const wrapper = mount(ReportPage, {
       props: { runId: "run-empty" },
@@ -377,7 +380,7 @@ describe("ReportPage", () => {
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     expect(wrapper.text()).toContain("Build is locked by another client.");
-    expect(fetchReportResults).not.toHaveBeenCalled();
+    expect(fetchReportResultsPayload).not.toHaveBeenCalled();
 
     wrapper.unmount();
   });
@@ -719,8 +722,8 @@ describe("ReportPage", () => {
   });
 
   it("shows error message on fetch failure", async () => {
-    const { fetchReportResults } = await import("../lib/api/reportsApi");
-    fetchReportResults.mockRejectedValueOnce(new Error("Network error"));
+    const { fetchReportResultsPayload } = await import("../lib/api/reportsApi");
+    fetchReportResultsPayload.mockRejectedValueOnce(new Error("Network error"));
 
     const wrapper = mount(ReportPage, {
       props: { runId: "run-fail" },
@@ -735,18 +738,21 @@ describe("ReportPage", () => {
   });
 
   it("shows row with test metadata", async () => {
-    const { fetchReportResults } = await import("../lib/api/reportsApi");
-    fetchReportResults.mockResolvedValueOnce([
-      { 
-        scenario_id: "s1", 
-        status: "failed", 
-        actual_path: "a.png",
-        suite_id: "suite1",
-        viewport: "1920x1080",
-        browser: "chrome",
-        test_metadata: { run: { run_id: "run-1", tester: "tester1" } }
-      },
-    ]);
+    const { fetchReportResultsPayload } = await import("../lib/api/reportsApi");
+    fetchReportResultsPayload.mockResolvedValueOnce({
+      results: [
+        {
+          scenario_id: "s1",
+          status: "failed",
+          actual_path: "a.png",
+          suite_id: "suite1",
+          viewport: "1920x1080",
+          browser: "chrome",
+          test_metadata: { run: { run_id: "run-1", tester: "tester1" } }
+        },
+      ],
+      build_metadata: {},
+    });
 
     const wrapper = mount(ReportPage, {
       props: { runId: "run-1" },

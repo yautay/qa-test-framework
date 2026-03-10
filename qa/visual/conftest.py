@@ -15,6 +15,7 @@ from framework.artifacts import RunArtifacts
 from framework.env import RuntimeEnv, load_env
 from framework.visual.models import VisualResult
 from framework.visual.perceptual import prepare_perceptual_placeholders, run_perceptual_postprocess
+from framework.visual.build_metadata import build_visual_build_metadata, write_visual_build_metadata
 from framework.visual.report_builder import write_visual_report, write_visual_results_json
 
 VIEWPORT_PRESETS: dict[str, tuple[int, int]] = settings.visual_viewport_presets
@@ -193,6 +194,10 @@ def visual_results(pytestconfig: pytest.Config) -> list:
         results=results,
     )
     write_visual_report(report_dir, results)
+    payloads_by_nodeid = getattr(pytestconfig, "_test_result_payloads", None)
+    if isinstance(payloads_by_nodeid, dict):
+        metadata = build_visual_build_metadata(results=results, payloads_by_nodeid=payloads_by_nodeid)
+        write_visual_build_metadata(report_dir, metadata)
     if env.pms_enabled:
         try:
             run_perceptual_postprocess(
@@ -209,6 +214,9 @@ def visual_results(pytestconfig: pytest.Config) -> list:
         except Exception as exc:
             logger.exception("reporting_test_result_updates_failed", run_id=str(run_artifacts.run_id), error=str(exc))
         write_visual_report(report_dir, results)
+        if isinstance(payloads_by_nodeid, dict):
+            metadata = build_visual_build_metadata(results=results, payloads_by_nodeid=payloads_by_nodeid)
+            write_visual_build_metadata(report_dir, metadata)
 
 
 @pytest.fixture(scope="session")

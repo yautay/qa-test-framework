@@ -16,6 +16,7 @@ from framework.artifacts import resolve_artifacts_base_dir
 from framework.env import load_env
 from framework.visual.models import VisualResult, VisualThresholds
 from framework.visual.perceptual import prepare_perceptual_placeholders, run_perceptual_postprocess
+from framework.visual.build_metadata import build_visual_build_metadata, write_visual_build_metadata
 from framework.visual.report_builder import write_visual_report, write_visual_results_json
 
 
@@ -387,6 +388,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
 
     env = load_env()
     report_dir = run_root / "visual"
+    payloads_by_nodeid = _load_worker_test_result_payloads(run_root)
     prepare_perceptual_placeholders(
         env=env,
         run_id=str(run_root.name),
@@ -398,6 +400,8 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         write_visual_report(report_dir, merged_results)
     except Exception as exc:
         logger.warning("visual_report_finalize_failed", run_root=str(run_root), error=str(exc))
+    metadata = build_visual_build_metadata(results=merged_results, payloads_by_nodeid=payloads_by_nodeid)
+    write_visual_build_metadata(report_dir, metadata)
 
     if env.pms_enabled:
         try:
@@ -420,3 +424,5 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
             write_visual_report(report_dir, merged_results)
         except Exception as exc:
             logger.warning("visual_report_finalize_failed", run_root=str(run_root), error=str(exc))
+        metadata = build_visual_build_metadata(results=merged_results, payloads_by_nodeid=payloads_by_nodeid)
+        write_visual_build_metadata(report_dir, metadata)

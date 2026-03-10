@@ -7,6 +7,7 @@ from typing import Any
 
 from .context import ReportServerContext
 from .state import _load_state, _save_state, _treat_reporting_disabled_as_success
+from framework.visual.build_metadata import read_visual_build_metadata
 
 _PERCEPTUAL_STATUS = "perceptual-status.json"
 
@@ -39,6 +40,11 @@ def _read_run_metadata(report_dir: Path) -> dict[str, str]:
         "tester": str(data.get("tester", "") or "").strip(),
         "run_note": str(data.get("run_note", "") or "").strip(),
     }
+
+
+def _read_build_metadata(report_dir: Path) -> dict[str, Any]:
+    payload = read_visual_build_metadata(report_dir)
+    return payload if isinstance(payload, dict) else {}
 
 
 def _summarize_perceptual_from_rows(rows: list[dict[str, Any]]) -> dict[str, int]:

@@ -3,7 +3,7 @@ import { summaryFor } from "../lib/format";
 import { normalizeCaseStateSnapshot } from "../lib/notes";
 import { getRowTagKey } from "../lib/viewer";
 import { SYNC_POLL_INTERVAL_MS } from "../config/syncConfig";
-import { fetchBuildTags, fetchReportResults } from "../lib/api/reportsApi";
+import { fetchBuildTags, fetchReportResultsPayload } from "../lib/api/reportsApi";
 
 const NUMERIC_SORT_KEYS = ["pixel_changed_ratio", "lpips", "dists"];
 
@@ -173,6 +173,8 @@ export const useResultsStore = defineStore("results", {
     browser: "",
     sortKey: "scenario_id",
     summary: summaryFor([]),
+    buildMetadata: {},
+    excludedVisualCases: [],
 
     runId: "",
     modalOpen: false,
@@ -372,6 +374,24 @@ export const useResultsStore = defineStore("results", {
           this.currentIndex = null;
         }
       }
+    },
+
+    setBuildMetadata(metadata) {
+      const normalized = metadata && typeof metadata === "object" ? { ...metadata } : {};
+      this.buildMetadata = normalized;
+      const visual = normalized.visual && typeof normalized.visual === "object" ? normalized.visual : {};
+      const excluded = Array.isArray(visual.excluded_cases) ? visual.excluded_cases : [];
+      this.excludedVisualCases = excluded
+        .map((entry) => {
+          if (!entry || typeof entry !== "object") return null;
+          return {
+            nodeid: String(entry.nodeid || ""),
+            status: String(entry.status || ""),
+            phase: String(entry.phase || ""),
+            reason: String(entry.reason || ""),
+          };
+        })
+        .filter((entry) => entry && entry.nodeid);
     },
 
     setFilter(key, value) {
@@ -700,8 +720,9 @@ export const useResultsStore = defineStore("results", {
         };
       }
       try {
-        const rows = await fetchReportResults(this.runId);
-        this.setRows(rows, { reconcileSelection: true });
+        const payload = await fetchReportResultsPayload(this.runId);
+        this.setRows(payload.results, { reconcileSelection: true });
+        this.setBuildMetadata(payload.build_metadata);
         return getPerceptualPollingStats(this.rows);
       } catch (_error) {
         return {

@@ -29,6 +29,11 @@ Supported variables:
 - `REPORTING_API_NOTE_ENDPOINT`
 - `REPORTING_API_TIMEOUT_SECONDS`
 - `REPORTING_API_RETRIES`
+- `REPORTING_ASYNC_ENABLED` (`0|1`)
+- `REPORTING_ASYNC_QUEUE_MAXSIZE`
+- `REPORTING_ASYNC_MAX_ATTEMPTS`
+- `REPORTING_ASYNC_MAX_RETRY_AGE_SECONDS`
+- `REPORTING_ASYNC_FLUSH_TIMEOUT_SECONDS`
 
 Example:
 
@@ -50,6 +55,11 @@ REPORTING_API_ASO_ENDPOINT=/test-run/aso-report
 REPORTING_API_NOTE_ENDPOINT=/test-run/note
 REPORTING_API_TIMEOUT_SECONDS=5
 REPORTING_API_RETRIES=2
+REPORTING_ASYNC_ENABLED=1
+REPORTING_ASYNC_QUEUE_MAXSIZE=1000
+REPORTING_ASYNC_MAX_ATTEMPTS=3
+REPORTING_ASYNC_MAX_RETRY_AGE_SECONDS=30
+REPORTING_ASYNC_FLUSH_TIMEOUT_SECONDS=3
 ```
 
 ## URL building
@@ -72,6 +82,9 @@ Example:
 - API errors never fail tests.
 - Non-2xx or transport errors are logged as warnings.
 - Retries and timeout are configurable.
+- When `REPORTING_ASYNC_ENABLED=1`, events are queued in-memory and sent by background worker.
+- `run_finish` uses highest queue priority and session end triggers flush+shutdown.
+- Setting `REPORTING_API_LOG_LEVEL=DEBUG` enables detailed async queue diagnostics in local logs.
 
 ## Payload shape (v2.1)
 

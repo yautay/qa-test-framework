@@ -39,13 +39,26 @@ export async function fetchReportsList() {
 }
 
 export async function fetchReportResults(runId) {
+  const payload = await fetchReportResultsPayload(runId);
+  return payload.results;
+}
+
+export async function fetchReportResultsPayload(runId) {
   const id = encodeURIComponent(String(runId || "").trim());
   const response = await fetch(`/api/reports/${id}/results`, { cache: "no-store" });
   const payload = await parseJsonResponse(response);
   if (!response.ok) {
     throw new Error(payload?.error || "unable to fetch report results");
   }
-  return Array.isArray(payload?.results) ? payload.results : [];
+  const results = Array.isArray(payload?.results) ? payload.results : [];
+  const buildMetadata = payload?.build_metadata && typeof payload.build_metadata === "object"
+    ? payload.build_metadata
+    : {};
+  return {
+    run_id: String(payload?.run_id || runId || ""),
+    results,
+    build_metadata: buildMetadata,
+  };
 }
 
 export async function fetchBuildTags(runId) {
