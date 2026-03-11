@@ -35,7 +35,7 @@ def _build_parser() -> ArgumentParser:
 
 def main() -> int:
     log_path = configure_tools_logging("retention_baselines")
-    logger.debug(f"tools_log_file={log_path}")
+    logger.debug("tools_log_file", path=str(log_path), script="retention_baselines")
 
     args = _build_parser().parse_args()
     env = load_env()

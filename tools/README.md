@@ -10,7 +10,7 @@ This directory contains helper scripts used by local developers, testers, and CI
   - `Cleanup_Windows.cmd`, `cleanup_windows.ps1`
 - `tools/scenarios/`
   - Scenario catalog tooling.
-  - `verify_scenarios.py`, `scenario_report.py`
+  - `verify_scenarios.py`
 - `tools/hooks/`
   - Local git hooks and installers.
 - `tools/remote/`
@@ -27,7 +27,6 @@ This directory contains helper scripts used by local developers, testers, and CI
 
 ```bash
 make verify-scenarios
-make scenario-report
 make report-serve
 make clean-artifacts
 make clean-visual-baselines

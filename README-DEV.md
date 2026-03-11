@@ -98,6 +98,7 @@ Scenario JSON reference and authoring guide: `qa/visual/README.md`
 Artifact cleanup commands:
 
 ```bash
+make clean
 make clean-artifacts
 make clean-artifacts-older DAYS=14
 ```
@@ -135,9 +136,28 @@ Main defaults:
 
 Important env groups:
 - Runtime/browser/grid: `BROWSER`, `HEADLESS`, `IS_GRID_AVAILABLE`, `GRID_*`
-- Target routing: `BASE_URL`, `BASE_URL_OVERRIDE`, `REFERENCE_HOST` + CLI `--server-type`, `--server-name`
+- Target routing: `BASE_URL`, `BASE_URL_OVERRIDE`, `REFERENCE_HOST` + CLI `--server-name`
 - Reporting v2: `REPORTING_*`
 - Visual baseline and perceptual post-process: `VISUAL_*`, `VISUAL_MINIO_*`, `PMS_*`
+
+Target routing migration (hard cut):
+- Removed: `--server-type` and `settings_cli.server_type`.
+- New model: only `--server-name` (or `settings_cli.server_name`) selects target.
+- Accepted `--server-name` values:
+  - `demo`, `prod`, `local` (fixed environment aliases),
+  - DNS host token (e.g. `weryfikacja.alfa`) for test template URLs.
+- `REFERENCE_HOST` keeps the same selector logic (`demo`/`prod`/`local` or DNS token).
+
+Examples:
+
+```bash
+# old (removed)
+pytest --server-type test --server-name weryfikacja.alfa
+
+# new
+pytest --server-name weryfikacja.alfa
+pytest --server-name demo
+```
 
 Reporting notes:
 - `REPORTING_SOURCE_ORIGIN` can be left empty to auto-detect (`ci` when `CI` exists, otherwise `local`).

@@ -13,7 +13,7 @@ from loguru import logger
 from ..constants import CHALLENGE_TTL_SECONDS
 from ..context import ChallengeEntry, ReportServerContext
 from ..paths import _build_dir, _resolve_actual_png, _safe_run_id_or_error
-from ..reports import _list_reports_payload, _read_results_rows, _read_run_metadata
+from ..reports import _list_reports_payload, _read_build_metadata, _read_results_rows, _read_run_metadata
 from ..services.pdf import _generate_bug_pdf
 from ..services.sync import (
     _apply_event_to_state,
@@ -62,8 +62,13 @@ def _build_handler(context: ReportServerContext):
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
-            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError) as e:
-                logger.debug(f"Client disconnected before response sent: {e}")
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, OSError) as exc:
+                logger.debug(
+                    "reporting_client_disconnected_before_response",
+                    status=status,
+                    error=str(exc),
+                    error_type=type(exc).__name__,
+                )
                 return
 
         def _read_json_body(self) -> dict[str, Any]:
@@ -162,6 +167,7 @@ def _build_handler(context: ReportServerContext):
                     return True
                 rows = _read_results_rows(run_dir)
                 run_metadata = _read_run_metadata(run_dir)
+                build_metadata = _read_build_metadata(run_dir)
                 tester = run_metadata.get("tester", "")
                 run_note = run_metadata.get("run_note", "")
                 enriched_rows: list[dict[str, Any]] = []
@@ -181,7 +187,10 @@ def _build_handler(context: ReportServerContext):
                     row_meta["run"] = run_meta
                     enriched["test_metadata"] = row_meta
                     enriched_rows.append(enriched)
-                self._send_json(HTTPStatus.OK, {"run_id": run_id, "results": enriched_rows})
+                self._send_json(
+                    HTTPStatus.OK,
+                    {"run_id": run_id, "results": enriched_rows, "build_metadata": build_metadata},
+                )
                 return True
 
             m_ref = re.match(r"^/api/reports/([^/]+)/image/ref$", path)
@@ -258,7 +267,7 @@ def _build_handler(context: ReportServerContext):
             except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
                 return
             except Exception:
-                logger.opt(exception=True).warning("report server GET failed", path=self.path)
+                logger.opt(exception=True).warning("report_server_get_failed", path=self.path)
                 try:
                     self._send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": "internal server error"})
                 except Exception:
@@ -639,7 +648,7 @@ def _build_handler(context: ReportServerContext):
             except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
                 return
             except Exception:
-                logger.opt(exception=True).warning("report server POST failed", path=self.path)
+                logger.opt(exception=True).warning("report_server_post_failed", path=self.path)
                 try:
                     self._send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": "internal server error"})
                 except Exception:

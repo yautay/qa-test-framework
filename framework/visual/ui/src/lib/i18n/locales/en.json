@@ -80,6 +80,20 @@
     "run": "Run",
     "sendBaseline": "SEND BASELINE",
     "sendReport": "REPORT",
+    "excludedVisualCases": "Excluded visual cases",
+    "excludedReasons": "Exclusion reasons",
+    "excludedUnknownReason": "Unknown exclusion reason",
+    "excludedRawReason": "Raw pytest reason",
+    "excludedReasonCodes": {
+      "timeout": "Timeout during test execution",
+      "assertion_error": "Assertion failed before visual capture",
+      "collection_error": "Test collection error",
+      "fixture_teardown_error": "Fixture teardown error",
+      "fixture_setup_error": "Fixture setup error",
+      "test_failed": "Test failed before visual capture",
+      "execution_error": "Pytest execution error",
+      "unknown": "Unknown exclusion reason"
+    },
     "confirmSend": "Are you sure you want to submit BUG/ASO?",
     "summary": {
       "total": "total",

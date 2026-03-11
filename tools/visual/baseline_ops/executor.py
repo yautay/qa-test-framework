@@ -41,12 +41,12 @@ def execute_ops(ops: list[CopyOp], *, dry_run: bool) -> OperationSummary:
     for op in ops:
         if op.action == "skip":
             skipped += 1
-            logger.debug(f"SKIP  {op.object_key} ({op.reason})")
+            logger.debug("baseline_copy_skip", object_key=op.object_key, reason=op.reason)
             continue
 
         if op.action == "copy":
             if dry_run:
-                logger.debug(f"COPY  {op.object_key}")
+                logger.debug("baseline_copy_dry_run", object_key=op.object_key)
                 copied += 1
                 copied_bytes += op.size_bytes
                 continue
@@ -57,15 +57,15 @@ def execute_ops(ops: list[CopyOp], *, dry_run: bool) -> OperationSummary:
                 shutil.copyfile(str(op.source), str(op.target))
                 copied += 1
                 copied_bytes += op.size_bytes
-                logger.debug(f"COPY  {op.object_key}")
+                logger.debug("baseline_copy_done", object_key=op.object_key)
             except Exception as exc:
                 failed += 1
-                logger.debug(f"FAIL  {op.object_key}: {exc}")
+                logger.warning("baseline_copy_failed", object_key=op.object_key, error=str(exc))
             continue
 
         if op.action == "remove":
             if dry_run:
-                logger.debug(f"RM    {op.object_key}")
+                logger.debug("baseline_remove_dry_run", object_key=op.object_key)
                 removed += 1
                 removed_bytes += op.size_bytes
                 continue
@@ -73,10 +73,10 @@ def execute_ops(ops: list[CopyOp], *, dry_run: bool) -> OperationSummary:
                 op.target.unlink(missing_ok=True)
                 removed += 1
                 removed_bytes += op.size_bytes
-                logger.debug(f"RM    {op.object_key}")
+                logger.debug("baseline_remove_done", object_key=op.object_key)
             except Exception as exc:
                 failed += 1
-                logger.debug(f"FAIL  {op.object_key}: {exc}")
+                logger.warning("baseline_remove_failed", object_key=op.object_key, error=str(exc))
 
     return OperationSummary(
         copied=copied,

@@ -27,6 +27,8 @@ export const presets = {
     successEmphasis: "#0f5132",
     dangerEmphasis: "#842029",
     warningEmphasis: "#664d03",
+    reportExcludedBorder: "#ffc107",
+    reportExcludedText: "#664d03",
     badgeViewport: {
       default: { bg: "#6c757d", color: "#ffffff" },
       fhd: { bg: "#0d6efd", color: "#ffffff" },
@@ -74,6 +76,8 @@ export const presets = {
     successEmphasis: "#75b798",
     dangerEmphasis: "#ea868f",
     warningEmphasis: "#ffda6a",
+    reportExcludedBorder: "#ffda6a",
+    reportExcludedText: "#ffda6a",
     badgeViewport: {
       default: { bg: "#495057", color: "#f8f9fa" },
       fhd: { bg: "#6ea8fe", color: "#0f172a" },
@@ -121,6 +125,8 @@ export const presets = {
     successEmphasis: "#50fa7b",
     dangerEmphasis: "#ff5555",
     warningEmphasis: "#f1fa8c",
+    reportExcludedBorder: "#f1fa8c",
+    reportExcludedText: "#f1fa8c",
     badgeViewport: {
       default: { bg: "#6272a4", color: "#f8f8f2" },
       fhd: { bg: "#bd93f9", color: "#2f2a46" },
@@ -168,6 +174,8 @@ export const presets = {
     successEmphasis: "#b8bb26",
     dangerEmphasis: "#fb4934",
     warningEmphasis: "#fabd2f",
+    reportExcludedBorder: "#fabd2f",
+    reportExcludedText: "#fabd2f",
     badgeViewport: {
       default: { bg: "#3c3836", color: "#ebdbb2" },
       fhd: { bg: "#fe8019", color: "#1d2021" },
@@ -215,6 +223,8 @@ export const presets = {
     successEmphasis: "#98c379",
     dangerEmphasis: "#e06c75",
     warningEmphasis: "#e5c07b",
+    reportExcludedBorder: "#e5c07b",
+    reportExcludedText: "#e5c07b",
     badgeViewport: {
       default: { bg: "#5c6370", color: "#abb2bf" },
       fhd: { bg: "#61afef", color: "#0b1220" },
@@ -259,9 +269,11 @@ export const presets = {
   successSubtle: "#2c3326",
   dangerSubtle: "#332626",
   warningSubtle: "#332e1a",
-  successEmphasis: "#a6c48a",
-  dangerEmphasis: "#d36a6a",
-  warningEmphasis: "#e0b94a",
+   successEmphasis: "#a6c48a",
+   dangerEmphasis: "#d36a6a",
+   warningEmphasis: "#e0b94a",
+   reportExcludedBorder: "#e0b94a",
+   reportExcludedText: "#e0b94a",
   badgeViewport: {
     default: { bg: "#444b52", color: "#d6d3c4" },
     fhd: { bg: "#c9a227", color: "#1b1e22" },
@@ -309,6 +321,8 @@ export const presets = {
     successEmphasis: "#5e7a52",
     dangerEmphasis: "#8b4a52",
     warningEmphasis: "#a68a3d",
+    reportExcludedBorder: "#ebcb8b",
+    reportExcludedText: "#a68a3d",
     badgeViewport: {
       default: { bg: "#4c566a", color: "#eceff4" },
       fhd: { bg: "#5e81ac", color: "#2e3440" },
@@ -356,6 +370,8 @@ export const presets = {
     successEmphasis: "#5a6b00",
     dangerEmphasis: "#a61d1a",
     warningEmphasis: "#8a6608",
+    reportExcludedBorder: "#b58900",
+    reportExcludedText: "#8a6608",
     badgeViewport: {
       default: { bg: "#93a1a1", color: "#073642" },
       fhd: { bg: "#268bd2", color: "#fdf6e3" },
@@ -403,6 +419,8 @@ export const presets = {
     successEmphasis: "#116329",
     dangerEmphasis: "#a40e26",
     warningEmphasis: "#7d4e00",
+    reportExcludedBorder: "#9a6700",
+    reportExcludedText: "#7d4e00",
     badgeViewport: {
       default: { bg: "#57606a", color: "#f6f8fa" },
       fhd: { bg: "#0969da", color: "#ffffff" },

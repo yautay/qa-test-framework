@@ -87,7 +87,7 @@ Assets are copied file-by-file (not metadata-preserving copy). This avoids cross
 
 ## Logs
 
-- `logs/test_run.log/` - structured Loguru logs (per worker + controller files),
+- `logs/run_<run_id>_<worker>.log` - structured Loguru JSON logs (per worker + controller file),
 - `logs/test_durations_<worker>.json` - worker-local timing snapshots,
 - `logs/test_durations.json` - merged timing snapshot.
 

@@ -48,6 +48,14 @@ function applyTheme(name) {
   root.style.setProperty("--success-emphasis", preset.successEmphasis);
   root.style.setProperty("--danger-emphasis", preset.dangerEmphasis);
   root.style.setProperty("--warning-emphasis", preset.warningEmphasis);
+  root.style.setProperty(
+    "--report-excluded-border",
+    preset.reportExcludedBorder || preset.warning
+  );
+  root.style.setProperty(
+    "--report-excluded-text",
+    preset.reportExcludedText || preset.warningEmphasis || preset.bodyColor
+  );
 
   const viewportPalette = preset.badgeViewport || {};
   const browserPalette = preset.badgeBrowser || {};

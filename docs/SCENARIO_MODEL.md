@@ -15,16 +15,6 @@ Smoke checkout scenarios are defined in code and validated automatically.
 - duplicated scenario IDs,
 - scenario-to-test mapping for full-process smoke cases.
 
-## Reports
-
-`tools/scenarios/scenario_report.py` prints a scenario matrix containing:
-- case id,
-- legacy group,
-- order mode,
-- delivery and payment,
-- time budget,
-- risk and source flow.
-
 ## Optional method-level scenario description
 
 Each pytest test method can include optional business description:

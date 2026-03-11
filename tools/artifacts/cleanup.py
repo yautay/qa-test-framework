@@ -13,9 +13,19 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+import settings
 from framework.logger import configure_tools_logging
 
 ARTIFACTS_DIR = REPO_ROOT / "artifacts"
+TOOLS_LOGS_DIR = (REPO_ROOT / str(getattr(settings, "tools_logs_dir", "tools/logs") or "tools/logs")).resolve()
+COMMON_CACHE_TARGETS = (
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    ".coverage",
+    "htmlcov",
+)
+IGNORE_ROOTS_FOR_R_GLOB = {".git", ".venv", "venv", "node_modules", ".python313"}
 
 
 @dataclass(frozen=True)
@@ -54,21 +64,65 @@ def _is_older_than(path: Path, cutoff_utc: datetime) -> bool:
     return mtime < cutoff_utc
 
 
+def _remove_path(path: Path, dry_run: bool) -> int:
+    size = _dir_size(path) if path.is_dir() else (path.stat().st_size if path.exists() and path.is_file() else 0)
+    size_mib = _bytes_to_mib(size)
+    print(f"remove: {path} ({size_mib:.2f} MiB)")
+    if not dry_run:
+        if path.is_dir():
+            shutil.rmtree(path, ignore_errors=True)
+        else:
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:
+                pass
+    return size
+
+
+def _iter_tools_log_files() -> list[Path]:
+    if not TOOLS_LOGS_DIR.is_dir():
+        return []
+    files: list[Path] = []
+    for pattern in ("*.log", "*.log.*"):
+        for path in TOOLS_LOGS_DIR.glob(pattern):
+            if path.is_file():
+                files.append(path)
+    return sorted(set(files))
+
+
+def _iter_common_cache_paths() -> list[Path]:
+    paths = [(REPO_ROOT / item).resolve() for item in COMMON_CACHE_TARGETS]
+    return [path for path in paths if path.exists()]
+
+
+def _iter_pycache_dirs() -> list[Path]:
+    pycache_dirs: list[Path] = []
+    for path in REPO_ROOT.rglob("__pycache__"):
+        if not path.is_dir():
+            continue
+        rel_parts = path.relative_to(REPO_ROOT).parts
+        if any(part in IGNORE_ROOTS_FOR_R_GLOB for part in rel_parts):
+            continue
+        pycache_dirs.append(path)
+    return sorted(set(pycache_dirs))
+
+
 def cleanup_all(dry_run: bool) -> CleanupResult:
-    dirs = _run_dirs()
+    run_dirs = _run_dirs()
+    tools_log_files = _iter_tools_log_files()
+    cache_paths = _iter_common_cache_paths()
+    pycache_dirs = _iter_pycache_dirs()
+    targets: list[Path] = [*run_dirs, *tools_log_files, *cache_paths, *pycache_dirs]
+
     removed = 0
     removed_bytes = 0
 
-    for run_dir in dirs:
-        size = _dir_size(run_dir)
+    for target in targets:
+        size = _remove_path(target, dry_run=dry_run)
         removed_bytes += size
         removed += 1
-        size_mib = _bytes_to_mib(size)
-        print(f"remove: {run_dir} ({size_mib:.2f} MiB)")
-        if not dry_run:
-            shutil.rmtree(run_dir, ignore_errors=True)
 
-    return CleanupResult(scanned=len(dirs), removed=removed, removed_bytes=removed_bytes)
+    return CleanupResult(scanned=len(targets), removed=removed, removed_bytes=removed_bytes)
 
 
 def cleanup_older(days: int, dry_run: bool) -> CleanupResult:
@@ -92,7 +146,7 @@ def cleanup_older(days: int, dry_run: bool) -> CleanupResult:
 
 
 def _build_parser() -> ArgumentParser:
-    parser = ArgumentParser(description="Clean test artifacts directory")
+    parser = ArgumentParser(description="Clean local test artifacts, logs, and caches")
     parser.add_argument(
         "--days",
         type=int,
@@ -102,7 +156,7 @@ def _build_parser() -> ArgumentParser:
     parser.add_argument(
         "--all",
         action="store_true",
-        help="Remove all run directories under artifacts/",
+        help="Remove run directories, tools logs, and common local caches",
     )
     parser.add_argument(
         "--dry-run",
@@ -114,14 +168,10 @@ def _build_parser() -> ArgumentParser:
 
 def main() -> int:
     log_path = configure_tools_logging("artifacts_cleanup")
-    logger.debug(f"tools_log_file={log_path}")
+    logger.debug("tools_log_file", path=str(log_path), script="artifacts_cleanup")
 
     parser = _build_parser()
     args = parser.parse_args()
-
-    if not ARTIFACTS_DIR.exists():
-        print(f"artifacts directory not found: {ARTIFACTS_DIR}")
-        return 0
 
     if args.all and args.days is not None:
         parser.error("Use either --all or --days, not both")

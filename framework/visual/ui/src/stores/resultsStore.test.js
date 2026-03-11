@@ -4,10 +4,10 @@ import { useResultsStore } from "./resultsStore";
 
 vi.mock("../lib/api/reportsApi", () => ({
   fetchBuildTags: vi.fn(async () => ({ tags: { test_cases: {}, outbox: [] } })),
-  fetchReportResults: vi.fn(async () => []),
+  fetchReportResultsPayload: vi.fn(async () => ({ results: [], build_metadata: {} })),
 }));
 
-import { fetchReportResults } from "../lib/api/reportsApi";
+import { fetchReportResultsPayload } from "../lib/api/reportsApi";
 
 describe("resultsStore", () => {
   let pinia;
@@ -1077,7 +1077,10 @@ describe("resultsStore", () => {
   describe("dynamic results polling", () => {
     it("switches to idle mode when PMS jobs are not pending", async () => {
       vi.useFakeTimers();
-      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "hybrid", perceptual: { status: "done" } }]);
+      fetchReportResultsPayload.mockResolvedValue({
+        results: [{ scenario_id: "s1", compare_mode: "hybrid", perceptual: { status: "done" } }],
+        build_metadata: {},
+      });
 
       const store = useResultsStore();
       store.startPolling("run-1", 200, { pmsPollIntervalMs: 200, pmsPollIdleMultiplier: 3 });
@@ -1091,7 +1094,10 @@ describe("resultsStore", () => {
 
     it("stays active mode when PMS jobs are pending", async () => {
       vi.useFakeTimers();
-      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "hybrid", perceptual: { status: "running" } }]);
+      fetchReportResultsPayload.mockResolvedValue({
+        results: [{ scenario_id: "s1", compare_mode: "hybrid", perceptual: { status: "running" } }],
+        build_metadata: {},
+      });
 
       const store = useResultsStore();
       store.startPolling("run-1", 200, { pmsPollIntervalMs: 200, pmsPollIdleMultiplier: 4 });
@@ -1105,7 +1111,10 @@ describe("resultsStore", () => {
 
     it("stays active mode when compare_mode is missing but perceptual is pending", async () => {
       vi.useFakeTimers();
-      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", perceptual: { status: "running" } }]);
+      fetchReportResultsPayload.mockResolvedValue({
+        results: [{ scenario_id: "s1", perceptual: { status: "running" } }],
+        build_metadata: {},
+      });
 
       const store = useResultsStore();
       store.startPolling("run-1", 200, { pmsPollIntervalMs: 200, pmsPollIdleMultiplier: 4 });
@@ -1119,7 +1128,10 @@ describe("resultsStore", () => {
 
     it("stays active mode when compare_mode is pixel and perceptual is pending", async () => {
       vi.useFakeTimers();
-      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "pixel", perceptual: { status: "running" } }]);
+      fetchReportResultsPayload.mockResolvedValue({
+        results: [{ scenario_id: "s1", compare_mode: "pixel", perceptual: { status: "running" } }],
+        build_metadata: {},
+      });
 
       const store = useResultsStore();
       store.startPolling("run-1", 200, { pmsPollIntervalMs: 200, pmsPollIdleMultiplier: 4 });
@@ -1135,7 +1147,10 @@ describe("resultsStore", () => {
       vi.useFakeTimers();
       document.cookie = "debug=1; path=/";
       const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
-      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "pixel", perceptual: { status: "running" } }]);
+      fetchReportResultsPayload.mockResolvedValue({
+        results: [{ scenario_id: "s1", compare_mode: "pixel", perceptual: { status: "running" } }],
+        build_metadata: {},
+      });
 
       const store = useResultsStore();
       store.startPolling("run-1", 200, { pmsPollIntervalMs: 200, pmsPollIdleMultiplier: 3 });
@@ -1164,7 +1179,10 @@ describe("resultsStore", () => {
     it("does not emit polling debug logs when debug cookie is disabled", async () => {
       vi.useFakeTimers();
       const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
-      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "hybrid", perceptual: { status: "done" } }]);
+      fetchReportResultsPayload.mockResolvedValue({
+        results: [{ scenario_id: "s1", compare_mode: "hybrid", perceptual: { status: "done" } }],
+        build_metadata: {},
+      });
 
       const store = useResultsStore();
       store.startPolling("run-1", 200, { pmsPollIntervalMs: 200, pmsPollIdleMultiplier: 3 });
@@ -1180,7 +1198,10 @@ describe("resultsStore", () => {
       vi.useFakeTimers();
       document.cookie = "debug=1; path=/";
       const debugSpy = vi.spyOn(console, "debug").mockImplementation(() => {});
-      fetchReportResults.mockResolvedValue([{ scenario_id: "s1", compare_mode: "hybrid", perceptual: { status: "done" } }]);
+      fetchReportResultsPayload.mockResolvedValue({
+        results: [{ scenario_id: "s1", compare_mode: "hybrid", perceptual: { status: "done" } }],
+        build_metadata: {},
+      });
 
       const store = useResultsStore();
       store.startPolling("run-1", 200, { pmsPollIntervalMs: 200, pmsPollIdleMultiplier: 3 });

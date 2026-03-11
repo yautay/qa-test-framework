@@ -202,6 +202,10 @@ def _write_perceptual_status(
     done_count: int,
     error_count: int,
     in_progress: bool,
+    submitted_count: int = 0,
+    skipped_count: int = 0,
+    used: bool = False,
+    unavailable_reason: str = "",
 ) -> None:
     report_dir.mkdir(parents=True, exist_ok=True)
     payload = {
@@ -210,6 +214,10 @@ def _write_perceptual_status(
         "pending_count": max(0, int(pending_count)),
         "done_count": max(0, int(done_count)),
         "error_count": max(0, int(error_count)),
+        "submitted_count": max(0, int(submitted_count)),
+        "skipped_count": max(0, int(skipped_count)),
+        "used": bool(used),
+        "unavailable_reason": str(unavailable_reason or ""),
         "in_progress": bool(in_progress),
     }
     target = report_dir / PERCEPTUAL_STATUS_FILENAME
@@ -218,14 +226,16 @@ def _write_perceptual_status(
     temp.replace(target)
 
 
-def _prepare_pending_jobs(env: RuntimeEnv, run_id: str, results: list[VisualResult]) -> list[_PairJob]:
+def _prepare_pending_jobs(env: RuntimeEnv, run_id: str, results: list[VisualResult]) -> tuple[list[_PairJob], int]:
     pending: list[_PairJob] = []
+    skipped_count = 0
     for result in results:
         if not _expects_perceptual(result):
             continue
         baseline = Path(str(result.baseline_path or "").strip())
         actual = Path(str(result.actual_path or "").strip())
         if not baseline.is_file() or not actual.is_file():
+            skipped_count += 1
             _upsert_perceptual(
                 result,
                 {
@@ -268,7 +278,7 @@ def _prepare_pending_jobs(env: RuntimeEnv, run_id: str, results: list[VisualResu
             },
         )
         logger.debug("perceptual_pair_queued", run_id=run_id, pair_id=pair_id, job_id=job_id)
-    return pending
+    return pending, skipped_count
 
 
 def prepare_perceptual_placeholders(
@@ -276,7 +286,7 @@ def prepare_perceptual_placeholders(
 ) -> None:
     if not env.pms_enabled:
         return
-    pending = _prepare_pending_jobs(env, run_id, results)
+    pending, skipped_count = _prepare_pending_jobs(env, run_id, results)
     total_count = len(pending)
     _write_perceptual_status(
         report_dir,
@@ -285,6 +295,9 @@ def prepare_perceptual_placeholders(
         done_count=0,
         error_count=0,
         in_progress=total_count > 0,
+        submitted_count=0,
+        skipped_count=skipped_count,
+        used=False,
     )
 
 
@@ -322,7 +335,19 @@ def run_perceptual_postprocess(
     if not client.enabled:
         msg = "PMS is enabled but PMS_BASE_URL is empty"
         affected = _fallback_hybrid_to_pixel(results, env, msg)
-        logger.error(
+        _write_perceptual_status(
+            report_dir,
+            total_count=0,
+            pending_count=0,
+            done_count=0,
+            error_count=0,
+            in_progress=False,
+            submitted_count=0,
+            skipped_count=affected,
+            used=False,
+            unavailable_reason=msg,
+        )
+        logger.warning(
             "perceptual_postprocess_unavailable",
             run_id=run_id,
             reason=msg,
@@ -336,7 +361,19 @@ def run_perceptual_postprocess(
     if not client.health():
         msg = "PMS healthcheck failed; skipping perceptual postprocess"
         affected = _fallback_hybrid_to_pixel(results, env, msg)
-        logger.error(
+        _write_perceptual_status(
+            report_dir,
+            total_count=0,
+            pending_count=0,
+            done_count=0,
+            error_count=0,
+            in_progress=False,
+            submitted_count=0,
+            skipped_count=affected,
+            used=False,
+            unavailable_reason=msg,
+        )
+        logger.warning(
             "perceptual_postprocess_unavailable",
             run_id=run_id,
             reason=msg,
@@ -358,9 +395,11 @@ def run_perceptual_postprocess(
     pending: list[_PairJob] = []
     done_count = 0
     error_count = 0
+    submitted_count = 0
+    skipped_count = 0
 
     started_at = time.monotonic()
-    pending = _prepare_pending_jobs(env, run_id, results)
+    pending, skipped_count = _prepare_pending_jobs(env, run_id, results)
     total_jobs = len(pending)
     _write_perceptual_status(
         report_dir,
@@ -369,6 +408,9 @@ def run_perceptual_postprocess(
         done_count=done_count,
         error_count=error_count,
         in_progress=total_jobs > 0,
+        submitted_count=submitted_count,
+        skipped_count=skipped_count,
+        used=False,
     )
 
     logger.info(
@@ -414,6 +456,7 @@ def run_perceptual_postprocess(
                     )
                     next_job.submitted_at = time.monotonic()
                     next_job.status = "submitted"
+                    submitted_count += 1
                     inflight[next_job.job_id] = next_job
                     logger.info(
                         "perceptual_job_submitted",
@@ -456,6 +499,9 @@ def run_perceptual_postprocess(
                         done_count=done_count,
                         error_count=error_count,
                         in_progress=(len(pending) + len(inflight)) > 0,
+                        submitted_count=submitted_count,
+                        skipped_count=skipped_count,
+                        used=submitted_count > 0,
                     )
 
         for job_id, item in list(inflight.items()):
@@ -488,6 +534,9 @@ def run_perceptual_postprocess(
                     done_count=done_count,
                     error_count=error_count,
                     in_progress=(len(pending) + len(inflight)) > 0,
+                    submitted_count=submitted_count,
+                    skipped_count=skipped_count,
+                    used=submitted_count > 0,
                 )
                 continue
 
@@ -561,6 +610,9 @@ def run_perceptual_postprocess(
                     done_count=done_count,
                     error_count=error_count,
                     in_progress=(len(pending) + len(inflight)) > 0,
+                    submitted_count=submitted_count,
+                    skipped_count=skipped_count,
+                    used=submitted_count > 0,
                 )
                 continue
 
@@ -569,7 +621,7 @@ def run_perceptual_postprocess(
                 payload.get("error_message") or payload.get("error") or payload.get("message") or ""
             ).strip()
             if status == "error":
-                logger.info(
+                logger.debug(
                     "perceptual_job_error_details_requested",
                     run_id=run_id,
                     pair_id=item.pair_id,
@@ -583,7 +635,7 @@ def run_perceptual_postprocess(
                     ).strip()
                     if endpoint_message:
                         err_message = endpoint_message
-                    logger.info(
+                    logger.debug(
                         "perceptual_job_error_details_loaded",
                         run_id=run_id,
                         pair_id=item.pair_id,
@@ -632,6 +684,9 @@ def run_perceptual_postprocess(
                 done_count=done_count,
                 error_count=error_count,
                 in_progress=(len(pending) + len(inflight)) > 0,
+                submitted_count=submitted_count,
+                skipped_count=skipped_count,
+                used=submitted_count > 0,
             )
 
         if inflight:
@@ -654,5 +709,8 @@ def run_perceptual_postprocess(
         done_count=done_count,
         error_count=error_count,
         in_progress=False,
+        submitted_count=submitted_count,
+        skipped_count=skipped_count,
+        used=submitted_count > 0,
     )
     _log_perceptual_coverage(run_id=run_id, results=results)

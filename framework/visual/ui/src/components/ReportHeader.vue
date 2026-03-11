@@ -46,7 +46,8 @@ const summaryText = computed(() => {
   const total = Number(summary.total || 0);
   const passed = Number(summary.passed || 0);
   const failed = Number(summary.failed || 0);
-  const skipped = Number(summary.skipped || 0);
+  const excluded = Number(props.store?.excludedVisualCases?.length || 0);
+  const skipped = Number(summary.skipped || 0) + excluded;
   const uncertain = Number(summary.uncertain || 0);
   const parts = [
     `${t("report.summary.total")}: ${total}`,

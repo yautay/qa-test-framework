@@ -122,7 +122,14 @@ def _allure_attach_file(
             extension=extension,
         )
     except Exception as exc:
-        logger.debug(f"allure attach skipped: {exc}")
+        logger.debug(
+            "allure_attach_skipped",
+            file_path=str(file_path),
+            attachment_name=name,
+            attachment_type=attachment_type,
+            extension=extension,
+            error=str(exc),
+        )
 
 
 def _allure_apply_dynamic_metadata(
@@ -323,7 +330,12 @@ def page(
     try:
         page.screenshot(path=str(raw_path), full_page=True)
     except Exception as exc:
-        logger.warning(f"raw screenshot capture failed: {exc}")
+        logger.warning(
+            "raw_screenshot_capture_failed",
+            nodeid=request.node.nodeid,
+            path=str(raw_path),
+            error=str(exc),
+        )
         page.close()
         return
 
@@ -333,7 +345,12 @@ def page(
         try:
             box = page.locator(selector).first.bounding_box()
         except Exception as exc:
-            logger.warning(f"highlight failed: {exc}")
+            logger.warning(
+                "screenshot_highlight_failed",
+                nodeid=request.node.nodeid,
+                selector=selector,
+                error=str(exc),
+            )
 
     normalized_box = None
     if box:

@@ -11,6 +11,7 @@ from typing import Any, cast
 from loguru import logger
 
 import settings
+from framework.log_levels import normalize_log_level
 
 
 _REDACTED = "***REDACTED***"
@@ -47,14 +48,13 @@ Best practices implemented:
 
 
 def _resolve_console_log_level() -> str:
-    """Normalize console log level from env/settings, falling back to INFO."""
-    value = os.getenv("CONSOLE_LOG_LEVEL", getattr(settings, "console_log_level", "INFO"))
-    normalized = str(value).strip().upper()
-    if normalized == "WARN":
-        normalized = "WARNING"
+    """Normalize console log level from env/settings, falling back to WARNING."""
+    value = os.getenv("CONSOLE_LOG_LEVEL", getattr(settings, "console_log_level", "WARNING"))
+    return normalize_log_level(str(value), default="WARNING")
 
-    allowed = {"TRACE", "DEBUG", "INFO", "SUCCESS", "WARNING", "ERROR", "CRITICAL"}
-    return normalized if normalized in allowed else "INFO"
+
+def _normalize_log_level(value: str, default: str = "WARNING") -> str:
+    return normalize_log_level(value, default=default)
 
 
 def _is_sensitive_key(key: str) -> bool:
@@ -239,6 +239,64 @@ def configure_tools_logging(script_name: str) -> Path:
         format="<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | {message}",
     )
     return add_tools_file_sink(script_name)
+
+
+def add_reporting_api_sink(reporting_client: Any, level: str = "WARNING") -> int | None:
+    """Attach optional sink that forwards Loguru records to Reporting API."""
+    client = reporting_client
+    endpoint = str(getattr(client, "log_endpoint", "") or "").strip()
+    enabled = bool(getattr(client, "enabled", False))
+    base_url = str(getattr(client, "base_url", "") or "").strip()
+    if not enabled or not base_url or not endpoint:
+        return None
+
+    normalized_level = _normalize_log_level(level, default="WARNING")
+
+    def _sink(message: Any) -> None:
+        record = cast(dict[str, Any], getattr(message, "record", {}))
+        if not isinstance(record, dict):
+            return
+        extra = record.get("extra")
+        if not isinstance(extra, dict):
+            extra = {}
+        if bool(extra.get("_skip_remote_log", False)):
+            return
+
+        event_type = str(record.get("message", "") or "")
+        metadata = {
+            "tester": str(extra.get("tester", "") or ""),
+            "run_note": str(extra.get("run_note", "") or ""),
+            "hostname": str(extra.get("hostname", "") or ""),
+            "worker_id": str(extra.get("worker_id", "") or ""),
+            "browser": str(extra.get("browser", "") or ""),
+        }
+        event_extra = {
+            "event": event_type,
+            "module": str(record.get("module", "") or ""),
+            "function": str(record.get("function", "") or ""),
+            "line": int(record.get("line", 0) or 0),
+        }
+        client.log_event(
+            level=str(record.get("level").name if record.get("level") else "INFO"),
+            message=event_type,
+            run_id=str(extra.get("run_id", "") or ""),
+            nodeid=str(extra.get("nodeid", "") or ""),
+            metadata=metadata,
+            timestamp=str(record.get("time", "") or ""),
+            extra=event_extra,
+        )
+
+    return cast(
+        int,
+        logger.add(
+            _sink,
+            level=normalized_level,
+            enqueue=True,
+            backtrace=False,
+            diagnose=False,
+            catch=True,
+        ),
+    )
 
 
 def bind_test_context(nodeid: str):

@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+import socket
+import hashlib
+import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
@@ -14,7 +17,15 @@ from framework.artifacts import resolve_artifacts_base_dir
 from framework.env import load_env
 from framework.visual.models import VisualResult, VisualThresholds
 from framework.visual.perceptual import prepare_perceptual_placeholders, run_perceptual_postprocess
+from framework.visual.build_metadata import build_visual_build_metadata, write_visual_build_metadata
 from framework.visual.report_builder import write_visual_report, write_visual_results_json
+
+_VISUAL_RESULT_ARTIFACT_KINDS = {
+    "visual_baseline": "baseline_path",
+    "visual_actual": "actual_path",
+    "visual_diff": "diff_path",
+    "visual_heatmap": "heatmap_path",
+}
 
 
 def _is_xdist_controller(config: pytest.Config) -> bool:
@@ -181,6 +192,7 @@ def _result_from_dict(data: dict[str, object]) -> VisualResult | None:
             suite_id=str(data.get("suite_id") or ""),
             viewport=str(data.get("viewport") or ""),
             browser=str(data.get("browser") or ""),
+            nodeid=str(data.get("nodeid") or ""),
             pixel_changed_ratio=(
                 float(cast(Any, pixel_changed_ratio_raw)) if pixel_changed_ratio_raw is not None else None
             ),
@@ -222,6 +234,203 @@ def _load_merged_worker_visual_results(run_root: Path) -> tuple[list[VisualResul
     return list(merged.values()), len(worker_files)
 
 
+def _load_worker_test_result_payloads(run_root: Path) -> dict[str, dict[str, Any]]:
+    workers_root = run_root / "workers"
+    payload_files = sorted(workers_root.glob("*/test_result_payloads.json"))
+    merged: dict[str, dict[str, Any]] = {}
+    for path in payload_files:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            continue
+        if not isinstance(payload, dict):
+            continue
+        for nodeid, item in payload.items():
+            if not isinstance(nodeid, str) or not nodeid.strip():
+                continue
+            if not isinstance(item, dict):
+                continue
+            merged[nodeid] = cast(dict[str, Any], item)
+    return merged
+
+
+def _build_source_context(env, worker_id: str) -> dict[str, str]:
+    host = socket.gethostname()
+    user = os.getenv("USER") or os.getenv("USERNAME") or ""
+    instance_id = f"{host}-{user}-{os.getpid()}"
+    producer_id = str(getattr(env, "reporting_source_producer_id", "") or "").strip() or host
+    return {
+        "project": str(getattr(env, "reporting_source_project", "") or ""),
+        "framework_version": str(getattr(env, "framework_version", "") or "unknown"),
+        "producer_id": producer_id,
+        "instance_id": instance_id,
+        "host": host,
+        "user": user,
+        "worker_id": worker_id,
+        "origin": str(getattr(env, "reporting_source_origin", "") or "local"),
+    }
+
+
+def _build_test_result_idempotency_key(run_uid: str, nodeid: str, attempt: int) -> str:
+    return f"test_result:{run_uid}:{nodeid}:{int(attempt)}"
+
+
+def _sha256_for_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        while True:
+            chunk = handle.read(1024 * 1024)
+            if not chunk:
+                break
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _build_artifact_entry(kind: str, raw_path: str, report_dir: Path) -> dict[str, Any]:
+    path_token = str(raw_path or "").strip()
+    available = False
+    size_bytes = 0
+    size_mib = 0.0
+    sha256 = ""
+    if path_token:
+        artifact_path = Path(path_token)
+        if not artifact_path.is_absolute():
+            artifact_path = report_dir / artifact_path
+        if artifact_path.is_file():
+            available = True
+            try:
+                size_bytes = int(artifact_path.stat().st_size)
+                size_mib = round(size_bytes / (1024 * 1024), 3)
+            except OSError:
+                size_bytes = 0
+                size_mib = 0.0
+            try:
+                sha256 = _sha256_for_file(artifact_path)
+            except OSError:
+                sha256 = ""
+    return {
+        "kind": kind,
+        "path": path_token,
+        "uri": "",
+        "sha256": sha256,
+        "size_bytes": size_bytes,
+        "size_mib": size_mib,
+        "available": available,
+    }
+
+
+def _merge_visual_result_artifacts(
+    existing_artifacts: Any,
+    result: VisualResult,
+    report_dir: Path,
+) -> list[dict[str, Any]]:
+    merged: list[dict[str, Any]] = []
+    if isinstance(existing_artifacts, list):
+        for item in existing_artifacts:
+            if not isinstance(item, dict):
+                continue
+            kind = str(item.get("kind") or "").strip()
+            if kind in _VISUAL_RESULT_ARTIFACT_KINDS:
+                continue
+            merged.append(dict(item))
+    for kind, attr_name in _VISUAL_RESULT_ARTIFACT_KINDS.items():
+        merged.append(_build_artifact_entry(kind, str(getattr(result, attr_name, "") or ""), report_dir))
+    return merged
+
+
+def _build_visual_payload_from_result(result: VisualResult, existing_visual: Any) -> dict[str, Any]:
+    thresholds = getattr(result, "thresholds", None)
+    execution = {}
+    if isinstance(existing_visual, dict):
+        execution_value = existing_visual.get("execution")
+        if isinstance(execution_value, dict):
+            execution = dict(execution_value)
+    return {
+        "threshold_scope": "scenario+viewport+browser",
+        "thresholds_used": {
+            "pixel_max": thresholds.pixel_max if thresholds else None,
+            "lpips_max": thresholds.lpips_max if thresholds else None,
+            "dists_max": thresholds.dists_max if thresholds else None,
+        },
+        "scores": {
+            "pixel_changed_ratio": result.pixel_changed_ratio,
+            "lpips": result.lpips,
+            "dists": result.dists,
+        },
+        "execution": execution,
+        "verdict": result.status,
+    }
+
+
+def _send_test_result_updates(config: pytest.Config, run_root: Path, results: list[VisualResult]) -> None:
+    reporting_client = getattr(config, "_reporting_client", None)
+    if reporting_client is None or not bool(getattr(reporting_client, "enabled", False)):
+        return
+
+    payloads_by_nodeid = _load_worker_test_result_payloads(run_root)
+    if not payloads_by_nodeid:
+        return
+
+    env = load_env()
+    run_artifacts = getattr(config, "_run_artifacts", None)
+    run_id = str(getattr(run_artifacts, "run_id", "") or run_root.name)
+    run_uid = str(getattr(config, "_run_uid", "") or os.getenv("PYTEST_XDIST_RUN_UID", "") or "")
+    if not run_uid:
+        return
+
+    run_metadata_path = run_root / "run-metadata.json"
+    run_metadata: dict[str, str] = {"tester": "", "run_note": ""}
+    if run_metadata_path.is_file():
+        try:
+            payload = json.loads(run_metadata_path.read_text(encoding="utf-8"))
+            if isinstance(payload, dict):
+                run_metadata = {
+                    "tester": str(payload.get("tester", "") or ""),
+                    "run_note": str(payload.get("run_note", "") or ""),
+                }
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            pass
+
+    worker_id = os.getenv("PYTEST_XDIST_WORKER", "master")
+    report_dir = run_root / "visual"
+    source = _build_source_context(env, worker_id)
+    for result in results:
+        nodeid = str(getattr(result, "nodeid", "") or "").strip()
+        if not nodeid:
+            continue
+        base_payload = payloads_by_nodeid.get(nodeid)
+        if not isinstance(base_payload, dict):
+            continue
+        base_visual = base_payload.get("visual")
+        if not isinstance(base_visual, dict) or str(base_visual.get("verdict", "")).strip().lower() != "analysis":
+            continue
+        if str(getattr(result, "status", "") or "").strip().lower() == "analysis":
+            continue
+
+        update = dict(base_payload)
+        attempt = 2
+        update["event_id"] = str(uuid.uuid4())
+        update["event_type"] = "test_result"
+        update["event_time_utc"] = datetime.now(UTC).isoformat()
+        update["run_id"] = run_id
+        update["run_uid"] = run_uid
+        update["source"] = source
+        metadata = base_payload.get("metadata")
+        metadata_out = dict(metadata) if isinstance(metadata, dict) else dict(run_metadata)
+        metadata_out["update_reason"] = "pms_postprocess_finalized"
+        update["metadata"] = metadata_out
+        update["attempt"] = attempt
+        update["idempotency_key"] = _build_test_result_idempotency_key(run_uid, nodeid, attempt)
+        update["test_id"] = nodeid
+        update["nodeid"] = nodeid
+        update["status"] = str(getattr(result, "status", "") or base_payload.get("status", "failed"))
+        update["visual"] = _build_visual_payload_from_result(result, base_visual)
+        update["artifacts"] = _merge_visual_result_artifacts(base_payload.get("artifacts"), result, report_dir)
+
+        logger.info("reporting_test_result_update", run_id=run_id, nodeid=nodeid, status=update["status"])
+        reporting_client.test_result(update)
+
+
 def _is_visual_profile(config: pytest.Config) -> bool:
     markexpr = str(getattr(config.option, "markexpr", "") or "").strip()
     return markexpr == "visual"
@@ -252,6 +461,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
 
     env = load_env()
     report_dir = run_root / "visual"
+    payloads_by_nodeid = _load_worker_test_result_payloads(run_root)
     prepare_perceptual_placeholders(
         env=env,
         run_id=str(run_root.name),
@@ -263,6 +473,8 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         write_visual_report(report_dir, merged_results)
     except Exception as exc:
         logger.warning("visual_report_finalize_failed", run_root=str(run_root), error=str(exc))
+    metadata = build_visual_build_metadata(results=merged_results, payloads_by_nodeid=payloads_by_nodeid)
+    write_visual_build_metadata(report_dir, metadata)
 
     if env.pms_enabled:
         try:
@@ -277,6 +489,13 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
             logger.warning("perceptual_postprocess_failed", run_root=str(run_root), error=str(exc))
 
         try:
+            _send_test_result_updates(config, run_root, merged_results)
+        except Exception as exc:
+            logger.warning("reporting_test_result_updates_failed", run_root=str(run_root), error=str(exc))
+
+        try:
             write_visual_report(report_dir, merged_results)
         except Exception as exc:
             logger.warning("visual_report_finalize_failed", run_root=str(run_root), error=str(exc))
+        metadata = build_visual_build_metadata(results=merged_results, payloads_by_nodeid=payloads_by_nodeid)
+        write_visual_build_metadata(report_dir, metadata)

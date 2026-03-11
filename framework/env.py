@@ -68,7 +68,6 @@ class RuntimeEnv:
     headless: bool
     ignore_https_errors: bool
     base_url: str
-    server_type: str
     server_name: str
     reference_host: str
     record_video: bool
@@ -77,6 +76,7 @@ class RuntimeEnv:
     reporting_schema_version: str
     reporting_source_project: str
     reporting_source_origin: str
+    reporting_source_producer_id: str
     framework_version: str
     reporting_api_url: str
     reporting_api_token: str
@@ -85,9 +85,15 @@ class RuntimeEnv:
     reporting_api_run_finish_endpoint: str
     reporting_api_bug_endpoint: str
     reporting_api_aso_endpoint: str
-    reporting_api_note_endpoint: str
+    reporting_api_log_endpoint: str
+    reporting_api_log_level: str
     reporting_api_timeout_seconds: int
     reporting_api_retries: int
+    reporting_async_enabled: bool
+    reporting_async_queue_maxsize: int
+    reporting_async_max_attempts: int
+    reporting_async_max_retry_age_seconds: int
+    reporting_async_flush_timeout_seconds: int
     artifacts_dir: str
     allure_enabled: bool
     pytest_html_enabled: bool
@@ -175,9 +181,6 @@ def load_env() -> RuntimeEnv:
     if not reporting_source_origin:
         reporting_source_origin = "ci" if os.getenv("CI") else "local"
 
-    # Legacy compatibility split used by URL resolvers.
-    # New flows may derive environment selection from server_name/reference_host aliases.
-    server_type = settings_cli.server_type
     server_name = settings_cli.server_name
     reference_host = env_str("REFERENCE_HOST", str(getattr(settings_cli, "reference_host", "")))
 
@@ -197,11 +200,10 @@ def load_env() -> RuntimeEnv:
             settings.ignore_https_errors,
         ),
         base_url=base_url,
-        server_type=server_type,
         server_name=server_name,
         reference_host=reference_host,
-        record_video=env_bool("RECORD_VIDEO", True),
-        video_min_seconds=env_int("VIDEO_MIN_SECONDS", 30),
+        record_video=env_bool("RECORD_VIDEO", bool(settings.record_video)),
+        video_min_seconds=env_int("VIDEO_MIN_SECONDS", int(settings.video_min_seconds)),
         reporting_enabled=env_bool("REPORTING_ENABLED", settings.reporting_enabled),
         reporting_schema_version=env_str(
             "REPORTING_SCHEMA_VERSION",
@@ -212,6 +214,10 @@ def load_env() -> RuntimeEnv:
             str(settings.reporting_source_project),
         ),
         reporting_source_origin=reporting_source_origin,
+        reporting_source_producer_id=env_str(
+            "REPORTING_SOURCE_PRODUCER_ID",
+            str(getattr(settings, "reporting_source_producer_id", "")),
+        ).strip(),
         framework_version=_resolve_framework_version(),
         reporting_api_url=env_str("REPORTING_API_URL", settings.reporting_api_url),
         reporting_api_token=env_str("REPORTING_API_TOKEN", settings.reporting_api_token),
@@ -235,9 +241,13 @@ def load_env() -> RuntimeEnv:
             "REPORTING_API_ASO_ENDPOINT",
             settings.reporting_api_aso_endpoint,
         ),
-        reporting_api_note_endpoint=env_str(
-            "REPORTING_API_NOTE_ENDPOINT",
-            settings.reporting_api_note_endpoint,
+        reporting_api_log_endpoint=env_str(
+            "REPORTING_API_LOG_ENDPOINT",
+            settings.reporting_api_log_endpoint,
+        ),
+        reporting_api_log_level=env_str(
+            "REPORTING_API_LOG_LEVEL",
+            settings.reporting_api_log_level,
         ),
         reporting_api_timeout_seconds=env_int(
             "REPORTING_API_TIMEOUT_SECONDS",
@@ -246,6 +256,26 @@ def load_env() -> RuntimeEnv:
         reporting_api_retries=env_int(
             "REPORTING_API_RETRIES",
             settings.reporting_api_retries,
+        ),
+        reporting_async_enabled=env_bool(
+            "REPORTING_ASYNC_ENABLED",
+            bool(settings.reporting_async_enabled),
+        ),
+        reporting_async_queue_maxsize=env_int(
+            "REPORTING_ASYNC_QUEUE_MAXSIZE",
+            int(settings.reporting_async_queue_maxsize),
+        ),
+        reporting_async_max_attempts=env_int(
+            "REPORTING_ASYNC_MAX_ATTEMPTS",
+            int(settings.reporting_async_max_attempts),
+        ),
+        reporting_async_max_retry_age_seconds=env_int(
+            "REPORTING_ASYNC_MAX_RETRY_AGE_SECONDS",
+            int(settings.reporting_async_max_retry_age_seconds),
+        ),
+        reporting_async_flush_timeout_seconds=env_int(
+            "REPORTING_ASYNC_FLUSH_TIMEOUT_SECONDS",
+            int(settings.reporting_async_flush_timeout_seconds),
         ),
         artifacts_dir=env_str("ARTIFACTS_DIR", settings.artifacts_dir),
         allure_enabled=env_bool("ALLURE_ENABLED", bool(settings.allure_enabled)),

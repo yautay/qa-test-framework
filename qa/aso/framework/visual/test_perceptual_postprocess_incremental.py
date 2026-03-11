@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import json
 from pathlib import Path
 
 import pytest
@@ -209,3 +210,45 @@ def test_postprocess_falls_back_to_pixel_when_pms_job_errors(tmp_path: Path, mon
     assert result.perceptual and result.perceptual.get("status") == "error"
     assert result.status == "passed"
     assert result.message == "Pixel threshold passed"
+
+
+def test_postprocess_writes_status_usage_counters(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    class _DoneClient:
+        def __init__(self, **_: object) -> None:
+            self.enabled = True
+
+        def health(self) -> bool:
+            return True
+
+        def list_jobs(self) -> list[dict[str, object]]:
+            return []
+
+        def submit_job(self, **_: object) -> None:
+            return None
+
+        def get_job(self, _job_id: str) -> dict[str, object]:
+            return {"status": "done", "lpips": 0.05, "dists": 0.06}
+
+        def download_heatmap(self, _job_id: str, _path: Path) -> bool:
+            return False
+
+        def get_job_error(self, _job_id: str) -> dict[str, object]:
+            return {}
+
+    monkeypatch.setattr(postprocess, "PMSClient", _DoneClient)
+    result = _make_result(tmp_path)
+    report_dir = tmp_path / "visual"
+
+    postprocess.run_perceptual_postprocess(
+        env=_runtime_env(),
+        run_id="run-5",
+        report_dir=report_dir,
+        results=[result],
+        on_results_updated=None,
+    )
+
+    status_payload = json.loads((report_dir / postprocess.PERCEPTUAL_STATUS_FILENAME).read_text(encoding="utf-8"))
+    assert status_payload["submitted_count"] == 1
+    assert status_payload["done_count"] == 1
+    assert status_payload["error_count"] == 0
+    assert status_payload["used"] is True

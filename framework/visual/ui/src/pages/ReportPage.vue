@@ -11,6 +11,40 @@
 
     <div v-if="store.loadError" class="alert alert-danger py-2">{{ store.loadError }}</div>
 
+    <div v-if="store.excludedVisualCases.length" class="alert alert-warning py-2">
+      <details class="excluded-visual-cases">
+        <summary class="fw-semibold">{{ t('report.excludedVisualCases') }}: {{ store.excludedVisualCases.length }}</summary>
+        <div v-if="store.excludedVisualReasonsSummary.length" class="excluded-reasons mt-2">
+          <div class="small fw-semibold mb-1">{{ t('report.excludedReasons') }}</div>
+          <ul class="excluded-reasons-list mb-0">
+            <li
+              v-for="reason in store.excludedVisualReasonsSummary"
+              :key="`${reason.reasonCode}::${reason.reasonTitle}`"
+              class="small"
+            >
+              <span>{{ excludedReasonLabel(reason) }}</span>
+              <span class="badge text-bg-secondary ms-2">{{ reason.count }}</span>
+            </li>
+          </ul>
+        </div>
+        <ul class="excluded-cases-list mb-0 mt-2">
+          <li v-for="item in store.excludedVisualCases" :key="item.nodeid" class="excluded-case-item small">
+            <div class="excluded-case-head">
+              <span class="mono excluded-nodeid">{{ item.nodeid }}</span>
+              <span class="badge text-bg-warning">{{ item.phase || 'n/a' }} / {{ item.status || 'n/a' }}</span>
+            </div>
+            <div class="excluded-reason-text">
+              {{ excludedReasonLabel(item) || item.reasonDetails || item.reason || t('report.excludedUnknownReason') }}
+            </div>
+            <details v-if="item.reasonRaw && item.reasonRaw !== (item.reasonDetails || item.reason)" class="excluded-raw-details">
+              <summary>{{ t('report.excludedRawReason') }}</summary>
+              <pre class="excluded-raw-text mono mb-0">{{ item.reasonRaw }}</pre>
+            </details>
+          </li>
+        </ul>
+      </details>
+    </div>
+
     <FiltersPanel />
     <ResultsTable 
       :rows="store.filteredSorted" 
@@ -84,7 +118,7 @@ import { Modal } from "bootstrap";
 import { getRowTagKey } from "../lib/viewer";
 import { requestBaselineChallengeForRun, sendBaselineSelectionForRun } from "../lib/baselineApi";
 import {
-  fetchReportResults,
+  fetchReportResultsPayload,
   fetchBuildTags,
   postBuildEvent,
   acquireBuildLock,
@@ -125,6 +159,16 @@ const noteMaxLength = NOTE_MAX_LENGTH;
 
 const baseZoom = ref(100);
 const HEARTBEAT_MS = 15000;
+
+function excludedReasonLabel(item) {
+  const reasonCode = String(item?.reasonCode || "").trim();
+  if (reasonCode) {
+    const key = `report.excludedReasonCodes.${reasonCode}`;
+    const translated = t(key);
+    if (translated !== key) return translated;
+  }
+  return String(item?.reasonTitle || "").trim();
+}
 
 function rowKey(row) {
   if (!row || typeof row !== "object") return "";
@@ -265,6 +309,7 @@ async function loadResults() {
   store.loadError = "";
   if (!props.runId) {
     store.setRows([]);
+    store.setBuildMetadata({});
     store.selectedIndex = -1;
     store.loadError = "Missing run id in URL";
     return;
@@ -276,8 +321,9 @@ async function loadResults() {
       : null;
   const selectedKey = rowKey(selectedRow);
   try {
-    const rows = await fetchReportResults(props.runId);
-    store.setRows(rows);
+    const payload = await fetchReportResultsPayload(props.runId);
+    store.setRows(payload.results);
+    store.setBuildMetadata(payload.build_metadata);
     if (store.filteredSorted.length === 0) {
       store.selectedIndex = -1;
       return;
@@ -294,6 +340,7 @@ async function loadResults() {
     }
   } catch (error) {
     store.setRows([]);
+    store.setBuildMetadata({});
     store.selectedIndex = -1;
     store.loadError = `Unable to load results: ${error?.message || "unknown error"}`;
   }
@@ -925,5 +972,48 @@ onBeforeUnmount(() => {
   padding: 0.5rem;
   background: var(--card-bg);
   border-radius: 0.25rem;
+}
+
+.excluded-visual-cases > summary {
+  cursor: pointer;
+  color: var(--report-excluded-text, var(--warning-emphasis));
+}
+
+.excluded-visual-cases {
+  border-left: 0.2rem solid var(--report-excluded-border, var(--warning));
+  padding-left: 0.5rem;
+}
+
+.excluded-reasons-list,
+.excluded-cases-list {
+  padding-left: 1.25rem;
+}
+
+.excluded-case-item + .excluded-case-item {
+  margin-top: 0.5rem;
+}
+
+.excluded-case-head {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.excluded-nodeid {
+  word-break: break-all;
+}
+
+.excluded-reason-text {
+  margin-top: 0.2rem;
+}
+
+.excluded-raw-details {
+  margin-top: 0.2rem;
+}
+
+.excluded-raw-text {
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 </style>

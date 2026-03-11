@@ -80,6 +80,20 @@
     "run": "Uruchomienie",
     "sendBaseline": "WYŚLIJ BASELINE",
     "sendReport": "RAPORT",
+    "excludedVisualCases": "Wykluczone przypadki wizualne",
+    "excludedReasons": "Powody wykluczenia",
+    "excludedUnknownReason": "Nieznany powód wykluczenia",
+    "excludedRawReason": "Surowy powód z pytest",
+    "excludedReasonCodes": {
+      "timeout": "Przekroczony czas wykonania testu",
+      "assertion_error": "Niespelniona asercja przed zrzutem wizualnym",
+      "collection_error": "Blad kolekcji testow",
+      "fixture_teardown_error": "Blad fixture w teardown",
+      "fixture_setup_error": "Blad fixture w setup",
+      "test_failed": "Test zakonczyl sie niepowodzeniem przed zrzutem",
+      "execution_error": "Blad wykonania pytest",
+      "unknown": "Nieznany powod wykluczenia"
+    },
     "confirmSend": "Czy jesteś pewien i chcesz zgłosić BUG/ASO?",
     "summary": {
       "total": "razem",

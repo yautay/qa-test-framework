@@ -17,7 +17,7 @@ from tools.visual.version_baselines_parser import build_parser
 
 def main() -> int:
     log_path = configure_tools_logging("version_baselines")
-    logger.debug(f"tools_log_file={log_path}")
+    logger.debug("tools_log_file", path=str(log_path), script="version_baselines")
 
     args = build_parser().parse_args()
     env = load_env()

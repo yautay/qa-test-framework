@@ -11,6 +11,7 @@ resolve_pl = url_resolver(
         prod="https://komputronik.pl",
         demo="https://sklep3-demo.komputronik.dev",
         test_template="https://komputronik-{host}.netcorner.pl",
+        local="https://komputronik.local",
     )
 )
 
@@ -21,10 +22,8 @@ def runtime_env(pytestconfig: pytest.Config) -> RuntimeEnv:
     if (env.base_url or "").strip():
         return env
 
-    # Legacy compatibility: env.server_type + env.server_name split is resolved
-    # centrally in qa/conftest.py (including server_name aliases demo/prod/local).
     try:
-        resolved = resolve_pl(env.server_type, env.server_name).rstrip("/")
+        resolved = resolve_pl(env.server_name).rstrip("/")
     except ValueError as e:
         raise pytest.UsageError(f"Cannot resolve base_url for env={env!r}: {e}") from e
 

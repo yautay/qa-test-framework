@@ -54,7 +54,7 @@ def generate_visual_tree() -> str:
 
 def main() -> int:
     log_path = configure_tools_logging("generate_tree")
-    logger.debug(f"tools_log_file={log_path}")
+    logger.debug("tools_log_file", path=str(log_path), script="generate_tree")
 
     tree = generate_visual_tree()
     print(tree)

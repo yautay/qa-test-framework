@@ -339,7 +339,7 @@ class BaselineStore:
         try:
             from minio import Minio
         except Exception:
-            logger.warning("minio library not available; skipping minio operations")
+            logger.warning("baseline_minio_library_unavailable")
             return None
 
         self._minio_client = Minio(
