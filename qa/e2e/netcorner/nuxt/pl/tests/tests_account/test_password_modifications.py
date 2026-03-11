@@ -3,13 +3,13 @@ from __future__ import annotations
 import allure
 import pytest
 
+from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.my_account_page import MyAccountPage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.register_user_data import (
     RegisterUserCase,
     RegisterUserDataBuilder,
 )
-from qa.e2e.netcorner.nuxt.pl.lib.wrapers.register_client import FlowRegisterClient
 
 pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
 
@@ -20,7 +20,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
     "user_case",
     [
         RegisterUserCase(
-            case_id="pl_password_recovery",
+            case_id="pl_password_change",
             factory=lambda: RegisterUserDataBuilder().with_required_terms().build(),
         )
     ],
@@ -29,7 +29,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
 @pytest.mark.scenario("Zmiana hasła użytkownika")
 def test_password_change(page, context, runtime_env, user_case):
     user_data = user_case.factory()
-    assert FlowRegisterClient(page, context, runtime_env).register_new_client(
+    assert ClientWrappers(page, context, runtime_env).register_new_client(
         user_data
     ), "Użytkownik nie został poprawnie zarejestrowany."
     home_page = HomePage(page, runtime_env.base_url).wait_loaded()
@@ -37,6 +37,9 @@ def test_password_change(page, context, runtime_env, user_case):
     my_account = MyAccountPage(page, runtime_env.base_url).wait_loaded()
     my_account.content.menu_root.open_password_change()
     my_account.content.menu_change_password.change_password(user_data.password, user_data.password_changed)
+    ClientWrappers(page, context, runtime_env).logout_client()
+
+
     home_page.open().wait_loaded().header.actions.open_login()
     home_page.overlays.login.log_client(user_data.email, user_data.password_changed)
     home_page.header.actions.open_account()

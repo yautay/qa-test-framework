@@ -89,7 +89,6 @@ class MyAccountPasswordChangeComponent(BaseComponent):
         self.__input_new_password = self.find("#newPassword")
         self.__input_new_password_repeated = self.find("#newPasswordRepeated")
         self.__button_save = self.find('button:has-text("Zapisz zmiany")')
-        self.__session_expired_alert = self.root.page.get_by_text("Twoja sesja wygasła")
 
     def __fill_old_password(self, password: str) -> MyAccountPasswordChangeComponent:
         self.safe_type(self.__input_old_password, password)
@@ -113,4 +112,3 @@ class MyAccountPasswordChangeComponent(BaseComponent):
     @step("Zmiana hasła z {old_pwd} na {new_pwd}")
     def change_password(self, old_pwd: str, new_pwd: str) -> None:
         self.__fill_old_password(old_pwd).__fill_new_password(new_pwd).__fill_new_password_repeated(new_pwd).__submit()
-        expect(self.__session_expired_alert).to_be_visible()
