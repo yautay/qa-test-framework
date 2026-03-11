@@ -259,6 +259,12 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     )
 
 
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    for item in items:
+        if item.get_closest_marker("extended_timeout") is not None:
+            item.add_marker(pytest.mark.usefixtures("extended_timeout"))
+
+
 @pytest.fixture(scope="function")
 def extended_timeout(request: pytest.FixtureRequest) -> None:
     """Extend Playwright default action/navigation timeout for marked tests."""
