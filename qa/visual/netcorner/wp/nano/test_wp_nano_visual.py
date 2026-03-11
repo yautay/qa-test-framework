@@ -11,7 +11,7 @@ from qa.visual.netcorner.nuxt.pl.url_config import resolve_reference_base_url
 
 SCENARIOS_DIR = Path(__file__).resolve().parent
 
-pytestmark = [pytest.mark.visual, pytest.mark.wp]
+pytestmark = [pytest.mark.visual, pytest.mark.wp, pytest.mark.usefixtures("extended_timeout")]
 
 
 def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:

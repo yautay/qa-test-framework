@@ -19,7 +19,7 @@ def _looks_like_e2e_selection(config: pytest.Config) -> bool:
     qa_root = (root / "qa").resolve()
     e2e_root = (qa_root / "e2e").resolve()
 
-    raw_args = tuple(getattr(config, "args", ()) or ())
+    raw_args = cast(tuple[Any, ...], tuple(getattr(config, "args", ()) or ()))
     if not raw_args:
         return True
 
@@ -257,3 +257,13 @@ def pytest_addoption(parser: pytest.Parser) -> None:
         dest="pytest_html_enabled",
         help="Disable automatic pytest-html report path setup",
     )
+
+
+@pytest.fixture(scope="function")
+def extended_timeout(request: pytest.FixtureRequest) -> None:
+    """Extend Playwright default action/navigation timeout for marked tests."""
+    if "page" not in request.fixturenames:
+        return
+    page = request.getfixturevalue("page")
+    page.set_default_timeout(60_000)
+    page.set_default_navigation_timeout(60_000)
