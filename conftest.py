@@ -269,8 +269,9 @@ def _apply_extended_timeout_marker(request: pytest.FixtureRequest) -> None:
 @pytest.fixture(scope="function")
 def extended_timeout(request: pytest.FixtureRequest) -> None:
     """Extend Playwright default action/navigation timeout for marked tests."""
-    if "page" not in request.fixturenames:
+    try:
+        page = request.getfixturevalue("page")
+    except pytest.FixtureLookupError:
         return
-    page = request.getfixturevalue("page")
     page.set_default_timeout(60_000)
     page.set_default_navigation_timeout(60_000)
