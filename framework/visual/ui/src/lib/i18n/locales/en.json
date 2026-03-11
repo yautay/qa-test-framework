@@ -94,6 +94,8 @@
       "execution_error": "Pytest execution error",
       "unknown": "Unknown exclusion reason"
     },
+    "baselineConfirmPrompt": "Type the phrase below to confirm baseline write.",
+    "baselineConfirmPlaceholder": "Type confirmation phrase",
     "confirmSend": "Are you sure you want to submit BUG/ASO?",
     "summary": {
       "total": "total",

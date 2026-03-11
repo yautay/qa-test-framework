@@ -94,6 +94,8 @@
       "execution_error": "Blad wykonania pytest",
       "unknown": "Nieznany powod wykluczenia"
     },
+    "baselineConfirmPrompt": "Wpisz ponizsza fraze, aby potwierdzic zapis baseline.",
+    "baselineConfirmPlaceholder": "Wpisz fraze potwierdzajaca",
     "confirmSend": "Czy jesteś pewien i chcesz zgłosić BUG/ASO?",
     "summary": {
       "total": "razem",

@@ -94,6 +94,8 @@
       "execution_error": "Помилка виконання pytest",
       "unknown": "Невідома причина виключення"
     },
+    "baselineConfirmPrompt": "Введіть фразу нижче, щоб підтвердити запис baseline.",
+    "baselineConfirmPlaceholder": "Введіть фразу підтвердження",
     "confirmSend": "Ви впевнені, що хочете надіслати BUG/ASO?",
     "summary": {
       "total": "усього",
