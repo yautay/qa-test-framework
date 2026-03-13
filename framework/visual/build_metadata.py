@@ -86,9 +86,11 @@ def _as_reason(payload: dict[str, Any], status: str) -> tuple[str, str]:
     pytest_outcome = payload.get("pytest_outcome")
     if isinstance(pytest_outcome, dict):
         phase = str(pytest_outcome.get("phase", "") or "")
+        longrepr = str(pytest_outcome.get("longrepr", "") or "").strip()
         message = str(pytest_outcome.get("message", "") or "").strip()
-        if message:
-            return phase, message[:500]
+        reason = longrepr or message
+        if reason:
+            return phase, reason[:5000]
     timing = payload.get("timing")
     if isinstance(timing, dict) and status == "skipped":
         return "call", "pytest skipped before visual result was produced"

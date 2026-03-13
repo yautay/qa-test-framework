@@ -300,6 +300,7 @@ def _extract_pytest_outcome(item: pytest.Item) -> dict[str, str]:
             "phase": phase,
             "outcome": outcome,
             "message": first_line[:300],
+            "longrepr": longrepr_text[:2500],
         }
     return {}
 
@@ -510,6 +511,8 @@ def pytest_configure(config: pytest.Config) -> None:
         async_max_attempts=env.reporting_async_max_attempts,
         async_max_retry_age_seconds=env.reporting_async_max_retry_age_seconds,
         async_flush_timeout_seconds=env.reporting_async_flush_timeout_seconds,
+        source_host=socket.gethostname(),
+        source_user=os.getenv("USER") or os.getenv("USERNAME") or getpass.getuser(),
     )
     add_reporting_api_sink(config._reporting_client, env.reporting_api_log_level)
     config._test_case_timings = {}

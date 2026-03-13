@@ -11,7 +11,7 @@
 
     <div v-if="store.loadError" class="alert alert-danger py-2">{{ store.loadError }}</div>
 
-    <div v-if="store.excludedVisualCases.length" class="alert alert-warning py-2">
+    <div v-if="store.excludedVisualCases.length" class="alert alert-warning py-2" data-name="excluded-visual-cases">
       <details class="excluded-visual-cases">
         <summary class="fw-semibold">{{ t('report.excludedVisualCases') }}: {{ store.excludedVisualCases.length }}</summary>
         <div v-if="store.excludedVisualReasonsSummary.length" class="excluded-reasons mt-2">

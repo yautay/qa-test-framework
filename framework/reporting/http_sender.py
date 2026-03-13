@@ -25,6 +25,8 @@ class ReportingHttpSender:
         session: requests.Session,
         thread_local: threading.local,
         debug_async: bool,
+        source_host: str = "",
+        source_user: str = "",
     ) -> None:
         self.enabled = bool(enabled)
         self.base_url = str(base_url or "")
@@ -35,6 +37,8 @@ class ReportingHttpSender:
         self._base_session = session
         self._thread_local = thread_local
         self.debug_async = bool(debug_async)
+        self.source_host = str(source_host or "")
+        self.source_user = str(source_user or "")
 
     def _session_for_thread(self) -> Any:
         if self.session is not self._base_session:
@@ -59,6 +63,10 @@ class ReportingHttpSender:
         idempotency_key = payload.get("idempotency_key")
         if isinstance(idempotency_key, str) and idempotency_key.strip():
             headers["X-Idempotency-Key"] = idempotency_key.strip()
+        if self.source_host:
+            headers["X-Source-Host"] = self.source_host
+        if self.source_user:
+            headers["X-Source-User"] = self.source_user
         return headers
 
     @staticmethod
