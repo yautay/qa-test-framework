@@ -21,7 +21,7 @@ def _scenario() -> VisualScenario:
             "name": "Hero",
             "target_url": "/",
             "suite_id": "suite-1",
-            "compare_mode": "pixel",
+            "compare_mode": "hybrid",
             "capture": {"type": "page", "full_page": True},
             "thresholds": {"pixel_max": 0.01, "lpips_max": 0.1, "dists_max": 0.1},
         }

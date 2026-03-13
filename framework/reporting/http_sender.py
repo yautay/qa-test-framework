@@ -32,10 +32,14 @@ class ReportingHttpSender:
         self.timeout_seconds = max(1, int(timeout_seconds))
         self.retries = max(0, int(retries))
         self.session = session
+        self._base_session = session
         self._thread_local = thread_local
         self.debug_async = bool(debug_async)
 
-    def _session_for_thread(self) -> requests.Session:
+    def _session_for_thread(self) -> Any:
+        if self.session is not self._base_session:
+            return self.session
+
         existing = getattr(self._thread_local, "session", None)
         if isinstance(existing, requests.Session):
             return existing
