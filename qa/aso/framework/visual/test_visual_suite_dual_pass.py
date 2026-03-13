@@ -7,9 +7,9 @@ from types import SimpleNamespace
 import pytest
 
 from framework.env import load_env
+from framework.targeting import resolve_reference_base_url
 from framework.visual.models import VisualResult, VisualScenario
 from framework.visual import visual_suite
-from qa.visual.netcorner.nuxt.pl.url_config import resolve_reference_base_url
 
 pytestmark = [pytest.mark.aso]
 
@@ -106,6 +106,7 @@ def test_execute_visual_scenario_uses_dual_pass_when_reference_host_is_set(monke
         scenario=_scenario(),
         viewport="fhd",
         runtime_env=env,
+        base_url=env.base_url,
         visual_output_dir=tmp_path / "visual",
         visual_results=visual_results,
         pytestconfig=pytestconfig,
@@ -174,6 +175,7 @@ def test_execute_visual_scenario_uses_single_pass_when_reference_host_is_empty(m
         scenario=_scenario(),
         viewport="fhd",
         runtime_env=env,
+        base_url=env.base_url,
         visual_output_dir=tmp_path / "visual",
         visual_results=visual_results,
         pytestconfig=pytestconfig,
@@ -186,3 +188,58 @@ def test_execute_visual_scenario_uses_single_pass_when_reference_host_is_empty(m
     assert payload["execution"]["dual_pass"] is False
     assert payload["execution"]["pms_usage_state"] in {"deferred", "disabled", "not_applicable"}
     assert "visual_reference_actual" not in request.node._artifacts_payload
+
+
+def test_execute_visual_scenario_uses_base_url_argument_for_target_runner(monkeypatch, tmp_path: Path) -> None:
+    calls: list[str] = []
+
+    class FakeRunner:
+        def __init__(self, env, repo_root: Path, output_dir: Path) -> None:
+            self.env = env
+            self.output_dir = output_dir
+
+        def run(self, page, scenario: VisualScenario, viewport: str) -> VisualResult:
+            actual = self.output_dir / "actual" / f"{scenario.scenario_id}__{viewport}.png"
+            actual.parent.mkdir(parents=True, exist_ok=True)
+            actual.write_bytes(b"png")
+            calls.append(self.env.base_url)
+            return VisualResult(
+                scenario_id=scenario.scenario_id,
+                status="passed",
+                message="Pixel threshold passed",
+                compare_mode="pixel",
+                suite_id=scenario.suite_id,
+                viewport=viewport,
+                browser="chromium",
+                baseline_path="/tmp/baseline.png",
+                actual_path=str(actual),
+                diff_path="",
+                heatmap_path="",
+                pixel_changed_ratio=0.0,
+                lpips=None,
+                dists=None,
+                thresholds=scenario.thresholds,
+            )
+
+    monkeypatch.setattr(visual_suite, "VisualRunner", FakeRunner)
+
+    env = load_env()
+    env = replace(env, base_url="", reference_host="")
+    request = _make_request()
+    pytestconfig = _make_pytestconfig(tmp_path)
+    visual_results: list[VisualResult] = []
+
+    visual_suite.execute_visual_scenario(
+        request=request,
+        page=object(),
+        scenario=_scenario(),
+        viewport="fhd",
+        runtime_env=env,
+        base_url="https://fixture-base.example",
+        visual_output_dir=tmp_path / "visual",
+        visual_results=visual_results,
+        pytestconfig=pytestconfig,
+    )
+
+    assert calls == ["https://fixture-base.example"]
+    assert visual_results[0].test_metadata["execution"]["target_base_url"] == "https://fixture-base.example"

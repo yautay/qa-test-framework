@@ -44,8 +44,8 @@ visual_viewport_presets = {
 
 # Visual MinIO
 visual_minio_endpoint = "s3.cpt-sztos.com"
-visual_minio_access_key = "user"
-visual_minio_secret_key = "nc12345678"
+visual_minio_access_key = "release"
+visual_minio_secret_key = "Bytniebytodbyt"
 visual_minio_bucket = "visual-baselines"
 visual_minio_secure = True
 

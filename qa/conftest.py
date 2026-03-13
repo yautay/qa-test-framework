@@ -21,6 +21,7 @@ from framework.env import RuntimeEnv, load_env
 from framework.git_info import get_git_metadata
 from framework.logger import add_reporting_api_sink, bind_test_context, configure_logging
 from framework.reporting_client import ReportingClient
+from framework.targeting import resolve_target_context, resolve_target_id_for_nodeid
 from framework.timing_monitor import (
     detect_slow_regressions,
     load_previous_timings,
@@ -461,10 +462,40 @@ def _base_url_resolver(config: pytest.Config):
         config._runtime_env = replace(env, base_url=settings_cli.base_url_override)
         return
 
-    if env.base_url:
-        env = replace(env, base_url=env.base_url)
-
     config._runtime_env = env
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    env: RuntimeEnv | None = getattr(config, "_runtime_env", None)
+    explicit_base_url = str(getattr(env, "base_url", "") or "")
+    explicit_base_url = (explicit_base_url or "").strip()
+    if explicit_base_url:
+        return
+
+    issues: list[str] = []
+    for item in items:
+        marker = item.get_closest_marker("target")
+        marker_target = ""
+        if marker and marker.args:
+            marker_target = str(marker.args[0] or "").strip()
+        nodeid = str(getattr(item, "nodeid", "") or "")
+        try:
+            target_id = marker_target or resolve_target_id_for_nodeid(nodeid)
+        except ValueError as exc:
+            issues.append(str(exc))
+            continue
+        if target_id:
+            continue
+        normalized = nodeid.replace("\\", "/")
+        if normalized.startswith("qa/visual/") or normalized.startswith("qa/e2e/netcorner/"):
+            issues.append(
+                "Cannot resolve target for nodeid="
+                f"{nodeid!r}; add @pytest.mark.target('<id>') or extend path mapping in framework.targeting.registry"
+            )
+
+    if issues:
+        details = "\n".join(f"- {issue}" for issue in sorted(set(issues)))
+        raise pytest.UsageError(f"Target resolution errors (strict mode):\n{details}")
 
 
 def pytest_configure(config: pytest.Config) -> None:
@@ -781,6 +812,29 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
 def runtime_env(pytestconfig: pytest.Config) -> RuntimeEnv:
     """Resolved runtime configuration shared by all tests."""
     return pytestconfig._runtime_env
+
+
+@pytest.fixture(scope="function")
+def target_context(request: pytest.FixtureRequest, runtime_env: RuntimeEnv):
+    marker = request.node.get_closest_marker("target")
+    marker_target = ""
+    if marker and marker.args:
+        marker_target = str(marker.args[0] or "").strip()
+
+    try:
+        return resolve_target_context(
+            nodeid=request.node.nodeid,
+            server_name=runtime_env.server_name,
+            explicit_base_url=runtime_env.base_url,
+            marker_target=marker_target,
+        )
+    except ValueError as exc:
+        raise pytest.UsageError(str(exc)) from exc
+
+
+@pytest.fixture(scope="function")
+def base_url(target_context) -> str:
+    return str(target_context.base_url or "")
 
 
 @pytest.fixture(scope="session")
