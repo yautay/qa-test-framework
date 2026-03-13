@@ -50,7 +50,7 @@ _TARGETS: tuple[TargetDefinition, ...] = (
         urls=EnvUrls(
             prod="https://gaming.komputronik.pl/",
             demo="https://gaming-demo.ktr.pl",
-            test_template="https://wp-komputronik-gaming{host}.netcorner.pl",
+            test_template="https://wp-komputronik-gaming-{host}.netcorner.pl",
         ),
         path_prefixes=("qa/visual/netcorner/wp/gaming/",),
     ),
