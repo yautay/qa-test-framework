@@ -116,6 +116,61 @@ def _normalize_run_note(raw: object, source: str) -> str:
 
 _ENV_ALIAS_TOKENS = {"demo", "prod", "local"}
 
+_FORBIDDEN_PLUGIN_PATTERNS: tuple[tuple[str, str], ...] = (
+    ("anyio", "plugin anyio can force asyncio loop and conflicts with Playwright Sync API"),
+    ("playwright", "plugin pytest-playwright is disabled because project uses custom Playwright fixtures"),
+    (
+        "pytest_playwright",
+        "plugin pytest-playwright is disabled because project uses custom Playwright fixtures",
+    ),
+    ("base_url", "plugin pytest-base-url is disabled because project uses custom base_url resolution"),
+    (
+        "pytest_base_url",
+        "plugin pytest-base-url is disabled because project uses custom base_url resolution",
+    ),
+)
+
+
+def _iter_loaded_plugins(config: pytest.Config) -> list[tuple[str, str]]:
+    loaded: list[tuple[str, str]] = []
+    plugin_manager = config.pluginmanager
+    is_blocked = getattr(plugin_manager, "is_blocked", None)
+    for raw_name, plugin in plugin_manager.list_name_plugin():
+        name = str(raw_name or "").strip()
+        if not name:
+            continue
+        if callable(is_blocked):
+            try:
+                if bool(is_blocked(name)):
+                    continue
+            except Exception:
+                pass
+        if plugin is None:
+            continue
+        module_name = str(getattr(plugin, "__name__", "") or "").strip()
+        if not module_name:
+            module_name = str(type(plugin).__name__)
+        loaded.append((name.lower(), module_name.lower()))
+    return loaded
+
+
+def _assert_supported_plugin_profile(config: pytest.Config) -> None:
+    forbidden: list[str] = []
+    for plugin_name, module_name in _iter_loaded_plugins(config):
+        token = f"{plugin_name} {module_name}".strip()
+        for pattern, reason in _FORBIDDEN_PLUGIN_PATTERNS:
+            if pattern in token:
+                forbidden.append(f"{plugin_name} ({module_name}) -> {reason}")
+                break
+    if not forbidden:
+        return
+    details = "\n".join(f"- {item}" for item in sorted(set(forbidden)))
+    raise pytest.UsageError(
+        "Unsupported pytest plugin profile for this project. "
+        "Disable conflicting plugins in run configuration.\n"
+        f"{details}"
+    )
+
 
 def _normalize_target_selector(server_name: str) -> tuple[str, str]:
     """Resolve effective target selector from server_name.
@@ -499,6 +554,7 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
 
 
 def pytest_configure(config: pytest.Config) -> None:
+    _assert_supported_plugin_profile(config)
     env = replace(load_env(), ignore_https_errors=True)
     artifacts_base_dir = resolve_artifacts_base_dir(env.artifacts_dir, config.rootpath)
     artifacts = build_run_artifacts(str(artifacts_base_dir), run_id=_resolve_shared_run_id(config))
