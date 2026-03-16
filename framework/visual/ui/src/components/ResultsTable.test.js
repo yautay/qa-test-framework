@@ -126,6 +126,52 @@ describe("ResultsTable", () => {
     expect(warning.attributes("title")).toBe("sync.unsyncedTooltip");
   });
 
+  it("shows BUG/ASO note indicator when corresponding tag note exists", () => {
+    const row = makeRow();
+    const key = rowKey(row);
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [row],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {
+          [key]: {
+            bug: { locked: true, synced: false, note: "bug note" },
+            aso: { locked: true, synced: false, note: "aso note" },
+            baseline: false,
+          },
+        },
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    expect(wrapper.find('.tag-note-indicator[title="tags.bugHasNote"]').exists()).toBe(true);
+    expect(wrapper.find('.tag-note-indicator[title="tags.asoHasNote"]').exists()).toBe(true);
+  });
+
+  it("hides BUG/ASO note indicator when tag note is empty", () => {
+    const row = makeRow();
+    const key = rowKey(row);
+    const wrapper = mount(ResultsTable, {
+      props: {
+        rows: [row],
+        fmt: (value) => String(value ?? ""),
+        tagLog: {
+          [key]: {
+            bug: { locked: true, synced: false, note: "   " },
+            aso: { locked: true, synced: false, note: "" },
+            baseline: false,
+          },
+        },
+        tagKeyForRow: rowKey,
+        selectedIndex: -1,
+      },
+    });
+
+    expect(wrapper.find('.tag-note-indicator[title="tags.bugHasNote"]').exists()).toBe(false);
+    expect(wrapper.find('.tag-note-indicator[title="tags.asoHasNote"]').exists()).toBe(false);
+  });
+
   it("shows localized error tooltip when sync error exists", () => {
     const row = makeRow();
     const key = rowKey(row);
