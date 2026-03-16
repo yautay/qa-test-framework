@@ -581,6 +581,7 @@ async function sendBaseline() {
   }
 
   const items = candidates.map((row) => ({
+    case_id: getRowTagKey(row),
     scenario_id: row.scenario_id || "",
     suite_id: row.suite_id || "",
     viewport: row.viewport || "",
@@ -1002,6 +1003,14 @@ async function sendEventToBackend(type, noteValue) {
     const note = sanitizeNoteText(noteValue || "");
     const payload = note ? { note } : {};
     await postEvent("ASO_SET", payload);
+    return;
+  }
+  if (type === "baseline") {
+    await postEvent("BASELINE_SET", {});
+    return;
+  }
+  if (type === "remove-baseline") {
+    await postEvent("BASELINE_UNSET", {});
   }
 }
 
@@ -1012,10 +1021,7 @@ async function confirmPrompt() {
   prompt.value = { active: false, type: null, note: "" };
 
   if (currentType.startsWith("remove-")) {
-    const type = currentType.replace("remove-", "");
-    if (type === "baseline") {
-      store.setBaseline(false);
-    }
+    await sendEventToBackend(currentType, "");
     return;
   }
 
@@ -1025,7 +1031,7 @@ async function confirmPrompt() {
   }
 
   if (currentType === "baseline") {
-    store.toggleBaseline();
+    await sendEventToBackend("baseline", "");
   }
 }
 

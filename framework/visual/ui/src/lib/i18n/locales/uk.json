@@ -130,7 +130,9 @@
     "aso": "ASO",
     "baseline": "BASELINE",
     "bugSent": "BUG НАДІСЛАНО",
-    "asoSent": "ASO НАДІСЛАНО"
+    "asoSent": "ASO НАДІСЛАНО",
+    "bugHasNote": "BUG має примітку",
+    "asoHasNote": "ASO має примітку"
   },
   "artifacts": {
     "ref": "ref",

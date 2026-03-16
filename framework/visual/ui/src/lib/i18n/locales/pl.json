@@ -130,7 +130,9 @@
     "aso": "ASO",
     "baseline": "BASELINE",
     "bugSent": "BUG WYSŁANY",
-    "asoSent": "ASO WYSŁANE"
+    "asoSent": "ASO WYSŁANE",
+    "bugHasNote": "BUG ma notatkę",
+    "asoHasNote": "ASO ma notatkę"
   },
   "artifacts": {
     "ref": "ref",

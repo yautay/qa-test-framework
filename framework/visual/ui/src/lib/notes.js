@@ -51,6 +51,7 @@ export function normalizeCaseStateSnapshot(snapshot) {
     normalized[key] = {
       bug: { locked: !!bug.locked, synced: normalizeSynced(bug.synced), note: bugNote },
       aso: { locked: !!aso.locked, synced: normalizeSynced(aso.synced), note: asoNote },
+      baseline: !!state.baseline,
     };
   }
   return normalized;

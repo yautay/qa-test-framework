@@ -514,7 +514,10 @@ export const useResultsStore = defineStore("results", {
       const normalized = normalizeCaseStateSnapshot(snapshot);
       const merged = {};
       for (const [key, value] of Object.entries(normalized)) {
-        const baseline = this.tagLog?.[key]?.baseline || false;
+        const hasServerBaseline = Object.prototype.hasOwnProperty.call(value, "baseline");
+        const baseline = hasServerBaseline
+          ? !!value.baseline
+          : !!(this.tagLog?.[key]?.baseline);
         merged[key] = { ...value, baseline };
       }
       for (const [key, value] of Object.entries(this.tagLog || {})) {

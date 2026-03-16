@@ -149,6 +149,21 @@ describe("notes.js", () => {
       expect(result.key1.aso.synced).toBe(true);
       expect(result.key1.bug.note).toBe("note1");
       expect(result.key1.aso.note).toBe("aso1");
+      expect(result.key1.baseline).toBe(false);
+    });
+
+    it("normalizes baseline flag", () => {
+      const snapshot = {
+        "key1": {
+          bug: { locked: false, synced: false, note: "" },
+          aso: { locked: false, synced: false, note: "" },
+          baseline: 1,
+        },
+      };
+
+      const result = normalizeCaseStateSnapshot(snapshot);
+
+      expect(result.key1.baseline).toBe(true);
     });
 
     it("handles missing fields with defaults", () => {
