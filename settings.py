@@ -1,6 +1,6 @@
 # Logging
 console_log_level = "WARNING"
-tools_file_log_level = "DEBUG"
+tools_file_log_level = "WARNING"
 tools_logs_dir = "tools/logs"
 log_rotation = "50 MB"
 log_retention = "7 days"
@@ -44,8 +44,8 @@ visual_viewport_presets = {
 
 # Visual MinIO
 visual_minio_endpoint = "s3.cpt-sztos.com"
-visual_minio_access_key = "user"
-visual_minio_secret_key = "nc12345678"
+visual_minio_access_key = "release"
+visual_minio_secret_key = "Bytniebytodbyt"
 visual_minio_bucket = "visual-baselines"
 visual_minio_secure = True
 
@@ -70,7 +70,7 @@ reporting_enabled = True
 reporting_schema_version = "2.1"
 reporting_source_project = "netQArner"
 reporting_source_producer_id = ""
-reporting_api_url = "http://127.0.0.1:3001"
+reporting_api_url = "https://toc-api.cpt-sztos.com"
 reporting_api_token = ""
 reporting_api_run_start_endpoint = "/test-run/start"
 reporting_api_test_result_endpoint = "/test-run/test-result"

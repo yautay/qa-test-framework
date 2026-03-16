@@ -11,7 +11,7 @@
 
     <div v-if="store.loadError" class="alert alert-danger py-2">{{ store.loadError }}</div>
 
-    <div v-if="store.excludedVisualCases.length" class="alert alert-warning py-2">
+    <div v-if="store.excludedVisualCases.length" class="alert alert-warning py-2" data-name="excluded-visual-cases">
       <details class="excluded-visual-cases">
         <summary class="fw-semibold">{{ t('report.excludedVisualCases') }}: {{ store.excludedVisualCases.length }}</summary>
         <div v-if="store.excludedVisualReasonsSummary.length" class="excluded-reasons mt-2">
@@ -91,6 +91,40 @@
       @cancel="cancelPrompt"
       @note-input="updatePromptNote"
     />
+    <div v-if="baselineSendPrompt.active" class="baseline-send-overlay" role="dialog" aria-modal="true">
+      <div class="baseline-send-card">
+        <div class="baseline-send-title">{{ t('prompt.confirm') }}</div>
+        <div class="baseline-send-text">{{ t('report.baselineConfirmPrompt') }}</div>
+        <div class="baseline-send-phrase mono">{{ baselineSendPrompt.phrase }}</div>
+        <input
+          ref="baselineSendInput"
+          type="text"
+          class="form-control baseline-send-input"
+          :placeholder="t('report.baselineConfirmPlaceholder')"
+          :value="baselineSendPrompt.input"
+          :disabled="baselineSendPrompt.submitting"
+          @input="updateBaselineSendInput($event.target.value)"
+        />
+        <div class="baseline-send-actions">
+          <button
+            type="button"
+            class="btn btn-sm btn-primary baseline-send-confirm"
+            :disabled="baselineSendPrompt.submitting"
+            @click="confirmBaselineSendPrompt"
+          >
+            {{ t('prompt.yes') }}
+          </button>
+          <button
+            type="button"
+            class="btn btn-sm btn-outline-secondary"
+            :disabled="baselineSendPrompt.submitting"
+            @click="closeBaselineSendPrompt"
+          >
+            {{ t('prompt.no') }}
+          </button>
+        </div>
+      </div>
+    </div>
     <TestMetadataPanel
       :active="metadataPanel.active"
       :metadata="metadataPanel.payload"
@@ -101,7 +135,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount } from "vue";
+import { computed, ref, onMounted, onBeforeUnmount, nextTick, watch } from "vue";
 import AppHeader from "../components/AppHeader.vue";
 import ReportHeader from "../components/ReportHeader.vue";
 import FiltersPanel from "../components/FiltersPanel.vue";
@@ -156,6 +190,15 @@ const metadataPanel = ref({
   payload: {},
 });
 const noteMaxLength = NOTE_MAX_LENGTH;
+const baselineSendPrompt = ref({
+  active: false,
+  phrase: "",
+  challengeId: "",
+  input: "",
+  items: [],
+  submitting: false,
+});
+const baselineSendInput = ref(null);
 
 const baseZoom = ref(100);
 const HEARTBEAT_MS = 15000;
@@ -381,6 +424,82 @@ function stopLockHeartbeat() {
   }
 }
 
+function openBaselineSendPrompt(challengeId, phrase, items) {
+  baselineSendPrompt.value = {
+    active: true,
+    phrase,
+    challengeId,
+    input: "",
+    items,
+    submitting: false,
+  };
+}
+
+function closeBaselineSendPrompt() {
+  baselineSendPrompt.value = {
+    active: false,
+    phrase: "",
+    challengeId: "",
+    input: "",
+    items: [],
+    submitting: false,
+  };
+}
+
+function updateBaselineSendInput(value) {
+  if (!baselineSendPrompt.value.active) return;
+  baselineSendPrompt.value = {
+    ...baselineSendPrompt.value,
+    input: String(value || ""),
+  };
+}
+
+async function confirmBaselineSendPrompt() {
+  if (!baselineSendPrompt.value.active || baselineSendPrompt.value.submitting) return;
+  const lockOk = await ensureLock();
+  if (!lockOk) {
+    closeBaselineSendPrompt();
+    return;
+  }
+
+  const challengeId = String(baselineSendPrompt.value.challengeId || "").trim();
+  const phraseInput = String(baselineSendPrompt.value.input || "").trim();
+  const items = Array.isArray(baselineSendPrompt.value.items) ? baselineSendPrompt.value.items : [];
+  baselineSendPrompt.value = {
+    ...baselineSendPrompt.value,
+    submitting: true,
+  };
+
+  try {
+    const response = await sendBaselineSelectionForRun(props.runId, {
+      challenge_id: challengeId,
+      phrase: phraseInput,
+      items,
+    });
+    const saved = Number(response?.saved_count || 0);
+    const failed = Number(response?.failed_count || 0);
+    if (failed > 0) {
+      console.error(`ERROR Baseline sync finished with failures: saved=${saved}, failed=${failed}`);
+      return;
+    }
+    for (const row of store.baselineCandidates) {
+      const key = getRowTagKey(row);
+      store.setBaselineForKey(key, false);
+    }
+    console.info(`Baseline sync done: saved=${saved}, failed=${failed}`);
+    closeBaselineSendPrompt();
+  } catch (error) {
+    console.error(`ERROR SEND BASELINE failed: ${error?.message || "unknown error"}`);
+  } finally {
+    if (baselineSendPrompt.value.active) {
+      baselineSendPrompt.value = {
+        ...baselineSendPrompt.value,
+        submitting: false,
+      };
+    }
+  }
+}
+
 async function ensureLock() {
   if (!props.runId || !clientId) return false;
   if (lockInfo.value.lockId) return true;
@@ -441,6 +560,11 @@ async function sendBaseline() {
     return;
   }
 
+  const lockOk = await ensureLock();
+  if (!lockOk) {
+    return;
+  }
+
   let challenge;
   try {
     challenge = await requestBaselineChallengeForRun(props.runId);
@@ -456,12 +580,6 @@ async function sendBaseline() {
     return;
   }
 
-  const typed = window.prompt(`Type this phrase to confirm baseline write:\n\n${phrase}`);
-  if (typed === null) {
-    console.info("SEND BASELINE cancelled");
-    return;
-  }
-
   const items = candidates.map((row) => ({
     scenario_id: row.scenario_id || "",
     suite_id: row.suite_id || "",
@@ -470,26 +588,7 @@ async function sendBaseline() {
     actual_path: row.actual_path || "",
   }));
 
-  try {
-    const response = await sendBaselineSelectionForRun(props.runId, {
-      challenge_id: challengeId,
-      phrase: String(typed).trim(),
-      items,
-    });
-    const saved = Number(response?.saved_count || 0);
-    const failed = Number(response?.failed_count || 0);
-    if (failed > 0) {
-      console.error(`ERROR Baseline sync finished with failures: saved=${saved}, failed=${failed}`);
-      return;
-    }
-    for (const row of candidates) {
-      const key = getRowTagKey(row);
-      store.setBaselineForKey(key, false);
-    }
-    console.info(`Baseline sync done: saved=${saved}, failed=${failed}`);
-  } catch (error) {
-    console.error(`ERROR SEND BASELINE failed: ${error?.message || "unknown error"}`);
-  }
+  openBaselineSendPrompt(challengeId, phrase, items);
 }
 
 async function promptSendReport() {
@@ -664,6 +763,8 @@ function releaseKeyPress(evt) {
 }
 
 function handleKeydown(evt) {
+  if (handleBaselineSendPromptKeydown(evt)) return;
+
   const modalEl = document.getElementById("vrtModal");
   const isOpen = modalEl && modalEl.classList.contains("show");
 
@@ -829,6 +930,23 @@ function handlePromptKeydown(evt) {
   return true;
 }
 
+function handleBaselineSendPromptKeydown(evt) {
+  if (!baselineSendPrompt.value.active) return false;
+  if (evt.code === "Enter") {
+    evt.preventDefault();
+    evt.stopPropagation();
+    confirmBaselineSendPrompt();
+    return true;
+  }
+  if (evt.code === "Escape" || evt.code === "ShiftLeft" || evt.code === "ShiftRight") {
+    evt.preventDefault();
+    evt.stopPropagation();
+    closeBaselineSendPrompt();
+    return true;
+  }
+  return false;
+}
+
 function promptRemoveTag(type) {
   if (prompt.value.active) return;
   if (type !== "baseline") return;
@@ -931,15 +1049,19 @@ function handleMouseMove(payload) {
 }
 
 onMounted(async () => {
-  await ensureLock();
-  if (!lockDenied.value) {
-    const pmsPollingConfig = await loadPmsPollingConfig();
+  if (!props.runId) {
     await loadResults();
-    await loadState();
-    store.startPolling(props.runId, SYNC_POLL_INTERVAL_MS, {
-      pmsPollIntervalMs: pmsPollingConfig.intervalMs,
-      pmsPollIdleMultiplier: pmsPollingConfig.idleMultiplier,
-    });
+  } else {
+    const lockOk = await ensureLock();
+    if (lockOk && !lockDenied.value) {
+      const pmsPollingConfig = await loadPmsPollingConfig();
+      await loadResults();
+      await loadState();
+      store.startPolling(props.runId, SYNC_POLL_INTERVAL_MS, {
+        pmsPollIntervalMs: pmsPollingConfig.intervalMs,
+        pmsPollIdleMultiplier: pmsPollingConfig.idleMultiplier,
+      });
+    }
   }
   window.addEventListener("keydown", handleKeydown);
   window.addEventListener("keyup", handleKeyup);
@@ -949,6 +1071,15 @@ onMounted(async () => {
     modalEl.addEventListener("hidden.bs.modal", closeModal);
   }
 });
+
+watch(
+  () => baselineSendPrompt.value.active,
+  async (active) => {
+    if (!active) return;
+    await nextTick();
+    baselineSendInput.value?.focus();
+  }
+);
 
 onBeforeUnmount(() => {
   window.removeEventListener("keydown", handleKeydown);
@@ -960,6 +1091,7 @@ onBeforeUnmount(() => {
   store.stopPolling();
   stopLockHeartbeat();
   releaseLock();
+  closeBaselineSendPrompt();
 });
 </script>
 
@@ -1015,5 +1147,52 @@ onBeforeUnmount(() => {
 .excluded-raw-text {
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.baseline-send-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1110;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.baseline-send-card {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 0.75rem;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.2);
+  padding: 1.25rem 1.5rem;
+}
+
+.baseline-send-title {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.baseline-send-text {
+  margin-bottom: 0.5rem;
+}
+
+.baseline-send-phrase {
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.35rem;
+  border: 1px dashed var(--border);
+  background: color-mix(in srgb, var(--card-bg) 80%, var(--body-bg) 20%);
+}
+
+.baseline-send-input {
+  margin-bottom: 0.75rem;
+}
+
+.baseline-send-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
 }
 </style>

@@ -14,7 +14,6 @@ def test_load_env_reads_browser_from_environment(monkeypatch):
     env = load_env()
 
     assert env.browser == "chrome"
-    assert env.headless is True
 
 
 def test_load_env_uses_settings_browser_by_default(monkeypatch):

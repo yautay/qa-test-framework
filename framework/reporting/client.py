@@ -31,6 +31,8 @@ class ReportingClient:
     async_max_attempts: int = 3
     async_max_retry_age_seconds: int = 30
     async_flush_timeout_seconds: int = 3
+    source_host: str = ""
+    source_user: str = ""
 
     session: requests.Session = field(default_factory=requests.Session, repr=False)
     _thread_local: threading.local = field(default_factory=threading.local, repr=False)
@@ -48,6 +50,8 @@ class ReportingClient:
             session=self.session,
             thread_local=self._thread_local,
             debug_async=self._debug_async,
+            source_host=self.source_host,
+            source_user=self.source_user,
         )
         self._queue = AsyncReportingQueue(
             enabled=self.enabled and self.async_enabled,

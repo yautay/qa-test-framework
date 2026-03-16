@@ -194,13 +194,17 @@ def execute_visual_scenario(
     scenario: VisualScenario,
     viewport: str,
     runtime_env: RuntimeEnv,
+    base_url: str,
     visual_output_dir: Path,
     visual_results: list,
     pytestconfig: pytest.Config,
     resolve_reference_base_url: Callable[[str], tuple[str, str, str]] | None = None,
 ) -> None:
-    if not runtime_env.base_url and not scenario.target_url.startswith(("http://", "https://")):
+    effective_base_url = str(base_url or runtime_env.base_url or "").strip()
+    if not effective_base_url and not scenario.target_url.startswith(("http://", "https://")):
         pytest.skip("BASE_URL is not configured for relative visual target_url")
+
+    target_env = replace(runtime_env, base_url=effective_base_url)
 
     repo_root = Path(pytestconfig.rootpath).resolve()
     run_metadata = getattr(pytestconfig, "_run_metadata", {})
@@ -233,7 +237,7 @@ def execute_visual_scenario(
             viewport=viewport,
             worker_id=worker_id,
         )
-        runner = VisualRunner(runtime_env, repo_root, visual_output_dir)
+        runner = VisualRunner(target_env, repo_root, visual_output_dir)
         target_pass_started = time.perf_counter()
         result = runner.run(page, scenario, viewport=viewport)
         target_pass_duration_ms = int((time.perf_counter() - target_pass_started) * 1000)
@@ -244,7 +248,7 @@ def execute_visual_scenario(
             tester=tester,
             run_note=run_note,
             dual_pass=False,
-            target_base_url=runtime_env.base_url,
+            target_base_url=effective_base_url,
             reference_host="",
             reference_url="",
             reference_pass_duration_ms=None,
@@ -319,7 +323,7 @@ def execute_visual_scenario(
         reference_output_dir.mkdir(parents=True, exist_ok=True)
 
         compare_env = replace(
-            runtime_env,
+            target_env,
             visual_baseline_provider="",
             visual_cache_dir=str(reference_cache_dir),
         )
@@ -376,7 +380,7 @@ def execute_visual_scenario(
             nodeid=request.node.nodeid,
             scenario_id=scenario.scenario_id,
             viewport=viewport,
-            target_base_url=runtime_env.base_url,
+            target_base_url=effective_base_url,
         )
         target_pass_started = time.perf_counter()
         target_runner = VisualRunner(compare_env, repo_root, visual_output_dir)
@@ -400,7 +404,7 @@ def execute_visual_scenario(
             tester=tester,
             run_note=run_note,
             dual_pass=True,
-            target_base_url=runtime_env.base_url,
+            target_base_url=effective_base_url,
             reference_host=reference_host,
             reference_url=reference_url,
             reference_pass_duration_ms=reference_pass_duration_ms,

@@ -155,9 +155,18 @@ def test_postprocess_calls_incremental_callback_on_timeout(tmp_path: Path, monke
         def get_job_error(self, _job_id: str) -> dict[str, object]:
             return {}
 
-    times = iter([0.0, 0.0, 2.0, 3.0])
+    class _FakeTime:
+        def __init__(self, values: list[float]) -> None:
+            self._values = iter(values)
+
+        def monotonic(self) -> float:
+            return next(self._values)
+
+        def sleep(self, _seconds: float) -> None:
+            return None
+
     monkeypatch.setattr(postprocess, "PMSClient", _SlowClient)
-    monkeypatch.setattr(postprocess.time, "monotonic", lambda: next(times))
+    monkeypatch.setattr(postprocess, "time", _FakeTime([0.0, 0.0, 2.0, 3.0]))
     result = _make_result(tmp_path)
     calls = {"count": 0}
 
