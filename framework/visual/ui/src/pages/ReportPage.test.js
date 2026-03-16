@@ -46,7 +46,7 @@ vi.mock("bootstrap", () => ({
 }));
 
 import ReportPage from "./ReportPage.vue";
-import { acquireBuildLock, fetchBuildTags, fetchReportResultsPayload, heartbeatBuildLock, sendBuildReport } from "../lib/api/reportsApi";
+import { acquireBuildLock, fetchBuildTags, fetchReportResultsPayload, heartbeatBuildLock, postBuildEvent, sendBuildReport } from "../lib/api/reportsApi";
 import { requestBaselineChallengeForRun, sendBaselineSelectionForRun } from "../lib/baselineApi";
 import { useResultsStore } from "../stores/resultsStore";
 import { getRowTagKey } from "../lib/viewer";
@@ -1221,6 +1221,104 @@ describe("ReportPage", () => {
     const prompt = wrapper.findComponent({ name: "ConfirmPrompt" });
     expect(prompt.props("active")).toBe(true);
     expect(prompt.props("type")).toBe("remove-baseline");
+
+    wrapper.unmount();
+    teleportHost.remove();
+  });
+
+  it("persists baseline via BASELINE_SET event", async () => {
+    const teleportHost = document.createElement("div");
+    teleportHost.id = "vrtModal";
+    const modalContent = document.createElement("div");
+    modalContent.className = "modal-content";
+    teleportHost.appendChild(modalContent);
+    document.body.appendChild(teleportHost);
+
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const store = useResultsStore();
+    const row = store.rows[0];
+    const key = getRowTagKey(row);
+    store.openViewer(row, "test", 0);
+    postBuildEvent.mockResolvedValueOnce({
+      accepted: true,
+      test_cases: {
+        [key]: {
+          bug: { locked: false, synced: false, note: "" },
+          aso: { locked: false, synced: false, note: "" },
+          baseline: true,
+        },
+      },
+    });
+
+    const modal = wrapper.findComponent({ name: "ViewerModal" });
+    modal.vm.$emit("prompt-tag", "baseline");
+    await nextTick();
+
+    const prompt = wrapper.findComponent({ name: "ConfirmPrompt" });
+    prompt.vm.$emit("confirm");
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(postBuildEvent).toHaveBeenCalledWith(
+      "run-1",
+      expect.objectContaining({ type: "BASELINE_SET", test_case_id: key })
+    );
+    expect(store.tagLog[key].baseline).toBe(true);
+
+    wrapper.unmount();
+    teleportHost.remove();
+  });
+
+  it("persists baseline removal via BASELINE_UNSET event", async () => {
+    const teleportHost = document.createElement("div");
+    teleportHost.id = "vrtModal";
+    const modalContent = document.createElement("div");
+    modalContent.className = "modal-content";
+    teleportHost.appendChild(modalContent);
+    document.body.appendChild(teleportHost);
+
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const store = useResultsStore();
+    const row = store.rows[0];
+    const key = getRowTagKey(row);
+    store.openViewer(row, "test", 0);
+    store.setBaseline(true);
+    postBuildEvent.mockResolvedValueOnce({
+      accepted: true,
+      test_cases: {
+        [key]: {
+          bug: { locked: false, synced: false, note: "" },
+          aso: { locked: false, synced: false, note: "" },
+          baseline: false,
+        },
+      },
+    });
+
+    const modal = wrapper.findComponent({ name: "ViewerModal" });
+    modal.vm.$emit("prompt-tag", "baseline");
+    await nextTick();
+
+    const prompt = wrapper.findComponent({ name: "ConfirmPrompt" });
+    expect(prompt.props("type")).toBe("remove-baseline");
+    prompt.vm.$emit("confirm");
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(postBuildEvent).toHaveBeenCalledWith(
+      "run-1",
+      expect.objectContaining({ type: "BASELINE_UNSET", test_case_id: key })
+    );
+    expect(store.tagLog[key].baseline).toBe(false);
 
     wrapper.unmount();
     teleportHost.remove();

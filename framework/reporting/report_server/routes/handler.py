@@ -402,7 +402,7 @@ def _build_handler(context: ReportServerContext):
                     if not event_id:
                         self._send_json(HTTPStatus.BAD_REQUEST, {"error": "missing event_id"})
                         return
-                    if event_type not in {"BUG_SET", "ASO_SET"}:
+                    if event_type not in {"BUG_SET", "ASO_SET", "BASELINE_SET", "BASELINE_UNSET"}:
                         self._send_json(HTTPStatus.BAD_REQUEST, {"error": "invalid event type"})
                         return
                     if not case_id:
@@ -412,21 +412,23 @@ def _build_handler(context: ReportServerContext):
                     build_dir = report_dir.parent
                     reporting_enabled = False
                     event_id_to_send = ""
+                    response_event: dict[str, Any] | None = None
                     with context._lock:
                         state = _load_state(build_dir)
-                        outbox = state.setdefault("outbox", [])
-                        existing = next((item for item in outbox if item.get("event_id") == event_id), None)
-                        if existing:
-                            self._send_json(
-                                HTTPStatus.OK,
-                                {
-                                    "accepted": True,
-                                    "duplicate": True,
-                                    "event": existing,
-                                    "test_cases": state.get("test_cases", {}),
-                                },
-                            )
-                            return
+                        if event_type in {"BUG_SET", "ASO_SET"}:
+                            outbox = state.setdefault("outbox", [])
+                            existing = next((item for item in outbox if item.get("event_id") == event_id), None)
+                            if existing:
+                                self._send_json(
+                                    HTTPStatus.OK,
+                                    {
+                                        "accepted": True,
+                                        "duplicate": True,
+                                        "event": existing,
+                                        "test_cases": state.get("test_cases", {}),
+                                    },
+                                )
+                                return
 
                         case_state = _ensure_case_state(state, case_id)
                         if event_type == "BUG_SET" and case_state["bug"]["locked"]:
@@ -446,36 +448,48 @@ def _build_handler(context: ReportServerContext):
                         note_content = prompt_note
 
                         case_state = _apply_event_to_state(state, case_id, event_type, note_content)
+                        if event_type in {"BUG_SET", "ASO_SET"}:
+                            event_payload_out: dict[str, Any] = {}
+                            if prompt_note:
+                                event_payload_out["note"] = prompt_note
 
-                        event_payload_out: dict[str, Any] = {}
-                        if prompt_note:
-                            event_payload_out["note"] = prompt_note
+                            event_entry = {
+                                "event_id": event_id,
+                                "type": event_type,
+                                "payload": event_payload_out,
+                                "status": "pending",
+                                "attempts": 0,
+                                "last_attempt_at": "",
+                                "sent_at": "",
+                                "last_error": "",
+                                "test_case_id": case_id,
+                            }
+                            outbox = state.setdefault("outbox", [])
+                            outbox.append(event_entry)
+                            response_event = event_entry
 
-                        event_entry = {
-                            "event_id": event_id,
-                            "type": event_type,
-                            "payload": event_payload_out,
-                            "status": "pending",
-                            "attempts": 0,
-                            "last_attempt_at": "",
-                            "sent_at": "",
-                            "last_error": "",
-                            "test_case_id": case_id,
-                        }
-                        outbox.append(event_entry)
+                            if not context.reporting_enabled:
+                                _record_event_attempt(event_entry, True, "")
+                                _mark_case_synced(case_state, event_type)
 
-                        if not context.reporting_enabled:
-                            _record_event_attempt(event_entry, True, "")
-                            _mark_case_synced(case_state, event_type)
+                            reporting_enabled = bool(
+                                context.reporting_enabled
+                                and context.reporting_client
+                                and context.reporting_client.enabled
+                            )
+
+                            if reporting_enabled:
+                                event_id_to_send = str(event_entry.get("event_id", ""))
+                        else:
+                            response_event = {
+                                "event_id": event_id,
+                                "type": event_type,
+                                "payload": {},
+                                "status": "applied",
+                                "test_case_id": case_id,
+                            }
 
                         _save_state(build_dir, state)
-
-                        reporting_enabled = bool(
-                            context.reporting_enabled and context.reporting_client and context.reporting_client.enabled
-                        )
-
-                        if reporting_enabled:
-                            event_id_to_send = str(event_entry.get("event_id", ""))
 
                     if not reporting_enabled:
                         logger.debug(
@@ -502,14 +516,13 @@ def _build_handler(context: ReportServerContext):
                                 case_id=case_id,
                             )
 
-                    self._send_json(
-                        HTTPStatus.OK,
-                        {
-                            "accepted": True,
-                            "event": event_entry,
-                            "test_cases": state.get("test_cases", {}),
-                        },
-                    )
+                    response_payload = {
+                        "accepted": True,
+                        "test_cases": state.get("test_cases", {}),
+                    }
+                    if response_event is not None:
+                        response_payload["event"] = response_event
+                    self._send_json(HTTPStatus.OK, response_payload)
                     return
 
                 m_report = re.match(r"^/(?:api/)?builds/([^/]+)/report$", path)
@@ -594,7 +607,20 @@ def _build_handler(context: ReportServerContext):
 
                     context.challenges.pop(challenge_id, None)
 
+                rows = _read_results_rows(report_dir)
+                case_ids_by_fingerprint: dict[tuple[str, str, str, str, str], str] = {}
+                for row in rows:
+                    fingerprint = (
+                        str(row.get("scenario_id", "") or ""),
+                        str(row.get("suite_id", "") or ""),
+                        str(row.get("viewport", "") or ""),
+                        str(row.get("browser", "") or ""),
+                        str(row.get("actual_path", "") or ""),
+                    )
+                    case_ids_by_fingerprint[fingerprint] = _row_tag_key(row)
+
                 results: list[dict[str, Any]] = []
+                case_ids_to_clear: set[str] = set()
                 saved_count = 0
                 failed_count = 0
                 for raw_item in items:
@@ -617,6 +643,14 @@ def _build_handler(context: ReportServerContext):
                             source,
                             version_override="candidates",
                         )
+                        case_id = _normalize_text(raw_item.get("case_id"), trim=True)
+                        if not case_id:
+                            case_id = case_ids_by_fingerprint.get(
+                                (scenario_id, suite_id, viewport, browser, actual_path),
+                                "",
+                            )
+                        if case_id:
+                            case_ids_to_clear.add(case_id)
                         results.append(
                             {
                                 "status": "saved",
@@ -635,6 +669,25 @@ def _build_handler(context: ReportServerContext):
                                 "message": str(exc),
                             }
                         )
+
+                if case_ids_to_clear:
+                    with context._lock:
+                        build_dir = report_dir.parent
+                        state = _load_state(build_dir)
+                        changed = False
+                        for case_id in case_ids_to_clear:
+                            cases = state.get("test_cases", {})
+                            if not isinstance(cases, dict):
+                                continue
+                            case_state = cases.get(case_id)
+                            if not isinstance(case_state, dict):
+                                continue
+                            normalized_state = _ensure_case_state(state, case_id)
+                            if bool(normalized_state.get("baseline", False)):
+                                normalized_state["baseline"] = False
+                                changed = True
+                        if changed:
+                            _save_state(build_dir, state)
 
                 self._send_json(
                     HTTPStatus.OK,

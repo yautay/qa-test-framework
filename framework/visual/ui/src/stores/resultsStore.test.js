@@ -457,6 +457,19 @@ describe("resultsStore", () => {
       store.updateTagLog(undefined);
       expect(store.tagLog).toEqual({});
     });
+
+    it("applies baseline flag from server snapshot", () => {
+      const store = useResultsStore();
+      store.updateTagLog({
+        "s1::a.png::::": {
+          bug: { locked: false, synced: false, note: "" },
+          aso: { locked: false, synced: false, note: "" },
+          baseline: true,
+        },
+      });
+
+      expect(store.tagLog["s1::a.png::::"].baseline).toBe(true);
+    });
   });
 
   describe("baselineCandidates", () => {
