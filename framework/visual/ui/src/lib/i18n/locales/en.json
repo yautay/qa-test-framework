@@ -94,6 +94,8 @@
       "execution_error": "Pytest execution error",
       "unknown": "Unknown exclusion reason"
     },
+    "baselineConfirmPrompt": "Type the phrase below to confirm baseline write.",
+    "baselineConfirmPlaceholder": "Type confirmation phrase",
     "confirmSend": "Are you sure you want to submit BUG/ASO?",
     "summary": {
       "total": "total",
@@ -128,7 +130,9 @@
     "aso": "ASO",
     "baseline": "BASELINE",
     "bugSent": "BUG SENT",
-    "asoSent": "ASO SENT"
+    "asoSent": "ASO SENT",
+    "bugHasNote": "BUG has a note",
+    "asoHasNote": "ASO has a note"
   },
   "artifacts": {
     "ref": "ref",

@@ -5,9 +5,9 @@ from pathlib import Path
 import pytest
 
 from framework.env import RuntimeEnv
+from framework.targeting import resolve_reference_base_url
 from framework.visual.visual_suite import apply_parametrization, execute_visual_scenario
 from framework.visual.models import VisualScenario
-from qa.visual.netcorner.nuxt.pl.url_config import resolve_reference_base_url
 
 SCENARIOS_DIR = Path(__file__).resolve().parent
 
@@ -24,6 +24,7 @@ def test_layers_visual(
     page,
     scenario: VisualScenario,
     viewport: str,
+    base_url: str,
     runtime_env: RuntimeEnv,
     visual_output_dir: Path,
     visual_results: list,
@@ -35,6 +36,7 @@ def test_layers_visual(
         scenario=scenario,
         viewport=viewport,
         runtime_env=runtime_env,
+        base_url=base_url,
         visual_output_dir=visual_output_dir,
         visual_results=visual_results,
         pytestconfig=pytestconfig,

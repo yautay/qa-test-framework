@@ -124,6 +124,11 @@ def _resolve_log_option(env_name: str, settings_name: str, default: str) -> str:
     return normalized or default
 
 
+def _console_stream() -> Any:
+    stream = getattr(sys, "__stdout__", None)
+    return stream if stream is not None else sys.stdout
+
+
 def configure_logging(
     run_log_dir: Path,
     run_id: str,
@@ -161,7 +166,7 @@ def configure_logging(
 
     # Human-readable console sink
     logger.add(
-        sys.stdout,
+        _console_stream(),
         level=_resolve_console_log_level(),
         enqueue=False,  # console is fine without queue; lower overhead
         serialize=False,
@@ -229,7 +234,7 @@ def configure_tools_logging(script_name: str) -> Path:
     _install_stdlib_logging_bridge()
     logger.configure(patcher=cast(Any, _redact_record))
     logger.add(
-        sys.stdout,
+        _console_stream(),
         level=_resolve_console_log_level(),
         enqueue=False,
         serialize=False,
@@ -276,8 +281,11 @@ def add_reporting_api_sink(reporting_client: Any, level: str = "WARNING") -> int
             "function": str(record.get("function", "") or ""),
             "line": int(record.get("line", 0) or 0),
         }
+        level_obj = record.get("level")
+        level_name = str(getattr(level_obj, "name", "INFO") or "INFO")
+
         client.log_event(
-            level=str(record.get("level").name if record.get("level") else "INFO"),
+            level=level_name,
             message=event_type,
             run_id=str(extra.get("run_id", "") or ""),
             nodeid=str(extra.get("nodeid", "") or ""),

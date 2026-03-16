@@ -21,6 +21,7 @@ from framework.env import RuntimeEnv, load_env
 from framework.git_info import get_git_metadata
 from framework.logger import add_reporting_api_sink, bind_test_context, configure_logging
 from framework.reporting_client import ReportingClient
+from framework.targeting import resolve_target_context, resolve_target_id_for_nodeid
 from framework.timing_monitor import (
     detect_slow_regressions,
     load_previous_timings,
@@ -114,6 +115,61 @@ def _normalize_run_note(raw: object, source: str) -> str:
 
 
 _ENV_ALIAS_TOKENS = {"demo", "prod", "local"}
+
+_FORBIDDEN_PLUGIN_PATTERNS: tuple[tuple[str, str], ...] = (
+    ("anyio", "plugin anyio can force asyncio loop and conflicts with Playwright Sync API"),
+    ("playwright", "plugin pytest-playwright is disabled because project uses custom Playwright fixtures"),
+    (
+        "pytest_playwright",
+        "plugin pytest-playwright is disabled because project uses custom Playwright fixtures",
+    ),
+    ("base_url", "plugin pytest-base-url is disabled because project uses custom base_url resolution"),
+    (
+        "pytest_base_url",
+        "plugin pytest-base-url is disabled because project uses custom base_url resolution",
+    ),
+)
+
+
+def _iter_loaded_plugins(config: pytest.Config) -> list[tuple[str, str]]:
+    loaded: list[tuple[str, str]] = []
+    plugin_manager = config.pluginmanager
+    is_blocked = getattr(plugin_manager, "is_blocked", None)
+    for raw_name, plugin in plugin_manager.list_name_plugin():
+        name = str(raw_name or "").strip()
+        if not name:
+            continue
+        if callable(is_blocked):
+            try:
+                if bool(is_blocked(name)):
+                    continue
+            except Exception:
+                pass
+        if plugin is None:
+            continue
+        module_name = str(getattr(plugin, "__name__", "") or "").strip()
+        if not module_name:
+            module_name = str(type(plugin).__name__)
+        loaded.append((name.lower(), module_name.lower()))
+    return loaded
+
+
+def _assert_supported_plugin_profile(config: pytest.Config) -> None:
+    forbidden: list[str] = []
+    for plugin_name, module_name in _iter_loaded_plugins(config):
+        token = f"{plugin_name} {module_name}".strip()
+        for pattern, reason in _FORBIDDEN_PLUGIN_PATTERNS:
+            if pattern in token:
+                forbidden.append(f"{plugin_name} ({module_name}) -> {reason}")
+                break
+    if not forbidden:
+        return
+    details = "\n".join(f"- {item}" for item in sorted(set(forbidden)))
+    raise pytest.UsageError(
+        "Unsupported pytest plugin profile for this project. "
+        "Disable conflicting plugins in run configuration.\n"
+        f"{details}"
+    )
 
 
 def _normalize_target_selector(server_name: str) -> tuple[str, str]:
@@ -300,6 +356,7 @@ def _extract_pytest_outcome(item: pytest.Item) -> dict[str, str]:
             "phase": phase,
             "outcome": outcome,
             "message": first_line[:300],
+            "longrepr": longrepr_text[:2500],
         }
     return {}
 
@@ -460,13 +517,44 @@ def _base_url_resolver(config: pytest.Config):
         config._runtime_env = replace(env, base_url=settings_cli.base_url_override)
         return
 
-    if env.base_url:
-        env = replace(env, base_url=env.base_url)
-
     config._runtime_env = env
 
 
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    env: RuntimeEnv | None = getattr(config, "_runtime_env", None)
+    explicit_base_url = str(getattr(env, "base_url", "") or "")
+    explicit_base_url = (explicit_base_url or "").strip()
+    if explicit_base_url:
+        return
+
+    issues: list[str] = []
+    for item in items:
+        marker = item.get_closest_marker("target")
+        marker_target = ""
+        if marker and marker.args:
+            marker_target = str(marker.args[0] or "").strip()
+        nodeid = str(getattr(item, "nodeid", "") or "")
+        try:
+            target_id = marker_target or resolve_target_id_for_nodeid(nodeid)
+        except ValueError as exc:
+            issues.append(str(exc))
+            continue
+        if target_id:
+            continue
+        normalized = nodeid.replace("\\", "/")
+        if normalized.startswith("qa/visual/") or normalized.startswith("qa/e2e/netcorner/"):
+            issues.append(
+                "Cannot resolve target for nodeid="
+                f"{nodeid!r}; add @pytest.mark.target('<id>') or extend path mapping in framework.targeting.registry"
+            )
+
+    if issues:
+        details = "\n".join(f"- {issue}" for issue in sorted(set(issues)))
+        raise pytest.UsageError(f"Target resolution errors (strict mode):\n{details}")
+
+
 def pytest_configure(config: pytest.Config) -> None:
+    _assert_supported_plugin_profile(config)
     env = replace(load_env(), ignore_https_errors=True)
     artifacts_base_dir = resolve_artifacts_base_dir(env.artifacts_dir, config.rootpath)
     artifacts = build_run_artifacts(str(artifacts_base_dir), run_id=_resolve_shared_run_id(config))
@@ -510,6 +598,8 @@ def pytest_configure(config: pytest.Config) -> None:
         async_max_attempts=env.reporting_async_max_attempts,
         async_max_retry_age_seconds=env.reporting_async_max_retry_age_seconds,
         async_flush_timeout_seconds=env.reporting_async_flush_timeout_seconds,
+        source_host=socket.gethostname(),
+        source_user=os.getenv("USER") or os.getenv("USERNAME") or getpass.getuser(),
     )
     add_reporting_api_sink(config._reporting_client, env.reporting_api_log_level)
     config._test_case_timings = {}
@@ -778,6 +868,29 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
 def runtime_env(pytestconfig: pytest.Config) -> RuntimeEnv:
     """Resolved runtime configuration shared by all tests."""
     return pytestconfig._runtime_env
+
+
+@pytest.fixture(scope="function")
+def target_context(request: pytest.FixtureRequest, runtime_env: RuntimeEnv):
+    marker = request.node.get_closest_marker("target")
+    marker_target = ""
+    if marker and marker.args:
+        marker_target = str(marker.args[0] or "").strip()
+
+    try:
+        return resolve_target_context(
+            nodeid=request.node.nodeid,
+            server_name=runtime_env.server_name,
+            explicit_base_url=runtime_env.base_url,
+            marker_target=marker_target,
+        )
+    except ValueError as exc:
+        raise pytest.UsageError(str(exc)) from exc
+
+
+@pytest.fixture(scope="function")
+def base_url(target_context) -> str:
+    return str(target_context.base_url or "")
 
 
 @pytest.fixture(scope="session")

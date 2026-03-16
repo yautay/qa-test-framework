@@ -96,6 +96,10 @@ def _apply_event_to_state(
         case_state["aso"]["locked"] = True
         case_state["aso"]["synced"] = False
         case_state["aso"]["note"] = note_content or ""
+    elif event_type == "BASELINE_SET":
+        case_state["baseline"] = True
+    elif event_type == "BASELINE_UNSET":
+        case_state["baseline"] = False
     return case_state
 
 

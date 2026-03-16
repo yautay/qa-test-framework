@@ -91,11 +91,25 @@
                       class="badge bg-danger"
                       :class="{ 'tag-pending': isPendingTag(r, 'bug') }">
                   {{ t('tags.bug') }}
+                  <span
+                    v-if="rowHasTagNote(r, 'bug')"
+                    class="tag-note-indicator"
+                    :title="t('tags.bugHasNote')"
+                  >
+                    📝
+                  </span>
                 </span>
                 <span v-if="rowHasTag(r, 'aso')" 
                       class="badge bg-warning text-dark"
                       :class="{ 'tag-pending': isPendingTag(r, 'aso') }">
                   {{ t('tags.aso') }}
+                  <span
+                    v-if="rowHasTagNote(r, 'aso')"
+                    class="tag-note-indicator"
+                    :title="t('tags.asoHasNote')"
+                  >
+                    📝
+                  </span>
                 </span>
                 <span v-if="rowHasTag(r, 'baseline')" class="badge bg-success">{{ t('tags.baseline') }}</span>
               </div>
@@ -218,6 +232,13 @@ export default {
       if (tag === "aso") return !!tags.aso?.locked;
       if (tag === "baseline") return !!tags.baseline;
       return false;
+    },
+    rowHasTagNote(row, tag) {
+      const key = this.tagKeyForRow(row);
+      const tags = this.tagLog?.[key];
+      if (!tags) return false;
+      if (tag !== "bug" && tag !== "aso") return false;
+      return String(tags[tag]?.note || "").trim().length > 0;
     },
     rowKey(row, index) {
       const key = this.tagKeyForRow(row);
@@ -488,6 +509,12 @@ export default {
 .tag-pending {
   animation: pulse-tag 1.5s infinite;
   box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+}
+
+.tag-note-indicator {
+  margin-left: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1;
 }
 
 @keyframes pulse-tag {

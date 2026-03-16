@@ -4,16 +4,7 @@ from typing import Any, cast
 import pytest
 
 from framework.env import RuntimeEnv
-from framework.url_resolver.url_resolver import EnvUrls, url_resolver
-
-resolve_pl = url_resolver(
-    EnvUrls(
-        prod="https://bi-to-bi.pl",
-        demo="https://sklep-bi-to-bi-demo.komputronik.dev",
-        test_template="https://bi-to-bi-{host}.netcorner.pl",
-        local="https://bi-to-bi.local",
-    )
-)
+from framework.targeting import resolve_base_url
 
 
 @pytest.fixture(scope="session")
@@ -23,7 +14,7 @@ def runtime_env(pytestconfig: pytest.Config) -> RuntimeEnv:
         return env
 
     try:
-        resolved = resolve_pl(env.server_name).rstrip("/")
+        resolved = resolve_base_url(target_id="netcorner-nuxt-b2b", server_name=env.server_name)
     except ValueError as e:
         raise pytest.UsageError(f"Cannot resolve base_url for env={env!r}: {e}") from e
 

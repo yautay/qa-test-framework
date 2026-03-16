@@ -46,7 +46,7 @@ vi.mock("bootstrap", () => ({
 }));
 
 import ReportPage from "./ReportPage.vue";
-import { acquireBuildLock, fetchBuildTags, fetchReportResultsPayload, sendBuildReport } from "../lib/api/reportsApi";
+import { acquireBuildLock, fetchBuildTags, fetchReportResultsPayload, heartbeatBuildLock, postBuildEvent, sendBuildReport } from "../lib/api/reportsApi";
 import { requestBaselineChallengeForRun, sendBaselineSelectionForRun } from "../lib/baselineApi";
 import { useResultsStore } from "../stores/resultsStore";
 import { getRowTagKey } from "../lib/viewer";
@@ -1226,10 +1226,107 @@ describe("ReportPage", () => {
     teleportHost.remove();
   });
 
+  it("persists baseline via BASELINE_SET event", async () => {
+    const teleportHost = document.createElement("div");
+    teleportHost.id = "vrtModal";
+    const modalContent = document.createElement("div");
+    modalContent.className = "modal-content";
+    teleportHost.appendChild(modalContent);
+    document.body.appendChild(teleportHost);
+
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const store = useResultsStore();
+    const row = store.rows[0];
+    const key = getRowTagKey(row);
+    store.openViewer(row, "test", 0);
+    postBuildEvent.mockResolvedValueOnce({
+      accepted: true,
+      test_cases: {
+        [key]: {
+          bug: { locked: false, synced: false, note: "" },
+          aso: { locked: false, synced: false, note: "" },
+          baseline: true,
+        },
+      },
+    });
+
+    const modal = wrapper.findComponent({ name: "ViewerModal" });
+    modal.vm.$emit("prompt-tag", "baseline");
+    await nextTick();
+
+    const prompt = wrapper.findComponent({ name: "ConfirmPrompt" });
+    prompt.vm.$emit("confirm");
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(postBuildEvent).toHaveBeenCalledWith(
+      "run-1",
+      expect.objectContaining({ type: "BASELINE_SET", test_case_id: key })
+    );
+    expect(store.tagLog[key].baseline).toBe(true);
+
+    wrapper.unmount();
+    teleportHost.remove();
+  });
+
+  it("persists baseline removal via BASELINE_UNSET event", async () => {
+    const teleportHost = document.createElement("div");
+    teleportHost.id = "vrtModal";
+    const modalContent = document.createElement("div");
+    modalContent.className = "modal-content";
+    teleportHost.appendChild(modalContent);
+    document.body.appendChild(teleportHost);
+
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const store = useResultsStore();
+    const row = store.rows[0];
+    const key = getRowTagKey(row);
+    store.openViewer(row, "test", 0);
+    store.setBaseline(true);
+    postBuildEvent.mockResolvedValueOnce({
+      accepted: true,
+      test_cases: {
+        [key]: {
+          bug: { locked: false, synced: false, note: "" },
+          aso: { locked: false, synced: false, note: "" },
+          baseline: false,
+        },
+      },
+    });
+
+    const modal = wrapper.findComponent({ name: "ViewerModal" });
+    modal.vm.$emit("prompt-tag", "baseline");
+    await nextTick();
+
+    const prompt = wrapper.findComponent({ name: "ConfirmPrompt" });
+    expect(prompt.props("type")).toBe("remove-baseline");
+    prompt.vm.$emit("confirm");
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(postBuildEvent).toHaveBeenCalledWith(
+      "run-1",
+      expect.objectContaining({ type: "BASELINE_UNSET", test_case_id: key })
+    );
+    expect(store.tagLog[key].baseline).toBe(false);
+
+    wrapper.unmount();
+    teleportHost.remove();
+  });
+
   it("clears baseline tags after successful baseline send", async () => {
     requestBaselineChallengeForRun.mockResolvedValueOnce({ challenge_id: "c1", phrase: "HELLO" });
     sendBaselineSelectionForRun.mockResolvedValueOnce({ saved_count: 1, failed_count: 0 });
-    const promptSpy = vi.spyOn(window, "prompt").mockReturnValue("HELLO");
 
     const wrapper = mount(ReportPage, {
       props: { runId: "run-1" },
@@ -1247,20 +1344,23 @@ describe("ReportPage", () => {
 
     const baselineBtn = wrapper.find(".report-header button.btn-success");
     await baselineBtn.trigger("click");
+    await nextTick();
+    const phraseInput = wrapper.find(".baseline-send-input");
+    expect(phraseInput.exists()).toBe(true);
+    await phraseInput.setValue("HELLO");
+    await wrapper.find(".baseline-send-confirm").trigger("click");
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     expect(requestBaselineChallengeForRun).toHaveBeenCalledWith("run-1");
     expect(sendBaselineSelectionForRun).toHaveBeenCalled();
     expect(store.tagLog[key].baseline).toBe(false);
 
-    promptSpy.mockRestore();
     wrapper.unmount();
   });
 
   it("keeps baseline tags when baseline send returns failed items", async () => {
     requestBaselineChallengeForRun.mockResolvedValueOnce({ challenge_id: "c1", phrase: "HELLO" });
     sendBaselineSelectionForRun.mockResolvedValueOnce({ saved_count: 0, failed_count: 1 });
-    const promptSpy = vi.spyOn(window, "prompt").mockReturnValue("HELLO");
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
 
     const wrapper = mount(ReportPage, {
@@ -1279,14 +1379,65 @@ describe("ReportPage", () => {
 
     const baselineBtn = wrapper.find(".report-header button.btn-success");
     await baselineBtn.trigger("click");
+    await nextTick();
+    const phraseInput = wrapper.find(".baseline-send-input");
+    expect(phraseInput.exists()).toBe(true);
+    await phraseInput.setValue("HELLO");
+    await wrapper.find(".baseline-send-confirm").trigger("click");
     await new Promise((resolve) => setTimeout(resolve, 20));
 
     expect(store.tagLog[key].baseline).toBe(true);
     expect(errorSpy).toHaveBeenCalled();
 
     errorSpy.mockRestore();
-    promptSpy.mockRestore();
     wrapper.unmount();
+  });
+
+  it("keeps lock heartbeat running while baseline confirmation prompt is open", async () => {
+    vi.useFakeTimers();
+    try {
+      requestBaselineChallengeForRun.mockResolvedValueOnce({ challenge_id: "c1", phrase: "HELLO" });
+
+      const wrapper = mount(ReportPage, {
+        props: { runId: "run-1" },
+        global: { plugins: [pinia] },
+      });
+
+      await Promise.resolve();
+      await Promise.resolve();
+
+      const store = useResultsStore();
+      store.setRows([
+        {
+          scenario_id: "s1",
+          status: "failed",
+          actual_path: "a.png",
+          suite_id: "suite1",
+          viewport: "1920x1080",
+          browser: "chrome",
+        },
+      ]);
+      const row = store.rows[0];
+      store.openViewer(row, "test", 0);
+      store.setBaseline(true);
+      await nextTick();
+
+      const baselineBtn = wrapper.find(".report-header button.btn-success");
+      await baselineBtn.trigger("click");
+      await nextTick();
+
+      expect(wrapper.find(".baseline-send-overlay").exists()).toBe(true);
+      const beforeHeartbeatCalls = heartbeatBuildLock.mock.calls.length;
+
+      await vi.advanceTimersByTimeAsync(16000);
+
+      expect(heartbeatBuildLock.mock.calls.length).toBeGreaterThan(beforeHeartbeatCalls);
+      expect(sendBaselineSelectionForRun).not.toHaveBeenCalled();
+
+      wrapper.unmount();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

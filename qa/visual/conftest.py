@@ -348,9 +348,9 @@ def context(
 
 
 @pytest.fixture(scope="function")
-def page(context: BrowserContext, runtime_env: RuntimeEnv) -> Page:
+def page(context: BrowserContext, base_url: str) -> Page:
     """Function-scoped Playwright page used by visual scenarios."""
     page = context.new_page()
-    _set_consent_cookies(page, runtime_env.base_url)
+    _set_consent_cookies(page, base_url)
     yield page
     page.close()

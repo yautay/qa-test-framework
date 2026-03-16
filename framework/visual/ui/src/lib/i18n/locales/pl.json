@@ -94,6 +94,8 @@
       "execution_error": "Blad wykonania pytest",
       "unknown": "Nieznany powod wykluczenia"
     },
+    "baselineConfirmPrompt": "Wpisz ponizsza fraze, aby potwierdzic zapis baseline.",
+    "baselineConfirmPlaceholder": "Wpisz fraze potwierdzajaca",
     "confirmSend": "Czy jesteś pewien i chcesz zgłosić BUG/ASO?",
     "summary": {
       "total": "razem",
@@ -128,7 +130,9 @@
     "aso": "ASO",
     "baseline": "BASELINE",
     "bugSent": "BUG WYSŁANY",
-    "asoSent": "ASO WYSŁANE"
+    "asoSent": "ASO WYSŁANE",
+    "bugHasNote": "BUG ma notatkę",
+    "asoHasNote": "ASO ma notatkę"
   },
   "artifacts": {
     "ref": "ref",

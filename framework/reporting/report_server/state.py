@@ -144,6 +144,7 @@ def _empty_case_state() -> dict[str, Any]:
     return {
         "bug": {"locked": False, "synced": False, "note": ""},
         "aso": {"locked": False, "synced": False, "note": ""},
+        "baseline": False,
     }
 
 
@@ -151,11 +152,13 @@ def _normalize_case_state(raw: Any) -> dict[str, Any]:
     base = raw if isinstance(raw, dict) else {}
     bug = cast(dict[str, Any], base.get("bug")) if isinstance(base.get("bug"), dict) else {}
     aso = cast(dict[str, Any], base.get("aso")) if isinstance(base.get("aso"), dict) else {}
+    baseline = bool(base.get("baseline", False))
     bug_note = _normalize_text(bug.get("note"), trim=True)[:TEXT_MAX_LENGTH]
     aso_note = _normalize_text(aso.get("note"), trim=True)[:TEXT_MAX_LENGTH]
     return {
         "bug": {"locked": bool(bug.get("locked", False)), "synced": bool(bug.get("synced", False)), "note": bug_note},
         "aso": {"locked": bool(aso.get("locked", False)), "synced": bool(aso.get("synced", False)), "note": aso_note},
+        "baseline": baseline,
     }
 
 
