@@ -2,7 +2,7 @@
   <div class="app-wrapper">
     <div class="container-fluid p-3">
       <HeroPage v-if="route.page === 'hero'" />
-      <ReportPage v-else :run-id="route.runId" :key="route.runId" />
+      <ReportPage v-else :run-id="route.runId" />
     </div>
   </div>
 </template>

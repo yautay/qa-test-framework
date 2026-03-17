@@ -46,18 +46,28 @@
     </div>
 
     <FiltersPanel />
-    <ResultsTable 
-      :rows="store.filteredSorted" 
-      :fmt="fmt" 
-      :tag-log="store.tagLog" 
-      :tag-key-for-row="getRowTagKey"
-      :selected-index="store.selectedIndex"
-      :sync-errors="store.syncErrors"
-      :pending-tags="store.pendingTags"
-      @show="show"
-      @select="store.selectRow"
-      @open-metadata="openMetadataFromTable"
-    />
+    <div class="results-table-shell">
+      <ResultsTable
+        :rows="store.filteredSorted"
+        :fmt="fmt"
+        :tag-log="store.tagLog"
+        :tag-key-for-row="getRowTagKey"
+        :selected-index="store.selectedIndex"
+        :sync-errors="store.syncErrors"
+        :pending-tags="store.pendingTags"
+        @show="show"
+        @select="store.selectRow"
+        @open-metadata="openMetadataFromTable"
+      />
+      <transition name="run-switch-fade">
+        <div v-if="isRunSwitching" class="run-switch-overlay" role="status" aria-live="polite" aria-label="Loading report">
+          <div class="run-switch-overlay-card">
+            <div class="spinner-border spinner-border-sm" role="presentation" aria-hidden="true"></div>
+            <span class="run-switch-label">Loading report...</span>
+          </div>
+        </div>
+      </transition>
+    </div>
     <div v-if="store.selectedIndex >= 0" class="keyboard-hint text-muted small mb-2">
       {{ t('navigate.backToHero') }}
     </div>
@@ -182,7 +192,9 @@ const pressedKeys = ref(new Set());
 const prompt = ref({ active: false, type: null, note: "" });
 const pdfGenerated = ref(false);
 const isSendingInProgress = ref(false);
+const isRunSwitching = ref(false);
 const lockInfo = ref({ lockId: "", ownerClientId: "", expiresAt: 0 });
+const lockRunId = ref("");
 const lockHeartbeatTimer = ref(null);
 const lockDenied = ref(false);
 const metadataPanel = ref({
@@ -202,6 +214,7 @@ const baselineSendInput = ref(null);
 
 const baseZoom = ref(100);
 const HEARTBEAT_MS = 15000;
+let runSwitchToken = 0;
 
 function excludedReasonLabel(item) {
   const reasonCode = String(item?.reasonCode || "").trim();
@@ -348,23 +361,25 @@ function slotImage(slot) {
   return "";
 }
 
-async function loadResults() {
+async function loadResults(runId = props.runId, options = {}) {
+  const targetRunId = String(runId || "").trim();
+  const clearOnError = options?.clearOnError !== false;
   store.loadError = "";
-  if (!props.runId) {
+  if (!targetRunId) {
     store.setRows([]);
     store.setBuildMetadata({});
     store.selectedIndex = -1;
     store.loadError = "Missing run id in URL";
     return;
   }
-  store.setRunId(props.runId);
+  store.setRunId(targetRunId);
   const selectedRow =
     store.selectedIndex >= 0 && store.selectedIndex < store.filteredSorted.length
       ? store.filteredSorted[store.selectedIndex]
       : null;
   const selectedKey = rowKey(selectedRow);
   try {
-    const payload = await fetchReportResultsPayload(props.runId);
+    const payload = await fetchReportResultsPayload(targetRunId);
     store.setRows(payload.results);
     store.setBuildMetadata(payload.build_metadata);
     if (store.filteredSorted.length === 0) {
@@ -382,21 +397,23 @@ async function loadResults() {
       store.selectedIndex = nextIndex;
     }
   } catch (error) {
-    store.setRows([]);
-    store.setBuildMetadata({});
-    store.selectedIndex = -1;
+    if (clearOnError) {
+      store.setRows([]);
+      store.setBuildMetadata({});
+      store.selectedIndex = -1;
+    }
     store.loadError = `Unable to load results: ${error?.message || "unknown error"}`;
   }
 }
 
-function startLockHeartbeat() {
+function startLockHeartbeat(runId = lockRunId.value) {
   if (lockHeartbeatTimer.value) {
     window.clearInterval(lockHeartbeatTimer.value);
   }
   lockHeartbeatTimer.value = window.setInterval(async () => {
-    if (!props.runId || !lockInfo.value.lockId) return;
+    if (!runId || !lockInfo.value.lockId) return;
     try {
-      const result = await heartbeatBuildLock(props.runId, clientId, lockInfo.value.lockId, {
+      const result = await heartbeatBuildLock(runId, clientId, lockInfo.value.lockId, {
         timeoutMs: 8000,
       });
       if (!result?.accepted) {
@@ -500,11 +517,20 @@ async function confirmBaselineSendPrompt() {
   }
 }
 
-async function ensureLock() {
-  if (!props.runId || !clientId) return false;
-  if (lockInfo.value.lockId) return true;
+async function ensureLock(runId = props.runId) {
+  const targetRunId = String(runId || "").trim();
+  if (!targetRunId || !clientId) return false;
+
+  if (lockInfo.value.lockId && lockRunId.value && lockRunId.value !== targetRunId) {
+    await releaseLock(lockRunId.value);
+  }
+
+  if (lockInfo.value.lockId && lockRunId.value === targetRunId) {
+    return true;
+  }
+
   try {
-    const result = await acquireBuildLock(props.runId, clientId, { timeoutMs: 8000 });
+    const result = await acquireBuildLock(targetRunId, clientId, { timeoutMs: 8000 });
     if (!result?.accepted) {
       lockDenied.value = true;
       store.loadError = "Build is locked by another client.";
@@ -516,7 +542,8 @@ async function ensureLock() {
       ownerClientId: lock.owner_client_id || clientId,
       expiresAt: Number(lock.expires_at || 0),
     };
-    startLockHeartbeat();
+    lockRunId.value = targetRunId;
+    startLockHeartbeat(targetRunId);
     return true;
   } catch (error) {
     store.loadError = `Unable to acquire lock: ${error?.message || "unknown error"}`;
@@ -524,22 +551,73 @@ async function ensureLock() {
   }
 }
 
-async function releaseLock() {
-  if (!props.runId || !lockInfo.value.lockId) return;
+async function releaseLock(runId = lockRunId.value) {
+  const targetRunId = String(runId || "").trim();
+  if (!targetRunId || !lockInfo.value.lockId) return;
   try {
-    await releaseBuildLock(props.runId, clientId, lockInfo.value.lockId, { timeoutMs: 5000 });
+    await releaseBuildLock(targetRunId, clientId, lockInfo.value.lockId, { timeoutMs: 5000 });
   } catch (_error) {
     // best-effort
   } finally {
     lockInfo.value = { lockId: "", ownerClientId: "", expiresAt: 0 };
+    lockRunId.value = "";
     stopLockHeartbeat();
   }
 }
 
-async function loadState() {
-  if (!props.runId) return;
-  const payload = await fetchBuildTags(props.runId);
+async function loadState(runId = props.runId) {
+  const targetRunId = String(runId || "").trim();
+  if (!targetRunId) return;
+  const payload = await fetchBuildTags(targetRunId);
   store.applyBuildTags(payload?.tags || {});
+}
+
+async function switchRun(runId, options = {}) {
+  const targetRunId = String(runId || "").trim();
+  const token = ++runSwitchToken;
+  const showOverlay = options?.showOverlay === true;
+
+  if (showOverlay) {
+    isRunSwitching.value = true;
+  }
+
+  try {
+    lockDenied.value = false;
+    store.stopPolling();
+    stopLockHeartbeat();
+    const previousLockRunId = lockRunId.value;
+    await releaseLock(previousLockRunId);
+
+    if (token !== runSwitchToken) return;
+
+    if (!targetRunId) {
+      await loadResults(targetRunId);
+      return;
+    }
+
+    const lockOk = await ensureLock(targetRunId);
+    if (!lockOk || token !== runSwitchToken || lockDenied.value) {
+      return;
+    }
+
+    const pmsPollingConfig = await loadPmsPollingConfig();
+    if (token !== runSwitchToken) return;
+
+    await loadResults(targetRunId, { clearOnError: !showOverlay });
+    if (token !== runSwitchToken) return;
+
+    await loadState(targetRunId);
+    if (token !== runSwitchToken) return;
+
+    store.startPolling(targetRunId, SYNC_POLL_INTERVAL_MS, {
+      pmsPollIntervalMs: pmsPollingConfig.intervalMs,
+      pmsPollIdleMultiplier: pmsPollingConfig.idleMultiplier,
+    });
+  } finally {
+    if (token === runSwitchToken) {
+      isRunSwitching.value = false;
+    }
+  }
 }
 
 function applyStateFromResponse(response) {
@@ -1054,21 +1132,17 @@ function handleMouseMove(payload) {
   store.setCursorPosition(bounds, evt);
 }
 
+watch(
+  () => props.runId,
+  (nextRunId, previousRunId) => {
+    void switchRun(nextRunId, {
+      showOverlay: !!previousRunId && nextRunId !== previousRunId,
+    });
+  },
+  { immediate: true }
+);
+
 onMounted(async () => {
-  if (!props.runId) {
-    await loadResults();
-  } else {
-    const lockOk = await ensureLock();
-    if (lockOk && !lockDenied.value) {
-      const pmsPollingConfig = await loadPmsPollingConfig();
-      await loadResults();
-      await loadState();
-      store.startPolling(props.runId, SYNC_POLL_INTERVAL_MS, {
-        pmsPollIntervalMs: pmsPollingConfig.intervalMs,
-        pmsPollIdleMultiplier: pmsPollingConfig.idleMultiplier,
-      });
-    }
-  }
   window.addEventListener("keydown", handleKeydown);
   window.addEventListener("keyup", handleKeyup);
   const modalEl = document.getElementById("vrtModal");
@@ -1088,6 +1162,7 @@ watch(
 );
 
 onBeforeUnmount(() => {
+  runSwitchToken += 1;
   window.removeEventListener("keydown", handleKeydown);
   window.removeEventListener("keyup", handleKeyup);
   const modalEl = document.getElementById("vrtModal");
@@ -1096,7 +1171,7 @@ onBeforeUnmount(() => {
   }
   store.stopPolling();
   stopLockHeartbeat();
-  releaseLock();
+  void releaseLock(lockRunId.value);
   closeBaselineSendPrompt();
 });
 </script>
@@ -1106,6 +1181,59 @@ onBeforeUnmount(() => {
   max-width: 96%;
   margin: 0 auto;
 }
+
+.results-table-shell {
+  position: relative;
+}
+
+.run-switch-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--body-bg) 68%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.run-switch-fade-enter-active,
+.run-switch-fade-leave-active {
+  transition: opacity 0.18s ease;
+}
+
+.run-switch-fade-enter-from,
+.run-switch-fade-leave-to {
+  opacity: 0;
+}
+
+.run-switch-overlay-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+}
+
+.run-switch-fade-enter-active .run-switch-overlay-card,
+.run-switch-fade-leave-active .run-switch-overlay-card {
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.run-switch-fade-enter-from .run-switch-overlay-card,
+.run-switch-fade-leave-to .run-switch-overlay-card {
+  transform: translateY(4px) scale(0.98);
+  opacity: 0;
+}
+
+.run-switch-label {
+  font-size: 0.85rem;
+  color: var(--body-color);
+}
+
 .keyboard-hint {
   padding: 0.5rem;
   background: var(--card-bg);
