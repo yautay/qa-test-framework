@@ -427,7 +427,15 @@ export const useResultsStore = defineStore("results", {
     },
 
     setRunId(runId) {
-      this.runId = runId;
+      const nextRunId = String(runId || "");
+      const hasRunChanged = this.runId && this.runId !== nextRunId;
+      if (hasRunChanged) {
+        this.tagLog = {};
+        this.pendingTags = {};
+        this.syncErrors = {};
+        this.retryMarkers = {};
+      }
+      this.runId = nextRunId;
     },
 
     openViewer(row, mode, index = null) {
@@ -511,21 +519,7 @@ export const useResultsStore = defineStore("results", {
         this.tagLog = {};
         return;
       }
-      const normalized = normalizeCaseStateSnapshot(snapshot);
-      const merged = {};
-      for (const [key, value] of Object.entries(normalized)) {
-        const hasServerBaseline = Object.prototype.hasOwnProperty.call(value, "baseline");
-        const baseline = hasServerBaseline
-          ? !!value.baseline
-          : !!(this.tagLog?.[key]?.baseline);
-        merged[key] = { ...value, baseline };
-      }
-      for (const [key, value] of Object.entries(this.tagLog || {})) {
-        if (!merged[key] && value?.baseline) {
-          merged[key] = { ...buildEmptyTagEntry(), baseline: true };
-        }
-      }
-      this.tagLog = merged;
+      this.tagLog = normalizeCaseStateSnapshot(snapshot);
     },
 
     navigateSelection(delta) {
