@@ -28,6 +28,8 @@ visual_baseline_profile = "test-ref"
 visual_baseline_version = "latest"
 visual_cache_dir = ".visual_cache"
 visual_fail_on_missing_baseline = False
+visual_freeze_animations = True
+visual_shift_compensation_y_px = 0
 
 visual_uncertain_enabled = True
 visual_uncertain_pixel_delta = 0.05

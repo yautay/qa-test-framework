@@ -9,7 +9,7 @@ import pytest
 
 from framework.env import load_env
 from framework.visual.models import VisualScenario
-from framework.visual.runner import VisualRunner, _first_visible_locator
+from framework.visual.runner import VisualRunner, _first_visible_locator, _resolve_shift_compensation_y_px
 
 pytestmark = [pytest.mark.aso]
 
@@ -178,3 +178,16 @@ def test_capture_element_uses_first_visible_match(tmp_path: Path) -> None:
     assert page.locator_calls == ["[data-name='addToCartWrapper']"]
     assert hidden.screenshot_calls == []
     assert visible.screenshot_calls == [str(tmp_path / "element.png")]
+
+
+def test_resolve_shift_compensation_uses_env_default_when_scenario_override_missing() -> None:
+    assert _resolve_shift_compensation_y_px(6, None) == 6
+
+
+def test_resolve_shift_compensation_prefers_scenario_override() -> None:
+    assert _resolve_shift_compensation_y_px(6, 2) == 2
+
+
+def test_resolve_shift_compensation_clamps_negative_to_zero() -> None:
+    assert _resolve_shift_compensation_y_px(-5, None) == 0
+    assert _resolve_shift_compensation_y_px(5, -2) == 0

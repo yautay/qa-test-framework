@@ -68,3 +68,19 @@ def test_load_env_uses_settings_defaults_for_report_toggles(monkeypatch):
 
     assert env.allure_enabled is bool(settings.allure_enabled)
     assert env.pytest_html_enabled is bool(settings.pytest_html_enabled)
+
+
+def test_load_env_reads_visual_freeze_animations_from_environment(monkeypatch):
+    monkeypatch.setenv("VISUAL_FREEZE_ANIMATIONS", "0")
+
+    env = load_env()
+
+    assert env.visual_freeze_animations is False
+
+
+def test_load_env_reads_visual_shift_compensation_from_environment(monkeypatch):
+    monkeypatch.setenv("VISUAL_SHIFT_COMPENSATION_Y_PX", "7")
+
+    env = load_env()
+
+    assert env.visual_shift_compensation_y_px == 7

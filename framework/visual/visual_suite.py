@@ -74,6 +74,7 @@ def _attach_result_metadata(
         },
         "scores": {
             "pixel_changed_ratio": result.pixel_changed_ratio,
+            "applied_shift_y": result.applied_shift_y,
             "lpips": result.lpips,
             "dists": result.dists,
         },
@@ -139,6 +140,7 @@ def _finalize_result(
         },
         "scores": {
             "pixel_changed_ratio": result.pixel_changed_ratio,
+            "applied_shift_y": result.applied_shift_y,
             "lpips": result.lpips,
             "dists": result.dists,
         },

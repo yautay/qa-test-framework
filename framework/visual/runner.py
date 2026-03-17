@@ -33,6 +33,12 @@ def _safe_float(value: object, default: float | None = None) -> float | None:
         return default
 
 
+def _resolve_shift_compensation_y_px(env_shift_px: int, scenario_shift_px: int | None) -> int:
+    if scenario_shift_px is not None:
+        return max(0, int(scenario_shift_px))
+    return max(0, int(env_shift_px))
+
+
 class VisualRunner:
     """Capture actual screenshots, compare to baselines, and return VisualResult."""
 
@@ -93,8 +99,19 @@ class VisualRunner:
             )
 
         diff_path = self._diff_dir / f"{file_stem}.png"
-        pixel_out = compare_images(baseline_path, actual_path, diff_path)
-        pixel_changed_ratio = float(pixel_out[0]) if isinstance(pixel_out, tuple) else float(pixel_out)
+        shift_compensation_y_px = _resolve_shift_compensation_y_px(
+            self._env.visual_shift_compensation_y_px,
+            getattr(scenario.thresholds, "shift_compensation_y_px", None),
+        )
+        pixel_out = compare_images(
+            baseline_path,
+            actual_path,
+            diff_path,
+            shift_compensation_y_px=shift_compensation_y_px,
+            return_details=True,
+        )
+        pixel_changed_ratio = float(cast(dict[str, Any], pixel_out).get("changed_ratio", 1.0))
+        applied_shift_y = int(cast(dict[str, Any], pixel_out).get("applied_shift_y", 0) or 0)
 
         lpips_score: float | None = None
         dists_score: float | None = None
@@ -133,6 +150,7 @@ class VisualRunner:
             diff_path=str(diff_path),
             heatmap_path=heatmap_path_str,
             pixel_changed_ratio=pixel_changed_ratio,
+            applied_shift_y=applied_shift_y,
             lpips=lpips_score,
             dists=dists_score,
             thresholds=scenario.thresholds,
@@ -205,6 +223,7 @@ class VisualRunner:
     def _capture(self, page: Page, scenario: VisualScenario, output_path: Path) -> None:
         """Capture the screenshot based on capture settings while masking selectors."""
         output_path.parent.mkdir(parents=True, exist_ok=True)
+        freeze_style_id = _inject_freeze_styles(page) if bool(self._env.visual_freeze_animations) else ""
         if scenario.capture.full_page:
             _stabilize_full_page_capture(page)
         cleanup_ids = _inject_masks(page, list(scenario.mask.selectors), scenario.mask.color)
@@ -215,6 +234,7 @@ class VisualRunner:
             page.screenshot(path=str(output_path), full_page=scenario.capture.full_page)
         finally:
             _remove_masks(page, cleanup_ids)
+            _remove_freeze_styles(page, freeze_style_id)
 
 
 def _first_visible_locator(locator: Locator) -> Locator:
@@ -327,6 +347,59 @@ def _stabilize_full_page_capture(page: Page) -> None:
         page.wait_for_timeout(150)
     except Exception:
         pass
+
+
+def _inject_freeze_styles(page: Page) -> str:
+    style_id = "visual-freeze-style"
+    script = """
+    (styleId) => {
+      try {
+        const existing = document.getElementById(styleId);
+        if (existing) {
+          return styleId;
+        }
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+          *, *::before, *::after {
+            animation: none !important;
+            transition: none !important;
+            caret-color: transparent !important;
+          }
+          html, body {
+            scroll-behavior: auto !important;
+          }
+        `;
+        document.head.appendChild(style);
+        return styleId;
+      } catch (_) {
+        return "";
+      }
+    }
+    """
+    try:
+        value = page.evaluate(script, style_id)
+        return str(value or "")
+    except Exception:
+        return ""
+
+
+def _remove_freeze_styles(page: Page, style_id: str) -> None:
+    token = str(style_id or "").strip()
+    if not token:
+        return
+    script = """
+    (styleId) => {
+      const el = document.getElementById(styleId);
+      if (el) {
+        el.remove();
+      }
+    }
+    """
+    try:
+        page.evaluate(script, token)
+    except Exception:
+        return
 
 
 def _inject_masks(page: Page, selectors: list[str], color: str) -> list[str]:

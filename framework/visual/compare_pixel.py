@@ -6,6 +6,65 @@ import cv2
 import numpy as np
 
 
+def _vertical_shifted(image: np.ndarray, dy: int) -> tuple[np.ndarray, np.ndarray]:
+    h, w = image.shape[:2]
+    shifted = np.zeros_like(image)
+    valid = np.zeros((h, w), dtype=np.uint8)
+    if dy > 0:
+        if dy < h:
+            shifted[dy:, :] = image[: h - dy, :]
+            valid[dy:, :] = 255
+        return shifted, valid
+    if dy < 0:
+        d = -dy
+        if d < h:
+            shifted[: h - d, :] = image[d:, :]
+            valid[: h - d, :] = 255
+        return shifted, valid
+    shifted[:, :] = image
+    valid[:, :] = 255
+    return shifted, valid
+
+
+def _alignment_error_for_shift(baseline: np.ndarray, actual: np.ndarray, dy: int) -> float:
+    h = int(baseline.shape[0])
+    if dy > 0:
+        if dy >= h:
+            return float("inf")
+        b = baseline[dy:, :]
+        a = actual[: h - dy, :]
+    elif dy < 0:
+        d = -dy
+        if d >= h:
+            return float("inf")
+        b = baseline[: h - d, :]
+        a = actual[d:, :]
+    else:
+        b = baseline
+        a = actual
+
+    if b.size == 0 or a.size == 0:
+        return float("inf")
+
+    diff = cv2.absdiff(b, a)
+    gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
+    return float(np.mean(gray))
+
+
+def _find_best_vertical_shift(baseline: np.ndarray, actual: np.ndarray, max_shift: int) -> int:
+    span = max(0, int(max_shift))
+    if span <= 0:
+        return 0
+    best_dy = 0
+    best_err = _alignment_error_for_shift(baseline, actual, 0)
+    for dy in range(-span, span + 1):
+        err = _alignment_error_for_shift(baseline, actual, dy)
+        if err < best_err:
+            best_err = err
+            best_dy = dy
+    return int(best_dy)
+
+
 def compare_images(
     baseline_path: Path,
     actual_path: Path,
@@ -16,7 +75,9 @@ def compare_images(
     min_region_area: int = 40,
     dilate_iters: int = 1,
     return_bbox_count: bool = False,
-) -> float | tuple[float, int]:
+    shift_compensation_y_px: int = 0,
+    return_details: bool = False,
+) -> float | tuple[float, int] | dict[str, float | int]:
     """Practical pixel diff:
     - thresholds per-pixel delta
     - reduces noise (blur + morphology)
@@ -28,12 +89,23 @@ def compare_images(
     baseline = cv2.imread(str(baseline_path), cv2.IMREAD_COLOR)
     actual = cv2.imread(str(actual_path), cv2.IMREAD_COLOR)
     if baseline is None or actual is None:
+        if return_details:
+            return {
+                "changed_ratio": 1.0,
+                "bbox_count": 0,
+                "applied_shift_y": 0,
+                "shift_compensation_y_px": max(0, int(shift_compensation_y_px)),
+            }
         return (1.0, 0) if return_bbox_count else 1.0
 
     if baseline.shape != actual.shape:
         actual = cv2.resize(actual, (baseline.shape[1], baseline.shape[0]), interpolation=cv2.INTER_AREA)
 
-    abs_diff = cv2.absdiff(baseline, actual)
+    shift_span = max(0, int(shift_compensation_y_px))
+    applied_shift_y = _find_best_vertical_shift(baseline, actual, shift_span) if shift_span > 0 else 0
+    aligned_actual, valid_region = _vertical_shifted(actual, applied_shift_y)
+
+    abs_diff = cv2.absdiff(baseline, aligned_actual)
     gray = cv2.cvtColor(abs_diff, cv2.COLOR_BGR2GRAY)
 
     # 1) reduce tiny pixel noise
@@ -51,6 +123,8 @@ def compare_images(
     if dilate_iters and dilate_iters > 0:
         binary = cv2.dilate(binary, kernel, iterations=int(dilate_iters))
 
+    binary = cv2.bitwise_and(binary, valid_region)
+
     # 4) find regions and ignore tiny ones
     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -66,11 +140,11 @@ def compare_images(
 
     # ratio computed on filtered mask (more stable)
     changed = int(np.count_nonzero(mask))
-    total = int(mask.shape[0] * mask.shape[1])
+    total = int(np.count_nonzero(valid_region))
     changed_ratio = changed / total if total else 1.0
 
     # 5) build a readable overlay + bounding boxes
-    overlay = actual.copy()
+    overlay = aligned_actual.copy()
     red = np.zeros_like(actual)
     red[:] = (0, 0, 255)
 
@@ -87,6 +161,13 @@ def compare_images(
     diff_path.parent.mkdir(parents=True, exist_ok=True)
     cv2.imwrite(str(diff_path), overlay)
 
+    if return_details:
+        return {
+            "changed_ratio": float(changed_ratio),
+            "bbox_count": int(len(kept_boxes)),
+            "applied_shift_y": int(applied_shift_y),
+            "shift_compensation_y_px": int(shift_span),
+        }
     if return_bbox_count:
         return changed_ratio, len(kept_boxes)
     return changed_ratio

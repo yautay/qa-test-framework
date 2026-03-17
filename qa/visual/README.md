@@ -65,6 +65,7 @@ Minimalny przyklad:
     - `pixel_uncertain_delta`
     - `lpips_uncertain_delta`
     - `dists_uncertain_delta`
+    - `shift_compensation_y_px` (int, `0` = wylaczone)
 - `mask` (opcjonalne, obiekt)
   - `selectors`: lista CSS selectorow do zamaskowania
   - `color`: `#RRGGBB` (domyslnie `#DDF527`)
@@ -122,6 +123,7 @@ Przyklad:
   - best-effort `networkidle`,
   - scroll dol/gora (lazy-load),
   - krotki wait na obrazy i fonty.
+- Jesli `VISUAL_FREEZE_ANIMATIONS=1`, runner tymczasowo wylacza animacje/transitions na czas capture.
 - Dla `full_page = false` stabilizacja lazy-load nie jest wymuszana.
 - Nawigacja (`target_url` i step `goto`) failuje test przy bledach HTTP:
   - brak odpowiedzi (`None`) -> fail,

@@ -153,6 +153,13 @@ def _opt_float(d: dict[str, Any], key: str, default: float) -> float:
     raise ValueError(f"Invalid float field: {key}")
 
 
+def _opt_int(d: dict[str, Any], key: str, default: int) -> int:
+    v = d.get(key, default)
+    if isinstance(v, int):
+        return int(v)
+    raise ValueError(f"Invalid int field: {key}")
+
+
 def _as_tuple_str(v: Any) -> tuple[str, ...]:
     """
     Normalize a list/tuple of strings into a tuple.
@@ -234,6 +241,7 @@ class VisualThresholds:
     pixel_uncertain_delta: float | None = None
     lpips_uncertain_delta: float | None = None
     dists_uncertain_delta: float | None = None
+    shift_compensation_y_px: int | None = None
 
     def __post_init__(self) -> None:
         if self.pixel_max < 0 or self.lpips_max < 0 or self.dists_max < 0:
@@ -252,6 +260,9 @@ class VisualThresholds:
             pixel_uncertain_delta=d.get("pixel_uncertain_delta") if "pixel_uncertain_delta" in d else None,
             lpips_uncertain_delta=d.get("lpips_uncertain_delta") if "lpips_uncertain_delta" in d else None,
             dists_uncertain_delta=d.get("dists_uncertain_delta") if "dists_uncertain_delta" in d else None,
+            shift_compensation_y_px=(
+                _opt_int(d, "shift_compensation_y_px", 0) if "shift_compensation_y_px" in d else None
+            ),
         )
 
 
@@ -421,6 +432,7 @@ class VisualResult:
     nodeid: str = ""
 
     pixel_changed_ratio: float | None = None
+    applied_shift_y: int | None = None
     lpips: float | None = None
     dists: float | None = None
 
@@ -445,6 +457,7 @@ class VisualResult:
             "diff_path": self.diff_path,
             "heatmap_path": self.heatmap_path,
             "pixel_changed_ratio": self.pixel_changed_ratio,
+            "applied_shift_y": self.applied_shift_y,
             "lpips": self.lpips,
             "dists": self.dists,
             "thresholds": (
@@ -455,6 +468,7 @@ class VisualResult:
                     "pixel_uncertain_delta": self.thresholds.pixel_uncertain_delta,
                     "lpips_uncertain_delta": self.thresholds.lpips_uncertain_delta,
                     "dists_uncertain_delta": self.thresholds.dists_uncertain_delta,
+                    "shift_compensation_y_px": self.thresholds.shift_compensation_y_px,
                 }
                 if self.thresholds
                 else None

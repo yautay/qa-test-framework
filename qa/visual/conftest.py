@@ -104,6 +104,7 @@ def _build_update_visual_payload(result: VisualResult, existing_visual: object) 
         },
         "scores": {
             "pixel_changed_ratio": result.pixel_changed_ratio,
+            "applied_shift_y": result.applied_shift_y,
             "lpips": result.lpips,
             "dists": result.dists,
         },
