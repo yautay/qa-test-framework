@@ -73,11 +73,6 @@ class InboxPage(BasePage):
         if self.__open_message_from_rows(recipient=recipient, subject=subject):
             self.page.wait_for_timeout(400)
             return True
-
-        if self.__open_message_by_subject(subject):
-            self.page.wait_for_timeout(400)
-            return True
-
         return False
 
     @step("Pobieram link z treści wiadomości")
@@ -123,7 +118,7 @@ class InboxPage(BasePage):
                 if not row_text:
                     continue
 
-                recipient_match = recipient.lower() in row_text.lower()
+                recipient_match = self.__row_contains_recipient_email(row_text, recipient)
                 subject_match = bool(subject.compiled().search(row_text))
                 if recipient_match and subject_match:
                     row.click()
@@ -131,12 +126,13 @@ class InboxPage(BasePage):
 
         return False
 
-    def __open_message_by_subject(self, subject: MailSubjectPattern) -> bool:
-        candidate = self.page.get_by_text(subject.compiled()).first
-        if candidate.count() == 0:
+    @staticmethod
+    def __row_contains_recipient_email(row_text: str, recipient: str) -> bool:
+        recipient_normalized = recipient.strip().lower()
+        if not recipient_normalized:
             return False
-        candidate.click()
-        return True
+        emails_in_row = re.findall(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", row_text)
+        return any(email.lower() == recipient_normalized for email in emails_in_row)
 
     def __collect_links(self) -> list[str]:
         links: list[str] = []
