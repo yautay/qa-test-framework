@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from playwright.sync_api import Page
 
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_page import BasePage, LoadState
+from framework.base.page_objects import BasePage, LoadState
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import ContentSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.footer_section import FooterSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.header_section import HeaderSection
