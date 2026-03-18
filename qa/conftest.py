@@ -254,9 +254,7 @@ def _probe_is_resolved(probe: object) -> bool:
     if not isinstance(probe, dict):
         return False
     request_url = str(probe.get("request_url", "") or "").strip()
-    if not request_url:
-        return False
-    return probe.get("status_code") is not None
+    return bool(request_url)
 
 
 def _resolve_probe_base_url_from_items(config: pytest.Config, items: list[pytest.Item]) -> tuple[str, str]:
@@ -290,8 +288,10 @@ def _resolve_probe_base_url_from_items(config: pytest.Config, items: list[pytest
     if len(resolved_urls) == 1:
         return next(iter(resolved_urls)), "target_mapping"
     if len(resolved_urls) > 1:
-        values = ", ".join(sorted(resolved_urls))
-        return "", f"multiple base urls detected: {values}"
+        sorted_urls = sorted(resolved_urls)
+        chosen = sorted_urls[0]
+        values = ", ".join(sorted_urls)
+        return chosen, f"target_mapping_first_of_many: {values}"
     return "", "cannot resolve base_url from collected tests"
 
 
@@ -316,8 +316,10 @@ def _resolve_probe_base_url_from_runtime_items(items: list[pytest.Item]) -> tupl
     if len(resolved_urls) == 1:
         return next(iter(resolved_urls)), "runtime_item_base_url"
     if len(resolved_urls) > 1:
-        values = ", ".join(sorted(resolved_urls))
-        return "", f"multiple runtime base urls detected: {values}"
+        sorted_urls = sorted(resolved_urls)
+        chosen = sorted_urls[0]
+        values = ", ".join(sorted_urls)
+        return chosen, f"runtime_item_first_of_many: {values}"
     return "", "runtime item base_url is not available"
 
 
