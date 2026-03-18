@@ -88,3 +88,9 @@ reporting_async_queue_maxsize = 1000
 reporting_async_max_attempts = 3
 reporting_async_max_retry_age_seconds = 30
 reporting_async_flush_timeout_seconds = 3
+
+# Jira
+jira_url = "https://jira.netcorner.pl"
+jira_username = ""
+jira_password = ""
+jira_verify_ssl = False

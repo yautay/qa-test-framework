@@ -5,13 +5,31 @@ import requests
 import urllib3
 from requests.auth import HTTPBasicAuth
 
+import settings
+
+
+def _as_bool(value: str | None, default: bool) -> bool:
+    if value is None:
+        return default
+
+    token = value.strip().lower()
+    if token == "":
+        return default
+
+    if token in {"1", "true", "t", "yes", "y", "on"}:
+        return True
+    if token in {"0", "false", "f", "no", "n", "off"}:
+        return False
+    return default
+
+
 # =====================================================
-# KONFIGURACJA (jak w innych skryptach tools/jira)
+# KONFIGURACJA (ENV -> settings.py)
 # =====================================================
-jira_url = "https://jira.netcorner.pl"
-USERNAME = "michal.pielaszkiewicz"  # login do JIRA
-PASSWORD = "Tereska15@"  # hasło / token (zależy od instancji)
-VERIFY = False  # lepiej: True lub ścieżka do CA.pem
+jira_url = os.getenv("JIRA_URL", str(getattr(settings, "jira_url", "https://jira.netcorner.pl")))
+USERNAME = os.getenv("JIRA_USERNAME", str(getattr(settings, "jira_username", ""))).strip()
+PASSWORD = os.getenv("JIRA_PASSWORD", str(getattr(settings, "jira_password", ""))).strip()
+VERIFY = _as_bool(os.getenv("JIRA_VERIFY_SSL"), bool(getattr(settings, "jira_verify_ssl", False)))
 
 # Numer zadania podajesz tutaj
 ISSUE_KEY = "NN-23107"
@@ -28,6 +46,12 @@ DELETE_AFTER_TEST = True
 
 
 def main() -> None:
+    if not USERNAME or not PASSWORD:
+        raise RuntimeError(
+            "Brak danych logowania do JIRA. Ustaw JIRA_USERNAME/JIRA_PASSWORD w ENV "
+            "lub jira_username/jira_password w settings.py."
+        )
+
     if VERIFY is False:
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 

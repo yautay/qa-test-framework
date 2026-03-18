@@ -1,23 +1,48 @@
+import os
 import re
 import urllib3
 import requests
 from requests.auth import HTTPBasicAuth
 import pandas as pd
 
+import settings
+
+
+def _as_bool(value: str | None, default: bool) -> bool:
+    if value is None:
+        return default
+
+    token = value.strip().lower()
+    if token == "":
+        return default
+
+    if token in {"1", "true", "t", "yes", "y", "on"}:
+        return True
+    if token in {"0", "false", "f", "no", "n", "off"}:
+        return False
+    return default
+
+
 # =====================================================
-# KONFIGURACJA API
+# KONFIGURACJA API (ENV -> settings.py)
 # =====================================================
-jira_url = "https://jira.netcorner.pl"
-USERNAME = "michal.pielaszkiewicz"  # login do JIRA
-PASSWORD = "Tereska15@"  # hasło / token (zależy od instancji)
-VERIFY = False  # lepiej: ścieżka do CA.pem
+jira_url = os.getenv("JIRA_URL", str(getattr(settings, "jira_url", "https://jira.netcorner.pl")))
+USERNAME = os.getenv("JIRA_USERNAME", str(getattr(settings, "jira_username", ""))).strip()
+PASSWORD = os.getenv("JIRA_PASSWORD", str(getattr(settings, "jira_password", ""))).strip()
+VERIFY = _as_bool(os.getenv("JIRA_VERIFY_SSL"), bool(getattr(settings, "jira_verify_ssl", False)))
+
+if not USERNAME or not PASSWORD:
+    raise RuntimeError(
+        "Brak danych logowania do JIRA. Ustaw JIRA_USERNAME/JIRA_PASSWORD w ENV "
+        "lub jira_username/jira_password w settings.py."
+    )
 
 # Opcja 1: podaj JQL wprost (jak w UI)
 # JQL = 'issuekey = NN-23020 OR parent = NN-23020'
 
 # Opcja 2: albo podaj listę parentów i zbuduj JQL automatycznie
 main_issues = ["NN-23107"]
-JQL = " OR ".join([f'issuekey = {k} OR parent = {k}' for k in main_issues])
+JQL = " OR ".join([f"issuekey = {k} OR parent = {k}" for k in main_issues])
 
 MAX_RESULTS = 100  # paginacja search
 
@@ -39,7 +64,6 @@ USER_GROUPS = {
     "anna.liszka": "pm",
     "maciej.walczak": "pm",
     "tomasz.bolt": "pm",
-
     # TESTERS
     "michal.pielaszkiewicz": "testers",
     "marek.wleklik": "testers",
@@ -65,7 +89,6 @@ CUSTOM_STRUCTURE = [
     ("piotr.jedrzejak", "Piotr Jędrzejak", "Dev"),
     ("lukasz.kitajczuk", "Łukasz Kitajczuk", "Dev"),
     ("__DEV__", "Dev Total", "Dev"),
-
     # TEST
     ("michal.pielaszkiewicz", "Michał Pielaszkiewicz", "Test"),
     ("karolina.krajewska", "Karolina Krajewska", "Test"),
@@ -77,14 +100,12 @@ CUSTOM_STRUCTURE = [
     ("weronika.bakowska", "Weronika Truscelli", "Test"),
     ("bartosz.michalak", "Bartosz Michalak", "Test"),
     ("__TEST__", "Test Total", "Test"),
-
     # PM
     ("maciej.walczak", "Maciej Walczak", "PM"),
     ("tomasz.bolt", "Tomasz Bolt", "PM"),
     ("anna.liszka", "Anna Liszka", "PM"),
     ("aneta.metel", "Anna Metel", "PM"),
     ("__PM__", "PM Total", "PM"),
-
     # DEVOPS
     ("rafal.bisingier", "Rafał Bisingier", "DevOps"),
     ("wojciech.iwanik", "Wojciech Iwanik", "DevOps"),
@@ -116,10 +137,14 @@ def format_duration(hours: float) -> str:
     w = total_days // 5
 
     parts = []
-    if w: parts.append(f"{w}w")
-    if d: parts.append(f"{d}d")
-    if h: parts.append(f"{h}h")
-    if minutes: parts.append(f"{minutes}m")
+    if w:
+        parts.append(f"{w}w")
+    if d:
+        parts.append(f"{d}d")
+    if h:
+        parts.append(f"{h}h")
+    if minutes:
+        parts.append(f"{minutes}m")
 
     return " ".join(parts) if parts else "0m"
 
@@ -140,12 +165,7 @@ def search_issues(jql: str):
     while True:
         data = jira_get(
             "/rest/api/2/search",
-            params={
-                "jql": jql,
-                "startAt": start_at,
-                "maxResults": MAX_RESULTS,
-                "fields": "summary"
-            }
+            params={"jql": jql, "startAt": start_at, "maxResults": MAX_RESULTS, "fields": "summary"},
         )
         issues.extend(data.get("issues", []))
         start_at += data.get("maxResults", 0)
@@ -160,8 +180,7 @@ def get_all_worklogs(issue_key: str):
     worklogs = []
     while True:
         data = jira_get(
-            f"/rest/api/2/issue/{issue_key}/worklog",
-            params={"startAt": start_at, "maxResults": max_results}
+            f"/rest/api/2/issue/{issue_key}/worklog", params={"startAt": start_at, "maxResults": max_results}
         )
         worklogs.extend(data.get("worklogs", []))
         start_at += data.get("maxResults", 0)
@@ -185,7 +204,6 @@ def get_issue_subtasks(issue_key: str):
     summary = fields.get("summary", "")
     subtasks = fields.get("subtasks", []) or []
     return summary, subtasks
-
 
 
 # =====================================================
@@ -214,13 +232,15 @@ for it in issues:
             )
 
         seconds = int(wl.get("timeSpentSeconds", 0))
-        rows.append({
-            "Issue key": key,
-            "Summary": summary,
-            "User": login,
-            "Group": USER_GROUPS.get(login, "dev"),
-            "Hours": seconds / 3600.0
-        })
+        rows.append(
+            {
+                "Issue key": key,
+                "Summary": summary,
+                "User": login,
+                "Group": USER_GROUPS.get(login, "dev"),
+                "Hours": seconds / 3600.0,
+            }
+        )
 
 parsed = pd.DataFrame(rows)
 
@@ -241,22 +261,14 @@ if unmapped:
 # =====================================================
 # 1. ISSUE × USER
 # =====================================================
-by_issue = (
-    parsed
-    .groupby(["Issue key", "Summary", "User"], as_index=False)["Hours"]
-    .sum()
-)
+by_issue = parsed.groupby(["Issue key", "Summary", "User"], as_index=False)["Hours"].sum()
 by_issue["Hours"] = by_issue["Hours"].round(2)
 by_issue.to_csv(OUT_BY_ISSUE, sep=",", index=False, encoding="utf-8")
 
 # =====================================================
 # 2. TOTAL PER USER
 # =====================================================
-by_user = (
-    parsed
-    .groupby("User", as_index=False)["Hours"]
-    .sum()
-)
+by_user = parsed.groupby("User", as_index=False)["Hours"].sum()
 by_user["Hours"] = by_user["Hours"].round(2)
 by_user["Total"] = by_user["Hours"].apply(format_duration)
 by_user = by_user.sort_values("Hours", ascending=False)
@@ -265,23 +277,15 @@ by_user.to_csv(OUT_BY_USER, sep=",", index=False, encoding="utf-8")
 # =====================================================
 # 3. TOTAL PER GROUP + ALL
 # =====================================================
-by_group = (
-    parsed
-    .groupby("Group", as_index=False)["Hours"]
-    .sum()
-)
+by_group = parsed.groupby("Group", as_index=False)["Hours"].sum()
 by_group["Hours"] = by_group["Hours"].round(2)
 by_group["Total"] = by_group["Hours"].apply(format_duration)
 
 all_hours = round(float(parsed["Hours"].sum()), 2)
-by_group = pd.concat([
-    by_group,
-    pd.DataFrame([{
-        "Group": "ALL",
-        "Hours": all_hours,
-        "Total": format_duration(all_hours)
-    }])
-], ignore_index=True)
+by_group = pd.concat(
+    [by_group, pd.DataFrame([{"Group": "ALL", "Hours": all_hours, "Total": format_duration(all_hours)}])],
+    ignore_index=True,
+)
 
 by_group.to_csv(OUT_BY_GROUP, sep=",", index=False, encoding="utf-8")
 
@@ -294,32 +298,16 @@ user_hours = by_user.set_index("User")["Hours"].to_dict()
 rows_custom = []
 for login, name, group in CUSTOM_STRUCTURE:
     if login.startswith("__"):
-        subtotal = sum(
-            r["Hours"] for r in rows_custom if r["Group"] == group and not r["IsTotal"]
-        )
-        rows_custom.append({
-            "Name": name,
-            "Hours": round(subtotal, 2),
-            "Group": group,
-            "IsTotal": True
-        })
+        subtotal = sum(r["Hours"] for r in rows_custom if r["Group"] == group and not r["IsTotal"])
+        rows_custom.append({"Name": name, "Hours": round(subtotal, 2), "Group": group, "IsTotal": True})
     else:
         h = float(user_hours.get(login, 0.0))
-        rows_custom.append({
-            "Name": name,
-            "Hours": round(h, 2),
-            "Group": group,
-            "IsTotal": False
-        })
+        rows_custom.append({"Name": name, "Hours": round(h, 2), "Group": group, "IsTotal": False})
 
 # TOTAL ALL jako ostatni wiersz (z całości)
-rows_custom.append({
-    "Name": "TOTAL ALL",
-    "Hours": all_hours,
-    "TotalWDHM": format_duration(all_hours),
-    "Group": "ALL",
-    "IsTotal": True
-})
+rows_custom.append(
+    {"Name": "TOTAL ALL", "Hours": all_hours, "TotalWDHM": format_duration(all_hours), "Group": "ALL", "IsTotal": True}
+)
 
 custom_df = pd.DataFrame(rows_custom)
 custom_df["Total"] = ""
@@ -342,11 +330,7 @@ print(f"- {OUT_CUSTOM}")
 subtask_rows = []
 for parent_key in main_issues:
     summary, subtasks = get_issue_subtasks(parent_key)
-    subtask_rows.append({
-        "Parent key": parent_key,
-        "Parent summary": summary,
-        "Subtasks count": len(subtasks)
-    })
+    subtask_rows.append({"Parent key": parent_key, "Parent summary": summary, "Subtasks count": len(subtasks)})
 
 pd.DataFrame(subtask_rows).to_csv(OUT_SUBTASK_COUNT, sep=",", index=False, encoding="utf-8")
 print(f"- {OUT_SUBTASK_COUNT}")
