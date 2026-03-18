@@ -5,9 +5,10 @@ import time
 from pathlib import Path
 from typing import Any
 
+from framework.visual.build_metadata import read_visual_build_metadata
+
 from .context import ReportServerContext
 from .state import _load_state, _save_state, _treat_reporting_disabled_as_success
-from framework.visual.build_metadata import read_visual_build_metadata
 
 _PERCEPTUAL_STATUS = "perceptual-status.json"
 

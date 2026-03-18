@@ -8,9 +8,9 @@ from typing import Any, cast
 
 import settings
 from framework.visual.models import (
+    DEFAULT_MASK_COLOR,
     CaptureType,
     CompareMode,
-    DEFAULT_MASK_COLOR,
     VisualCapture,
     VisualMask,
     VisualScenario,

@@ -1,23 +1,23 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
-
-from playwright.sync_api import Page, TimeoutError as PlaywrightTimeoutError, expect
+from playwright.sync_api import Page, expect
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 
 
-class ToastType(str, Enum):
+class ToastType(StrEnum):
     SUCCESS = "positive"
     ERROR = "error"
     INFO = "informative"
     UNKNOWN = "unknown"
 
 
-class ToastInstance(str, Enum):
+class ToastInstance(StrEnum):
     USER_REGISTERED = "Konto zostało założone, zostałeś automatycznie zalogowany"
     FILL_FIELDS = "Wypełnij wszystkie pola"
     UNKNOWN = "unknown"

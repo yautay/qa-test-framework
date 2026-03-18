@@ -1,9 +1,10 @@
 import os
-import re
-import urllib3
-import requests
-from requests.auth import HTTPBasicAuth
+from typing import Any, cast
+
 import pandas as pd
+import requests
+import urllib3
+from requests.auth import HTTPBasicAuth
 
 import settings
 
@@ -295,10 +296,14 @@ by_group.to_csv(OUT_BY_GROUP, sep=",", index=False, encoding="utf-8")
 # =====================================================
 user_hours = by_user.set_index("User")["Hours"].to_dict()
 
-rows_custom = []
+rows_custom: list[dict[str, object]] = []
 for login, name, group in CUSTOM_STRUCTURE:
     if login.startswith("__"):
-        subtotal = sum(r["Hours"] for r in rows_custom if r["Group"] == group and not r["IsTotal"])
+        subtotal = sum(
+            float(cast(Any, r).get("Hours", 0.0))
+            for r in rows_custom
+            if str(cast(Any, r).get("Group", "")) == group and not bool(cast(Any, r).get("IsTotal", False))
+        )
         rows_custom.append({"Name": name, "Hours": round(subtotal, 2), "Group": group, "IsTotal": True})
     else:
         h = float(user_hours.get(login, 0.0))

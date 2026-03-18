@@ -6,8 +6,8 @@ import pytest
 
 from framework.env import RuntimeEnv
 from framework.targeting import resolve_reference_base_url
-from framework.visual.visual_suite import apply_parametrization, execute_visual_scenario
 from framework.visual.models import VisualScenario
+from framework.visual.visual_suite import apply_parametrization, execute_visual_scenario
 
 SCENARIOS_DIR = Path(__file__).resolve().parent
 

@@ -282,11 +282,14 @@ def test_send_test_result_updates_uses_worker_payload_snapshot(tmp_path: Path, m
     payload = cast(dict[str, Any], payload)
     assert payload["attempt"] == 2
     assert payload["idempotency_key"] == f"test_result:run-uid-1:{nodeid}:2"
-    assert payload["visual"]["scores"]["applied_shift_y"] == 3
-    assert payload["visual"]["scores"]["shift_compensation_y_px_effective"] == 6
-    assert payload["visual"]["execution"]["shift_compensation_y_px_env_default"] == 4
-    assert payload["visual"]["execution"]["shift_compensation_y_px_scenario_override"] == 6
-    assert payload["visual"]["execution"]["shift_compensation_y_px_source"] == "scenario_override"
+    visual = cast(dict[str, Any], payload["visual"])
+    visual_scores = cast(dict[str, Any], visual["scores"])
+    visual_execution = cast(dict[str, Any], visual["execution"])
+    assert visual_scores["applied_shift_y"] == 3
+    assert visual_scores["shift_compensation_y_px_effective"] == 6
+    assert visual_execution["shift_compensation_y_px_env_default"] == 4
+    assert visual_execution["shift_compensation_y_px_scenario_override"] == 6
+    assert visual_execution["shift_compensation_y_px_source"] == "scenario_override"
     artifacts = cast(list[dict[str, Any]], payload["artifacts"])
     heatmap = next(item for item in artifacts if item.get("kind") == "visual_heatmap")
     assert heatmap["path"] == heatmap_rel
