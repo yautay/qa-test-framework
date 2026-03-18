@@ -250,6 +250,15 @@ def _capture_environment_probe(base_url: str, ignore_https_errors: bool) -> dict
     return payload
 
 
+def _probe_is_resolved(probe: object) -> bool:
+    if not isinstance(probe, dict):
+        return False
+    request_url = str(probe.get("request_url", "") or "").strip()
+    if not request_url:
+        return False
+    return probe.get("status_code") is not None
+
+
 def _resolve_probe_base_url_from_items(config: pytest.Config, items: list[pytest.Item]) -> tuple[str, str]:
     env: RuntimeEnv | None = getattr(config, "_runtime_env", None)
     if env is None:
@@ -295,9 +304,22 @@ def _refresh_environment_probe_metadata(config: pytest.Config, items: list[pytes
         return
 
     existing_probe = metadata.get("environment_probe")
-    if isinstance(existing_probe, dict) and existing_probe.get("status_code") is not None:
+    if _probe_is_resolved(existing_probe):
         config._environment_probe_resolved = True
         return
+
+    run_artifacts = getattr(config, "_run_artifacts", None)
+    metadata_path = None
+    if isinstance(run_artifacts, RunArtifacts):
+        metadata_path = run_artifacts.root / "run-metadata.json"
+
+    if metadata_path is not None:
+        persisted_metadata = _read_run_metadata_file(metadata_path)
+        persisted_probe = persisted_metadata.get("environment_probe") if isinstance(persisted_metadata, dict) else None
+        if _probe_is_resolved(persisted_probe):
+            config._run_metadata = persisted_metadata
+            config._environment_probe_resolved = True
+            return
 
     env: RuntimeEnv | None = getattr(config, "_runtime_env", None)
     if env is None:
@@ -322,12 +344,11 @@ def _refresh_environment_probe_metadata(config: pytest.Config, items: list[pytes
     metadata["environment_probe"] = probe
     config._run_metadata = metadata
 
-    if not _is_xdist_worker(config):
-        run_artifacts = getattr(config, "_run_artifacts", None)
-        if isinstance(run_artifacts, RunArtifacts):
-            _write_run_metadata_file(run_artifacts, metadata)
+    probe_resolved = _probe_is_resolved(probe)
+    if probe_resolved and isinstance(run_artifacts, RunArtifacts):
+        _write_run_metadata_file(run_artifacts, metadata)
 
-    config._environment_probe_resolved = True
+    config._environment_probe_resolved = probe_resolved
 
 
 def _write_run_metadata_file(artifacts: RunArtifacts, metadata: dict[str, Any]) -> None:
@@ -335,7 +356,10 @@ def _write_run_metadata_file(artifacts: RunArtifacts, metadata: dict[str, Any]) 
     payload["tester"] = str(payload.get("tester", "") or "")
     payload["run_note"] = str(payload.get("run_note", "") or "")
     target = artifacts.root / "run-metadata.json"
-    target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temp = target.parent / f"{target.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp"
+    temp.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    temp.replace(target)
 
 
 def _read_run_metadata_file(path: Path) -> dict[str, Any] | None:
@@ -682,6 +706,11 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
         raise pytest.UsageError(f"Target resolution errors (strict mode):\n{details}")
 
 
+def pytest_collection_finish(session: pytest.Session) -> None:
+    items = list(getattr(session, "items", []) or [])
+    _refresh_environment_probe_metadata(session.config, items)
+
+
 def pytest_configure(config: pytest.Config) -> None:
     _assert_supported_plugin_profile(config)
     env = replace(load_env(), ignore_https_errors=True)
@@ -714,11 +743,14 @@ def pytest_configure(config: pytest.Config) -> None:
         if isinstance(persisted_metadata, dict):
             run_metadata = persisted_metadata
     else:
+        initial_probe = _capture_environment_probe(env.base_url, env.ignore_https_errors)
+        initial_probe["source"] = "runtime_env.base_url"
         run_metadata = {
             **run_metadata,
-            "environment_probe": _capture_environment_probe(env.base_url, env.ignore_https_errors),
+            "environment_probe": initial_probe,
         }
     config._run_metadata = run_metadata
+    config._environment_probe_resolved = _probe_is_resolved(run_metadata.get("environment_probe"))
     config._run_artifacts = artifacts
     config._git_metadata = git_metadata
     config._reporting_client = ReportingClient(
@@ -914,6 +946,8 @@ def pytest_runtest_protocol(item: pytest.Item, nextitem: pytest.Item | None):
 def pytest_runtest_teardown(item: pytest.Item) -> None:
     if item.nodeid in item.config._test_case_emitted:
         return
+
+    _refresh_environment_probe_metadata(item.config, [item])
 
     env: RuntimeEnv = item.config._runtime_env
     run_artifacts: RunArtifacts = item.config._run_artifacts
