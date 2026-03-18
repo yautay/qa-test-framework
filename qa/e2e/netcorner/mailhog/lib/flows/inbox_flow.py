@@ -12,6 +12,8 @@ from qa.e2e.netcorner.mailhog.lib.page_objects.pages.inbox_page import InboxPage
 
 _PASSWORD_RESET_LINK_REGEX = r"(?i)https?://[^\s\"'<>]*(reset|odzysk|hasl|password)[^\s\"'<>]*"
 _ORDER_LINK_REGEX = r"(?i)https?://[^\s\"'<>]*(zamow|order|checkout|status|details)[^\s\"'<>]*"
+_MAILHOG_REFRESH_INTERVAL_MS = 10_000
+_MAILHOG_LOOKUP_TIMEOUT_MS = 30_000
 
 
 class MailInboxService:
@@ -31,7 +33,7 @@ class MailInboxService:
         recipient: str,
         subject: MailSubjectPattern,
         link_regex: str,
-        timeout_ms: int = 60_000,
+        timeout_ms: int = _MAILHOG_LOOKUP_TIMEOUT_MS,
     ) -> str:
         previous_pages = tuple(context.pages)
         open_pages_before = len(context.pages)
@@ -57,7 +59,7 @@ class MailInboxService:
         *,
         context: BrowserContext,
         recipient: str,
-        timeout_ms: int = 60_000,
+        timeout_ms: int = _MAILHOG_LOOKUP_TIMEOUT_MS,
         link_regex: str = _PASSWORD_RESET_LINK_REGEX,
     ) -> str:
         return self.get_link_from_subject(
@@ -76,7 +78,7 @@ class MailInboxService:
         recipient: str,
         shop_host: str,
         order_number: str | None = None,
-        timeout_ms: int = 60_000,
+        timeout_ms: int = _MAILHOG_LOOKUP_TIMEOUT_MS,
         link_regex: str = _ORDER_LINK_REGEX,
     ) -> str:
         return self.get_link_from_subject(
@@ -111,7 +113,11 @@ class MailInboxService:
             inbox_page.refresh_messages()
             if inbox_page.open_message(recipient=recipient, subject=subject):
                 return
-            inbox_page.page.wait_for_timeout(2_000)
+            remaining_ms = max(0, int((deadline - time.monotonic()) * 1000))
+            wait_ms = min(_MAILHOG_REFRESH_INTERVAL_MS, remaining_ms)
+            if wait_ms == 0:
+                break
+            inbox_page.page.wait_for_timeout(wait_ms)
 
         raise AssertionError(
             f"Nie znaleziono wiadomości '{subject.key}' dla odbiorcy '{recipient}' w czasie {timeout_ms} ms"

@@ -128,11 +128,29 @@ class InboxPage(BasePage):
 
     @staticmethod
     def __row_contains_recipient_email(row_text: str, recipient: str) -> bool:
+        row_text_normalized = row_text.lower()
         recipient_normalized = recipient.strip().lower()
         if not recipient_normalized:
             return False
+
+        if InboxPage.__contains_email_token(row_text_normalized, recipient_normalized):
+            return True
+
         emails_in_row = re.findall(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", row_text)
-        return any(email.lower() == recipient_normalized for email in emails_in_row)
+        if any(email.lower() == recipient_normalized for email in emails_in_row):
+            return True
+
+        local_part, separator, _domain = recipient_normalized.partition("@")
+        if separator and local_part:
+            return InboxPage.__contains_email_token(row_text_normalized, local_part)
+
+        return False
+
+    @staticmethod
+    def __contains_email_token(text: str, token: str) -> bool:
+        escaped_token = re.escape(token)
+        pattern = rf"(?<![A-Za-z0-9._%+-]){escaped_token}(?![A-Za-z0-9._%+-])"
+        return bool(re.search(pattern, text))
 
     def __collect_links(self) -> list[str]:
         links: list[str] = []
