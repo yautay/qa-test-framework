@@ -295,6 +295,32 @@ def _resolve_probe_base_url_from_items(config: pytest.Config, items: list[pytest
     return "", "cannot resolve base_url from collected tests"
 
 
+def _resolve_probe_base_url_from_runtime_items(items: list[pytest.Item]) -> tuple[str, str]:
+    resolved_urls: set[str] = set()
+    for item in items:
+        funcargs = getattr(item, "funcargs", None)
+        if isinstance(funcargs, dict):
+            runtime_base_url = str(funcargs.get("base_url", "") or "").strip()
+            if runtime_base_url:
+                resolved_urls.add(runtime_base_url)
+                continue
+
+        visual_payload = getattr(item, "_visual_payload", None)
+        if isinstance(visual_payload, dict):
+            execution = visual_payload.get("execution")
+            if isinstance(execution, dict):
+                runtime_target_base_url = str(execution.get("target_base_url", "") or "").strip()
+                if runtime_target_base_url:
+                    resolved_urls.add(runtime_target_base_url)
+
+    if len(resolved_urls) == 1:
+        return next(iter(resolved_urls)), "runtime_item_base_url"
+    if len(resolved_urls) > 1:
+        values = ", ".join(sorted(resolved_urls))
+        return "", f"multiple runtime base urls detected: {values}"
+    return "", "runtime item base_url is not available"
+
+
 def _refresh_environment_probe_metadata(config: pytest.Config, items: list[pytest.Item]) -> None:
     if bool(getattr(config, "_environment_probe_resolved", False)):
         return
@@ -325,7 +351,9 @@ def _refresh_environment_probe_metadata(config: pytest.Config, items: list[pytes
     if env is None:
         return
 
-    probe_base_url, source = _resolve_probe_base_url_from_items(config, items)
+    probe_base_url, source = _resolve_probe_base_url_from_runtime_items(items)
+    if not probe_base_url:
+        probe_base_url, source = _resolve_probe_base_url_from_items(config, items)
     if probe_base_url:
         probe = _capture_environment_probe(probe_base_url, env.ignore_https_errors)
         probe["source"] = source
