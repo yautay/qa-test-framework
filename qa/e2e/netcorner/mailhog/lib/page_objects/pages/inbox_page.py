@@ -100,6 +100,7 @@ class InboxPage(BasePage):
             )
         else:
             row_selectors = (
+                "div.msglist-message",
                 "tr.msglist-message",
                 "#messages tbody tr",
                 "table tbody tr",
