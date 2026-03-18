@@ -167,9 +167,18 @@ def _result_from_dict(data: dict[str, object]) -> VisualResult | None:
                 dists_uncertain_delta=(
                     float(cast(Any, dists_uncertain_delta)) if dists_uncertain_delta is not None else None
                 ),
+                shift_compensation_y_px=(
+                    int(cast(Any, thresholds_raw.get("shift_compensation_y_px")))
+                    if thresholds_raw.get("shift_compensation_y_px") is not None
+                    else None
+                ),
             )
 
         pixel_changed_ratio_raw = data.get("pixel_changed_ratio")
+        applied_shift_y_raw = data.get("applied_shift_y")
+        shift_effective_raw = data.get("shift_compensation_y_px_effective")
+        shift_env_default_raw = data.get("shift_compensation_y_px_env_default")
+        shift_scenario_override_raw = data.get("shift_compensation_y_px_scenario_override")
         lpips_raw = data.get("lpips")
         dists_raw = data.get("dists")
         test_metadata_obj = data.get("test_metadata")
@@ -198,6 +207,17 @@ def _result_from_dict(data: dict[str, object]) -> VisualResult | None:
             pixel_changed_ratio=(
                 float(cast(Any, pixel_changed_ratio_raw)) if pixel_changed_ratio_raw is not None else None
             ),
+            applied_shift_y=int(cast(Any, applied_shift_y_raw)) if applied_shift_y_raw is not None else None,
+            shift_compensation_y_px_effective=(
+                int(cast(Any, shift_effective_raw)) if shift_effective_raw is not None else None
+            ),
+            shift_compensation_y_px_env_default=(
+                int(cast(Any, shift_env_default_raw)) if shift_env_default_raw is not None else None
+            ),
+            shift_compensation_y_px_scenario_override=(
+                int(cast(Any, shift_scenario_override_raw)) if shift_scenario_override_raw is not None else None
+            ),
+            shift_compensation_y_px_source=(str(data.get("shift_compensation_y_px_source") or "") or None),
             lpips=float(cast(Any, lpips_raw)) if lpips_raw is not None else None,
             dists=float(cast(Any, dists_raw)) if dists_raw is not None else None,
             thresholds=thresholds,
@@ -343,19 +363,59 @@ def _merge_visual_result_artifacts(
 def _build_visual_payload_from_result(result: VisualResult, existing_visual: Any) -> dict[str, Any]:
     thresholds = getattr(result, "thresholds", None)
     execution = {}
+    shift_effective = getattr(result, "shift_compensation_y_px_effective", None)
+    shift_env_default = getattr(result, "shift_compensation_y_px_env_default", None)
+    shift_scenario_override = getattr(result, "shift_compensation_y_px_scenario_override", None)
+    shift_source = getattr(result, "shift_compensation_y_px_source", None)
+    metadata = getattr(result, "test_metadata", None)
+    if isinstance(metadata, dict):
+        scores_meta = metadata.get("scores")
+        if shift_effective is None and isinstance(scores_meta, dict):
+            value = scores_meta.get("shift_compensation_y_px_effective")
+            if value is not None:
+                shift_effective = value
+        execution_meta = metadata.get("execution")
+        if isinstance(execution_meta, dict):
+            if shift_env_default is None:
+                value = execution_meta.get("shift_compensation_y_px_env_default")
+                if value is not None:
+                    shift_env_default = value
+            if shift_scenario_override is None:
+                value = execution_meta.get("shift_compensation_y_px_scenario_override")
+                if value is not None:
+                    shift_scenario_override = value
+            if not shift_source:
+                value = execution_meta.get("shift_compensation_y_px_source")
+                if value:
+                    shift_source = value
     if isinstance(existing_visual, dict):
         execution_value = existing_visual.get("execution")
         if isinstance(execution_value, dict):
             execution = dict(execution_value)
+    execution["shift_compensation_y_px_env_default"] = (
+        int(cast(Any, shift_env_default)) if shift_env_default is not None else None
+    )
+    execution["shift_compensation_y_px_scenario_override"] = (
+        int(cast(Any, shift_scenario_override)) if shift_scenario_override is not None else None
+    )
+    execution["shift_compensation_y_px_effective"] = (
+        int(cast(Any, shift_effective)) if shift_effective is not None else None
+    )
+    execution["shift_compensation_y_px_source"] = str(shift_source or "") or None
     return {
         "threshold_scope": "scenario+viewport+browser",
         "thresholds_used": {
             "pixel_max": thresholds.pixel_max if thresholds else None,
             "lpips_max": thresholds.lpips_max if thresholds else None,
             "dists_max": thresholds.dists_max if thresholds else None,
+            "shift_compensation_y_px": thresholds.shift_compensation_y_px if thresholds else None,
         },
         "scores": {
             "pixel_changed_ratio": result.pixel_changed_ratio,
+            "applied_shift_y": result.applied_shift_y,
+            "shift_compensation_y_px_effective": (
+                int(cast(Any, shift_effective)) if shift_effective is not None else None
+            ),
             "lpips": result.lpips,
             "dists": result.dists,
         },

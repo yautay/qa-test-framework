@@ -74,6 +74,19 @@ class VisualRunner:
         except Exception:
             browser_family = (self._env.browser or "unknown").strip().lower()
 
+        shift_compensation_y_px_env_default = max(0, int(self._env.visual_shift_compensation_y_px))
+        scenario_shift_raw = getattr(scenario.thresholds, "shift_compensation_y_px", None)
+        shift_compensation_y_px_scenario_override = (
+            max(0, int(scenario_shift_raw)) if scenario_shift_raw is not None else None
+        )
+        shift_compensation_y_px = _resolve_shift_compensation_y_px(
+            shift_compensation_y_px_env_default,
+            shift_compensation_y_px_scenario_override,
+        )
+        shift_compensation_y_px_source = (
+            "scenario_override" if shift_compensation_y_px_scenario_override is not None else "env_default"
+        )
+
         baseline_path = self._store.resolve_baseline(
             scenario.suite_id,
             scenario.scenario_id,
@@ -95,6 +108,11 @@ class VisualRunner:
                 diff_path="",
                 heatmap_path="",
                 pixel_changed_ratio=1.0,
+                applied_shift_y=0,
+                shift_compensation_y_px_effective=shift_compensation_y_px,
+                shift_compensation_y_px_env_default=shift_compensation_y_px_env_default,
+                shift_compensation_y_px_scenario_override=shift_compensation_y_px_scenario_override,
+                shift_compensation_y_px_source=shift_compensation_y_px_source,
                 lpips=None,
                 dists=None,
                 thresholds=scenario.thresholds,
@@ -103,10 +121,6 @@ class VisualRunner:
         diff_path = self._diff_dir / f"{file_stem}.png"
         comparison_baseline_path = self._normalized_dir / f"{file_stem}__baseline.png"
         comparison_actual_path = self._normalized_dir / f"{file_stem}__actual.png"
-        shift_compensation_y_px = _resolve_shift_compensation_y_px(
-            self._env.visual_shift_compensation_y_px,
-            getattr(scenario.thresholds, "shift_compensation_y_px", None),
-        )
         pixel_out = compare_images(
             baseline_path,
             actual_path,
@@ -159,6 +173,10 @@ class VisualRunner:
             heatmap_path=heatmap_path_str,
             pixel_changed_ratio=pixel_changed_ratio,
             applied_shift_y=applied_shift_y,
+            shift_compensation_y_px_effective=shift_compensation_y_px,
+            shift_compensation_y_px_env_default=shift_compensation_y_px_env_default,
+            shift_compensation_y_px_scenario_override=shift_compensation_y_px_scenario_override,
+            shift_compensation_y_px_source=shift_compensation_y_px_source,
             lpips=lpips_score,
             dists=dists_score,
             thresholds=scenario.thresholds,

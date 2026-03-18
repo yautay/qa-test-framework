@@ -90,21 +90,31 @@ def _dump_worker_visual_results(run_artifacts: RunArtifacts, worker_id: str, res
 
 def _build_update_visual_payload(result: VisualResult, existing_visual: object) -> dict[str, object]:
     thresholds = getattr(result, "thresholds", None)
+    shift_effective = getattr(result, "shift_compensation_y_px_effective", None)
+    shift_env_default = getattr(result, "shift_compensation_y_px_env_default", None)
+    shift_scenario_override = getattr(result, "shift_compensation_y_px_scenario_override", None)
+    shift_source = getattr(result, "shift_compensation_y_px_source", None)
     execution: dict[str, object] = {}
     if isinstance(existing_visual, dict):
         execution_value = existing_visual.get("execution")
         if isinstance(execution_value, dict):
             execution = dict(execution_value)
+    execution["shift_compensation_y_px_env_default"] = shift_env_default
+    execution["shift_compensation_y_px_scenario_override"] = shift_scenario_override
+    execution["shift_compensation_y_px_effective"] = shift_effective
+    execution["shift_compensation_y_px_source"] = shift_source
     return {
         "threshold_scope": "scenario+viewport+browser",
         "thresholds_used": {
             "pixel_max": thresholds.pixel_max if thresholds else None,
             "lpips_max": thresholds.lpips_max if thresholds else None,
             "dists_max": thresholds.dists_max if thresholds else None,
+            "shift_compensation_y_px": thresholds.shift_compensation_y_px if thresholds else None,
         },
         "scores": {
             "pixel_changed_ratio": result.pixel_changed_ratio,
             "applied_shift_y": result.applied_shift_y,
+            "shift_compensation_y_px_effective": shift_effective,
             "lpips": result.lpips,
             "dists": result.dists,
         },

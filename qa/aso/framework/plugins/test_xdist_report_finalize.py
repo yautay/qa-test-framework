@@ -113,9 +113,14 @@ def test_load_merged_worker_visual_results_deduplicates_by_identity(tmp_path: Pa
         "heatmap_path": "heatmap.png",
         "suite_id": "suite",
         "pixel_changed_ratio": 0.01,
+        "applied_shift_y": 2,
         "lpips": 0.02,
         "dists": 0.03,
-        "thresholds": {"pixel_max": 0.1, "lpips_max": 0.2, "dists_max": 0.3},
+        "thresholds": {"pixel_max": 0.1, "lpips_max": 0.2, "dists_max": 0.3, "shift_compensation_y_px": 6},
+        "shift_compensation_y_px_effective": 6,
+        "shift_compensation_y_px_env_default": 4,
+        "shift_compensation_y_px_scenario_override": 6,
+        "shift_compensation_y_px_source": "scenario_override",
         "message": "ok",
     }
     (gw0 / "visual_results.json").write_text(json.dumps({"results": [base_row]}), encoding="utf-8")
@@ -128,6 +133,13 @@ def test_load_merged_worker_visual_results_deduplicates_by_identity(tmp_path: Pa
     assert file_count == 2
     assert len(rows) == 1
     assert rows[0].message == "newer"
+    assert rows[0].applied_shift_y == 2
+    assert rows[0].shift_compensation_y_px_effective == 6
+    assert rows[0].shift_compensation_y_px_env_default == 4
+    assert rows[0].shift_compensation_y_px_scenario_override == 6
+    assert rows[0].shift_compensation_y_px_source == "scenario_override"
+    assert rows[0].thresholds is not None
+    assert rows[0].thresholds.shift_compensation_y_px == 6
 
 
 def test_pytest_sessionfinish_writes_visual_report_for_controller(
@@ -258,12 +270,23 @@ def test_send_test_result_updates_uses_worker_payload_snapshot(tmp_path: Path, m
         heatmap_path=heatmap_rel,
         nodeid=nodeid,
     )
+    result.applied_shift_y = 3
+    result.shift_compensation_y_px_effective = 6
+    result.shift_compensation_y_px_env_default = 4
+    result.shift_compensation_y_px_scenario_override = 6
+    result.shift_compensation_y_px_source = "scenario_override"
     plugin._send_test_result_updates(config, run_root, [result])
 
     assert len(client.calls) == 1
     payload = client.calls[0]
+    payload = cast(dict[str, Any], payload)
     assert payload["attempt"] == 2
     assert payload["idempotency_key"] == f"test_result:run-uid-1:{nodeid}:2"
+    assert payload["visual"]["scores"]["applied_shift_y"] == 3
+    assert payload["visual"]["scores"]["shift_compensation_y_px_effective"] == 6
+    assert payload["visual"]["execution"]["shift_compensation_y_px_env_default"] == 4
+    assert payload["visual"]["execution"]["shift_compensation_y_px_scenario_override"] == 6
+    assert payload["visual"]["execution"]["shift_compensation_y_px_source"] == "scenario_override"
     artifacts = cast(list[dict[str, Any]], payload["artifacts"])
     heatmap = next(item for item in artifacts if item.get("kind") == "visual_heatmap")
     assert heatmap["path"] == heatmap_rel

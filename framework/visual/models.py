@@ -435,6 +435,10 @@ class VisualResult:
 
     pixel_changed_ratio: float | None = None
     applied_shift_y: int | None = None
+    shift_compensation_y_px_effective: int | None = None
+    shift_compensation_y_px_env_default: int | None = None
+    shift_compensation_y_px_scenario_override: int | None = None
+    shift_compensation_y_px_source: str | None = None
     lpips: float | None = None
     dists: float | None = None
 
@@ -462,6 +466,10 @@ class VisualResult:
             "heatmap_path": self.heatmap_path,
             "pixel_changed_ratio": self.pixel_changed_ratio,
             "applied_shift_y": self.applied_shift_y,
+            "shift_compensation_y_px_effective": self.shift_compensation_y_px_effective,
+            "shift_compensation_y_px_env_default": self.shift_compensation_y_px_env_default,
+            "shift_compensation_y_px_scenario_override": self.shift_compensation_y_px_scenario_override,
+            "shift_compensation_y_px_source": self.shift_compensation_y_px_source,
             "lpips": self.lpips,
             "dists": self.dists,
             "thresholds": (

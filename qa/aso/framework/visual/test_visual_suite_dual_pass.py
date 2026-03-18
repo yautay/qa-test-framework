@@ -70,6 +70,11 @@ def test_execute_visual_scenario_uses_dual_pass_when_reference_host_is_set(monke
                     diff_path="",
                     heatmap_path="",
                     pixel_changed_ratio=1.0,
+                    applied_shift_y=0,
+                    shift_compensation_y_px_effective=5,
+                    shift_compensation_y_px_env_default=5,
+                    shift_compensation_y_px_scenario_override=None,
+                    shift_compensation_y_px_source="env_default",
                     lpips=None,
                     dists=None,
                     thresholds=scenario.thresholds,
@@ -87,6 +92,11 @@ def test_execute_visual_scenario_uses_dual_pass_when_reference_host_is_set(monke
                 diff_path="",
                 heatmap_path="",
                 pixel_changed_ratio=0.0,
+                applied_shift_y=2,
+                shift_compensation_y_px_effective=5,
+                shift_compensation_y_px_env_default=5,
+                shift_compensation_y_px_scenario_override=None,
+                shift_compensation_y_px_source="env_default",
                 lpips=None,
                 dists=None,
                 thresholds=scenario.thresholds,
@@ -126,6 +136,11 @@ def test_execute_visual_scenario_uses_dual_pass_when_reference_host_is_set(monke
     assert payload["execution"]["pms_requested"] is True
     assert payload["execution"]["pms_configured"] is True
     assert payload["execution"]["pms_usage_state"] == "deferred"
+    assert payload["scores"]["applied_shift_y"] == 2
+    assert payload["scores"]["shift_compensation_y_px_effective"] == 5
+    assert payload["execution"]["shift_compensation_y_px_env_default"] == 5
+    assert payload["execution"]["shift_compensation_y_px_scenario_override"] is None
+    assert payload["execution"]["shift_compensation_y_px_source"] == "env_default"
     assert "visual_reference_actual" in request.node._artifacts_payload
     assert "visual_reference_baseline" in request.node._artifacts_payload
 
@@ -156,6 +171,11 @@ def test_execute_visual_scenario_uses_single_pass_when_reference_host_is_empty(m
                 diff_path="",
                 heatmap_path="",
                 pixel_changed_ratio=0.0,
+                applied_shift_y=1,
+                shift_compensation_y_px_effective=4,
+                shift_compensation_y_px_env_default=4,
+                shift_compensation_y_px_scenario_override=None,
+                shift_compensation_y_px_source="env_default",
                 lpips=None,
                 dists=None,
                 thresholds=scenario.thresholds,
@@ -187,6 +207,11 @@ def test_execute_visual_scenario_uses_single_pass_when_reference_host_is_empty(m
     payload = request.node._visual_payload
     assert payload["execution"]["dual_pass"] is False
     assert payload["execution"]["pms_usage_state"] in {"deferred", "disabled", "not_applicable"}
+    assert payload["scores"]["applied_shift_y"] == 1
+    assert payload["scores"]["shift_compensation_y_px_effective"] == 4
+    assert payload["execution"]["shift_compensation_y_px_env_default"] == 4
+    assert payload["execution"]["shift_compensation_y_px_scenario_override"] is None
+    assert payload["execution"]["shift_compensation_y_px_source"] == "env_default"
     assert "visual_reference_actual" not in request.node._artifacts_payload
 
 
@@ -216,6 +241,11 @@ def test_execute_visual_scenario_uses_base_url_argument_for_target_runner(monkey
                 diff_path="",
                 heatmap_path="",
                 pixel_changed_ratio=0.0,
+                applied_shift_y=0,
+                shift_compensation_y_px_effective=3,
+                shift_compensation_y_px_env_default=3,
+                shift_compensation_y_px_scenario_override=None,
+                shift_compensation_y_px_source="env_default",
                 lpips=None,
                 dists=None,
                 thresholds=scenario.thresholds,
