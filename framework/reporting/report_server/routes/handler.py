@@ -178,9 +178,10 @@ def _build_handler(context: ReportServerContext):
                     row_meta = enriched.get("test_metadata")
                     if not isinstance(row_meta, dict):
                         row_meta = {}
-                    run_meta = row_meta.get("run")
-                    if not isinstance(run_meta, dict):
-                        run_meta = {}
+                    row_run_meta = row_meta.get("run")
+                    run_meta = dict(run_metadata)
+                    if isinstance(row_run_meta, dict):
+                        run_meta.update(row_run_meta)
                     run_meta.setdefault("run_id", run_id)
                     run_meta.setdefault("tester", tester)
                     run_meta.setdefault("run_note", run_note)
@@ -189,7 +190,12 @@ def _build_handler(context: ReportServerContext):
                     enriched_rows.append(enriched)
                 self._send_json(
                     HTTPStatus.OK,
-                    {"run_id": run_id, "results": enriched_rows, "build_metadata": build_metadata},
+                    {
+                        "run_id": run_id,
+                        "run_metadata": run_metadata,
+                        "results": enriched_rows,
+                        "build_metadata": build_metadata,
+                    },
                 )
                 return True
 

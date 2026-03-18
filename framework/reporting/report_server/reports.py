@@ -26,7 +26,7 @@ def _read_results_rows(report_dir: Path) -> list[dict[str, Any]]:
     return [x for x in rows if isinstance(x, dict)]
 
 
-def _read_run_metadata(report_dir: Path) -> dict[str, str]:
+def _read_run_metadata(report_dir: Path) -> dict[str, Any]:
     candidate = report_dir.parent / "run-metadata.json"
     if not candidate.is_file():
         return {"tester": "", "run_note": ""}
@@ -36,10 +36,10 @@ def _read_run_metadata(report_dir: Path) -> dict[str, str]:
         return {"tester": "", "run_note": ""}
     if not isinstance(data, dict):
         return {"tester": "", "run_note": ""}
-    return {
-        "tester": str(data.get("tester", "") or "").strip(),
-        "run_note": str(data.get("run_note", "") or "").strip(),
-    }
+    payload = dict(data)
+    payload["tester"] = str(payload.get("tester", "") or "").strip()
+    payload["run_note"] = str(payload.get("run_note", "") or "").strip()
+    return payload
 
 
 def _read_build_metadata(report_dir: Path) -> dict[str, Any]:
@@ -198,6 +198,7 @@ def _list_reports_payload(context: ReportServerContext) -> list[dict[str, Any]]:
                 "new": stats["new"],
                 "tester": run_metadata.get("tester", ""),
                 "run_note": run_metadata.get("run_note", ""),
+                "run_metadata": run_metadata,
                 "bug_count": bug_count,
                 "aso_count": asso_count,
                 "note_count": note_count,

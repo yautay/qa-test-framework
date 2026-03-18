@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import pytest
+import requests
 from loguru import logger
 
 import settings_cli
@@ -198,7 +199,7 @@ def _normalize_reference_selector(reference_host: str) -> tuple[str, str]:
     return token, "reference_host"
 
 
-def _resolve_run_metadata(config: pytest.Config) -> dict[str, str]:
+def _resolve_run_metadata(config: pytest.Config) -> dict[str, Any]:
     cli_tester = str(config.getoption("--tester") or "").strip()
     cli_run_note_raw = config.getoption("--run_note")
     cli_run_note = _normalize_run_note(cli_run_note_raw, "--run_note")
@@ -214,13 +215,59 @@ def _resolve_run_metadata(config: pytest.Config) -> dict[str, str]:
     }
 
 
-def _write_run_metadata_file(artifacts: RunArtifacts, metadata: dict[str, str]) -> None:
-    payload = {
-        "tester": str(metadata.get("tester", "") or ""),
-        "run_note": str(metadata.get("run_note", "") or ""),
+def _capture_environment_probe(base_url: str, ignore_https_errors: bool) -> dict[str, Any]:
+    request_url = str(base_url or "").strip()
+    payload: dict[str, Any] = {
+        "request_url": request_url,
+        "method": "GET",
+        "status_code": None,
+        "final_url": "",
+        "headers": {},
+        "captured_at_utc": _utc_now(),
+        "error": "",
     }
+    if not request_url:
+        payload["error"] = "base_url is empty"
+        return payload
+
+    try:
+        response = requests.get(
+            request_url,
+            timeout=10,
+            verify=not ignore_https_errors,
+            allow_redirects=True,
+        )
+    except requests.RequestException as exc:
+        payload["error"] = str(exc)
+        return payload
+
+    payload["status_code"] = int(response.status_code)
+    payload["final_url"] = str(response.url or "")
+    headers: dict[str, str] = {}
+    for key, value in response.headers.items():
+        headers[str(key)] = str(value)
+    payload["headers"] = headers
+    return payload
+
+
+def _write_run_metadata_file(artifacts: RunArtifacts, metadata: dict[str, Any]) -> None:
+    payload = dict(metadata) if isinstance(metadata, dict) else {}
+    payload["tester"] = str(payload.get("tester", "") or "")
+    payload["run_note"] = str(payload.get("run_note", "") or "")
     target = artifacts.root / "run-metadata.json"
     target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _read_run_metadata_file(path: Path) -> dict[str, Any] | None:
+    if not path.is_file():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, dict):
+        return None
+    return dict(payload)
 
 
 def _resolve_run_profile(config: pytest.Config) -> str:
@@ -278,7 +325,7 @@ def _build_event_envelope(
     run_uid: str,
     event_type: str,
     worker_id: str,
-    metadata: dict[str, str],
+    metadata: dict[str, Any],
     event_time: str | None = None,
     test_id: str = "",
     attempt: int = 1,
@@ -579,6 +626,16 @@ def pytest_configure(config: pytest.Config) -> None:
     config._runtime_env = env
     _base_url_resolver(config)
     env = config._runtime_env
+    metadata_path = artifacts.root / "run-metadata.json"
+    if _is_xdist_worker(config):
+        persisted_metadata = _read_run_metadata_file(metadata_path)
+        if isinstance(persisted_metadata, dict):
+            run_metadata = persisted_metadata
+    else:
+        run_metadata = {
+            **run_metadata,
+            "environment_probe": _capture_environment_probe(env.base_url, env.ignore_https_errors),
+        }
     config._run_metadata = run_metadata
     config._run_artifacts = artifacts
     config._git_metadata = git_metadata
@@ -627,7 +684,6 @@ def pytest_configure(config: pytest.Config) -> None:
             "collectonly",
         )
     )
-    metadata_path = artifacts.root / "run-metadata.json"
     if (not _is_xdist_worker(config)) or (not metadata_path.exists()):
         _write_run_metadata_file(artifacts, run_metadata)
 
@@ -670,6 +726,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
         "target": {
             "server_name": env.server_name,
             "base_url": env.base_url,
+            "environment_probe": session.config._run_metadata.get("environment_probe", {}),
         },
         "git": {
             "repo": "",

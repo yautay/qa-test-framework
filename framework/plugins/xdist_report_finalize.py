@@ -89,16 +89,16 @@ def _ensure_run_metadata(run_root: Path, config: pytest.Config) -> None:
         return
 
     metadata = getattr(config, "_run_metadata", None)
-    tester = ""
-    run_note = ""
+    payload: dict[str, Any]
     if isinstance(metadata, dict):
-        tester = str(metadata.get("tester", "") or "")
-        run_note = str(metadata.get("run_note", "") or "")
+        payload = dict(metadata)
     else:
-        tester = str(getattr(settings_cli, "tester", "") or "")
-        run_note = str(getattr(settings_cli, "run_note", "") or "")
-
-    payload = {"tester": tester, "run_note": run_note}
+        payload = {
+            "tester": str(getattr(settings_cli, "tester", "") or ""),
+            "run_note": str(getattr(settings_cli, "run_note", "") or ""),
+        }
+    payload["tester"] = str(payload.get("tester", "") or "")
+    payload["run_note"] = str(payload.get("run_note", "") or "")
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
@@ -441,15 +441,14 @@ def _send_test_result_updates(config: pytest.Config, run_root: Path, results: li
         return
 
     run_metadata_path = run_root / "run-metadata.json"
-    run_metadata: dict[str, str] = {"tester": "", "run_note": ""}
+    run_metadata: dict[str, Any] = {"tester": "", "run_note": ""}
     if run_metadata_path.is_file():
         try:
             payload = json.loads(run_metadata_path.read_text(encoding="utf-8"))
             if isinstance(payload, dict):
-                run_metadata = {
-                    "tester": str(payload.get("tester", "") or ""),
-                    "run_note": str(payload.get("run_note", "") or ""),
-                }
+                run_metadata = dict(payload)
+                run_metadata["tester"] = str(run_metadata.get("tester", "") or "")
+                run_metadata["run_note"] = str(run_metadata.get("run_note", "") or "")
         except (OSError, UnicodeDecodeError, json.JSONDecodeError):
             pass
 
