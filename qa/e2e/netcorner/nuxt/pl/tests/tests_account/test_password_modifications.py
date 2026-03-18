@@ -5,6 +5,7 @@ from contextlib import nullcontext
 import allure
 import pytest
 
+from qa.e2e.netcorner.mailhog.lib.flows.inbox_flow import MailInboxService
 from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.my_account_page import MyAccountPage
@@ -31,9 +32,9 @@ pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
 @pytest.mark.scenario("Zmiana hasła użytkownika")
 def test_password_change(page, context, runtime_env, user_case):
     user_data = user_case.factory()
-    assert ClientWrappers(page, context, runtime_env).register_new_client(
-        user_data
-    ), "Użytkownik nie został poprawnie zarejestrowany."
+    assert ClientWrappers(page, context, runtime_env).register_new_client(user_data), (
+        "Użytkownik nie został poprawnie zarejestrowany."
+    )
     home_page = HomePage(page, runtime_env.base_url).wait_loaded()
     home_page.header.actions.open_account()
     my_account = MyAccountPage(page, runtime_env.base_url).wait_loaded()
@@ -57,13 +58,18 @@ def test_password_change(page, context, runtime_env, user_case):
     ids=lambda case: case.case_id,
 )
 @pytest.mark.scenario("Odzyskiwanie hasła użytkownika")
-def test_password_recovery(page, context, runtime_env, user_case):
+def test_password_recovery(page, context, runtime_env, user_case, mail_inbox: MailInboxService):
     user_data = user_case.factory()
-    assert ClientWrappers(page, context, runtime_env).register_new_client(
-        user_data
-    ), "Użytkownik nie został poprawnie zarejestrowany."
+    assert ClientWrappers(page, context, runtime_env).register_new_client(user_data), (
+        "Użytkownik nie został poprawnie zarejestrowany."
+    )
     ClientWrappers(page, context, runtime_env).logout_client()
     home = HomePage(page, runtime_env.base_url)
-    home.open().wait_loaded().header.actions.open_login()
+    home.open().wait_loaded()
+    home.header.actions.open_login()
     home.overlays.login.password_recovery(user_data.email)
-    pass
+    reset_link = mail_inbox.get_password_reset_link(
+        context=context,
+        recipient=user_data.email,
+    )
+    page.goto(reset_link, wait_until="domcontentloaded")
