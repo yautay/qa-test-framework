@@ -24,4 +24,4 @@ class LoginOverlay(BaseComponent):
     def log_client(self, client_login: str, client_pwd: str) -> None:
         self.safe_type(self.__input_login, client_login)
         self.safe_type(self.__input_password, client_pwd)
-        self.__input_password.press("Enter")
+        self.safe_click(self.__button_login)

@@ -73,7 +73,6 @@ class ClientWrappers:
     def logout_client(self) -> bool:
         home = HomePage(self.__page, self.__runtime_env.base_url)
         with _step("Otwieram 'Moje Konto'"):
-            home = HomePage(self.__page, self.__runtime_env.base_url)
             home.open().wait_loaded().header.actions.open_account()
 
         with _step("Klikam przycisk 'wyloguj'"):

@@ -8,7 +8,7 @@ import socket
 import time
 import uuid
 from dataclasses import replace
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, cast
 
@@ -42,7 +42,7 @@ def _get_scenario_description(item: pytest.Item) -> str | None:
 
 
 def _utc_now() -> str:
-    return datetime.now(UTC).isoformat()
+    return datetime.now(timezone.utc).isoformat()
 
 
 def _current_worker_id() -> str:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, cast
@@ -25,7 +25,7 @@ def _env() -> SimpleNamespace:
 
 
 def test_select_keys_to_remove_respects_candidates_ttl_and_keep_versions() -> None:
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     entries = [
         RetentionEntry("suite/test-ref/candidates/old.png", "suite", "candidates", now - timedelta(days=10)),
         RetentionEntry("suite/test-ref/candidates/new.png", "suite", "candidates", now - timedelta(days=1)),
@@ -72,7 +72,7 @@ def test_apply_retention_removes_from_local_and_cache(tmp_path: Path, monkeypatc
     old_cache.parent.mkdir(parents=True, exist_ok=True)
     old_cache.write_bytes(b"old")
 
-    old_mtime = datetime.now(UTC) - timedelta(days=9)
+    old_mtime = datetime.now(timezone.utc) - timedelta(days=9)
     ts = old_mtime.timestamp()
     for path in [old_candidates, old_cache]:
         path.touch()

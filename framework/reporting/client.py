@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 import threading
 from typing import Any
 
@@ -140,7 +140,7 @@ class ReportingClient:
 
         payload: dict[str, Any] = {
             "event_type": "log",
-            "timestamp": timestamp or datetime.now(UTC).isoformat(),
+            "timestamp": timestamp or datetime.now(timezone.utc).isoformat(),
             "level": normalized_level,
             "message": str(message or ""),
             "run_id": str(run_id or ""),

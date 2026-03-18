@@ -1,5 +1,5 @@
 from __future__ import annotations
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 import os
 from pathlib import Path
 from typing import Any, cast
@@ -57,7 +57,7 @@ def _resolve_report_run_id(config: pytest.Config) -> str:
     if env_run_id:
         return env_run_id
 
-    return datetime.now(UTC).strftime("%Y%m%d_%H%M%S_%f")
+    return datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
 
 
 def _resolve_report_toggles(config: pytest.Config, env: RuntimeEnv) -> tuple[bool, bool]:

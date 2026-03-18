@@ -3,7 +3,7 @@ from __future__ import annotations
 """Utilities that enrich failure screenshots with highlights and metadata text."""
 
 import re
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import cv2
@@ -59,7 +59,7 @@ def annotate_fail_screenshot(
 
     lines = [
         "status=FAIL",
-        f"time={datetime.now(UTC).isoformat()}",
+        f"time={datetime.now(timezone.utc).isoformat()}",
         f"nodeid={metadata.get('nodeid', '-')}",
         f"branch={metadata.get('branch', '-')}",
         f"commit={metadata.get('commit', '-')}",

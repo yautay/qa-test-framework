@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 from urllib.parse import urlsplit
@@ -57,8 +57,8 @@ class MinioOps:
         for item in self._client.list_objects(self._bucket, prefix=prefix, recursive=True):
             if not str(item.object_name).lower().endswith(".png"):
                 continue
-            modified = item.last_modified if isinstance(item.last_modified, datetime) else datetime.now(UTC)
-            modified_utc = modified.astimezone(UTC) if modified.tzinfo else modified.replace(tzinfo=UTC)
+            modified = item.last_modified if isinstance(item.last_modified, datetime) else datetime.now(timezone.utc)
+            modified_utc = modified.astimezone(timezone.utc) if modified.tzinfo else modified.replace(tzinfo=timezone.utc)
             out.append(
                 MinioObject(
                     object_key=str(item.object_name),

@@ -37,10 +37,6 @@ def test_password_change(page, context, runtime_env, user_case):
     my_account = MyAccountPage(page, runtime_env.base_url).wait_loaded()
     my_account.content.menu_root.open_password_change()
     my_account.content.menu_change_password.change_password(user_data.password, user_data.password_changed)
-    ClientWrappers(page, context, runtime_env).logout_client()
-
-
-    home_page.open().wait_loaded().header.actions.open_login()
-    home_page.overlays.login.log_client(user_data.email, user_data.password_changed)
-    home_page.header.actions.open_account()
+    my_account.overlays.login.log_client(user_data.email, user_data.password_changed)
+    my_account.header.actions.open_account()
     assert my_account.content.menu_root.get_logged_as() == user_data.email, "Użytkownik nie został poprawnie zalogowany"

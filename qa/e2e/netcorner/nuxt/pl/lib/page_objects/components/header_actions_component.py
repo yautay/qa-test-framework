@@ -25,6 +25,6 @@ class HeaderActionsComponent(BaseComponent):
     def open_cart(self) -> None:
         self.safe_click(self.__cart)
 
-    @step("Sprawdzam dostępność linku do sekcji konto")
+    @step("Sprawdzam dostępność linku do sekcji 'Moje konto'")
     def is_my_account_available(self) -> bool:
-        return self.__my_account.is_visible(timeout=3000)
+        return self.__my_account.is_visible()

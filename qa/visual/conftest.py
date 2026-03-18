@@ -4,7 +4,7 @@ import json
 import os
 import hashlib
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -221,7 +221,7 @@ def _send_test_result_updates(
         attempt = 2
         update["event_id"] = str(uuid.uuid4())
         update["event_type"] = "test_result"
-        update["event_time_utc"] = datetime.now(UTC).isoformat()
+        update["event_time_utc"] = datetime.now(timezone.utc).isoformat()
         update["idempotency_key"] = f"test_result:{run_uid}:{nodeid}:{attempt}"
         update["run_id"] = run_artifacts.run_id
         update["run_uid"] = run_uid
