@@ -3,6 +3,9 @@ from __future__ import annotations
 from playwright.sync_api import Page
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.login_overlay import LoginOverlay
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.password_recovery_overlay import (
+    PasswordRecoveryOverlay,
+)
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.toast_overlay import ToastOverlay
 
 
@@ -10,6 +13,7 @@ class Overlays:
     def __init__(self, page: Page):
         self.page = page
         self.__login: LoginOverlay | None = None
+        self.__password_recovery: PasswordRecoveryOverlay | None = None
         self.__toast: ToastOverlay | None = None
 
     @property
@@ -19,10 +23,10 @@ class Overlays:
         return self.__login
 
     @property
-    def password_recovery(self) -> LoginOverlay:
-        if self.__login is None:
-            self.__login = LoginOverlay(self.page)
-        return self.__login
+    def password_recovery(self) -> PasswordRecoveryOverlay:
+        if self.__password_recovery is None:
+            self.__password_recovery = PasswordRecoveryOverlay(self.page)
+        return self.__password_recovery
 
     @property
     def toast(self) -> ToastOverlay:

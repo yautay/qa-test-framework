@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from contextlib import nullcontext
-
 from playwright.sync_api import Page
-from qa.e2e.conftest import allure
+
 from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 
@@ -16,7 +14,17 @@ class PasswordRecoveryOverlay(BaseComponent):
 
     @step("Wypełniam formularz odzyskiwania hasła dla loginu: {client_login}")
     def password_recovery(self, client_login: str) -> None:
+        self.wait_visible()
         self.safe_type(self.__input_login, client_login)
-        # TODO recaptcha solve
-        # TODO submit form
+        self.solve_captcha()
+        self.submit_form()
 
+    @step("Klikam reCAPTCHA w odzyskiwaniu hasła")
+    def solve_captcha(self) -> None:
+        frame = self.root.page.frame_locator('iframe[title="reCAPTCHA"]')
+        checkbox = frame.locator("#recaptcha-anchor")
+        self.safe_click(checkbox)
+
+    @step("Wysyłam formularz odzyskiwania hasła")
+    def submit_form(self) -> None:
+        self.safe_click(self.__button_request_recovery)

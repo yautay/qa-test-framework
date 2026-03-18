@@ -4,6 +4,9 @@ from playwright.sync_api import Page
 
 from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.password_recovery_overlay import (
+    PasswordRecoveryOverlay,
+)
 
 
 class LoginOverlay(BaseComponent):
@@ -26,7 +29,8 @@ class LoginOverlay(BaseComponent):
         self.safe_type(self.__input_password, client_pwd)
         self.safe_click(self.__button_login)
 
-    @step("Wybieram odzyskiwanie hasła dla loginu: {client_login}")
-    def password_recovery(self, client_login: str) -> None:
+    @step("Otwieram odzyskiwanie hasła")
+    def password_recovery(self, client_login: str | None = None) -> None:
         self.safe_click(self.__reset_password)
-
+        if client_login is not None:
+            PasswordRecoveryOverlay(self.root.page).password_recovery(client_login)
