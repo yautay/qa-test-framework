@@ -250,6 +250,86 @@ def _capture_environment_probe(base_url: str, ignore_https_errors: bool) -> dict
     return payload
 
 
+def _resolve_probe_base_url_from_items(config: pytest.Config, items: list[pytest.Item]) -> tuple[str, str]:
+    env: RuntimeEnv | None = getattr(config, "_runtime_env", None)
+    if env is None:
+        return "", "runtime_env is not initialized"
+
+    explicit_base_url = str(getattr(env, "base_url", "") or "").strip()
+    if explicit_base_url:
+        return explicit_base_url, "runtime_env.base_url"
+
+    resolved_urls: set[str] = set()
+    for item in items:
+        marker = item.get_closest_marker("target")
+        marker_target = ""
+        if marker and marker.args:
+            marker_target = str(marker.args[0] or "").strip()
+        try:
+            target = resolve_target_context(
+                nodeid=str(getattr(item, "nodeid", "") or ""),
+                server_name=env.server_name,
+                explicit_base_url="",
+                marker_target=marker_target,
+            )
+        except ValueError:
+            continue
+        token = str(getattr(target, "base_url", "") or "").strip()
+        if token:
+            resolved_urls.add(token)
+
+    if len(resolved_urls) == 1:
+        return next(iter(resolved_urls)), "target_mapping"
+    if len(resolved_urls) > 1:
+        values = ", ".join(sorted(resolved_urls))
+        return "", f"multiple base urls detected: {values}"
+    return "", "cannot resolve base_url from collected tests"
+
+
+def _refresh_environment_probe_metadata(config: pytest.Config, items: list[pytest.Item]) -> None:
+    if bool(getattr(config, "_environment_probe_resolved", False)):
+        return
+
+    metadata = getattr(config, "_run_metadata", None)
+    if not isinstance(metadata, dict):
+        return
+
+    existing_probe = metadata.get("environment_probe")
+    if isinstance(existing_probe, dict) and existing_probe.get("status_code") is not None:
+        config._environment_probe_resolved = True
+        return
+
+    env: RuntimeEnv | None = getattr(config, "_runtime_env", None)
+    if env is None:
+        return
+
+    probe_base_url, source = _resolve_probe_base_url_from_items(config, items)
+    if probe_base_url:
+        probe = _capture_environment_probe(probe_base_url, env.ignore_https_errors)
+        probe["source"] = source
+    else:
+        probe = {
+            "request_url": "",
+            "method": "GET",
+            "status_code": None,
+            "final_url": "",
+            "headers": {},
+            "captured_at_utc": _utc_now(),
+            "error": source,
+            "source": source,
+        }
+
+    metadata["environment_probe"] = probe
+    config._run_metadata = metadata
+
+    if not _is_xdist_worker(config):
+        run_artifacts = getattr(config, "_run_artifacts", None)
+        if isinstance(run_artifacts, RunArtifacts):
+            _write_run_metadata_file(run_artifacts, metadata)
+
+    config._environment_probe_resolved = True
+
+
 def _write_run_metadata_file(artifacts: RunArtifacts, metadata: dict[str, Any]) -> None:
     payload = dict(metadata) if isinstance(metadata, dict) else {}
     payload["tester"] = str(payload.get("tester", "") or "")
@@ -568,6 +648,8 @@ def _base_url_resolver(config: pytest.Config):
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    _refresh_environment_probe_metadata(config, items)
+
     env: RuntimeEnv | None = getattr(config, "_runtime_env", None)
     explicit_base_url = str(getattr(env, "base_url", "") or "")
     explicit_base_url = (explicit_base_url or "").strip()
