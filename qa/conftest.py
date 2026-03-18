@@ -379,6 +379,26 @@ def _refresh_environment_probe_metadata(config: pytest.Config, items: list[pytes
     config._environment_probe_resolved = probe_resolved
 
 
+def _persist_environment_probe(config: pytest.Config, probe: dict[str, Any], source: str) -> bool:
+    payload = dict(probe)
+    payload["source"] = source
+    if not _probe_is_resolved(payload):
+        return False
+
+    metadata = getattr(config, "_run_metadata", None)
+    if not isinstance(metadata, dict):
+        return False
+
+    metadata["environment_probe"] = payload
+    config._run_metadata = metadata
+    config._environment_probe_resolved = True
+
+    run_artifacts = getattr(config, "_run_artifacts", None)
+    if isinstance(run_artifacts, RunArtifacts):
+        _write_run_metadata_file(run_artifacts, metadata)
+    return True
+
+
 def _write_run_metadata_file(artifacts: RunArtifacts, metadata: dict[str, Any]) -> None:
     payload = dict(metadata) if isinstance(metadata, dict) else {}
     payload["tester"] = str(payload.get("tester", "") or "")
@@ -737,6 +757,20 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
 def pytest_collection_finish(session: pytest.Session) -> None:
     items = list(getattr(session, "items", []) or [])
     _refresh_environment_probe_metadata(session.config, items)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _capture_environment_probe_from_runtime_env(
+    runtime_env: RuntimeEnv,
+    pytestconfig: pytest.Config,
+) -> None:
+    if bool(getattr(pytestconfig, "_environment_probe_resolved", False)):
+        return
+    base_url = str(getattr(runtime_env, "base_url", "") or "").strip()
+    if not base_url:
+        return
+    probe = _capture_environment_probe(base_url, runtime_env.ignore_https_errors)
+    _persist_environment_probe(pytestconfig, probe, "runtime_env_fixture")
 
 
 def pytest_configure(config: pytest.Config) -> None:
