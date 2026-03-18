@@ -25,3 +25,8 @@ class LoginOverlay(BaseComponent):
         self.safe_type(self.__input_login, client_login)
         self.safe_type(self.__input_password, client_pwd)
         self.safe_click(self.__button_login)
+
+    @step("Wybieram odzyskiwanie hasła dla loginu: {client_login}")
+    def password_recovery(self, client_login: str) -> None:
+        self.safe_click(self.__reset_password)
+        pass
