@@ -6,6 +6,12 @@ import cv2
 import numpy as np
 
 
+_COARSE_SHIFT_SPAN_PX = 20
+_SHIFT_PENALTY_LAMBDA = 10.0
+_MIN_SHIFT_IMPROVEMENT = 0.5
+_BOUNDARY_MARGIN_IMPROVEMENT = 1.0
+
+
 def _vertical_shifted(image: np.ndarray, dy: int) -> tuple[np.ndarray, np.ndarray]:
     h, w = image.shape[:2]
     shifted = np.zeros_like(image)
@@ -55,14 +61,49 @@ def _find_best_vertical_shift(baseline: np.ndarray, actual: np.ndarray, max_shif
     span = max(0, int(max_shift))
     if span <= 0:
         return 0
-    best_dy = 0
-    best_err = _alignment_error_for_shift(baseline, actual, 0)
-    for dy in range(-span, span + 1):
+
+    h = max(1, int(baseline.shape[0]))
+
+    def _score_for_shift(dy: int) -> tuple[float, float]:
         err = _alignment_error_for_shift(baseline, actual, dy)
-        if err < best_err:
-            best_err = err
-            best_dy = dy
-    return int(best_dy)
+        if not np.isfinite(err):
+            return float("inf"), float("inf")
+        shift_penalty = _SHIFT_PENALTY_LAMBDA * (abs(int(dy)) / float(h))
+        return float(err + shift_penalty), float(err)
+
+    def _best_shift_in_span(local_span: int) -> tuple[int, float, float]:
+        best_local_dy = 0
+        best_local_score, best_local_err = _score_for_shift(0)
+        for local_dy in range(-local_span, local_span + 1):
+            score, err = _score_for_shift(local_dy)
+            if score < best_local_score:
+                best_local_score = score
+                best_local_err = err
+                best_local_dy = local_dy
+        return int(best_local_dy), float(best_local_score), float(best_local_err)
+
+    _, _, err0 = _best_shift_in_span(0)
+    coarse_span = min(span, _COARSE_SHIFT_SPAN_PX)
+    coarse_dy, _, coarse_err = _best_shift_in_span(coarse_span)
+    coarse_improvement = err0 - coarse_err
+
+    if span == coarse_span:
+        return int(coarse_dy) if coarse_improvement >= _MIN_SHIFT_IMPROVEMENT else 0
+
+    if coarse_improvement < _MIN_SHIFT_IMPROVEMENT:
+        return 0
+
+    full_dy, _, full_err = _best_shift_in_span(span)
+    full_improvement = err0 - full_err
+    if full_improvement < _MIN_SHIFT_IMPROVEMENT:
+        return 0
+
+    if abs(full_dy) == span:
+        boundary_gain_over_coarse = coarse_err - full_err
+        if boundary_gain_over_coarse < _BOUNDARY_MARGIN_IMPROVEMENT:
+            return int(coarse_dy)
+
+    return int(full_dy)
 
 
 def compare_images(
@@ -107,11 +148,13 @@ def compare_images(
 
     abs_diff = cv2.absdiff(baseline, aligned_actual)
     gray = cv2.cvtColor(abs_diff, cv2.COLOR_BGR2GRAY)
+    gray = cv2.bitwise_and(gray, valid_region)
 
     # 1) reduce tiny pixel noise
     if blur_ksize and blur_ksize > 0:
         k = blur_ksize if blur_ksize % 2 == 1 else blur_ksize + 1
         gray = cv2.GaussianBlur(gray, (k, k), 0)
+        gray = cv2.bitwise_and(gray, valid_region)
 
     # 2) threshold meaningful differences
     t = max(0, min(255, int(diff_threshold)))
@@ -150,7 +193,7 @@ def compare_images(
 
     sel = mask > 0
     if np.any(sel):
-        a = actual[sel].astype(np.float32)
+        a = aligned_actual[sel].astype(np.float32)
         r = red[sel].astype(np.float32)
         out = a * 0.35 + r * 0.65
         overlay[sel] = np.clip(out, 0, 255).astype(np.uint8)

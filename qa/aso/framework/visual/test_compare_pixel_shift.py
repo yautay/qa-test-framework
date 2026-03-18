@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 import pytest
 
+import framework.visual.compare_pixel as compare_pixel
 from framework.visual.compare_pixel import compare_images
 
 pytestmark = [pytest.mark.aso]
@@ -85,3 +86,43 @@ def test_compare_images_keeps_shift_zero_when_compensation_disabled(tmp_path: Pa
 
     assert int(details["applied_shift_y"]) == 0
     assert int(details["shift_compensation_y_px"]) == 0
+
+
+def test_find_best_vertical_shift_returns_zero_for_tiny_gain(monkeypatch: pytest.MonkeyPatch) -> None:
+    baseline = np.zeros((200, 16, 3), dtype=np.uint8)
+    actual = np.zeros_like(baseline)
+
+    def _fake_err(_baseline: np.ndarray, _actual: np.ndarray, dy: int) -> float:
+        if dy == 0:
+            return 10.0
+        if dy == 100:
+            return 9.7
+        if abs(dy) <= 20:
+            return 9.75
+        return 9.71
+
+    monkeypatch.setattr(compare_pixel, "_alignment_error_for_shift", _fake_err)
+
+    applied = compare_pixel._find_best_vertical_shift(baseline, actual, 100)
+    assert applied == 0
+
+
+def test_find_best_vertical_shift_avoids_boundary_escape(monkeypatch: pytest.MonkeyPatch) -> None:
+    baseline = np.zeros((200, 16, 3), dtype=np.uint8)
+    actual = np.zeros_like(baseline)
+
+    def _fake_err(_baseline: np.ndarray, _actual: np.ndarray, dy: int) -> float:
+        if dy == 0:
+            return 10.0
+        if dy == 7:
+            return 8.0
+        if dy == 100:
+            return 7.95
+        if abs(dy) <= 20:
+            return 8.3
+        return 8.1
+
+    monkeypatch.setattr(compare_pixel, "_alignment_error_for_shift", _fake_err)
+
+    applied = compare_pixel._find_best_vertical_shift(baseline, actual, 100)
+    assert applied == 7
