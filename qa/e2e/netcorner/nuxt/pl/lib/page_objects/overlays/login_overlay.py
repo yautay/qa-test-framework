@@ -8,7 +8,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseCompone
 
 class LoginOverlay(BaseComponent):
     def __init__(self, page: Page):
-        super().__init__(page.locator('[data-name="loginForm"]'), name="Login Overlay")
+        super().__init__(page.locator('[data-name="loginForm"]:visible').first, name="Login Overlay")
         self.__input_login = self.root.locator("#loginEmail")
         self.__input_password = self.root.locator("#loginPassword")
         self.__button_login = self.root.get_by_role(role="button", name="Zaloguj się")
@@ -24,4 +24,4 @@ class LoginOverlay(BaseComponent):
     def log_client(self, client_login: str, client_pwd: str) -> None:
         self.safe_type(self.__input_login, client_login)
         self.safe_type(self.__input_password, client_pwd)
-        self.safe_click(self.__button_login)
+        self.__input_password.press("Enter")

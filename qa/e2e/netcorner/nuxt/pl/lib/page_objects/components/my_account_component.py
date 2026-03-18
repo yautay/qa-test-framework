@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from playwright.sync_api import Locator, expect
 
 from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
@@ -109,6 +111,14 @@ class MyAccountPasswordChangeComponent(BaseComponent):
     def back_to_account(self) -> None:
         self.safe_click(self.__breadcrumb_account)
 
+    @step("Oczekuję komunikatu o wygaśnięciu sesji")
+    def wait_for_session_expired_message(self) -> None:
+        session_expired_message = self.root.page.get_by_text(
+            re.compile(r"sesja\s+wygas.*ponowne\s+zalogowanie", re.IGNORECASE)
+        )
+        expect(session_expired_message).to_be_visible(timeout=10_000)
+
     @step("Zmiana hasła z {old_pwd} na {new_pwd}")
     def change_password(self, old_pwd: str, new_pwd: str) -> None:
         self.__fill_old_password(old_pwd).__fill_new_password(new_pwd).__fill_new_password_repeated(new_pwd).__submit()
+        self.wait_for_session_expired_message()
