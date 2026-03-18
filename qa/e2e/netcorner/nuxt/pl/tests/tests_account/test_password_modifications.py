@@ -65,6 +65,5 @@ def test_password_recovery(page, context, runtime_env, user_case):
     ClientWrappers(page, context, runtime_env).logout_client()
     home = HomePage(page, runtime_env.base_url)
     home.open().wait_loaded().header.actions.open_login()
-    home.overlays.login.password_recovery()
-    home.header.actions.open_login()
     home.overlays.login.password_recovery(user_data.email)
+    pass
