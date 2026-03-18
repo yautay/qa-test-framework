@@ -12,10 +12,10 @@ from qa.e2e.netcorner.mailhog.lib.page_objects.pages.inbox_page import InboxPage
 
 _PASSWORD_RESET_LINK_REGEX = r"(?i)https?://[^\s\"'<>]*(reset|odzysk|hasl|password)[^\s\"'<>]*"
 _ORDER_LINK_REGEX = r"(?i)https?://[^\s\"'<>]*(zamow|order|checkout|status|details)[^\s\"'<>]*"
-_MAILHOG_LOOKUP_TIMEOUT_MS = 30_000
-_MAILHOG_INITIAL_REFRESH_DELAY_MS = 2_000
+_MAILHOG_LOOKUP_TIMEOUT_MS = 45_000
+_MAILHOG_INITIAL_REFRESH_DELAY_MS = 1_000
 _MAILHOG_REFRESH_CURVE_BEND = 2.0
-_MAILHOG_REFRESH_MAX_RATIO = 0.35
+_MAILHOG_REFRESH_MAX_RATIO = 0.30
 _MAILHOG_LAST_REFRESH_BEFORE_DEADLINE_MS = 1_000
 
 # Dynamic MailHog refresh backoff for timeout=30s.
