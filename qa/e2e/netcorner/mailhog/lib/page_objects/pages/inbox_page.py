@@ -118,8 +118,8 @@ class InboxPage(BasePage):
                 if not row_text:
                     continue
 
-                recipient_match = self.__row_contains_recipient_email(row_text, recipient)
-                subject_match = bool(subject.compiled().search(row_text))
+                recipient_match = self.__row_contains_recipient_email(row=row, recipient=recipient)
+                subject_match = self.__row_contains_subject(row=row, subject=subject)
                 if recipient_match and subject_match:
                     row.click()
                     return True
@@ -127,11 +127,20 @@ class InboxPage(BasePage):
         return False
 
     @staticmethod
-    def __row_contains_recipient_email(row_text: str, recipient: str) -> bool:
-        row_text_normalized = row_text.lower()
+    def __row_contains_recipient_email(*, row: Locator, recipient: str) -> bool:
         recipient_normalized = recipient.strip().lower()
         if not recipient_normalized:
             return False
+
+        row_text = row.inner_text(timeout=500).strip()
+        row_text_normalized = row_text.lower()
+
+        to_recipients = row.locator("div[ng-if=\"message.Content.Headers['To']\"] div.ng-binding")
+        to_count = to_recipients.count()
+        for index in range(to_count):
+            recipient_text = to_recipients.nth(index).inner_text(timeout=300).strip().lower()
+            if recipient_text == recipient_normalized:
+                return True
 
         if InboxPage.__contains_email_token(row_text_normalized, recipient_normalized):
             return True
@@ -151,6 +160,26 @@ class InboxPage(BasePage):
         escaped_token = re.escape(token)
         pattern = rf"(?<![A-Za-z0-9._%+-]){escaped_token}(?![A-Za-z0-9._%+-])"
         return bool(re.search(pattern, text))
+
+    @staticmethod
+    def __row_contains_subject(*, row: Locator, subject: MailSubjectPattern) -> bool:
+        compiled_subject = subject.compiled()
+        subject_locators = ("span.subject", ".subject")
+
+        for selector in subject_locators:
+            subjects = row.locator(selector)
+            subject_count = subjects.count()
+            for index in range(subject_count):
+                subject_text = subjects.nth(index).inner_text(timeout=300).strip()
+                if subject_text and compiled_subject.search(subject_text):
+                    return True
+
+        row_text = row.inner_text(timeout=500).strip()
+        for line in row_text.splitlines():
+            if compiled_subject.search(line.strip()):
+                return True
+
+        return False
 
     def __collect_links(self) -> list[str]:
         links: list[str] = []
