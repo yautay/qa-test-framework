@@ -10,6 +10,8 @@ _COARSE_SHIFT_SPAN_PX = 20
 _SHIFT_PENALTY_LAMBDA = 10.0
 _MIN_SHIFT_IMPROVEMENT = 0.5
 _BOUNDARY_MARGIN_IMPROVEMENT = 1.0
+_SHIFT_PREVIEW_MAX_HEIGHT_PX = 1200
+_SHIFT_REFINE_WINDOW_PX = 3
 
 
 def _vertical_shifted(image: np.ndarray, dy: int) -> tuple[np.ndarray, np.ndarray]:
@@ -57,53 +59,94 @@ def _alignment_error_for_shift(baseline: np.ndarray, actual: np.ndarray, dy: int
     return float(np.mean(gray))
 
 
-def _find_best_vertical_shift(baseline: np.ndarray, actual: np.ndarray, max_shift: int) -> int:
-    span = max(0, int(max_shift))
-    if span <= 0:
-        return 0
-
+def _best_shift_for_candidates(
+    baseline: np.ndarray,
+    actual: np.ndarray,
+    candidates: list[int],
+    max_span: int,
+) -> int:
     h = max(1, int(baseline.shape[0]))
+    errors: dict[int, float] = {}
+
+    def _error_for_shift(dy: int) -> float:
+        if dy not in errors:
+            errors[dy] = float(_alignment_error_for_shift(baseline, actual, dy))
+        return float(errors[dy])
 
     def _score_for_shift(dy: int) -> tuple[float, float]:
-        err = _alignment_error_for_shift(baseline, actual, dy)
+        err = _error_for_shift(dy)
         if not np.isfinite(err):
             return float("inf"), float("inf")
         shift_penalty = _SHIFT_PENALTY_LAMBDA * (abs(int(dy)) / float(h))
         return float(err + shift_penalty), float(err)
 
-    def _best_shift_in_span(local_span: int) -> tuple[int, float, float]:
-        best_local_dy = 0
-        best_local_score, best_local_err = _score_for_shift(0)
-        for local_dy in range(-local_span, local_span + 1):
-            score, err = _score_for_shift(local_dy)
-            if score < best_local_score:
-                best_local_score = score
-                best_local_err = err
-                best_local_dy = local_dy
-        return int(best_local_dy), float(best_local_score), float(best_local_err)
+    err0 = _error_for_shift(0)
+    best_dy = 0
+    best_score, best_err = _score_for_shift(0)
+    for dy in candidates:
+        score, err = _score_for_shift(dy)
+        if score < best_score:
+            best_score = score
+            best_err = err
+            best_dy = int(dy)
 
-    _, _, err0 = _best_shift_in_span(0)
+    if (err0 - best_err) < _MIN_SHIFT_IMPROVEMENT:
+        return 0
+
+    if abs(best_dy) == max_span:
+        inner: list[int] = [dy for dy in candidates if abs(dy) < max_span]
+        if inner:
+            inner_best_err = min(_error_for_shift(dy) for dy in inner)
+            if (inner_best_err - best_err) < _BOUNDARY_MARGIN_IMPROVEMENT:
+                best_inner = min(
+                    inner,
+                    key=lambda dy: (
+                        _score_for_shift(dy)[0],
+                        abs(dy),
+                    ),
+                )
+                return int(best_inner)
+
+    return int(best_dy)
+
+
+def _best_shift_in_span(baseline: np.ndarray, actual: np.ndarray, span: int) -> int:
+    candidates = [dy for dy in range(-span, span + 1)]
+    return _best_shift_for_candidates(baseline, actual, candidates, span)
+
+
+def _find_best_vertical_shift(baseline: np.ndarray, actual: np.ndarray, max_shift: int) -> int:
+    span = max(0, int(max_shift))
+    if span <= 0:
+        return 0
+
+    if span <= _COARSE_SHIFT_SPAN_PX:
+        return _best_shift_in_span(baseline, actual, span)
+
+    h, w = baseline.shape[:2]
+    if h <= _SHIFT_PREVIEW_MAX_HEIGHT_PX:
+        return _best_shift_in_span(baseline, actual, span)
+
+    scale = float(_SHIFT_PREVIEW_MAX_HEIGHT_PX) / float(max(1, h))
+    preview_h = int(round(h * scale))
+    preview_w = int(round(w * scale))
+    if preview_h <= 0 or preview_w <= 0:
+        return _best_shift_in_span(baseline, actual, span)
+
+    baseline_preview = cv2.resize(baseline, (preview_w, preview_h), interpolation=cv2.INTER_AREA)
+    actual_preview = cv2.resize(actual, (preview_w, preview_h), interpolation=cv2.INTER_AREA)
+    preview_span = max(1, int(round(span * scale)))
+    preview_best = _best_shift_in_span(baseline_preview, actual_preview, preview_span)
+    projected_best = int(round(preview_best / max(scale, 1e-9)))
+
     coarse_span = min(span, _COARSE_SHIFT_SPAN_PX)
-    coarse_dy, _, coarse_err = _best_shift_in_span(coarse_span)
-    coarse_improvement = err0 - coarse_err
-
-    if span == coarse_span:
-        return int(coarse_dy) if coarse_improvement >= _MIN_SHIFT_IMPROVEMENT else 0
-
-    if coarse_improvement < _MIN_SHIFT_IMPROVEMENT:
-        return 0
-
-    full_dy, _, full_err = _best_shift_in_span(span)
-    full_improvement = err0 - full_err
-    if full_improvement < _MIN_SHIFT_IMPROVEMENT:
-        return 0
-
-    if abs(full_dy) == span:
-        boundary_gain_over_coarse = coarse_err - full_err
-        if boundary_gain_over_coarse < _BOUNDARY_MARGIN_IMPROVEMENT:
-            return int(coarse_dy)
-
-    return int(full_dy)
+    refine_lo = max(-span, projected_best - _SHIFT_REFINE_WINDOW_PX)
+    refine_hi = min(span, projected_best + _SHIFT_REFINE_WINDOW_PX)
+    candidates: set[int] = set(range(refine_lo, refine_hi + 1))
+    candidates.update(range(-coarse_span, coarse_span + 1))
+    candidates.add(0)
+    ordered_candidates = sorted(candidates)
+    return _best_shift_for_candidates(baseline, actual, ordered_candidates, span)
 
 
 def compare_images(
@@ -118,6 +161,8 @@ def compare_images(
     return_bbox_count: bool = False,
     shift_compensation_y_px: int = 0,
     return_details: bool = False,
+    normalized_baseline_path: Path | None = None,
+    normalized_actual_path: Path | None = None,
 ) -> float | tuple[float, int] | dict[str, float | int]:
     """Practical pixel diff:
     - thresholds per-pixel delta
@@ -145,6 +190,19 @@ def compare_images(
     shift_span = max(0, int(shift_compensation_y_px))
     applied_shift_y = _find_best_vertical_shift(baseline, actual, shift_span) if shift_span > 0 else 0
     aligned_actual, valid_region = _vertical_shifted(actual, applied_shift_y)
+
+    normalized_baseline = baseline.copy()
+    normalized_actual = aligned_actual.copy()
+    invalid = valid_region == 0
+    if np.any(invalid):
+        normalized_baseline[invalid] = 0
+        normalized_actual[invalid] = 0
+    if normalized_baseline_path is not None:
+        normalized_baseline_path.parent.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(normalized_baseline_path), normalized_baseline)
+    if normalized_actual_path is not None:
+        normalized_actual_path.parent.mkdir(parents=True, exist_ok=True)
+        cv2.imwrite(str(normalized_actual_path), normalized_actual)
 
     abs_diff = cv2.absdiff(baseline, aligned_actual)
     gray = cv2.cvtColor(abs_diff, cv2.COLOR_BGR2GRAY)

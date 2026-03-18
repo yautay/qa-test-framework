@@ -188,6 +188,8 @@ def _result_from_dict(data: dict[str, object]) -> VisualResult | None:
             baseline_path=str(data.get("baseline_path") or ""),
             actual_path=str(data.get("actual_path") or ""),
             diff_path=str(data.get("diff_path") or ""),
+            comparison_baseline_path=str(data.get("comparison_baseline_path") or ""),
+            comparison_actual_path=str(data.get("comparison_actual_path") or ""),
             heatmap_path=str(data.get("heatmap_path") or ""),
             suite_id=str(data.get("suite_id") or ""),
             viewport=str(data.get("viewport") or ""),

@@ -48,9 +48,11 @@ class VisualRunner:
         self._output_dir = output_dir
         self._actual_dir = output_dir / "actual"
         self._diff_dir = output_dir / "diff"
+        self._normalized_dir = output_dir / "normalized"
         self._heatmap_dir = output_dir / "heatmap"
         self._actual_dir.mkdir(parents=True, exist_ok=True)
         self._diff_dir.mkdir(parents=True, exist_ok=True)
+        self._normalized_dir.mkdir(parents=True, exist_ok=True)
         self._heatmap_dir.mkdir(parents=True, exist_ok=True)
 
     def run(self, page: Page, scenario: VisualScenario, viewport: str) -> VisualResult:
@@ -99,6 +101,8 @@ class VisualRunner:
             )
 
         diff_path = self._diff_dir / f"{file_stem}.png"
+        comparison_baseline_path = self._normalized_dir / f"{file_stem}__baseline.png"
+        comparison_actual_path = self._normalized_dir / f"{file_stem}__actual.png"
         shift_compensation_y_px = _resolve_shift_compensation_y_px(
             self._env.visual_shift_compensation_y_px,
             getattr(scenario.thresholds, "shift_compensation_y_px", None),
@@ -109,6 +113,8 @@ class VisualRunner:
             diff_path,
             shift_compensation_y_px=shift_compensation_y_px,
             return_details=True,
+            normalized_baseline_path=comparison_baseline_path,
+            normalized_actual_path=comparison_actual_path,
         )
         pixel_changed_ratio = float(cast(dict[str, Any], pixel_out).get("changed_ratio", 1.0))
         applied_shift_y = int(cast(dict[str, Any], pixel_out).get("applied_shift_y", 0) or 0)
@@ -148,6 +154,8 @@ class VisualRunner:
             baseline_path=str(baseline_path),
             actual_path=str(actual_path),
             diff_path=str(diff_path),
+            comparison_baseline_path=str(comparison_baseline_path),
+            comparison_actual_path=str(comparison_actual_path),
             heatmap_path=heatmap_path_str,
             pixel_changed_ratio=pixel_changed_ratio,
             applied_shift_y=applied_shift_y,

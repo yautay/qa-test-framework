@@ -424,6 +424,8 @@ class VisualResult:
     baseline_path: str
     actual_path: str
     diff_path: str = ""
+    comparison_baseline_path: str = ""
+    comparison_actual_path: str = ""
     heatmap_path: str = ""
 
     suite_id: str = ""
@@ -455,6 +457,8 @@ class VisualResult:
             "baseline_path": self.baseline_path,
             "actual_path": self.actual_path,
             "diff_path": self.diff_path,
+            "comparison_baseline_path": self.comparison_baseline_path,
+            "comparison_actual_path": self.comparison_actual_path,
             "heatmap_path": self.heatmap_path,
             "pixel_changed_ratio": self.pixel_changed_ratio,
             "applied_shift_y": self.applied_shift_y,

@@ -232,8 +232,8 @@ def _prepare_pending_jobs(env: RuntimeEnv, run_id: str, results: list[VisualResu
     for result in results:
         if not _expects_perceptual(result):
             continue
-        baseline = Path(str(result.baseline_path or "").strip())
-        actual = Path(str(result.actual_path or "").strip())
+        baseline = Path(str(result.comparison_baseline_path or result.baseline_path or "").strip())
+        actual = Path(str(result.comparison_actual_path or result.actual_path or "").strip())
         if not baseline.is_file() or not actual.is_file():
             skipped_count += 1
             _upsert_perceptual(
@@ -272,6 +272,8 @@ def _prepare_pending_jobs(env: RuntimeEnv, run_id: str, results: list[VisualResu
                 "lpips": None,
                 "dists": None,
                 "heatmap": None,
+                "comparison_baseline_path": str(baseline),
+                "comparison_actual_path": str(actual),
                 "job_id": job_id,
                 "timing_ms": 0,
                 "error_message": None,
@@ -442,8 +444,10 @@ def run_perceptual_postprocess(
             if server_active < server_active_limit:
                 next_job = pending.pop(0)
                 submit_limit.wait()
-                baseline = Path(str(next_job.result.baseline_path))
-                actual = Path(str(next_job.result.actual_path))
+                baseline = Path(
+                    str(next_job.result.comparison_baseline_path or next_job.result.baseline_path or "").strip()
+                )
+                actual = Path(str(next_job.result.comparison_actual_path or next_job.result.actual_path or "").strip())
                 try:
                     client.submit_job(
                         job_id=next_job.job_id,

@@ -316,8 +316,12 @@ const viewerForModal = computed(() => ({
   modalTitle: store.modalTitle,
   modalSubtitle: store.modalSubtitle,
   modalCaseUrl: store.modalRow ? scenarioTargetUrl(store.modalRow) : "",
-  modalRefSrc: store.modalRow ? buildRefApiSrc(props.runId, store.modalRow) : "",
-  modalTestSrc: store.modalRow ? buildReportAssetSrc(props.runId, store.modalRow.actual_path) : "",
+  modalRefSrc: store.modalRow
+    ? buildReportAssetSrc(props.runId, store.modalRow.comparison_baseline_path) || buildRefApiSrc(props.runId, store.modalRow)
+    : "",
+  modalTestSrc: store.modalRow
+    ? buildReportAssetSrc(props.runId, store.modalRow.comparison_actual_path) || buildReportAssetSrc(props.runId, store.modalRow.actual_path)
+    : "",
   modalDiffSrc: store.modalRow ? buildReportAssetSrc(props.runId, store.modalRow.diff_path) : "",
   modalLpipsSrc: store.modalRow ? buildReportAssetSrc(props.runId, store.modalRow.heatmap_path) : "",
   modalImgSrc: "",

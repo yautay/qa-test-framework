@@ -124,6 +124,8 @@ def _finalize_result(
         "visual_baseline": result.baseline_path,
         "visual_actual": result.actual_path,
         "visual_diff": result.diff_path,
+        "visual_comparison_baseline": result.comparison_baseline_path,
+        "visual_comparison_actual": result.comparison_actual_path,
         "visual_heatmap": result.heatmap_path,
     }
     if reference_actual_path:

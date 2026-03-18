@@ -1161,6 +1161,38 @@ describe("ReportPage", () => {
     wrapper.unmount();
   });
 
+  it("prefers normalized comparison assets in modal viewer", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const store = useResultsStore();
+    const row = {
+      scenario_id: "s1",
+      status: "failed",
+      message: "ok",
+      suite_id: "suite-1",
+      viewport: "fhd",
+      browser: "chromium",
+      baseline_path: "ref/original.png",
+      actual_path: "actual/original.png",
+      comparison_baseline_path: "normalized/ref.png",
+      comparison_actual_path: "normalized/actual.png",
+    };
+
+    store.openViewer(row, "test", 0);
+    await nextTick();
+
+    const modal = wrapper.findComponent({ name: "ViewerModal" });
+    expect(modal.props("viewer").modalRefSrc).toBe("/reports/run-1/normalized/ref.png");
+    expect(modal.props("viewer").modalTestSrc).toBe("/reports/run-1/normalized/actual.png");
+
+    wrapper.unmount();
+  });
+
   it("includes reference_host in metadata when present", async () => {
     const wrapper = mount(ReportPage, {
       props: { runId: "run-1" },
