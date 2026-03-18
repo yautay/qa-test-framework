@@ -19,6 +19,12 @@ class Overlays:
         return self.__login
 
     @property
+    def password_recovery(self) -> LoginOverlay:
+        if self.__login is None:
+            self.__login = LoginOverlay(self.page)
+        return self.__login
+
+    @property
     def toast(self) -> ToastOverlay:
         if self.__toast is None:
             self.__toast = ToastOverlay(self.page)
