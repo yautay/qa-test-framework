@@ -48,7 +48,7 @@ def resolve_mail_inbox_env(server_name: str) -> MailInboxEnv:
     )
     resolved_base_url = resolver(token).rstrip("/")
 
-    provider = MailInboxProvider.MAILHOG if token == "local" else MailInboxProvider.ROUNDCUBE
+    provider = MailInboxProvider.MAILHOG
     return MailInboxEnv(
         provider=provider,
         base_url=resolved_base_url,
