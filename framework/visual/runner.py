@@ -204,8 +204,8 @@ class VisualRunner:
         status_raw = getattr(response, "status", None)
         try:
             status = int(cast(Any, status_raw))
-        except (TypeError, ValueError):
-            raise ValueError(f"Navigation failed with invalid HTTP status for: {target}")
+        except (TypeError, ValueError) as err:
+            raise ValueError(f"Navigation failed with invalid HTTP status for: {target}") from err
         if status >= 400:
             response_url = str(getattr(response, "url", "") or target)
             raise ValueError(f"Navigation failed with HTTP {status}: {response_url}")
@@ -303,8 +303,7 @@ def _stabilize_full_page_capture(page: Page) -> None:
         pass
 
     try:
-        page.evaluate(
-            """
+        page.evaluate("""
             () => new Promise((resolve) => {
               const doc = document.scrollingElement || document.documentElement;
               const maxY = Math.max(0, (doc?.scrollHeight || 0) - window.innerHeight);
@@ -333,16 +332,16 @@ def _stabilize_full_page_capture(page: Page) -> None:
 
               tick();
             })
-            """
-        )
+            """)
     except Exception:
         pass
 
     try:
-        page.evaluate(
-            """
+        page.evaluate("""
             () => Promise.all([
-              (document.fonts && document.fonts.ready) ? document.fonts.ready.catch(() => undefined) : Promise.resolve(),
+              (document.fonts && document.fonts.ready)
+                ? document.fonts.ready.catch(() => undefined)
+                : Promise.resolve(),
               new Promise((resolve) => {
                 const images = Array.from(document.images || []);
                 const pending = images.filter((img) => !img.complete);
@@ -364,8 +363,7 @@ def _stabilize_full_page_capture(page: Page) -> None:
                 setTimeout(() => resolve(undefined), 1500);
               }),
             ])
-            """
-        )
+            """)
     except Exception:
         pass
 

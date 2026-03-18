@@ -4,7 +4,6 @@ import pytest
 
 from framework.logger import _redact_text, _redact_value
 
-
 pytestmark = [pytest.mark.aso]
 
 

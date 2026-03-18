@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from framework.env import RuntimeEnv
@@ -39,7 +39,7 @@ def apply_retention(
     repo = repo_root()
     baseline_root = (repo / "qa" / "visual" / "baselines").resolve()
     cache_root = (repo / env.visual_cache_dir).resolve()
-    cutoff_utc = datetime.now(timezone.utc) - timedelta(days=ttl_candidates_days)
+    cutoff_utc = datetime.now(UTC) - timedelta(days=ttl_candidates_days)
 
     local_entries = _scan_local_entries(baseline_root, profile=profile, suites=suites)
     to_remove = _select_keys_to_remove(
@@ -103,7 +103,7 @@ def _scan_local_entries(
         if suites and suite_id not in suites:
             continue
         try:
-            modified = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+            modified = datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
         except OSError:
             continue
         out.append(

@@ -5,8 +5,8 @@ from pathlib import Path
 from framework.env import RuntimeEnv
 
 from .minio_ops import MinioOps
-from .paths import local_baseline_root, parse_object_key, repo_root
 from .models import VersionStats
+from .paths import local_baseline_root, parse_object_key, repo_root
 from .scanner import list_local_versions as _list_local_versions
 
 

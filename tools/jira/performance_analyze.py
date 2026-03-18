@@ -1,8 +1,9 @@
+import math
 import os
 import re
-import math
-import pandas as pd
+
 import matplotlib.pyplot as plt
+import pandas as pd
 
 # =====================================================
 # KONFIG
@@ -17,10 +18,10 @@ os.makedirs(OUT_DIR, exist_ok=True)
 # PARAMETRY WYKRESÓW / ANALIZY
 # =====================================================
 
-TOP_ISSUES_BAR = 10        # ile zadań (NN-xxxx) na wykresach
-TOP_PEOPLE_BAR = 10       # ile osób na wykresach obciążenia
-HEATMAP_TOP_PEOPLE = 12   # ile osób w heatmapie
-HEATMAP_TOP_ISSUES = 8    # ile zadań w heatmapie
+TOP_ISSUES_BAR = 10  # ile zadań (NN-xxxx) na wykresach
+TOP_PEOPLE_BAR = 10  # ile osób na wykresach obciążenia
+HEATMAP_TOP_PEOPLE = 12  # ile osób w heatmapie
+HEATMAP_TOP_ISSUES = 8  # ile zadań w heatmapie
 
 
 # Excel ma wiersze 1-based.
@@ -55,7 +56,6 @@ ROLE_BY_NAME = {
     "Oleh Tsapok": "Dev",
     "Piotr Jędrzejak": "Dev",
     "Łukasz Kitajczuk": "Dev",
-
     # Test
     "Michał Pielaszkiewicz": "Test",
     "Karolina Krajewska": "Test",
@@ -65,13 +65,11 @@ ROLE_BY_NAME = {
     "Bogna Konstanty": "Test",
     "Weronika Truscelli": "Test",
     "Bartosz Michalak": "Test",
-
     # PM
     "Maciej Walczak": "PM",
     "Tomasz Bolt": "PM",
     "Anna Liszka": "PM",
     "Aneta Mętel": "PM",
-
     # DevOps
     "Rafał Bisingier": "DevOps",
     "Wojciech Iwanik": "DevOps",
@@ -85,6 +83,7 @@ FAIL_FAST_ROLE_MAP = False  # możesz ustawić False, jeśli chcesz bez fail-fas
 # =====================================================
 U_RE = re.compile(r"^u\d+$", re.IGNORECASE)
 NN_RE = re.compile(r"^NN-\d+$", re.IGNORECASE)
+
 
 def to_number_cell(x) -> float:
     """Konwersja komórki do float (obsługuje 0,25 i 0.25)."""
@@ -100,11 +99,12 @@ def to_number_cell(x) -> float:
     s = str(x).strip()
     if not s:
         return 0.0
-    s = s.replace("\u00A0", "").replace(" ", "").replace(",", ".")
+    s = s.replace("\u00a0", "").replace(" ", "").replace(",", ".")
     try:
         return float(s)
     except ValueError:
         return 0.0
+
 
 def find_u_marker_columns(raw: pd.DataFrame, marker_row_idx0: int):
     """Zwraca listę (col_idx, u_marker) dla kolumn oznaczonych u1..uN w danym wierszu."""
@@ -121,6 +121,7 @@ def find_u_marker_columns(raw: pd.DataFrame, marker_row_idx0: int):
     # sortuj po numerze u
     out.sort(key=lambda t: int(t[1][1:]))
     return out
+
 
 def detect_nn_header_row(raw: pd.DataFrame, u_cols):
     """
@@ -143,6 +144,7 @@ def detect_nn_header_row(raw: pd.DataFrame, u_cols):
         raise RuntimeError("Nie udało się znaleźć wiersza z nagłówkami NN-xxxxx w kolumnach u*.")
     return best_row
 
+
 def get_issue_map(raw: pd.DataFrame, nn_header_row_idx0: int, u_cols):
     """Mapuje u1..uN -> IssueKey z wiersza nagłówków."""
     m = {}
@@ -150,9 +152,13 @@ def get_issue_map(raw: pd.DataFrame, nn_header_row_idx0: int, u_cols):
         v = raw.iat[nn_header_row_idx0, c]
         key = str(v).strip() if not pd.isna(v) else ""
         # if not NN_RE.match(key):
-        #     raise RuntimeError(f"W kolumnie {u} nie ma NN-xxxxx w wierszu nagłówków (row idx {nn_header_row_idx0}). Wartość: {v}")
+        #     raise RuntimeError(
+        #         f"W kolumnie {u} nie ma NN-xxxxx w wierszu nagłówków "
+        #         f"(row idx {nn_header_row_idx0}). Wartość: {v}"
+        #     )
         m[u] = key
     return m
+
 
 # =====================================================
 # 1) WCZYTANIE
@@ -171,7 +177,7 @@ u_to_issue = get_issue_map(raw, nn_header_row_idx0, u_cols)
 start_idx0 = PEOPLE_START_ROW_EXCEL - 1
 end_idx0_inclusive = PEOPLE_END_ROW_EXCEL - 1
 
-rows_block = raw.iloc[start_idx0:end_idx0_inclusive + 1, [NAME_COL_IDX] + [c for c, _ in u_cols]].copy()
+rows_block = raw.iloc[start_idx0 : end_idx0_inclusive + 1, [NAME_COL_IDX] + [c for c, _ in u_cols]].copy()
 rows_block.columns = ["Name"] + [u for _, u in u_cols]
 
 rows_block["Name"] = rows_block["Name"].astype(str).str.strip()
@@ -189,8 +195,9 @@ missing_roles = sorted([n for n in people_names if n not in ROLE_BY_NAME])
 
 if FAIL_FAST_ROLE_MAP and missing_roles:
     raise RuntimeError(
-        "[FAIL FAST] Brakuje mapowania roli dla:\n- " + "\n- ".join(missing_roles) +
-        "\n\nDopisz do ROLE_BY_NAME albo ustaw FAIL_FAST_ROLE_MAP=False."
+        "[FAIL FAST] Brakuje mapowania roli dla:\n- "
+        + "\n- ".join(missing_roles)
+        + "\n\nDopisz do ROLE_BY_NAME albo ustaw FAIL_FAST_ROLE_MAP=False."
     )
 
 # =====================================================
@@ -204,17 +211,9 @@ long_df = long_df.drop(columns=["u"])
 # =====================================================
 # 5) METRYKI
 # =====================================================
-issue_totals = (
-    long_df.groupby("Issue", as_index=False)["Hours"]
-    .sum()
-    .sort_values("Hours", ascending=False)
-)
+issue_totals = long_df.groupby("Issue", as_index=False)["Hours"].sum().sort_values("Hours", ascending=False)
 
-person_totals = (
-    long_df.groupby(["Name", "Role"], as_index=False)["Hours"]
-    .sum()
-    .sort_values("Hours", ascending=False)
-)
+person_totals = long_df.groupby(["Name", "Role"], as_index=False)["Hours"].sum().sort_values("Hours", ascending=False)
 
 context_switch = (
     long_df[long_df["Hours"] > 0]
@@ -224,16 +223,14 @@ context_switch = (
     .sort_values("Issues_touched", ascending=False)
 )
 
-role_issue = (
-    long_df.groupby(["Issue", "Role"], as_index=False)["Hours"]
-    .sum()
-)
+role_issue = long_df.groupby(["Issue", "Role"], as_index=False)["Hours"].sum()
 role_tot = role_issue.groupby("Issue", as_index=False)["Hours"].sum().rename(columns={"Hours": "IssueHours"})
 role_issue = role_issue.merge(role_tot, on="Issue", how="left")
-role_issue["Share"] = role_issue.apply(lambda r: (r["Hours"]/r["IssueHours"]) if r["IssueHours"] else 0.0, axis=1)
+role_issue["Share"] = role_issue.apply(lambda r: (r["Hours"] / r["IssueHours"]) if r["IssueHours"] else 0.0, axis=1)
 
 tmp = long_df.groupby(["Issue", "Name"], as_index=False)["Hours"].sum()
 tmp = tmp[tmp["Hours"] > 0]
+
 
 def topk_share(g: pd.DataFrame, k: int) -> float:
     total = g["Hours"].sum()
@@ -241,25 +238,32 @@ def topk_share(g: pd.DataFrame, k: int) -> float:
         return 0.0
     return float(g.sort_values("Hours", ascending=False).head(k)["Hours"].sum() / total)
 
+
 bus_rows = []
 for issue, g in tmp.groupby("Issue"):
-    bus_rows.append({
-        "Issue": issue,
-        "Top1_share": topk_share(g, 1),
-        "Top3_share": topk_share(g, 3),
-        "Contributors": int(g.shape[0]),
-        "IssueHours": float(g["Hours"].sum()),
-    })
+    bus_rows.append(
+        {
+            "Issue": issue,
+            "Top1_share": topk_share(g, 1),
+            "Top3_share": topk_share(g, 3),
+            "Contributors": int(g.shape[0]),
+            "IssueHours": float(g["Hours"].sum()),
+        }
+    )
 bus_factor = pd.DataFrame(bus_rows).sort_values("IssueHours", ascending=False)
 
-variability = pd.DataFrame([{
-    "Issues_count": int(issue_totals.shape[0]),
-    "Total_hours": float(issue_totals["Hours"].sum()),
-    "Mean_hours_per_issue": float(issue_totals["Hours"].mean()) if not issue_totals.empty else 0.0,
-    "Median_hours_per_issue": float(issue_totals["Hours"].median()) if not issue_totals.empty else 0.0,
-    "Std_hours_per_issue": float(issue_totals["Hours"].std(ddof=0)) if issue_totals.shape[0] > 0 else 0.0,
-    "P90_hours_per_issue": float(issue_totals["Hours"].quantile(0.90)) if issue_totals.shape[0] > 0 else 0.0,
-}])
+variability = pd.DataFrame(
+    [
+        {
+            "Issues_count": int(issue_totals.shape[0]),
+            "Total_hours": float(issue_totals["Hours"].sum()),
+            "Mean_hours_per_issue": float(issue_totals["Hours"].mean()) if not issue_totals.empty else 0.0,
+            "Median_hours_per_issue": float(issue_totals["Hours"].median()) if not issue_totals.empty else 0.0,
+            "Std_hours_per_issue": float(issue_totals["Hours"].std(ddof=0)) if issue_totals.shape[0] > 0 else 0.0,
+            "P90_hours_per_issue": float(issue_totals["Hours"].quantile(0.90)) if issue_totals.shape[0] > 0 else 0.0,
+        }
+    ]
+)
 
 # =====================================================
 # 6) ZAPIS CSV
@@ -289,9 +293,8 @@ plt.close()
 
 # 7.2 Role split stacked bar (top 10 issues)
 top_issue_keys = issue_totals.head(min(10, len(issue_totals)))["Issue"].tolist()
-role_pivot = (
-    role_issue[role_issue["Issue"].isin(top_issue_keys)]
-    .pivot_table(index="Issue", columns="Role", values="Hours", aggfunc="sum", fill_value=0.0)
+role_pivot = role_issue[role_issue["Issue"].isin(top_issue_keys)].pivot_table(
+    index="Issue", columns="Role", values="Hours", aggfunc="sum", fill_value=0.0
 )
 role_pivot = role_pivot.reindex(top_issue_keys)
 
@@ -343,7 +346,8 @@ heat_issues = issue_totals.head(HEATMAP_TOP_ISSUES)["Issue"].tolist()
 
 heat = (
     long_df[long_df["Name"].isin(heat_people) & long_df["Issue"].isin(heat_issues)]
-    .groupby(["Name", "Issue"], as_index=False)["Hours"].sum()
+    .groupby(["Name", "Issue"], as_index=False)["Hours"]
+    .sum()
     .pivot(index="Name", columns="Issue", values="Hours")
     .fillna(0.0)
 )

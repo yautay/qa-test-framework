@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import importlib
 import sys
-from types import ModuleType
-from types import SimpleNamespace
+from types import ModuleType, SimpleNamespace
 from typing import Any
 
 import pytest
@@ -29,7 +28,7 @@ def _load_version_cli() -> Any:
 
 def _stub_version_baselines_commands(monkeypatch: pytest.MonkeyPatch) -> None:
     stub_module = ModuleType("tools.visual.version_baselines_commands")
-    setattr(stub_module, "run_command", lambda *_a, **_k: 0)
+    stub_module.run_command = lambda *_a, **_k: 0
     monkeypatch.setitem(sys.modules, "tools.visual.version_baselines_commands", stub_module)
 
 

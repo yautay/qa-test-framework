@@ -10,7 +10,7 @@ Outputs:
 
 import json
 import shutil
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -183,7 +183,7 @@ def _write_ready_marker(report_dir: Path, rows: list[dict[str, Any]]) -> None:
     marker = report_dir / READY_MARKER_FILENAME
     payload = {
         "ready": True,
-        "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "generated_at_utc": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "results_count": len(rows),
     }
     temp_marker = report_dir / f"{READY_MARKER_FILENAME}.tmp"

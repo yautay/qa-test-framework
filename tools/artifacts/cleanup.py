@@ -4,7 +4,7 @@ import shutil
 import sys
 from argparse import ArgumentParser
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from loguru import logger
@@ -58,7 +58,7 @@ def _dir_size(path: Path) -> int:
 
 def _is_older_than(path: Path, cutoff_utc: datetime) -> bool:
     try:
-        mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=timezone.utc)
+        mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=UTC)
     except OSError:
         return False
     return mtime < cutoff_utc
@@ -127,7 +127,7 @@ def cleanup_all(dry_run: bool) -> CleanupResult:
 
 def cleanup_older(days: int, dry_run: bool) -> CleanupResult:
     dirs = _run_dirs()
-    cutoff_utc = datetime.now(timezone.utc) - timedelta(days=days)
+    cutoff_utc = datetime.now(UTC) - timedelta(days=days)
     removed = 0
     removed_bytes = 0
 

@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import requests
 import urllib3
@@ -35,7 +35,7 @@ VERIFY = _as_bool(os.getenv("JIRA_VERIFY_SSL"), bool(getattr(settings, "jira_ver
 ISSUE_KEY = "NN-23107"
 
 # Treść komentarza (domyślnie z timestampem UTC)
-COMMENT_TEXT = f"[API TEST] Komentarz testowy dodany {datetime.now(timezone.utc).isoformat()}"
+COMMENT_TEXT = f"[API TEST] Komentarz testowy dodany {datetime.now(UTC).isoformat()}"
 
 # Opcjonalnie: ścieżka do obrazka/pliku do załączenia w issue
 # Przykład: r"C:\repos\nc-functional-tests-py\screenshot.png"

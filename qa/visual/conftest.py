@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
-import hashlib
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -14,9 +14,9 @@ from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_
 import settings
 from framework.artifacts import RunArtifacts
 from framework.env import RuntimeEnv, load_env
+from framework.visual.build_metadata import build_visual_build_metadata, write_visual_build_metadata
 from framework.visual.models import VisualResult
 from framework.visual.perceptual import prepare_perceptual_placeholders, run_perceptual_postprocess
-from framework.visual.build_metadata import build_visual_build_metadata, write_visual_build_metadata
 from framework.visual.report_builder import write_visual_report, write_visual_results_json
 
 VIEWPORT_PRESETS: dict[str, tuple[int, int]] = settings.visual_viewport_presets
@@ -221,7 +221,7 @@ def _send_test_result_updates(
         attempt = 2
         update["event_id"] = str(uuid.uuid4())
         update["event_type"] = "test_result"
-        update["event_time_utc"] = datetime.now(timezone.utc).isoformat()
+        update["event_time_utc"] = datetime.now(UTC).isoformat()
         update["idempotency_key"] = f"test_result:{run_uid}:{nodeid}:{attempt}"
         update["run_id"] = run_artifacts.run_id
         update["run_uid"] = run_uid

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import socket
-import hashlib
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
@@ -15,9 +15,9 @@ from loguru import logger
 import settings_cli
 from framework.artifacts import resolve_artifacts_base_dir
 from framework.env import load_env
+from framework.visual.build_metadata import build_visual_build_metadata, write_visual_build_metadata
 from framework.visual.models import VisualResult, VisualThresholds
 from framework.visual.perceptual import prepare_perceptual_placeholders, run_perceptual_postprocess
-from framework.visual.build_metadata import build_visual_build_metadata, write_visual_build_metadata
 from framework.visual.report_builder import write_visual_report, write_visual_results_json
 
 _VISUAL_RESULT_ARTIFACT_KINDS = {
@@ -48,7 +48,7 @@ def _ensure_shared_run_id(config: pytest.Config) -> str:
         config._shared_run_id = token
         return token
 
-    token = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
+    token = datetime.now(UTC).strftime("%Y%m%d_%H%M%S_%f")
     config._shared_run_id = token
     return token
 
@@ -472,7 +472,7 @@ def _send_test_result_updates(config: pytest.Config, run_root: Path, results: li
         attempt = 2
         update["event_id"] = str(uuid.uuid4())
         update["event_type"] = "test_result"
-        update["event_time_utc"] = datetime.now(timezone.utc).isoformat()
+        update["event_time_utc"] = datetime.now(UTC).isoformat()
         update["run_id"] = run_id
         update["run_uid"] = run_uid
         update["source"] = source

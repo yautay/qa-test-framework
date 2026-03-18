@@ -3,12 +3,11 @@ from __future__ import annotations
 import json
 import re
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 from framework.visual.models import VisualResult
-
 
 _REPORT_FILE = "build-metadata.json"
 _FIXTURE_REQUEST_RE = re.compile(r"^request\s*=\s*<FixtureRequest", re.IGNORECASE)
@@ -157,7 +156,7 @@ def build_visual_build_metadata(
         )
     ]
     return {
-        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "generated_at_utc": datetime.now(UTC).isoformat(),
         "visual": {
             "collected_count": int(collected_visual_count),
             "included_count": int(len(included_nodeids)),

@@ -4,7 +4,7 @@ import json
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
@@ -209,7 +209,7 @@ def _write_perceptual_status(
 ) -> None:
     report_dir.mkdir(parents=True, exist_ok=True)
     payload = {
-        "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "generated_at_utc": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "total_count": max(0, int(total_count)),
         "pending_count": max(0, int(pending_count)),
         "done_count": max(0, int(done_count)),

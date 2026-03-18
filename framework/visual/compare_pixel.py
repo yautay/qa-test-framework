@@ -5,7 +5,6 @@ from pathlib import Path
 import cv2
 import numpy as np
 
-
 _COARSE_SHIFT_SPAN_PX = 20
 _SHIFT_PENALTY_LAMBDA = 10.0
 _MIN_SHIFT_IMPROVEMENT = 0.5

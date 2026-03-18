@@ -4,7 +4,7 @@ import importlib
 import os
 import time
 from collections.abc import Iterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
 
@@ -59,7 +59,7 @@ def _resolve_allure_run_id(config: pytest.Config) -> str:
     if env_run_id:
         return env_run_id
 
-    return datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
+    return datetime.now(UTC).strftime("%Y%m%d_%H%M%S_%f")
 
 
 def _resolve_report_toggles(config: pytest.Config, env: RuntimeEnv) -> tuple[bool, bool]:

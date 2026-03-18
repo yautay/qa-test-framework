@@ -13,7 +13,6 @@ from loguru import logger
 import settings
 from framework.log_levels import normalize_log_level
 
-
 _REDACTED = "***REDACTED***"
 _SENSITIVE_KEY_FRAGMENTS = (
     "password",

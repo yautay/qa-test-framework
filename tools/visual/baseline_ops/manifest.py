@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from .types import FileEntry
@@ -46,11 +46,11 @@ def write_manifest(
             }
         )
 
-    payload: dict[str, str | int | float | list[dict[str, str | int | float]]] = {
+    payload: dict[str, object] = {
         "profile": profile,
         "version": version,
         "source_version": source_version,
-        "created_at_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "created_at_utc": datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "file_count": len(files),
         "total_size_bytes": total_size_bytes,
         "total_size_mib": round(total_size_bytes / (1024**2), 2),

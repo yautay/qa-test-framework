@@ -284,7 +284,7 @@ def test_sync_minio_falls_back_to_local_upload_when_source_key_missing(
 
     monkeypatch.setattr(versioning, "MinioOps", _FakeMinioOps)
 
-    copied = getattr(versioning, "_sync_minio")(
+    copied = versioning._sync_minio(
         cast(Any, _env()),
         source_entries=source_entries,
         to_version="2026-03-05",
@@ -334,7 +334,7 @@ def test_sync_minio_does_not_fallback_upload_for_non_missing_source_errors(
 
     monkeypatch.setattr(versioning, "MinioOps", _FakeMinioOps)
 
-    copied = getattr(versioning, "_sync_minio")(
+    copied = versioning._sync_minio(
         cast(Any, _env()),
         source_entries=source_entries,
         to_version="2026-03-05",

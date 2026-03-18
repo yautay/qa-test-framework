@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from contextlib import nullcontext
+
 import allure
 import pytest
-from contextlib import nullcontext
 
 from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage

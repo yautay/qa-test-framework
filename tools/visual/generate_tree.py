@@ -11,8 +11,8 @@ try:
 except ImportError:
     HAS_PYPERCLIP = False
 
-from framework.visual.scenario_loader import load_scenarios_with_errors
 from framework.logger import configure_tools_logging
+from framework.visual.scenario_loader import load_scenarios_with_errors
 
 
 def generate_visual_tree() -> str:
