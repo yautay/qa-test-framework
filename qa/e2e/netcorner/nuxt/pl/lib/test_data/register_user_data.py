@@ -25,8 +25,8 @@ class RegisterUserDataBuilder:
     def __init__(self) -> None:
         unique = uuid.uuid4().hex[:6]
         self._email = f"client_{unique}@test.pl"  # Mailhog nie lubi domeny netcorner bo Wosina
-        self._password = uuid.uuid4().hex[:6]
-        self._password_changed = uuid.uuid4().hex[:6]
+        self._password = f"a1{uuid.uuid4().hex[:8]}"
+        self._password_changed = f"b2{uuid.uuid4().hex[:8]}"
         self._business_offer = False
         self._accept_required_terms = False
         self._accept_marketing = False
@@ -83,7 +83,7 @@ def invalid_client_cases() -> list[RegisterUserCase]:
     return [
         RegisterUserCase(
             case_id="pl_marketing_business",
-            factory=lambda: (RegisterUserDataBuilder().with_business_offer().with_marketing().build()),
+            factory=lambda: RegisterUserDataBuilder().with_business_offer().with_marketing().build(),
         ),
         RegisterUserCase(
             case_id="pl_marketing",

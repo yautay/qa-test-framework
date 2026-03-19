@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import replace
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -261,3 +261,51 @@ def test_postprocess_writes_status_usage_counters(tmp_path: Path, monkeypatch: p
     assert status_payload["done_count"] == 1
     assert status_payload["error_count"] == 0
     assert status_payload["used"] is True
+
+
+def test_postprocess_prefers_normalized_pair_paths(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, Path] = {}
+
+    class _CaptureClient:
+        def __init__(self, **_: object) -> None:
+            self.enabled = True
+
+        def health(self) -> bool:
+            return True
+
+        def list_jobs(self) -> list[dict[str, object]]:
+            return []
+
+        def submit_job(self, **kwargs: object) -> None:
+            captured["img_a"] = Path(str(kwargs.get("img_a")))
+            captured["img_b"] = Path(str(kwargs.get("img_b")))
+
+        def get_job(self, _job_id: str) -> dict[str, object]:
+            return {"status": "done", "lpips": 0.05, "dists": 0.06}
+
+        def download_heatmap(self, _job_id: str, _path: Path) -> bool:
+            return False
+
+        def get_job_error(self, _job_id: str) -> dict[str, object]:
+            return {}
+
+    monkeypatch.setattr(postprocess, "PMSClient", _CaptureClient)
+    result = _make_result(tmp_path)
+    report_dir = tmp_path / "visual"
+    normalized_baseline = report_dir / "normalized-baseline.png"
+    normalized_actual = report_dir / "normalized-actual.png"
+    normalized_baseline.write_bytes(b"n-base")
+    normalized_actual.write_bytes(b"n-act")
+    result.comparison_baseline_path = str(normalized_baseline)
+    result.comparison_actual_path = str(normalized_actual)
+
+    postprocess.run_perceptual_postprocess(
+        env=_runtime_env(),
+        run_id="run-6",
+        report_dir=report_dir,
+        results=[result],
+        on_results_updated=None,
+    )
+
+    assert captured["img_a"] == normalized_baseline
+    assert captured["img_b"] == normalized_actual

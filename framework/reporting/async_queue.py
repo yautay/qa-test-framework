@@ -5,12 +5,12 @@ import queue
 import random
 import threading
 import time
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from loguru import logger
 
 from framework.reporting.models import AsyncReportingEvent, AsyncReportingStats
-
 
 SendCallable = Callable[[str, dict[str, Any]], bool]
 

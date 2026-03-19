@@ -106,6 +106,8 @@ class RuntimeEnv:
     visual_baseline_version: str
     visual_cache_dir: str
     visual_fail_on_missing_baseline: bool
+    visual_freeze_animations: bool
+    visual_shift_compensation_y_px: int
     visual_minio_endpoint: str
     visual_minio_access_key: str
     visual_minio_secret_key: str
@@ -313,6 +315,14 @@ def load_env() -> RuntimeEnv:
         visual_fail_on_missing_baseline=env_bool(
             "VISUAL_FAIL_ON_MISSING_BASELINE",
             bool(settings.visual_fail_on_missing_baseline),
+        ),
+        visual_freeze_animations=env_bool(
+            "VISUAL_FREEZE_ANIMATIONS",
+            bool(getattr(settings, "visual_freeze_animations", True)),
+        ),
+        visual_shift_compensation_y_px=env_int(
+            "VISUAL_SHIFT_COMPENSATION_Y_PX",
+            int(getattr(settings, "visual_shift_compensation_y_px", 0)),
         ),
         visual_minio_endpoint=env_str(
             "VISUAL_MINIO_ENDPOINT",

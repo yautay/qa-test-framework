@@ -470,6 +470,28 @@ describe("resultsStore", () => {
 
       expect(store.tagLog["s1::a.png::::"].baseline).toBe(true);
     });
+
+    it("does not keep baseline from previous snapshot when key is missing", () => {
+      const store = useResultsStore();
+      store.tagLog = {
+        "s1::a.png::::": {
+          bug: { locked: false, synced: false, note: "" },
+          aso: { locked: false, synced: false, note: "" },
+          baseline: true,
+        },
+      };
+
+      store.updateTagLog({
+        "s2::b.png::::": {
+          bug: { locked: false, synced: false, note: "" },
+          aso: { locked: false, synced: false, note: "" },
+          baseline: false,
+        },
+      });
+
+      expect(store.tagLog["s1::a.png::::"]).toBeUndefined();
+      expect(store.tagLog["s2::b.png::::"].baseline).toBe(false);
+    });
   });
 
   describe("baselineCandidates", () => {
@@ -638,6 +660,29 @@ describe("resultsStore", () => {
       store.setRunId("run-123");
 
       expect(store.runId).toBe("run-123");
+    });
+
+    it("clears run-scoped tag state when run changes", () => {
+      const store = useResultsStore();
+      store.setRunId("run-1");
+      store.tagLog = {
+        "s1::a.png::::": {
+          bug: { locked: false, synced: false, note: "" },
+          aso: { locked: false, synced: false, note: "" },
+          baseline: true,
+        },
+      };
+      store.pendingTags = { "s1::a.png::::": { bug: true } };
+      store.syncErrors = { "s1::a.png::::": { message: "sync failed", timestamp: Date.now() } };
+      store.retryMarkers = { "s1::a.png::::": { bug: Date.now() } };
+
+      store.setRunId("run-2");
+
+      expect(store.runId).toBe("run-2");
+      expect(store.tagLog).toEqual({});
+      expect(store.pendingTags).toEqual({});
+      expect(store.syncErrors).toEqual({});
+      expect(store.retryMarkers).toEqual({});
     });
   });
 

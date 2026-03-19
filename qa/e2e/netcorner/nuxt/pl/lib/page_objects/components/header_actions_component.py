@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from playwright.sync_api import Locator
 
+from framework.base.page_objects import BaseComponent
 from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 
 
 class HeaderActionsComponent(BaseComponent):
@@ -25,6 +25,6 @@ class HeaderActionsComponent(BaseComponent):
     def open_cart(self) -> None:
         self.safe_click(self.__cart)
 
-    @step("Sprawdzam dostępność linku do sekcji konto")
+    @step("Sprawdzam dostępność linku do sekcji 'Moje konto'")
     def is_my_account_available(self) -> bool:
-        return self.__my_account.is_visible(timeout=3000)
+        return self.__my_account.is_visible()

@@ -8,9 +8,9 @@ from typing import Any, cast
 
 import settings
 from framework.visual.models import (
+    DEFAULT_MASK_COLOR,
     CaptureType,
     CompareMode,
-    DEFAULT_MASK_COLOR,
     VisualCapture,
     VisualMask,
     VisualScenario,
@@ -175,6 +175,16 @@ def _scenario_from_payload(payload: dict[str, Any], file_path: Path, idx: int) -
             pixel_uncertain_delta=thresholds_raw.get("pixel_uncertain_delta"),
             lpips_uncertain_delta=thresholds_raw.get("lpips_uncertain_delta"),
             dists_uncertain_delta=thresholds_raw.get("dists_uncertain_delta"),
+            shift_compensation_y_px=(
+                _as_int(
+                    thresholds_raw.get("shift_compensation_y_px"),
+                    0,
+                    file_path,
+                    f"{pfx}thresholds.shift_compensation_y_px",
+                )
+                if "shift_compensation_y_px" in thresholds_raw
+                else None
+            ),
         ),
         mask=VisualMask(
             selectors=tuple(_as_str_list(mask_raw.get("selectors"), file_path, f"{pfx}mask.selectors")),

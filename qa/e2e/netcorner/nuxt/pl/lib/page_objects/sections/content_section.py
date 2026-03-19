@@ -2,17 +2,30 @@ from __future__ import annotations
 
 from playwright.sync_api import Page
 
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
+from framework.base.page_objects import BaseComponent
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.my_account_component import (
     MyAccountComponent,
     MyAccountPasswordChangeComponent,
 )
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.password_recovery_component import PasswordRecoveryComponent
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.register_client_component import RegisterClientComponent
 
 
 class ContentSection(BaseComponent):
     def __init__(self, page: Page):
         super().__init__(page.locator("#pageContentWrapper"), name="Content Section")
+
+
+class PasswordRecoveryContentSection(ContentSection):
+    def __init__(self, page: Page) -> None:
+        super().__init__(page)
+        self.__password_recovery: PasswordRecoveryComponent | None = None
+
+    @property
+    def recovery_form(self) -> PasswordRecoveryComponent:
+        if self.__password_recovery is None:
+            self.__password_recovery = PasswordRecoveryComponent(self.root.locator("[data-name='passwordResetPage']"))
+        return self.__password_recovery
 
 
 class RegisterContentSection(ContentSection):

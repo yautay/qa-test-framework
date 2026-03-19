@@ -369,6 +369,36 @@ describe("ReportPage", () => {
     wrapper.unmount();
   });
 
+  it("shows run switch overlay while loading next run", async () => {
+    fetchReportResultsPayload.mockImplementation((runId) => {
+      const scenarioId = runId === "run-2" ? "s2" : "s1";
+      return Promise.resolve({
+        results: [
+          { scenario_id: scenarioId, status: "failed", actual_path: "a.png", suite_id: "suite1", viewport: "1920x1080", browser: "chrome" },
+        ],
+        build_metadata: {},
+      });
+    });
+
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(wrapper.find(".run-switch-overlay").exists()).toBe(false);
+
+    await wrapper.setProps({ runId: "run-2" });
+    await nextTick();
+
+    expect(wrapper.find(".run-switch-overlay").exists()).toBe(true);
+
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
+    expect(wrapper.find(".run-switch-overlay").exists()).toBe(false);
+    wrapper.unmount();
+  });
+
   it("renders excluded visual cases in collapsed details", async () => {
     fetchReportResultsPayload.mockResolvedValueOnce({
       results: [
@@ -1127,6 +1157,38 @@ describe("ReportPage", () => {
 
     const modal = wrapper.findComponent({ name: "ViewerModal" });
     expect(modal.props("viewer").modalCaseUrl).toBe("https://shop.example.com/product/123");
+
+    wrapper.unmount();
+  });
+
+  it("prefers normalized comparison assets in modal viewer", async () => {
+    const wrapper = mount(ReportPage, {
+      props: { runId: "run-1" },
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const store = useResultsStore();
+    const row = {
+      scenario_id: "s1",
+      status: "failed",
+      message: "ok",
+      suite_id: "suite-1",
+      viewport: "fhd",
+      browser: "chromium",
+      baseline_path: "ref/original.png",
+      actual_path: "actual/original.png",
+      comparison_baseline_path: "normalized/ref.png",
+      comparison_actual_path: "normalized/actual.png",
+    };
+
+    store.openViewer(row, "test", 0);
+    await nextTick();
+
+    const modal = wrapper.findComponent({ name: "ViewerModal" });
+    expect(modal.props("viewer").modalRefSrc).toBe("/reports/run-1/normalized/ref.png");
+    expect(modal.props("viewer").modalTestSrc).toBe("/reports/run-1/normalized/actual.png");
 
     wrapper.unmount();
   });

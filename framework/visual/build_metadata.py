@@ -9,7 +9,6 @@ from typing import Any
 
 from framework.visual.models import VisualResult
 
-
 _REPORT_FILE = "build-metadata.json"
 _FIXTURE_REQUEST_RE = re.compile(r"^request\s*=\s*<FixtureRequest", re.IGNORECASE)
 

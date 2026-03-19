@@ -65,6 +65,14 @@ def _build_rows(report_dir: Path, results: list[VisualResult]) -> list[dict[str,
         baseline = _maybe_relpath(_as_str_path(result.baseline_path), report_dir)
         actual = _maybe_relpath(_as_str_path(result.actual_path), report_dir)
         diff = _maybe_relpath(_as_str_path(getattr(result, "diff_path", None)), report_dir)
+        comparison_baseline = _maybe_relpath(
+            _as_str_path(getattr(result, "comparison_baseline_path", None)),
+            report_dir,
+        )
+        comparison_actual = _maybe_relpath(
+            _as_str_path(getattr(result, "comparison_actual_path", None)),
+            report_dir,
+        )
         heatmap = _maybe_relpath(_as_str_path(getattr(result, "heatmap_path", None)), report_dir)
 
         metadata = getattr(result, "test_metadata", None)
@@ -102,11 +110,15 @@ def _build_rows(report_dir: Path, results: list[VisualResult]) -> list[dict[str,
                 "viewport": getattr(result, "viewport", ""),
                 "browser": getattr(result, "browser", ""),
                 "pixel_changed_ratio": result.pixel_changed_ratio,
+                "applied_shift_y": getattr(result, "applied_shift_y", None),
+                "shift_compensation_y_px_effective": getattr(result, "shift_compensation_y_px_effective", None),
                 "lpips": lpips,
                 "dists": dists,
                 "baseline_path": baseline,
                 "actual_path": actual,
                 "diff_path": diff,
+                "comparison_baseline_path": comparison_baseline,
+                "comparison_actual_path": comparison_actual,
                 "heatmap_path": heatmap,
                 "thresholds": {
                     "pixel_max": getattr(thresholds, "pixel_max", None),

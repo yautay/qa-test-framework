@@ -64,6 +64,7 @@ def test_send_test_result_updates_posts_attempt_two_for_finalized_pms_result(tmp
         nodeid=nodeid,
     )
     result.pixel_changed_ratio = 0.001
+    result.applied_shift_y = 3
     result.lpips = 0.0
     result.dists = 0.0
 
@@ -74,6 +75,7 @@ def test_send_test_result_updates_posts_attempt_two_for_finalized_pms_result(tmp
     assert payload["attempt"] == 2
     assert payload["idempotency_key"] == f"test_result:run-uid-1:{nodeid}:2"
     assert payload["visual"]["verdict"] == "passed"
+    assert payload["visual"]["scores"]["applied_shift_y"] == 3
     artifacts = cast(list[dict[str, Any]], payload["artifacts"])
     heatmap = next(item for item in artifacts if item.get("kind") == "visual_heatmap")
     assert heatmap["path"] == heatmap_rel

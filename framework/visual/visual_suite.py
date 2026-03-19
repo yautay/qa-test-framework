@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import os
 import time
+from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
-from typing import Callable
 
 import pytest
 from loguru import logger
@@ -74,6 +74,8 @@ def _attach_result_metadata(
         },
         "scores": {
             "pixel_changed_ratio": result.pixel_changed_ratio,
+            "applied_shift_y": result.applied_shift_y,
+            "shift_compensation_y_px_effective": result.shift_compensation_y_px_effective,
             "lpips": result.lpips,
             "dists": result.dists,
         },
@@ -81,6 +83,7 @@ def _attach_result_metadata(
             "pixel_max": thresholds.pixel_max if thresholds else None,
             "lpips_max": thresholds.lpips_max if thresholds else None,
             "dists_max": thresholds.dists_max if thresholds else None,
+            "shift_compensation_y_px": thresholds.shift_compensation_y_px if thresholds else None,
         },
         "execution": {
             "dual_pass": dual_pass,
@@ -93,6 +96,10 @@ def _attach_result_metadata(
             "pms_requested": pms_requested,
             "pms_configured": pms_configured,
             "pms_usage_state": pms_usage_state,
+            "shift_compensation_y_px_env_default": result.shift_compensation_y_px_env_default,
+            "shift_compensation_y_px_scenario_override": result.shift_compensation_y_px_scenario_override,
+            "shift_compensation_y_px_effective": result.shift_compensation_y_px_effective,
+            "shift_compensation_y_px_source": result.shift_compensation_y_px_source,
         },
         "verdict": result.status,
         "message": result.message,
@@ -123,6 +130,8 @@ def _finalize_result(
         "visual_baseline": result.baseline_path,
         "visual_actual": result.actual_path,
         "visual_diff": result.diff_path,
+        "visual_comparison_baseline": result.comparison_baseline_path,
+        "visual_comparison_actual": result.comparison_actual_path,
         "visual_heatmap": result.heatmap_path,
     }
     if reference_actual_path:
@@ -136,9 +145,12 @@ def _finalize_result(
             "pixel_max": thresholds.pixel_max if thresholds else None,
             "lpips_max": thresholds.lpips_max if thresholds else None,
             "dists_max": thresholds.dists_max if thresholds else None,
+            "shift_compensation_y_px": thresholds.shift_compensation_y_px if thresholds else None,
         },
         "scores": {
             "pixel_changed_ratio": result.pixel_changed_ratio,
+            "applied_shift_y": result.applied_shift_y,
+            "shift_compensation_y_px_effective": result.shift_compensation_y_px_effective,
             "lpips": result.lpips,
             "dists": result.dists,
         },
@@ -152,6 +164,10 @@ def _finalize_result(
             "pms_requested": pms_requested,
             "pms_configured": pms_configured,
             "pms_usage_state": pms_usage_state,
+            "shift_compensation_y_px_env_default": result.shift_compensation_y_px_env_default,
+            "shift_compensation_y_px_scenario_override": result.shift_compensation_y_px_scenario_override,
+            "shift_compensation_y_px_effective": result.shift_compensation_y_px_effective,
+            "shift_compensation_y_px_source": result.shift_compensation_y_px_source,
         },
         "verdict": result.status,
     }

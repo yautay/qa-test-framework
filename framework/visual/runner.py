@@ -33,6 +33,12 @@ def _safe_float(value: object, default: float | None = None) -> float | None:
         return default
 
 
+def _resolve_shift_compensation_y_px(env_shift_px: int, scenario_shift_px: int | None) -> int:
+    if scenario_shift_px is not None:
+        return max(0, int(scenario_shift_px))
+    return max(0, int(env_shift_px))
+
+
 class VisualRunner:
     """Capture actual screenshots, compare to baselines, and return VisualResult."""
 
@@ -42,9 +48,11 @@ class VisualRunner:
         self._output_dir = output_dir
         self._actual_dir = output_dir / "actual"
         self._diff_dir = output_dir / "diff"
+        self._normalized_dir = output_dir / "normalized"
         self._heatmap_dir = output_dir / "heatmap"
         self._actual_dir.mkdir(parents=True, exist_ok=True)
         self._diff_dir.mkdir(parents=True, exist_ok=True)
+        self._normalized_dir.mkdir(parents=True, exist_ok=True)
         self._heatmap_dir.mkdir(parents=True, exist_ok=True)
 
     def run(self, page: Page, scenario: VisualScenario, viewport: str) -> VisualResult:
@@ -65,6 +73,19 @@ class VisualRunner:
                 browser_family = b.browser_type.name
         except Exception:
             browser_family = (self._env.browser or "unknown").strip().lower()
+
+        shift_compensation_y_px_env_default = max(0, int(self._env.visual_shift_compensation_y_px))
+        scenario_shift_raw = getattr(scenario.thresholds, "shift_compensation_y_px", None)
+        shift_compensation_y_px_scenario_override = (
+            max(0, int(scenario_shift_raw)) if scenario_shift_raw is not None else None
+        )
+        shift_compensation_y_px = _resolve_shift_compensation_y_px(
+            shift_compensation_y_px_env_default,
+            shift_compensation_y_px_scenario_override,
+        )
+        shift_compensation_y_px_source = (
+            "scenario_override" if shift_compensation_y_px_scenario_override is not None else "env_default"
+        )
 
         baseline_path = self._store.resolve_baseline(
             scenario.suite_id,
@@ -87,14 +108,30 @@ class VisualRunner:
                 diff_path="",
                 heatmap_path="",
                 pixel_changed_ratio=1.0,
+                applied_shift_y=0,
+                shift_compensation_y_px_effective=shift_compensation_y_px,
+                shift_compensation_y_px_env_default=shift_compensation_y_px_env_default,
+                shift_compensation_y_px_scenario_override=shift_compensation_y_px_scenario_override,
+                shift_compensation_y_px_source=shift_compensation_y_px_source,
                 lpips=None,
                 dists=None,
                 thresholds=scenario.thresholds,
             )
 
         diff_path = self._diff_dir / f"{file_stem}.png"
-        pixel_out = compare_images(baseline_path, actual_path, diff_path)
-        pixel_changed_ratio = float(pixel_out[0]) if isinstance(pixel_out, tuple) else float(pixel_out)
+        comparison_baseline_path = self._normalized_dir / f"{file_stem}__baseline.png"
+        comparison_actual_path = self._normalized_dir / f"{file_stem}__actual.png"
+        pixel_out = compare_images(
+            baseline_path,
+            actual_path,
+            diff_path,
+            shift_compensation_y_px=shift_compensation_y_px,
+            return_details=True,
+            normalized_baseline_path=comparison_baseline_path,
+            normalized_actual_path=comparison_actual_path,
+        )
+        pixel_changed_ratio = float(cast(dict[str, Any], pixel_out).get("changed_ratio", 1.0))
+        applied_shift_y = int(cast(dict[str, Any], pixel_out).get("applied_shift_y", 0) or 0)
 
         lpips_score: float | None = None
         dists_score: float | None = None
@@ -131,8 +168,15 @@ class VisualRunner:
             baseline_path=str(baseline_path),
             actual_path=str(actual_path),
             diff_path=str(diff_path),
+            comparison_baseline_path=str(comparison_baseline_path),
+            comparison_actual_path=str(comparison_actual_path),
             heatmap_path=heatmap_path_str,
             pixel_changed_ratio=pixel_changed_ratio,
+            applied_shift_y=applied_shift_y,
+            shift_compensation_y_px_effective=shift_compensation_y_px,
+            shift_compensation_y_px_env_default=shift_compensation_y_px_env_default,
+            shift_compensation_y_px_scenario_override=shift_compensation_y_px_scenario_override,
+            shift_compensation_y_px_source=shift_compensation_y_px_source,
             lpips=lpips_score,
             dists=dists_score,
             thresholds=scenario.thresholds,
@@ -160,8 +204,8 @@ class VisualRunner:
         status_raw = getattr(response, "status", None)
         try:
             status = int(cast(Any, status_raw))
-        except (TypeError, ValueError):
-            raise ValueError(f"Navigation failed with invalid HTTP status for: {target}")
+        except (TypeError, ValueError) as err:
+            raise ValueError(f"Navigation failed with invalid HTTP status for: {target}") from err
         if status >= 400:
             response_url = str(getattr(response, "url", "") or target)
             raise ValueError(f"Navigation failed with HTTP {status}: {response_url}")
@@ -205,6 +249,7 @@ class VisualRunner:
     def _capture(self, page: Page, scenario: VisualScenario, output_path: Path) -> None:
         """Capture the screenshot based on capture settings while masking selectors."""
         output_path.parent.mkdir(parents=True, exist_ok=True)
+        freeze_style_id = _inject_freeze_styles(page) if bool(self._env.visual_freeze_animations) else ""
         if scenario.capture.full_page:
             _stabilize_full_page_capture(page)
         cleanup_ids = _inject_masks(page, list(scenario.mask.selectors), scenario.mask.color)
@@ -215,6 +260,7 @@ class VisualRunner:
             page.screenshot(path=str(output_path), full_page=scenario.capture.full_page)
         finally:
             _remove_masks(page, cleanup_ids)
+            _remove_freeze_styles(page, freeze_style_id)
 
 
 def _first_visible_locator(locator: Locator) -> Locator:
@@ -257,8 +303,7 @@ def _stabilize_full_page_capture(page: Page) -> None:
         pass
 
     try:
-        page.evaluate(
-            """
+        page.evaluate("""
             () => new Promise((resolve) => {
               const doc = document.scrollingElement || document.documentElement;
               const maxY = Math.max(0, (doc?.scrollHeight || 0) - window.innerHeight);
@@ -287,16 +332,16 @@ def _stabilize_full_page_capture(page: Page) -> None:
 
               tick();
             })
-            """
-        )
+            """)
     except Exception:
         pass
 
     try:
-        page.evaluate(
-            """
+        page.evaluate("""
             () => Promise.all([
-              (document.fonts && document.fonts.ready) ? document.fonts.ready.catch(() => undefined) : Promise.resolve(),
+              (document.fonts && document.fonts.ready)
+                ? document.fonts.ready.catch(() => undefined)
+                : Promise.resolve(),
               new Promise((resolve) => {
                 const images = Array.from(document.images || []);
                 const pending = images.filter((img) => !img.complete);
@@ -318,8 +363,7 @@ def _stabilize_full_page_capture(page: Page) -> None:
                 setTimeout(() => resolve(undefined), 1500);
               }),
             ])
-            """
-        )
+            """)
     except Exception:
         pass
 
@@ -327,6 +371,59 @@ def _stabilize_full_page_capture(page: Page) -> None:
         page.wait_for_timeout(150)
     except Exception:
         pass
+
+
+def _inject_freeze_styles(page: Page) -> str:
+    style_id = "visual-freeze-style"
+    script = """
+    (styleId) => {
+      try {
+        const existing = document.getElementById(styleId);
+        if (existing) {
+          return styleId;
+        }
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+          *, *::before, *::after {
+            animation: none !important;
+            transition: none !important;
+            caret-color: transparent !important;
+          }
+          html, body {
+            scroll-behavior: auto !important;
+          }
+        `;
+        document.head.appendChild(style);
+        return styleId;
+      } catch (_) {
+        return "";
+      }
+    }
+    """
+    try:
+        value = page.evaluate(script, style_id)
+        return str(value or "")
+    except Exception:
+        return ""
+
+
+def _remove_freeze_styles(page: Page, style_id: str) -> None:
+    token = str(style_id or "").strip()
+    if not token:
+        return
+    script = """
+    (styleId) => {
+      const el = document.getElementById(styleId);
+      if (el) {
+        el.remove();
+      }
+    }
+    """
+    try:
+        page.evaluate(script, token)
+    except Exception:
+        return
 
 
 def _inject_masks(page: Page, selectors: list[str], color: str) -> list[str]:

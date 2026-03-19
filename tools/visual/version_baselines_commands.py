@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from framework.env import RuntimeEnv
-
 from tools.visual.baseline_ops import (
     apply_version_copy,
     check_local_vs_minio,

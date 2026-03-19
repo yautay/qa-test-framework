@@ -28,6 +28,8 @@ visual_baseline_profile = "test-ref"
 visual_baseline_version = "latest"
 visual_cache_dir = ".visual_cache"
 visual_fail_on_missing_baseline = False
+visual_freeze_animations = True
+visual_shift_compensation_y_px = 100
 
 visual_uncertain_enabled = True
 visual_uncertain_pixel_delta = 0.05
@@ -86,3 +88,9 @@ reporting_async_queue_maxsize = 1000
 reporting_async_max_attempts = 3
 reporting_async_max_retry_age_seconds = 30
 reporting_async_flush_timeout_seconds = 3
+
+# Jira
+jira_url = "https://jira.netcorner.pl"
+jira_username = ""
+jira_password = ""
+jira_verify_ssl = False

@@ -2,13 +2,16 @@ from __future__ import annotations
 
 from playwright.sync_api import Page
 
+from framework.base.page_objects import BaseComponent
 from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.password_recovery_overlay import (
+    PasswordRecoveryOverlay,
+)
 
 
 class LoginOverlay(BaseComponent):
     def __init__(self, page: Page):
-        super().__init__(page.locator('[data-name="loginForm"]'), name="Login Overlay")
+        super().__init__(page.locator('[data-name="loginForm"]:visible').first, name="Login Overlay")
         self.__input_login = self.root.locator("#loginEmail")
         self.__input_password = self.root.locator("#loginPassword")
         self.__button_login = self.root.get_by_role(role="button", name="Zaloguj się")
@@ -25,3 +28,8 @@ class LoginOverlay(BaseComponent):
         self.safe_type(self.__input_login, client_login)
         self.safe_type(self.__input_password, client_pwd)
         self.safe_click(self.__button_login)
+
+    @step("Odzyskuję hasło")
+    def password_recovery(self, client_login: str) -> None:
+        self.safe_click(self.__reset_password)
+        PasswordRecoveryOverlay(self.root.page).password_recovery(client_login)

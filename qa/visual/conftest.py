@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
-import hashlib
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -13,10 +13,11 @@ from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_
 
 import settings
 from framework.artifacts import RunArtifacts
+from framework.browser import set_onetrust_consent_cookies
 from framework.env import RuntimeEnv, load_env
+from framework.visual.build_metadata import build_visual_build_metadata, write_visual_build_metadata
 from framework.visual.models import VisualResult
 from framework.visual.perceptual import prepare_perceptual_placeholders, run_perceptual_postprocess
-from framework.visual.build_metadata import build_visual_build_metadata, write_visual_build_metadata
 from framework.visual.report_builder import write_visual_report, write_visual_results_json
 
 VIEWPORT_PRESETS: dict[str, tuple[int, int]] = settings.visual_viewport_presets
@@ -26,46 +27,6 @@ _VISUAL_RESULT_ARTIFACT_KINDS = {
     "visual_diff": "diff_path",
     "visual_heatmap": "heatmap_path",
 }
-
-
-def _set_consent_cookies(page: Page, base_url: str) -> None:
-    """Set consent cookies to bypass OneTrust banner."""
-    if not base_url:
-        return
-    try:
-        hostname = base_url.split("//")[-1].split("/")[0]
-        parts = hostname.split(".")
-        if len(parts) >= 2:
-            domain = "." + ".".join(parts[-2:])
-        else:
-            domain = hostname
-        context = page.context
-        context.add_cookies(
-            [
-                {
-                    "name": "OptanonConsent",
-                    "value": "data=boBLJIDePN7tABBJRG7LEtAAAAyAABAyAEAQAkABgAGAAYABgAGwAcwBzAG8AdwBuAGMALQA1"
-                    "ADgANwA3ADkAOAAxADkAMgA0ADkAMgAzADkAMgAwADkAMgA0ADkAMgA0ADkAOAA1ADkANgA0ADkANgA1"
-                    "ADkAMQA3ADkAMQA2ADkAMgA1ADkANgA2ADkANgA3ADkANgA3ADkANgA3ADkAOAA2ADkANgA3ADkANgA4"
-                    "ADkANgA4ADkANgA5ADkANgA5ADkANgA5ADkAOAA2ADkANgA5ADkAOAA2ADkANgA3ADkANgA4ADkAOAA3"
-                    "ADkAOAA4ADkAOAA5ADkAOAA5ADkAOAA5ADkAOAA5ADkAOAA5ADkAOAA5ADkAOAA5ADkA,groups=BO_7"
-                    ",ACKN_1,AL_1,TE_1,AE_1,ME_1,CU_1,VA_1,PR_1,UA_1,MEPS_1,PV_1,GE_1,SP_1,EM_1,BF_1,WA_1"
-                    ",WG_1,OUBO_1,RG_1,OO_1,GR_1,PL_1,CD_1,CO_1,CRT_1,HR_1,PR_1,VO_1,NL_1,OA_1,P_1,PI_1"
-                    ",EV_1,AN_1,AO_1,CI_1,CT_1,C_1,DP_1,D_1,ET_1,F_1,IP_1,J_1,K_1,L_1,M_1,N_1,O_1,P_1"
-                    ",PM_1,Q_1,R_1,S_1,SF_1,SI_1,SK_1,T_1,U_1,UR_1,VM_1,VT_1,WA_1",
-                    "domain": domain,
-                    "path": "/",
-                },
-                {
-                    "name": "OptanonAlertBoxClosed",
-                    "value": "2024-01-01T00:00:00.000Z",
-                    "domain": domain,
-                    "path": "/",
-                },
-            ]
-        )
-    except Exception:
-        pass
 
 
 def _is_xdist_worker(config: pytest.Config) -> bool:
@@ -90,20 +51,31 @@ def _dump_worker_visual_results(run_artifacts: RunArtifacts, worker_id: str, res
 
 def _build_update_visual_payload(result: VisualResult, existing_visual: object) -> dict[str, object]:
     thresholds = getattr(result, "thresholds", None)
+    shift_effective = getattr(result, "shift_compensation_y_px_effective", None)
+    shift_env_default = getattr(result, "shift_compensation_y_px_env_default", None)
+    shift_scenario_override = getattr(result, "shift_compensation_y_px_scenario_override", None)
+    shift_source = getattr(result, "shift_compensation_y_px_source", None)
     execution: dict[str, object] = {}
     if isinstance(existing_visual, dict):
         execution_value = existing_visual.get("execution")
         if isinstance(execution_value, dict):
             execution = dict(execution_value)
+    execution["shift_compensation_y_px_env_default"] = shift_env_default
+    execution["shift_compensation_y_px_scenario_override"] = shift_scenario_override
+    execution["shift_compensation_y_px_effective"] = shift_effective
+    execution["shift_compensation_y_px_source"] = shift_source
     return {
         "threshold_scope": "scenario+viewport+browser",
         "thresholds_used": {
             "pixel_max": thresholds.pixel_max if thresholds else None,
             "lpips_max": thresholds.lpips_max if thresholds else None,
             "dists_max": thresholds.dists_max if thresholds else None,
+            "shift_compensation_y_px": thresholds.shift_compensation_y_px if thresholds else None,
         },
         "scores": {
             "pixel_changed_ratio": result.pixel_changed_ratio,
+            "applied_shift_y": result.applied_shift_y,
+            "shift_compensation_y_px_effective": shift_effective,
             "lpips": result.lpips,
             "dists": result.dists,
         },
@@ -351,6 +323,6 @@ def context(
 def page(context: BrowserContext, base_url: str) -> Page:
     """Function-scoped Playwright page used by visual scenarios."""
     page = context.new_page()
-    _set_consent_cookies(page, base_url)
+    set_onetrust_consent_cookies(page, base_url)
     yield page
     page.close()

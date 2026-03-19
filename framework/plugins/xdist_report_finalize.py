@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import socket
-import hashlib
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -15,9 +15,9 @@ from loguru import logger
 import settings_cli
 from framework.artifacts import resolve_artifacts_base_dir
 from framework.env import load_env
+from framework.visual.build_metadata import build_visual_build_metadata, write_visual_build_metadata
 from framework.visual.models import VisualResult, VisualThresholds
 from framework.visual.perceptual import prepare_perceptual_placeholders, run_perceptual_postprocess
-from framework.visual.build_metadata import build_visual_build_metadata, write_visual_build_metadata
 from framework.visual.report_builder import write_visual_report, write_visual_results_json
 
 _VISUAL_RESULT_ARTIFACT_KINDS = {
@@ -89,16 +89,16 @@ def _ensure_run_metadata(run_root: Path, config: pytest.Config) -> None:
         return
 
     metadata = getattr(config, "_run_metadata", None)
-    tester = ""
-    run_note = ""
+    payload: dict[str, Any]
     if isinstance(metadata, dict):
-        tester = str(metadata.get("tester", "") or "")
-        run_note = str(metadata.get("run_note", "") or "")
+        payload = dict(metadata)
     else:
-        tester = str(getattr(settings_cli, "tester", "") or "")
-        run_note = str(getattr(settings_cli, "run_note", "") or "")
-
-    payload = {"tester": tester, "run_note": run_note}
+        payload = {
+            "tester": str(getattr(settings_cli, "tester", "") or ""),
+            "run_note": str(getattr(settings_cli, "run_note", "") or ""),
+        }
+    payload["tester"] = str(payload.get("tester", "") or "")
+    payload["run_note"] = str(payload.get("run_note", "") or "")
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
@@ -167,9 +167,18 @@ def _result_from_dict(data: dict[str, object]) -> VisualResult | None:
                 dists_uncertain_delta=(
                     float(cast(Any, dists_uncertain_delta)) if dists_uncertain_delta is not None else None
                 ),
+                shift_compensation_y_px=(
+                    int(cast(Any, thresholds_raw.get("shift_compensation_y_px")))
+                    if thresholds_raw.get("shift_compensation_y_px") is not None
+                    else None
+                ),
             )
 
         pixel_changed_ratio_raw = data.get("pixel_changed_ratio")
+        applied_shift_y_raw = data.get("applied_shift_y")
+        shift_effective_raw = data.get("shift_compensation_y_px_effective")
+        shift_env_default_raw = data.get("shift_compensation_y_px_env_default")
+        shift_scenario_override_raw = data.get("shift_compensation_y_px_scenario_override")
         lpips_raw = data.get("lpips")
         dists_raw = data.get("dists")
         test_metadata_obj = data.get("test_metadata")
@@ -188,6 +197,8 @@ def _result_from_dict(data: dict[str, object]) -> VisualResult | None:
             baseline_path=str(data.get("baseline_path") or ""),
             actual_path=str(data.get("actual_path") or ""),
             diff_path=str(data.get("diff_path") or ""),
+            comparison_baseline_path=str(data.get("comparison_baseline_path") or ""),
+            comparison_actual_path=str(data.get("comparison_actual_path") or ""),
             heatmap_path=str(data.get("heatmap_path") or ""),
             suite_id=str(data.get("suite_id") or ""),
             viewport=str(data.get("viewport") or ""),
@@ -196,6 +207,17 @@ def _result_from_dict(data: dict[str, object]) -> VisualResult | None:
             pixel_changed_ratio=(
                 float(cast(Any, pixel_changed_ratio_raw)) if pixel_changed_ratio_raw is not None else None
             ),
+            applied_shift_y=int(cast(Any, applied_shift_y_raw)) if applied_shift_y_raw is not None else None,
+            shift_compensation_y_px_effective=(
+                int(cast(Any, shift_effective_raw)) if shift_effective_raw is not None else None
+            ),
+            shift_compensation_y_px_env_default=(
+                int(cast(Any, shift_env_default_raw)) if shift_env_default_raw is not None else None
+            ),
+            shift_compensation_y_px_scenario_override=(
+                int(cast(Any, shift_scenario_override_raw)) if shift_scenario_override_raw is not None else None
+            ),
+            shift_compensation_y_px_source=(str(data.get("shift_compensation_y_px_source") or "") or None),
             lpips=float(cast(Any, lpips_raw)) if lpips_raw is not None else None,
             dists=float(cast(Any, dists_raw)) if dists_raw is not None else None,
             thresholds=thresholds,
@@ -341,19 +363,59 @@ def _merge_visual_result_artifacts(
 def _build_visual_payload_from_result(result: VisualResult, existing_visual: Any) -> dict[str, Any]:
     thresholds = getattr(result, "thresholds", None)
     execution = {}
+    shift_effective = getattr(result, "shift_compensation_y_px_effective", None)
+    shift_env_default = getattr(result, "shift_compensation_y_px_env_default", None)
+    shift_scenario_override = getattr(result, "shift_compensation_y_px_scenario_override", None)
+    shift_source = getattr(result, "shift_compensation_y_px_source", None)
+    metadata = getattr(result, "test_metadata", None)
+    if isinstance(metadata, dict):
+        scores_meta = metadata.get("scores")
+        if shift_effective is None and isinstance(scores_meta, dict):
+            value = scores_meta.get("shift_compensation_y_px_effective")
+            if value is not None:
+                shift_effective = value
+        execution_meta = metadata.get("execution")
+        if isinstance(execution_meta, dict):
+            if shift_env_default is None:
+                value = execution_meta.get("shift_compensation_y_px_env_default")
+                if value is not None:
+                    shift_env_default = value
+            if shift_scenario_override is None:
+                value = execution_meta.get("shift_compensation_y_px_scenario_override")
+                if value is not None:
+                    shift_scenario_override = value
+            if not shift_source:
+                value = execution_meta.get("shift_compensation_y_px_source")
+                if value:
+                    shift_source = value
     if isinstance(existing_visual, dict):
         execution_value = existing_visual.get("execution")
         if isinstance(execution_value, dict):
             execution = dict(execution_value)
+    execution["shift_compensation_y_px_env_default"] = (
+        int(cast(Any, shift_env_default)) if shift_env_default is not None else None
+    )
+    execution["shift_compensation_y_px_scenario_override"] = (
+        int(cast(Any, shift_scenario_override)) if shift_scenario_override is not None else None
+    )
+    execution["shift_compensation_y_px_effective"] = (
+        int(cast(Any, shift_effective)) if shift_effective is not None else None
+    )
+    execution["shift_compensation_y_px_source"] = str(shift_source or "") or None
     return {
         "threshold_scope": "scenario+viewport+browser",
         "thresholds_used": {
             "pixel_max": thresholds.pixel_max if thresholds else None,
             "lpips_max": thresholds.lpips_max if thresholds else None,
             "dists_max": thresholds.dists_max if thresholds else None,
+            "shift_compensation_y_px": thresholds.shift_compensation_y_px if thresholds else None,
         },
         "scores": {
             "pixel_changed_ratio": result.pixel_changed_ratio,
+            "applied_shift_y": result.applied_shift_y,
+            "shift_compensation_y_px_effective": (
+                int(cast(Any, shift_effective)) if shift_effective is not None else None
+            ),
             "lpips": result.lpips,
             "dists": result.dists,
         },
@@ -379,15 +441,14 @@ def _send_test_result_updates(config: pytest.Config, run_root: Path, results: li
         return
 
     run_metadata_path = run_root / "run-metadata.json"
-    run_metadata: dict[str, str] = {"tester": "", "run_note": ""}
+    run_metadata: dict[str, Any] = {"tester": "", "run_note": ""}
     if run_metadata_path.is_file():
         try:
             payload = json.loads(run_metadata_path.read_text(encoding="utf-8"))
             if isinstance(payload, dict):
-                run_metadata = {
-                    "tester": str(payload.get("tester", "") or ""),
-                    "run_note": str(payload.get("run_note", "") or ""),
-                }
+                run_metadata = dict(payload)
+                run_metadata["tester"] = str(run_metadata.get("tester", "") or "")
+                run_metadata["run_note"] = str(run_metadata.get("run_note", "") or "")
         except (OSError, UnicodeDecodeError, json.JSONDecodeError):
             pass
 

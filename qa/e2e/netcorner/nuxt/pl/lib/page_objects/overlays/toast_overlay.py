@@ -4,9 +4,10 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from playwright.sync_api import Page, expect
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
+from framework.base.page_objects import BaseComponent
 from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 
 
 class ToastType(StrEnum):
@@ -42,13 +43,13 @@ class ToastOverlay(BaseComponent):
         try:
             expect(toast).to_be_visible(timeout=timeout)
             message = toast.locator("div").inner_text().strip()
-            classes = toast.get_attribute("class") or ""
+            classes = toast.get_attribute("class", timeout=1_000) or ""
             toast_type = self.__resolve_type(classes)
             instance = self.__resolve_instance(message)
             if expected_instance != ToastInstance.UNKNOWN and instance != expected_instance:
                 return None
 
-        except AssertionError:
+        except (AssertionError, PlaywrightTimeoutError):
             return None
 
         return ToastObject(

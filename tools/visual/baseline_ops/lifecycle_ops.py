@@ -18,7 +18,6 @@ from .scan_ops import scan_cache_version, scan_local_profile_files, scan_minio_v
 from .scanner import scan_local_version
 from .types import FileEntry, OperationSummary
 
-
 _SAFE_SEGMENT = re.compile(r"[^a-zA-Z0-9._-]+")
 
 

@@ -29,7 +29,19 @@ def test_report_server_endpoints_handle_listing_results_ref_tags_and_baseline_fl
     report_dir.mkdir(parents=True)
     (report_dir / ".report-ready.json").write_text('{"ready": true}\n', encoding="utf-8")
     (report_dir.parent / "run-metadata.json").write_text(
-        json.dumps({"tester": "jan.k", "run_note": "manual smoke"}),
+        json.dumps(
+            {
+                "tester": "jan.k",
+                "run_note": "manual smoke",
+                "environment_probe": {
+                    "status_code": 200,
+                    "headers": {
+                        "server": "nginx",
+                        "x-env": "demo",
+                    },
+                },
+            }
+        ),
         encoding="utf-8",
     )
     (report_dir / "results.json").write_text(
@@ -108,9 +120,11 @@ def test_report_server_endpoints_handle_listing_results_ref_tags_and_baseline_fl
         assert payload["reports"][0]["failed"] == 1
         assert payload["reports"][0]["tester"] == "jan.k"
         assert payload["reports"][0]["run_note"] == "manual smoke"
+        assert payload["reports"][0]["run_metadata"]["environment_probe"]["headers"]["x-env"] == "demo"
 
         status, payload = _http_json(base_url, f"/api/reports/{run_id}/results")
         assert status == 200
+        assert payload["run_metadata"]["environment_probe"]["headers"]["server"] == "nginx"
         assert payload["build_metadata"]["visual"]["excluded_count"] == 1
         assert payload["build_metadata"]["visual"]["excluded_cases"][0]["reason_code"] == "timeout"
         assert payload["build_metadata"]["visual"]["excluded_reasons_summary"][0]["count"] == 1
@@ -118,6 +132,7 @@ def test_report_server_endpoints_handle_listing_results_ref_tags_and_baseline_fl
         assert payload["results"][0]["tester"] == "jan.k"
         assert payload["results"][0]["run_note"] == "manual smoke"
         assert payload["results"][0]["test_metadata"]["run"]["run_id"] == run_id
+        assert payload["results"][0]["test_metadata"]["run"]["environment_probe"]["headers"]["x-env"] == "demo"
 
         query = urlencode(
             {
@@ -207,6 +222,20 @@ def test_baseline_send_handles_mixed_success_and_failure_and_keeps_candidates_ta
                         "actual_path": "actual/scenario-2.png",
                     },
                 ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    (report_dir.parent / "run-metadata.json").write_text(
+        json.dumps(
+            {
+                "tester": "jan.k",
+                "run_note": "metadata merge",
+                "environment_probe": {
+                    "headers": {
+                        "x-env-git-branch": "feature/demo",
+                    }
+                },
             }
         ),
         encoding="utf-8",
@@ -328,5 +357,7 @@ def test_results_endpoint_preserves_execution_target_base_url_metadata(tmp_path:
         row = payload["results"][0]
         assert row["test_metadata"]["scenario"]["target_url"] == "/produkt/lodz"
         assert row["test_metadata"]["execution"]["target_base_url"] == "https://shop.example.com"
+        assert row["test_metadata"]["run"]["tester"] == "jan.k"
+        assert row["test_metadata"]["run"]["environment_probe"]["headers"]["x-env-git-branch"] == "feature/demo"
     finally:
         _stop_server(server, thread)

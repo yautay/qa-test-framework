@@ -46,7 +46,7 @@ def write_manifest(
             }
         )
 
-    payload: dict[str, str | int | float | list[dict[str, str | int | float]]] = {
+    payload: dict[str, object] = {
         "profile": profile,
         "version": version,
         "source_version": source_version,
