@@ -17,7 +17,7 @@ highlight_on_fail = False
 min_expected_tests = 1
 
 # Grid
-grid_ws_endpoint = "ws://127.0.0.1:9323/"
+grid_ws_endpoint = "http://10.21.69.57:4444"
 grid_connect_timeout_ms = 30000
 
 # Visual
