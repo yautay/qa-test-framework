@@ -13,7 +13,7 @@ from playwright.sync_api import Browser, BrowserContext, Page, Playwright, sync_
 
 import settings
 from framework.artifacts import RunArtifacts
-from framework.browser import set_onetrust_consent_cookies
+from framework.browser import close_browser_session, open_browser_session, set_onetrust_consent_cookies
 from framework.env import RuntimeEnv, load_env
 from framework.visual.build_metadata import build_visual_build_metadata, write_visual_build_metadata
 from framework.visual.models import VisualResult
@@ -282,20 +282,9 @@ def playwright_instance() -> Playwright:
 @pytest.fixture(scope="session")
 def browser(playwright_instance: Playwright, runtime_env: RuntimeEnv) -> Browser:
     """Session browser for visual tests (local launch or remote connect)."""
-    if runtime_env.is_grid_available:
-        browser_name = "chromium" if runtime_env.browser == "chrome" else runtime_env.browser
-        browser_type = getattr(playwright_instance, browser_name)
-        browser = browser_type.connect(
-            runtime_env.grid_ws_endpoint,
-            timeout=runtime_env.grid_connect_timeout_ms,
-        )
-    elif runtime_env.browser == "chrome":
-        browser = playwright_instance.chromium.launch(channel="chrome", headless=runtime_env.headless)
-    else:
-        browser_type = getattr(playwright_instance, runtime_env.browser)
-        browser = browser_type.launch(headless=runtime_env.headless)
-    yield browser
-    browser.close()
+    session = open_browser_session(playwright_instance, runtime_env)
+    yield session.browser
+    close_browser_session(session, runtime_env)
 
 
 @pytest.fixture(scope="function")

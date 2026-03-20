@@ -11,4 +11,4 @@ is_session_headless = False
 server_name = "perpetum.gamma"
 reference_host = ""
 base_url_override = ""
-is_grid_available = False
+is_grid_available = True

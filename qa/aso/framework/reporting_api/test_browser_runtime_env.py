@@ -26,13 +26,17 @@ def test_load_env_uses_settings_browser_by_default(monkeypatch):
 
 def test_load_env_reads_grid_runtime_from_environment(monkeypatch):
     monkeypatch.setenv("IS_GRID_AVAILABLE", "1")
+    monkeypatch.setenv("GRID_PROVIDER", "selenium_cdp")
     monkeypatch.setenv("GRID_WS_ENDPOINT", "ws://127.0.0.1:9323/")
+    monkeypatch.setenv("GRID_CDP_ENDPOINT", "http://127.0.0.1:9222")
     monkeypatch.setenv("GRID_CONNECT_TIMEOUT_MS", "45000")
 
     env = load_env()
 
     assert env.is_grid_available is True
+    assert env.grid_provider == "selenium_cdp"
     assert env.grid_ws_endpoint == "ws://127.0.0.1:9323/"
+    assert env.grid_cdp_endpoint == "http://127.0.0.1:9222"
     assert env.grid_connect_timeout_ms == 45000
 
 
@@ -84,3 +88,13 @@ def test_load_env_reads_visual_shift_compensation_from_environment(monkeypatch):
     env = load_env()
 
     assert env.visual_shift_compensation_y_px == 7
+
+
+def test_load_env_uses_auto_grid_provider_by_default(monkeypatch):
+    monkeypatch.delenv("GRID_PROVIDER", raising=False)
+    monkeypatch.delenv("GRID_CDP_ENDPOINT", raising=False)
+
+    env = load_env()
+
+    assert env.grid_provider == "auto"
+    assert env.grid_cdp_endpoint == ""

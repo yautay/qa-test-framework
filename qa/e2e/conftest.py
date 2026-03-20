@@ -18,7 +18,7 @@ except Exception:  # pragma: no cover - optional dependency
     allure = None
 
 from framework.artifacts import RunArtifacts, resolve_artifacts_base_dir
-from framework.browser import set_onetrust_consent_cookies
+from framework.browser import close_browser_session, open_browser_session, set_onetrust_consent_cookies
 from framework.env import RuntimeEnv, load_env
 from framework.screenshot_annotator import annotate_fail_screenshot, extract_selector_from_error
 from framework.video_utils import ensure_min_fail_video
@@ -168,22 +168,9 @@ def playwright_instance() -> Iterator[Playwright]:
 @pytest.fixture(scope="session")
 def browser(playwright_instance: Playwright, runtime_env: RuntimeEnv) -> Iterator[Browser]:
     """Session browser instance (local launch or remote grid connect)."""
-    if runtime_env.is_grid_available:
-        if not runtime_env.grid_ws_endpoint:
-            raise RuntimeError("is_grid_available is enabled but GRID_WS_ENDPOINT is empty")
-        browser_name = "chromium" if runtime_env.browser == "chrome" else runtime_env.browser
-        browser_type = getattr(playwright_instance, browser_name)
-        browser = browser_type.connect(
-            runtime_env.grid_ws_endpoint,
-            timeout=runtime_env.grid_connect_timeout_ms,
-        )
-    elif runtime_env.browser == "chrome":
-        browser = playwright_instance.chromium.launch(channel="chrome", headless=runtime_env.headless)
-    else:
-        browser_type = getattr(playwright_instance, runtime_env.browser)
-        browser = browser_type.launch(headless=runtime_env.headless)
-    yield browser
-    browser.close()
+    session = open_browser_session(playwright_instance, runtime_env)
+    yield session.browser
+    close_browser_session(session, runtime_env)
 
 
 @pytest.fixture(scope="function")
