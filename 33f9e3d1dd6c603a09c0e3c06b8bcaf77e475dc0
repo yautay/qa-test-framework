@@ -1,0 +1,40 @@
+# Work Notes
+
+## 2026-03-20 - Selenium Grid + Playwright auto provider
+
+### Zmiany architektoniczne
+- Dodano wspolna warstwe zarzadzania sesja przegladarki: `framework/browser/session.py`.
+- Warstwa sesji zastapila duplikowana logike otwierania browsera w:
+  - `qa/e2e/conftest.py`
+  - `qa/visual/conftest.py`
+- Nowy model konfiguracji grida:
+  - `GRID_PROVIDER` (`auto`, `playwright`, `selenium_cdp`)
+  - `GRID_CDP_ENDPOINT` (opcjonalny, wymuszony endpoint CDP)
+
+### Rozwiazanie techniczne
+- `GRID_PROVIDER=auto`:
+  1. Najpierw probuje Playwright protocol (`browser_type.connect`).
+  2. Przy niepowodzeniu probuje Selenium CDP bridge (`connect_over_cdp`).
+- `GRID_PROVIDER=selenium_cdp`:
+  - Dziala tylko dla `chromium/chrome`.
+  - Gdy `GRID_CDP_ENDPOINT` jest pusty i endpoint wskazuje na hub Selenium (`:4444`), tworzona jest sesja WebDriver, a CDP endpoint pobierany jest z capabilities (`se:cdp` / `se:cdpEndpoint` / `goog:chromeOptions.debuggerAddress`) lub endpointu pomocniczego grida.
+- Dodano cleanup sesji Selenium (DELETE `/session/{id}`), aby nie zostawiac osieroconych sesji po zakonczeniu testow.
+
+### Wazne wskazowki i ograniczenia
+- Dla Selenium CDP fidelity jest nizsze niz natywny Playwright protocol; dla pelnej zgodnosci preferowac provider `playwright`.
+- Auto-detekcja jest fail-fast: gdy obie sciezki zawioda, dostajemy jeden blad z podsumowaniem prob.
+- Przy niestandardowym gridzie warto ustawic jawnie `GRID_CDP_ENDPOINT`, jesli capabilities nie zawieraja danych CDP.
+
+### Miejsca wymagajace obserwacji po wdrozeniu
+- Stabilnosc endpointu `se:cdp` po upgrade Selenium Grid.
+- Zachowanie cleanupu sesji przy timeoutach/awariach wezlow.
+- Kompatybilnosc z uruchomieniami `chrome` (channel) vs `chromium`.
+
+### Incident notes - 2026-03-20 (prod grid)
+- Grid na `:4444` odrzucal create session bez naglowka `charset=utf-8` (`application/json` bylo niewystarczajace).
+- Po poprawieniu naglowka node Chrome zwracal `DevToolsActivePort file doesn't exist`.
+- Dodano stabilizujace argumenty Chrome do sesji Selenium CDP: `--no-sandbox`, `--disable-dev-shm-usage`, `--disable-gpu`, oraz `--headless=new` dla trybu headless.
+- Wniosek operacyjny: przy diagnozie `500 /session` najpierw sprawdzac body odpowiedzi i log node, nie sam kod statusu.
+- Dodano retry logic: gdy create session na Selenium CDP nie-headless pada z sygnatura startup (`DevToolsActivePort` / `Chrome failed to start`), framework automatycznie ponawia probe w `headless=true`.
+- Potwierdzono przypadek infra: `se:cdp` zwracane w capabilities, ale websocket `ws://.../session/{id}/se/cdp` moze zwracac `socket hang up` (brak poprawnego websocket proxy po stronie Grid/LB).
+- Dodano defensywny cleanup: gdy attach Playwright do CDP nie powiedzie sie po utworzeniu sesji Selenium, sesja jest natychmiast usuwana z Grida (brak wyciekow sesji).
