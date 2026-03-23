@@ -24,7 +24,8 @@ cp tools/dbeaver/db_dump_config.example.json tools/dbeaver/db_dump_config.json
 
 - `wizard.auth_header` (or use env `WIZARD_AUTH_HEADER`)
 - `testovki.<vm>.mysql.username/password`
-- `testovki.<vm>.mariadb.schemas[]` with schema-level credentials
+- `defaults.mariadb-<service>` for microservice credentials/schema (e.g. `mariadb-promotions`)
+- `testovki.<vm>.mariadb.schemas[]` for VM-specific schema-level overrides
 - optional host filtering in `filters.include_host_tokens` / `filters.exclude_host_tokens`
 
 ## Run
@@ -35,6 +36,8 @@ python tools/dbeaver/export_wizard_connections.py --vm example-vm
 python tools/dbeaver/export_wizard_connections.py --config tools/dbeaver/db_dump_config.json --out-dir tools/dbeaver/out
 python tools/dbeaver/export_wizard_connections.py --exclude-host be124
 python tools/dbeaver/export_wizard_connections.py --include-host node2 --exclude-host be124,be115
+python tools/dbeaver/export_wizard_connections.py --testovki perpetum.gamma
+python tools/dbeaver/export_wizard_connections.py --testovki "[perpetum.gamma, selenium.alfa]"
 ```
 
 ## DBeaver usage

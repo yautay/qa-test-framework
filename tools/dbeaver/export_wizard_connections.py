@@ -193,6 +193,7 @@ class DbEndpoint:
     database: str
     username: str
     password: str
+    profile: str = ""
 
 
 def _extract_from_url(value: str) -> tuple[str, str, str]:
@@ -342,7 +343,15 @@ def _merge_with_config(vm_id: str, endpoint: DbEndpoint, config: dict[str, Any])
 
     username = _safe_str(engine_vm.get("username")) or _safe_str(engine_defaults.get("username")) or endpoint.username
     password = _safe_str(engine_vm.get("password")) or _safe_str(engine_defaults.get("password")) or endpoint.password
-    database = _safe_str(engine_vm.get("database_override")) or endpoint.database
+    database = (
+        _safe_str(engine_vm.get("database_override"))
+        or _safe_str(engine_vm.get("database"))
+        or _safe_str(engine_vm.get("schema"))
+        or _safe_str(engine_defaults.get("database_override"))
+        or _safe_str(engine_defaults.get("database"))
+        or _safe_str(engine_defaults.get("schema"))
+        or endpoint.database
+    )
 
     return DbEndpoint(
         engine=endpoint.engine,
@@ -351,7 +360,24 @@ def _merge_with_config(vm_id: str, endpoint: DbEndpoint, config: dict[str, Any])
         database=database,
         username=username,
         password=password,
+        profile=endpoint.profile,
     )
+
+
+def _mariadb_default_profiles(config: dict[str, Any]) -> list[tuple[str, dict[str, Any]]]:
+    defaults = config.get("defaults") if isinstance(config.get("defaults"), dict) else {}
+    profiles: list[tuple[str, dict[str, Any]]] = []
+    for key, value in (defaults or {}).items():
+        if not isinstance(value, dict):
+            continue
+        normalized_key = _normalize(key)
+        if not normalized_key.startswith("mariadb-"):
+            continue
+        profile = _safe_str(key)[len("mariadb-") :]
+        if not profile:
+            continue
+        profiles.append((profile, value))
+    return profiles
 
 
 def _mariadb_schema_entries(vm_id: str, endpoint: DbEndpoint, config: dict[str, Any]) -> list[DbEndpoint]:
@@ -359,9 +385,6 @@ def _mariadb_schema_entries(vm_id: str, endpoint: DbEndpoint, config: dict[str, 
     vm_cfg = (testovki or {}).get(vm_id) if isinstance((testovki or {}).get(vm_id), dict) else {}
     mariadb_cfg = (vm_cfg or {}).get("mariadb") if isinstance((vm_cfg or {}).get("mariadb"), dict) else {}
     schemas_cfg = mariadb_cfg.get("schemas") if isinstance(mariadb_cfg.get("schemas"), list) else []
-
-    if not schemas_cfg:
-        return [endpoint]
 
     out: list[DbEndpoint] = []
     for item in schemas_cfg:
@@ -378,9 +401,34 @@ def _mariadb_schema_entries(vm_id: str, endpoint: DbEndpoint, config: dict[str, 
                 database=schema_name,
                 username=_safe_str(item.get("username")) or endpoint.username,
                 password=_safe_str(item.get("password")) or endpoint.password,
+                profile=_safe_str(item.get("profile")),
             )
         )
-    return out or [endpoint]
+    if out:
+        return out
+
+    default_profiles = _mariadb_default_profiles(config)
+    if default_profiles:
+        for profile_name, profile_cfg in default_profiles:
+            out.append(
+                DbEndpoint(
+                    engine="mariadb",
+                    host=endpoint.host,
+                    port=endpoint.port,
+                    database=(
+                        _safe_str(profile_cfg.get("database_override"))
+                        or _safe_str(profile_cfg.get("database"))
+                        or _safe_str(profile_cfg.get("schema"))
+                        or endpoint.database
+                    ),
+                    username=_safe_str(profile_cfg.get("username")) or endpoint.username,
+                    password=_safe_str(profile_cfg.get("password")) or endpoint.password,
+                    profile=profile_name,
+                )
+            )
+        return out
+
+    return [endpoint]
 
 
 def _to_dbeaver_provider(engine: str) -> tuple[str, str]:
@@ -391,7 +439,41 @@ def _to_dbeaver_provider(engine: str) -> tuple[str, str]:
 
 def _connection_name(vm_id: str, endpoint: DbEndpoint) -> str:
     suffix = endpoint.database if endpoint.database else "default"
+    if endpoint.engine == "mariadb" and endpoint.profile:
+        return f"{vm_id} | {endpoint.engine.upper()} | {endpoint.profile} | {suffix}"
     return f"{vm_id} | {endpoint.engine.upper()} | {suffix}"
+
+
+def _parse_vm_tokens(value: str) -> list[str]:
+    token = _safe_str(value)
+    if not token:
+        return []
+    if token.startswith("[") and token.endswith("]"):
+        token = token[1:-1]
+
+    out: list[str] = []
+    for part in token.split(","):
+        cleaned = _safe_str(part).strip("'\"")
+        normalized = _normalize(cleaned)
+        if normalized:
+            out.append(normalized)
+    return list(dict.fromkeys(out))
+
+
+def _parse_test_vm_tokens(value: str) -> list[str]:
+    out: list[str] = []
+    for token in _parse_vm_tokens(value):
+        out.append(token)
+        if "." in token:
+            base = _normalize(token.split(".", 1)[0])
+            if base:
+                out.append(base)
+    return list(dict.fromkeys(out))
+
+
+def _selected_vm_filters(args: argparse.Namespace) -> set[str]:
+    selected = _parse_vm_tokens(args.vm) + _parse_test_vm_tokens(args.test_vm)
+    return set(selected)
 
 
 def _to_data_sources_json(entries: list[dict[str, Any]]) -> dict[str, Any]:
@@ -454,6 +536,7 @@ def _write_outputs(out_dir: Path, raw_records: list[dict[str, Any]], exported_ro
                 "database": endpoint.database,
                 "username": endpoint.username,
                 "password": endpoint.password,
+                "profile": endpoint.profile,
                 "name": _connection_name(_safe_str(row.get("vm_id")), endpoint),
             }
         )
@@ -498,7 +581,14 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Parse test wizard and export DB connections for DBeaver")
     parser.add_argument("--config", default=str(DEFAULT_CONFIG_PATH), help="Path to JSON config")
     parser.add_argument("--out-dir", default=str(DEFAULT_OUT_DIR), help="Output directory")
-    parser.add_argument("--vm", default="", help="Optional VM id filter")
+    parser.add_argument("--vm", default="", help="Optional VM filter (single id, comma-separated or [list])")
+    parser.add_argument(
+        "--test_vm",
+        dest="test_vm",
+        default="",
+        help="Optional VM filter by test names, e.g. perpetum.gamma or [perpetum.gamma, selenium.alfa]",
+    )
+    parser.add_argument("--testovki", dest="test_vm", help=argparse.SUPPRESS)
     parser.add_argument(
         "--include-host",
         action="append",
@@ -518,7 +608,7 @@ def main() -> int:
     args = _parse_args()
     config_path = Path(args.config).expanduser().resolve()
     out_dir = Path(args.out_dir).expanduser().resolve()
-    vm_filter = _normalize(args.vm)
+    vm_filters = _selected_vm_filters(args)
 
     config = _load_config(config_path)
     url, auth_header, headless, timeout_ms = _wizard_settings(config)
@@ -543,7 +633,7 @@ def main() -> int:
         vm_id = _safe_str(record.get("vm_id"))
         if not vm_id:
             continue
-        if vm_filter and _normalize(vm_id) != vm_filter:
+        if vm_filters and _normalize(vm_id) not in vm_filters:
             continue
 
         fields = record.get("fields") if isinstance(record.get("fields"), list) else []
