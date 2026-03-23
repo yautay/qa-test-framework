@@ -1,0 +1,1 @@
+Zrealizowano: rozbudowa eksportera DBeaver o filtry --test_vm/--testovki i listy VM; wsparcie profili domyślnych mariadb-* z mapowaniem schema/database; rozszerzenie nazewnictwa połączeń o profil; aktualizacja README z nowymi przykładami użycia.
