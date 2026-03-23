@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import os
 import re
 import shutil
 import sys
-import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -74,6 +74,27 @@ def _load_config(path: Path) -> dict[str, Any]:
         raise ValueError(f"Invalid JSON in config {path}: {exc}") from exc
 
 
+def _load_json_file_any_encoding(path: Path) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+
+    raw = path.read_bytes()
+    encodings = ["utf-8", "utf-8-sig", "utf-16", "utf-16-le", "utf-16-be", "cp1250", "cp1252", "latin-1"]
+    for encoding in encodings:
+        try:
+            payload = json.loads(raw.decode(encoding))
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            continue
+        if isinstance(payload, dict):
+            return payload
+        return None
+    return None
+
+
+def _test_vm_config(config: dict[str, Any]) -> dict[str, Any]:
+    return config.get("test_vm") if isinstance(config.get("test_vm"), dict) else {}
+
+
 def _wizard_settings(config: dict[str, Any]) -> tuple[str, str, bool, int]:
     wizard = config.get("wizard") if isinstance(config.get("wizard"), dict) else {}
     url = _safe_str((wizard or {}).get("url")) or "https://test-wizard.netcorner.pl/"
@@ -89,6 +110,31 @@ def _wizard_settings(config: dict[str, Any]) -> tuple[str, str, bool, int]:
             "Missing wizard auth header. Fill wizard.auth_header in config or set WIZARD_AUTH_HEADER env variable."
         )
     return url, auth_header, headless, timeout_ms
+
+
+def _dbeaver_copy_settings(
+    config: dict[str, Any], args: argparse.Namespace
+) -> tuple[bool, Path | None, Path | None, bool]:
+    dbeaver = config.get("dbeaver") if isinstance(config.get("dbeaver"), dict) else {}
+    enabled = bool((dbeaver or {}).get("copy_enabled", False)) or bool(args.copy_to_dbeaver)
+    if not enabled:
+        return False, None, None, False
+
+    create_target_dir = bool((dbeaver or {}).get("create_target_dir", False)) or bool(args.create_target_dir)
+
+    target_path_raw = _safe_str(args.dbeaver_target_path) or _safe_str((dbeaver or {}).get("target_data_sources_path"))
+    if not target_path_raw:
+        raise RuntimeError(
+            "Missing DBeaver target path. Fill dbeaver.target_data_sources_path in config or pass --dbeaver-target-path."
+        )
+
+    credentials_path_raw = _safe_str((dbeaver or {}).get("target_credentials_config_path"))
+    if credentials_path_raw:
+        credentials_path = Path(credentials_path_raw).expanduser().resolve()
+    else:
+        credentials_path = Path(target_path_raw).expanduser().resolve().parent / "credentials-config.json"
+
+    return True, Path(target_path_raw).expanduser().resolve(), credentials_path, create_target_dir
 
 
 def _parse_csv_tokens(raw_values: list[str]) -> list[str]:
@@ -334,9 +380,9 @@ def _extract_engine_endpoint(fields: list[dict[str, Any]], engine: str, default_
 
 
 def _merge_with_config(vm_id: str, endpoint: DbEndpoint, config: dict[str, Any]) -> DbEndpoint:
-    testovki = config.get("testovki") if isinstance(config.get("testovki"), dict) else {}
+    test_vm = _test_vm_config(config)
     defaults = config.get("defaults") if isinstance(config.get("defaults"), dict) else {}
-    vm_cfg = (testovki or {}).get(vm_id) if isinstance((testovki or {}).get(vm_id), dict) else {}
+    vm_cfg = (test_vm or {}).get(vm_id) if isinstance((test_vm or {}).get(vm_id), dict) else {}
     defaults_for_engine = (defaults or {}).get(endpoint.engine)
     engine_defaults = defaults_for_engine if isinstance(defaults_for_engine, dict) else {}
     engine_vm = (vm_cfg or {}).get(endpoint.engine) if isinstance((vm_cfg or {}).get(endpoint.engine), dict) else {}
@@ -381,8 +427,8 @@ def _mariadb_default_profiles(config: dict[str, Any]) -> list[tuple[str, dict[st
 
 
 def _mariadb_schema_entries(vm_id: str, endpoint: DbEndpoint, config: dict[str, Any]) -> list[DbEndpoint]:
-    testovki = config.get("testovki") if isinstance(config.get("testovki"), dict) else {}
-    vm_cfg = (testovki or {}).get(vm_id) if isinstance((testovki or {}).get(vm_id), dict) else {}
+    test_vm = _test_vm_config(config)
+    vm_cfg = (test_vm or {}).get(vm_id) if isinstance((test_vm or {}).get(vm_id), dict) else {}
     mariadb_cfg = (vm_cfg or {}).get("mariadb") if isinstance((vm_cfg or {}).get("mariadb"), dict) else {}
     schemas_cfg = mariadb_cfg.get("schemas") if isinstance(mariadb_cfg.get("schemas"), list) else []
 
@@ -431,10 +477,10 @@ def _mariadb_schema_entries(vm_id: str, endpoint: DbEndpoint, config: dict[str, 
     return [endpoint]
 
 
-def _to_dbeaver_provider(engine: str) -> tuple[str, str]:
+def _to_dbeaver_driver_settings(engine: str) -> tuple[str, str, str]:
     if engine == "mariadb":
-        return "mariadb", "mariadb"
-    return "mysql", "mysql8"
+        return "mysql", "mariaDB", "mariadb"
+    return "mysql", "mysql8", "mysql"
 
 
 def _connection_name(vm_id: str, endpoint: DbEndpoint) -> str:
@@ -476,6 +522,21 @@ def _selected_vm_filters(args: argparse.Namespace) -> set[str]:
     return set(selected)
 
 
+def _connection_id(vm_id: str, endpoint: DbEndpoint, driver: str) -> str:
+    fingerprint = "|".join(
+        [
+            _normalize(vm_id),
+            endpoint.engine,
+            _normalize(endpoint.host),
+            endpoint.port,
+            _normalize(endpoint.database),
+            _normalize(endpoint.profile),
+        ]
+    )
+    token = hashlib.sha1(fingerprint.encode("utf-8")).hexdigest()[:24]
+    return f"{driver}-{token}"
+
+
 def _to_data_sources_json(entries: list[dict[str, Any]]) -> dict[str, Any]:
     connections: dict[str, Any] = {}
     for row in entries:
@@ -484,15 +545,16 @@ def _to_data_sources_json(entries: list[dict[str, Any]]) -> dict[str, Any]:
         if not isinstance(endpoint, DbEndpoint):
             continue
 
-        provider, driver = _to_dbeaver_provider(endpoint.engine)
-        conn_id = f"{driver}-{uuid.uuid4().hex[:24]}"
+        provider, driver, jdbc_scheme = _to_dbeaver_driver_settings(endpoint.engine)
+        conn_id = _connection_id(vm_id=vm_id, endpoint=endpoint, driver=driver)
         jdbc_db = endpoint.database or ""
-        jdbc_url = f"jdbc:{provider}://{endpoint.host}:{endpoint.port}/{jdbc_db}"
+        jdbc_url = f"jdbc:{jdbc_scheme}://{endpoint.host}:{endpoint.port}/{jdbc_db}"
 
         connections[conn_id] = {
             "provider": provider,
             "driver": driver,
             "name": _connection_name(vm_id, endpoint),
+            "auth-model": "native",
             "save-password": True,
             "show-system-objects": True,
             "read-only": False,
@@ -502,6 +564,9 @@ def _to_data_sources_json(entries: list[dict[str, Any]]) -> dict[str, Any]:
                 "database": endpoint.database,
                 "url": jdbc_url,
                 "type": "dev",
+                "auth-model": "native",
+                "user": endpoint.username,
+                "password": endpoint.password,
             },
             "user": endpoint.username,
             "password": endpoint.password,
@@ -514,11 +579,45 @@ def _to_data_sources_json(entries: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def _write_outputs(out_dir: Path, raw_records: list[dict[str, Any]], exported_rows: list[dict[str, Any]]) -> None:
+def _to_credentials_config_json(entries: list[dict[str, Any]]) -> dict[str, Any]:
+    connections: dict[str, Any] = {}
+    secure_store: dict[str, Any] = {}
+
+    for row in entries:
+        vm_id = _safe_str(row.get("vm_id"))
+        endpoint = row.get("endpoint")
+        if not isinstance(endpoint, DbEndpoint):
+            continue
+
+        _, driver, _ = _to_dbeaver_driver_settings(endpoint.engine)
+        conn_id = _connection_id(vm_id=vm_id, endpoint=endpoint, driver=driver)
+
+        secret_pair = {
+            "user": endpoint.username,
+            "password": endpoint.password,
+        }
+
+        connections[conn_id] = {
+            "#connection": dict(secret_pair),
+            "auth-model": "native",
+            "native": dict(secret_pair),
+        }
+        secure_store[f"database/{conn_id}/#connection"] = dict(secret_pair)
+
+    return {
+        "connections": connections,
+        "secure": secure_store,
+    }
+
+
+def _write_outputs(
+    out_dir: Path, raw_records: list[dict[str, Any]], exported_rows: list[dict[str, Any]]
+) -> tuple[Path, Path]:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     raw_path = out_dir / "wizard_db_connections.json"
     dbeaver_json_path = out_dir / "dbeaver_data-sources.json"
+    dbeaver_credentials_path = out_dir / "dbeaver_credentials-config.json"
     dbeaver_csv_path = out_dir / "dbeaver_connections_import.csv"
 
     serializable_rows: list[dict[str, Any]] = []
@@ -550,6 +649,9 @@ def _write_outputs(out_dir: Path, raw_records: list[dict[str, Any]], exported_ro
     dbeaver_json = _to_data_sources_json(exported_rows)
     dbeaver_json_path.write_text(json.dumps(dbeaver_json, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    dbeaver_credentials = _to_credentials_config_json(exported_rows)
+    dbeaver_credentials_path.write_text(json.dumps(dbeaver_credentials, ensure_ascii=False, indent=2), encoding="utf-8")
+
     with dbeaver_csv_path.open("w", encoding="utf-8", newline="") as fp:
         writer = csv.DictWriter(
             fp,
@@ -573,8 +675,91 @@ def _write_outputs(out_dir: Path, raw_records: list[dict[str, Any]], exported_ro
 
     print(f"raw dump: {raw_path}")
     print(f"dbeaver data-sources: {dbeaver_json_path}")
+    print(f"dbeaver credentials: {dbeaver_credentials_path}")
     print(f"dbeaver csv import: {dbeaver_csv_path}")
     print(f"connections generated: {len(serializable_rows)}")
+
+    missing_credentials = [
+        row["name"]
+        for row in serializable_rows
+        if not _safe_str(row.get("username")) or not _safe_str(row.get("password"))
+    ]
+    if missing_credentials:
+        print(f"WARNING: connections with missing credentials: {len(missing_credentials)}")
+        for name in missing_credentials[:10]:
+            print(f"  - {name}")
+        if len(missing_credentials) > 10:
+            print(f"  ... and {len(missing_credentials) - 10} more")
+    else:
+        print("credentials check: OK (username/password present for all connections)")
+
+    return dbeaver_json_path, dbeaver_credentials_path
+
+
+def _copy_data_sources_to_dbeaver(source_path: Path, target_path: Path, create_target_dir: bool) -> None:
+    if not source_path.exists():
+        raise FileNotFoundError(f"Generated data-sources file not found: {source_path}")
+    target_parent = target_path.parent
+    if create_target_dir:
+        target_parent.mkdir(parents=True, exist_ok=True)
+    if not target_parent.exists() or not target_parent.is_dir():
+        raise FileNotFoundError(f"Target directory does not exist: {target_parent}")
+
+    source_payload = json.loads(source_path.read_text(encoding="utf-8"))
+    if not isinstance(source_payload, dict):
+        raise ValueError(f"Invalid generated data-sources JSON: {source_path}")
+
+    merged_payload = source_payload
+    if target_path.exists():
+        target_payload = _load_json_file_any_encoding(target_path)
+        if isinstance(target_payload, dict):
+            merged_payload = dict(target_payload)
+            merged_payload["folders"] = source_payload.get("folders", {})
+            merged_payload["connections"] = source_payload.get("connections", {})
+
+    target_path.write_text(json.dumps(merged_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"dbeaver data-sources copied to: {target_path}")
+
+
+def _copy_credentials_to_dbeaver(source_path: Path, target_path: Path, create_target_dir: bool) -> None:
+    if not source_path.exists():
+        raise FileNotFoundError(f"Generated credentials file not found: {source_path}")
+    target_parent = target_path.parent
+    if create_target_dir:
+        target_parent.mkdir(parents=True, exist_ok=True)
+    if not target_parent.exists() or not target_parent.is_dir():
+        raise FileNotFoundError(f"Target directory does not exist: {target_parent}")
+
+    source_payload = json.loads(source_path.read_text(encoding="utf-8"))
+    if not isinstance(source_payload, dict):
+        raise ValueError(f"Invalid generated credentials JSON: {source_path}")
+
+    merged_payload = source_payload
+    if target_path.exists():
+        target_payload = _load_json_file_any_encoding(target_path)
+        if isinstance(target_payload, dict):
+            merged_payload = dict(target_payload)
+
+            target_connections = target_payload.get("connections")
+            source_connections = source_payload.get("connections")
+            if isinstance(target_connections, dict) and isinstance(source_connections, dict):
+                merged_connections = dict(target_connections)
+                merged_connections.update(source_connections)
+                merged_payload["connections"] = merged_connections
+            else:
+                merged_payload["connections"] = source_payload.get("connections", {})
+
+            target_secure = target_payload.get("secure")
+            source_secure = source_payload.get("secure")
+            if isinstance(target_secure, dict) and isinstance(source_secure, dict):
+                merged_secure = dict(target_secure)
+                merged_secure.update(source_secure)
+                merged_payload["secure"] = merged_secure
+            else:
+                merged_payload["secure"] = source_payload.get("secure", {})
+
+    target_path.write_text(json.dumps(merged_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"dbeaver credentials copied to: {target_path}")
 
 
 def _parse_args() -> argparse.Namespace:
@@ -588,7 +773,26 @@ def _parse_args() -> argparse.Namespace:
         default="",
         help="Optional VM filter by test names, e.g. perpetum.gamma or [perpetum.gamma, selenium.alfa]",
     )
-    parser.add_argument("--testovki", dest="test_vm", help=argparse.SUPPRESS)
+    parser.add_argument(
+        "--copy-to-dbeaver",
+        action="store_true",
+        help="Copy generated dbeaver_data-sources.json to target path from config or --dbeaver-target-path",
+    )
+    parser.add_argument(
+        "--dbeaver-target-path",
+        default="",
+        help="Target path for DBeaver data-sources-*.json copy",
+    )
+    parser.add_argument(
+        "--dbeaver-credentials-path",
+        default="",
+        help="Target path for DBeaver credentials-config.json copy",
+    )
+    parser.add_argument(
+        "--create-target-dir",
+        action="store_true",
+        help="Create target directory if missing when copying to DBeaver",
+    )
     parser.add_argument(
         "--include-host",
         action="append",
@@ -613,6 +817,11 @@ def main() -> int:
     config = _load_config(config_path)
     url, auth_header, headless, timeout_ms = _wizard_settings(config)
     include_host_tokens, exclude_host_tokens = _host_filter_tokens(config=config, args=args)
+    copy_to_dbeaver, dbeaver_target_path, dbeaver_credentials_path, create_target_dir = _dbeaver_copy_settings(
+        config=config, args=args
+    )
+    if args.dbeaver_credentials_path:
+        dbeaver_credentials_path = Path(args.dbeaver_credentials_path).expanduser().resolve()
 
     pw = None
     browser = None
@@ -670,7 +879,24 @@ def main() -> int:
     if not exported_rows:
         raise RuntimeError("No MySQL/MariaDB endpoints extracted from wizard DOM.")
 
-    _write_outputs(out_dir=out_dir, raw_records=records, exported_rows=exported_rows)
+    generated_data_sources_path, generated_credentials_path = _write_outputs(
+        out_dir=out_dir,
+        raw_records=records,
+        exported_rows=exported_rows,
+    )
+    if copy_to_dbeaver and dbeaver_target_path is not None:
+        _copy_data_sources_to_dbeaver(
+            source_path=generated_data_sources_path,
+            target_path=dbeaver_target_path,
+            create_target_dir=create_target_dir,
+        )
+        if dbeaver_credentials_path is None:
+            raise RuntimeError("Missing DBeaver credentials path.")
+        _copy_credentials_to_dbeaver(
+            source_path=generated_credentials_path,
+            target_path=dbeaver_credentials_path,
+            create_target_dir=create_target_dir,
+        )
     return 0
 
 

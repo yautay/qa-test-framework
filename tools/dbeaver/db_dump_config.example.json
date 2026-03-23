@@ -1,18 +1,46 @@
 {
   "wizard": {
     "url": "https://test-wizard.netcorner.pl/",
-    "auth_header": "Basic <PUT_YOUR_HEADER_HERE>",
+    "auth_header": "Basic ********",
     "headless": true,
     "timeout_ms": 30000
   },
+  "dbeaver": {
+    "copy_enabled": false,
+    "create_target_dir": false,
+    "target_data_sources_path": "C:/Users/********/AppData/Roaming/DBeaverData/workspace6/General/.dbeaver/data-sources.json",
+    "target_credentials_config_path": "C:/Users/********/AppData/Roaming/DBeaverData/workspace6/General/.dbeaver/credentials-config.json"
+  },
   "defaults": {
     "mysql": {
-      "username": "",
-      "password": ""
+      "username": "komputronikpl_up",
+      "password": "********",
+      "schema": "kryzys_komputronikpl"
     },
-    "mariadb": {
-      "username": "",
-      "password": ""
+    "mariadb-promotions": {
+      "username": "promotion_rw",
+      "password": "********",
+      "schema": "kryzys_promotion"
+    },
+    "mariadb-nc-cms": {
+      "username": "nc_cms_rw",
+      "password": "********",
+      "schema": "kryzys_nc_cms"
+    },
+    "mariadb-rodo": {
+      "username": "rodo_ro",
+      "password": "********",
+      "schema": "kryzys_rodo"
+    },
+    "mariadb-so": {
+      "username": "suppliers_rw",
+      "password": "********",
+      "schema": "kryzys_suppliers"
+    },
+    "mariadb-wp": {
+      "username": "wordpress_up",
+      "password": "********",
+      "schema": ""
     }
   },
   "filters": {
@@ -21,29 +49,5 @@
       "be124"
     ]
   },
-  "testovki": {
-    "example-vm": {
-      "mysql": {
-        "username": "mysql_user",
-        "password": "mysql_pass",
-        "database_override": "service_main"
-      },
-      "mariadb": {
-        "username": "maria_user",
-        "password": "maria_pass",
-        "schemas": [
-          {
-            "name": "service_a",
-            "username": "service_a_user",
-            "password": "service_a_pass"
-          },
-          {
-            "name": "service_b",
-            "username": "service_b_user",
-            "password": "service_b_pass"
-          }
-        ]
-      }
-    }
-  }
+  "test_vm": {}
 }
