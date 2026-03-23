@@ -1,0 +1,851 @@
+{
+  "folders": {},
+  "connections": {
+    "mariadb-d0d76395b2a94c3aa6330733": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "czterysta | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node2.netcorner.pl",
+        "port": "38538",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://node2.netcorner.pl:38538/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM czterysta"
+    },
+    "mysql8-1522064dc965487b8c911291": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "czterysta | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node2.netcorner.pl",
+        "port": "38541",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://node2.netcorner.pl:38541/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM czterysta"
+    },
+    "mysql8-ca5317726f854ac0a0d18b8a": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "platnosci | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node2.netcorner.pl",
+        "port": "38555",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://node2.netcorner.pl:38555/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM platnosci"
+    },
+    "mariadb-54cfb6f1700e4502b9fabfaf": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "platnosci | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node2.netcorner.pl",
+        "port": "38556",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://node2.netcorner.pl:38556/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM platnosci"
+    },
+    "mariadb-189f85e505af491c9359dd48": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "stagingmobile | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node2.netcorner.pl",
+        "port": "38035",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://node2.netcorner.pl:38035/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM stagingmobile"
+    },
+    "mysql8-44f21e3c514747128e8f3d96": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "stagingmobile | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node2.netcorner.pl",
+        "port": "38033",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://node2.netcorner.pl:38033/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM stagingmobile"
+    },
+    "mariadb-ff0fcb1b727144cca6f62c64": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "mobile | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node2.netcorner.pl",
+        "port": "36472",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://node2.netcorner.pl:36472/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM mobile"
+    },
+    "mysql8-ff5330b5824a4a3684255a52": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "mobile | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node2.netcorner.pl",
+        "port": "36474",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://node2.netcorner.pl:36474/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM mobile"
+    },
+    "mariadb-a93d4b21b9734b64a755fb3a": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "extnewaxis | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node2.netcorner.pl",
+        "port": "34659",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://node2.netcorner.pl:34659/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM extnewaxis"
+    },
+    "mysql8-804c8239240a4420bed85159": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "extnewaxis | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node2.netcorner.pl",
+        "port": "34658",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://node2.netcorner.pl:34658/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM extnewaxis"
+    },
+    "mariadb-5bdb875b3ee645cfae889bd5": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "extb2bkarta | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node2.netcorner.pl",
+        "port": "54284",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://node2.netcorner.pl:54284/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM extb2bkarta"
+    },
+    "mysql8-8a1419c885054e6e8d25822f": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "extb2bkarta | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node2.netcorner.pl",
+        "port": "54285",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://node2.netcorner.pl:54285/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM extb2bkarta"
+    },
+    "mariadb-86ab82a084124f2ea24c64f2": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "pmistaging | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node2.netcorner.pl",
+        "port": "33936",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://node2.netcorner.pl:33936/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM pmistaging"
+    },
+    "mariadb-cd6991ce9afa4983a7cff6b3": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "nc4pmi | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node2.netcorner.pl",
+        "port": "33922",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://node2.netcorner.pl:33922/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM nc4pmi"
+    },
+    "mysql8-c68421dfbe614d0ebbc10ee6": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "nc4pmi | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node2.netcorner.pl",
+        "port": "33921",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://node2.netcorner.pl:33921/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM nc4pmi"
+    },
+    "mariadb-02ff93a8cd9942ceab2d95ca": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "koko | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node3.netcorner.pl",
+        "port": "32945",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://node3.netcorner.pl:32945/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM koko"
+    },
+    "mysql8-069d7675686f44a39778c151": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "koko | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node3.netcorner.pl",
+        "port": "32943",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://node3.netcorner.pl:32943/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM koko"
+    },
+    "mariadb-4d4726a7e2f346acac1cb032": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "extsezam0 | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node3.netcorner.pl",
+        "port": "32931",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://node3.netcorner.pl:32931/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM extsezam0"
+    },
+    "mysql8-98c100febe8d4943b4665394": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "extsezam0 | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node3.netcorner.pl",
+        "port": "32930",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://node3.netcorner.pl:32930/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM extsezam0"
+    },
+    "mariadb-a109cd8b42754e168fb985d0": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "punchout | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node3.netcorner.pl",
+        "port": "32844",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://node3.netcorner.pl:32844/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM punchout"
+    },
+    "mysql8-78f7f0b4aa0c432b8ec71d39": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "punchout | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node3.netcorner.pl",
+        "port": "32841",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://node3.netcorner.pl:32841/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM punchout"
+    },
+    "mysql8-7cb81ce2a05c4eb4819df611": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "selenium | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node3.netcorner.pl",
+        "port": "32770",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://node3.netcorner.pl:32770/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM selenium"
+    },
+    "mariadb-0b91a0788fa84036a03a15a9": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "selenium | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "node3.netcorner.pl",
+        "port": "32768",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://node3.netcorner.pl:32768/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM selenium"
+    },
+    "mariadb-fbce76bb39484b548f9d74dc": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "rodzynki | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be117.netcorner.pl",
+        "port": "33349",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://be117.netcorner.pl:33349/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM rodzynki"
+    },
+    "mysql8-cd492ec9628a4a7896ef7c45": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "rodzynki | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be117.netcorner.pl",
+        "port": "33348",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://be117.netcorner.pl:33348/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM rodzynki"
+    },
+    "mariadb-20e6406d4ca449b4a5993e86": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "sernik | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be117.netcorner.pl",
+        "port": "33364",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://be117.netcorner.pl:33364/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM sernik"
+    },
+    "mysql8-33ffa735ffa0465f8a549fd7": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "sernik | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be117.netcorner.pl",
+        "port": "33365",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://be117.netcorner.pl:33365/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM sernik"
+    },
+    "mysql8-e1ed8aa74d9643d0b4a3316e": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "sezam | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be117.netcorner.pl",
+        "port": "33378",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://be117.netcorner.pl:33378/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM sezam"
+    },
+    "mariadb-33805b6bb6244666b1254a7b": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "sezam | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be117.netcorner.pl",
+        "port": "33380",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://be117.netcorner.pl:33380/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM sezam"
+    },
+    "mysql8-4d8fb91013cf4621bb3f4573": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "sezamisko | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be117.netcorner.pl",
+        "port": "33392",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://be117.netcorner.pl:33392/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM sezamisko"
+    },
+    "mariadb-0e6e6da22e6c45d69003c369": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "sezamisko | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be117.netcorner.pl",
+        "port": "33394",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://be117.netcorner.pl:33394/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM sezamisko"
+    },
+    "mariadb-87a8c39d269147b9a8fe7bac": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "restrykcje | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be117.netcorner.pl",
+        "port": "33424",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://be117.netcorner.pl:33424/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM restrykcje"
+    },
+    "mysql8-f3504de6cd7f4772a019b555": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "restrykcje | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be117.netcorner.pl",
+        "port": "33421",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://be117.netcorner.pl:33421/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM restrykcje"
+    },
+    "mariadb-8e477ad9f41846b2b122ca8a": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "perpetum | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be117.netcorner.pl",
+        "port": "33409",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://be117.netcorner.pl:33409/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM perpetum"
+    },
+    "mysql8-51a8e1cb30404438822f8cfa": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "perpetum | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be117.netcorner.pl",
+        "port": "33406",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://be117.netcorner.pl:33406/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM perpetum"
+    },
+    "mysql8-1ce91e64855147219efac1e7": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "sezam2 | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be115.netcorner.pl",
+        "port": "33572",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://be115.netcorner.pl:33572/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM sezam2"
+    },
+    "mariadb-3635f882f5e94d56bcef16ba": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "sezam2 | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be115.netcorner.pl",
+        "port": "33574",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://be115.netcorner.pl:33574/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM sezam2"
+    },
+    "mariadb-1c7e765cc1e34a85bd8506c3": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "develop2 | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be115.netcorner.pl",
+        "port": "33559",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://be115.netcorner.pl:33559/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM develop2"
+    },
+    "mysql8-2fc473fd54d64605a2e0a8f5": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "develop2 | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be115.netcorner.pl",
+        "port": "33560",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://be115.netcorner.pl:33560/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM develop2"
+    },
+    "mysql8-f14e406f591941658431544e": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "sezam3 | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be115.netcorner.pl",
+        "port": "33543",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://be115.netcorner.pl:33543/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM sezam3"
+    },
+    "mariadb-6bf5ea3862ea4f42aeb12a44": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "sezam3 | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be115.netcorner.pl",
+        "port": "33544",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://be115.netcorner.pl:33544/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM sezam3"
+    },
+    "mariadb-4521a48f8e83405682f5696d": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "develop | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be115.netcorner.pl",
+        "port": "33529",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://be115.netcorner.pl:33529/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM develop"
+    },
+    "mysql8-f6967202431240cfab0bb9b8": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "develop | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be115.netcorner.pl",
+        "port": "33528",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://be115.netcorner.pl:33528/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM develop"
+    },
+    "mysql8-d84e5b01aece4ddf830b7cfd": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "extsezam1 | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be115.netcorner.pl",
+        "port": "33349",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://be115.netcorner.pl:33349/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM extsezam1"
+    },
+    "mariadb-6c30a97f169d4f4191acdc3a": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "extsezam1 | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be115.netcorner.pl",
+        "port": "33350",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://be115.netcorner.pl:33350/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM extsezam1"
+    },
+    "mariadb-9eec253117b84a418bab5162": {
+      "provider": "mariadb",
+      "driver": "mariadb",
+      "name": "extwordpress | MARIADB | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be115.netcorner.pl",
+        "port": "33293",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mariadb://be115.netcorner.pl:33293/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM extwordpress"
+    },
+    "mysql8-02ec756d0c064417aff97236": {
+      "provider": "mysql",
+      "driver": "mysql8",
+      "name": "extwordpress | MYSQL | kryzys_komputronikpl",
+      "save-password": true,
+      "show-system-objects": true,
+      "read-only": false,
+      "configuration": {
+        "host": "be115.netcorner.pl",
+        "port": "33295",
+        "database": "kryzys_komputronikpl",
+        "url": "jdbc:mysql://be115.netcorner.pl:33295/kryzys_komputronikpl",
+        "type": "dev"
+      },
+      "user": "komputronikpl_rw",
+      "password": "",
+      "description": "Generated from wizard for VM extwordpress"
+    }
+  }
+}
