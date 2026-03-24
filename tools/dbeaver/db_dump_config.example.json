@@ -1,0 +1,53 @@
+{
+  "wizard": {
+    "url": "https://test-wizard.netcorner.pl/",
+    "auth_header": "Basic ********",
+    "headless": true,
+    "timeout_ms": 30000
+  },
+  "dbeaver": {
+    "copy_enabled": false,
+    "create_target_dir": false,
+    "target_data_sources_path": "C:/Users/********/AppData/Roaming/DBeaverData/workspace6/General/.dbeaver/data-sources.json",
+    "target_credentials_config_path": "C:/Users/********/AppData/Roaming/DBeaverData/workspace6/General/.dbeaver/credentials-config.json"
+  },
+  "defaults": {
+    "mysql": {
+      "username": "komputronikpl_up",
+      "password": "********",
+      "schema": "kryzys_komputronikpl"
+    },
+    "mariadb-promotions": {
+      "username": "promotion_rw",
+      "password": "********",
+      "schema": "kryzys_promotion"
+    },
+    "mariadb-nc-cms": {
+      "username": "nc_cms_rw",
+      "password": "********",
+      "schema": "kryzys_nc_cms"
+    },
+    "mariadb-rodo": {
+      "username": "rodo_ro",
+      "password": "********",
+      "schema": "kryzys_rodo"
+    },
+    "mariadb-so": {
+      "username": "suppliers_rw",
+      "password": "********",
+      "schema": "kryzys_suppliers"
+    },
+    "mariadb-wp": {
+      "username": "wordpress_up",
+      "password": "********",
+      "schema": ""
+    }
+  },
+  "filters": {
+    "include_host_tokens": [],
+    "exclude_host_tokens": [
+      "be124"
+    ]
+  },
+  "test_vm": {}
+}

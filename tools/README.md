@@ -20,6 +20,13 @@ This directory contains helper scripts used by local developers, testers, and CI
 - `tools/visual/`
   - Visual regression utility scripts.
   - Modular internals for baseline versioning/debug flows (entrypoint + parser/handlers/helpers).
+- `tools/toc/`
+  - TOC synchronization scripts.
+  - `sync_test_cases.py` (pytest collect-only catalog)
+  - `sync_stepapi_dump.py` (runtime StepAPI dump sync)
+- `tools/dbeaver/`
+  - Wizard parser and DBeaver connection export generator.
+  - `export_wizard_connections.py`
 - `tools/artifacts/`
   - Artifact cleanup scripts.
 
