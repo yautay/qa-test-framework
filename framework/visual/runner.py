@@ -255,7 +255,12 @@ class VisualRunner:
         cleanup_ids = _inject_masks(page, list(scenario.mask.selectors), scenario.mask.color)
         try:
             if scenario.capture.capture_type == "element" and scenario.capture.selector:
-                _first_visible_locator(page.locator(scenario.capture.selector)).screenshot(path=str(output_path))
+                target_locator = _first_visible_locator(page.locator(scenario.capture.selector))
+                scroll_lock_style_id = _stabilize_element_capture(page, target_locator)
+                try:
+                    target_locator.screenshot(path=str(output_path))
+                finally:
+                    _remove_freeze_styles(page, scroll_lock_style_id)
                 return
             page.screenshot(path=str(output_path), full_page=scenario.capture.full_page)
         finally:
@@ -373,6 +378,28 @@ def _stabilize_full_page_capture(page: Page) -> None:
         pass
 
 
+def _stabilize_element_capture(page: Page, locator: Locator) -> str:
+    """Stabilize element capture and lock page scrolling during screenshot."""
+    try:
+        page.wait_for_load_state("networkidle", timeout=3000)
+    except Exception:
+        pass
+
+    try:
+        locator.scroll_into_view_if_needed(timeout=3000)
+    except Exception:
+        pass
+
+    scroll_lock_style_id = _inject_scroll_lock_styles(page)
+
+    try:
+        page.wait_for_timeout(120)
+    except Exception:
+        pass
+
+    return scroll_lock_style_id
+
+
 def _inject_freeze_styles(page: Page) -> str:
     style_id = "visual-freeze-style"
     script = """
@@ -391,6 +418,38 @@ def _inject_freeze_styles(page: Page) -> str:
             caret-color: transparent !important;
           }
           html, body {
+            scroll-behavior: auto !important;
+          }
+        `;
+        document.head.appendChild(style);
+        return styleId;
+      } catch (_) {
+        return "";
+      }
+    }
+    """
+    try:
+        value = page.evaluate(script, style_id)
+        return str(value or "")
+    except Exception:
+        return ""
+
+
+def _inject_scroll_lock_styles(page: Page) -> str:
+    style_id = "visual-scroll-lock-style"
+    script = """
+    (styleId) => {
+      try {
+        const existing = document.getElementById(styleId);
+        if (existing) {
+          return styleId;
+        }
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+          html, body {
+            overflow: hidden !important;
+            overscroll-behavior: none !important;
             scroll-behavior: auto !important;
           }
         `;
