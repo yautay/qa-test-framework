@@ -10,7 +10,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
 
 
 @allure.feature("Konto użytkownika")
-@allure.severity(allure.severity_level.CRITICAL)
+@allure.severity(allure.severity_level.BLOCKER)
 @pytest.mark.parametrize(
     "user_case",
     valid_client_cases(),
@@ -24,7 +24,7 @@ def test_create_account(page, context, runtime_env, user_case):
 
 
 @allure.feature("Konto użytkownika")
-@allure.severity(allure.severity_level.NORMAL)
+@allure.severity(allure.severity_level.BLOCKER)
 @pytest.mark.parametrize(
     "user_case",
     invalid_client_cases(),

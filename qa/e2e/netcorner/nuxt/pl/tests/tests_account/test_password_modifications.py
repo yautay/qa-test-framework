@@ -17,7 +17,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
 
 
 @allure.feature("Konto użytkownika")
-@allure.severity(allure.severity_level.CRITICAL)
+@allure.severity(allure.severity_level.BLOCKER)
 @pytest.mark.parametrize(
     "user_case",
     [
@@ -46,7 +46,7 @@ def test_password_change(page, context, runtime_env, user_case):
 
 
 @allure.feature("Konto użytkownika")
-@allure.severity(allure.severity_level.CRITICAL)
+@allure.severity(allure.severity_level.BLOCKER)
 @pytest.mark.parametrize(
     "user_case",
     [

@@ -124,7 +124,12 @@ Przyklad:
   - scroll dol/gora (lazy-load),
   - krotki wait na obrazy i fonty.
 - Jesli `VISUAL_FREEZE_ANIMATIONS=1`, runner tymczasowo wylacza animacje/transitions na czas capture.
-- Dla `full_page = false` stabilizacja lazy-load nie jest wymuszana.
+- Dla `capture.type = element` runner wykonuje stabilizacje elementu:
+  - best-effort `networkidle`,
+  - `scroll_into_view_if_needed` dla celu,
+  - tymczasowy lock scrolla (`overflow: hidden`) na czas screenshotu,
+  - krotki wait na ustabilizowanie layoutu.
+- Dla `full_page = false` stabilizacja lazy-load calej strony nie jest wymuszana.
 - Nawigacja (`target_url` i step `goto`) failuje test przy bledach HTTP:
   - brak odpowiedzi (`None`) -> fail,
   - status `>= 400` (np. 404/500) -> fail.
