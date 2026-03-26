@@ -83,12 +83,16 @@ class _FakeLocatorItem:
         self._visible = visible
         self.name = name
         self.screenshot_calls: list[str] = []
+        self.scroll_into_view_calls: list[int] = []
 
     def is_visible(self) -> bool:
         return self._visible
 
     def screenshot(self, *, path: str):
         self.screenshot_calls.append(path)
+
+    def scroll_into_view_if_needed(self, timeout: int = 0):
+        self.scroll_into_view_calls.append(timeout)
 
 
 class _FakeLocatorGroup:
@@ -176,8 +180,12 @@ def test_capture_element_uses_first_visible_match(tmp_path: Path) -> None:
     runner._capture(cast(Any, page), scenario, tmp_path / "element.png")
 
     assert page.locator_calls == ["[data-name='addToCartWrapper']"]
+    assert page.wait_for_load_state_calls
+    assert page.wait_for_timeout_calls
     assert hidden.screenshot_calls == []
+    assert hidden.scroll_into_view_calls == []
     assert visible.screenshot_calls == [str(tmp_path / "element.png")]
+    assert visible.scroll_into_view_calls
 
 
 def test_resolve_shift_compensation_uses_env_default_when_scenario_override_missing() -> None:
