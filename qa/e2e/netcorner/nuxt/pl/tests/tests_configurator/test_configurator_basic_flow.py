@@ -6,7 +6,7 @@ import pytest
 from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client import valid_client_cases
 
-pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
+pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.configurator]
 
 
 @allure.feature("Konfigurator zestawów")
