@@ -4,7 +4,7 @@ import allure
 import pytest
 
 from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
-from qa.e2e.netcorner.nuxt.pl.lib.test_data.register_user_data import invalid_client_cases, valid_client_cases
+from qa.e2e.netcorner.nuxt.pl.lib.test_data.client import invalid_client_cases, valid_client_cases
 
 pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
 

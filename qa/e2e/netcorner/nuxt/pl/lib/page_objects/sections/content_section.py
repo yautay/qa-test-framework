@@ -3,6 +3,13 @@ from __future__ import annotations
 from playwright.sync_api import Page
 
 from framework.base.page_objects import BaseComponent
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.configurator_components import (
+    ConfiguratorAdviseComponent,
+    ConfiguratorComponentsListComponent,
+    ConfiguratorRootComponent,
+    ConfiguratorSummaryComponent,
+)
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.hero_component import HeroComponent
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.my_account_component import (
     MyAccountComponent,
     MyAccountPasswordChangeComponent,
@@ -57,3 +64,48 @@ class MyAccountContentSection(ContentSection):
         if self.__my_account_password_change is None:
             self.__my_account_password_change = MyAccountPasswordChangeComponent(self.root.locator("#pageContent"))
         return self.__my_account_password_change
+
+
+class HeroPageContentSection(ContentSection):
+    def __init__(self, page: Page) -> None:
+        super().__init__(page)
+        self.__hero: HeroComponent | None = None
+
+    @property
+    def hero(self) -> HeroComponent:
+        if self.__hero is None:
+            self.__hero = HeroComponent(self.root.locator("#pageContent"))
+        return self.__hero
+
+
+class ConfiguratorContentSection(ContentSection):
+    def __init__(self, page: Page) -> None:
+        super().__init__(page)
+        self.__root: ConfiguratorRootComponent | None = None
+        self.__advise: ConfiguratorAdviseComponent | None = None
+        self.__components: ConfiguratorComponentsListComponent | None = None
+        self.__summary: ConfiguratorSummaryComponent | None = None
+
+    @property
+    def root_panel(self) -> ConfiguratorRootComponent:
+        if self.__root is None:
+            self.__root = ConfiguratorRootComponent(self.root.locator("main"))
+        return self.__root
+
+    @property
+    def advise(self) -> ConfiguratorAdviseComponent:
+        if self.__advise is None:
+            self.__advise = ConfiguratorAdviseComponent(self.root.locator("#komputronik-advise"))
+        return self.__advise
+
+    @property
+    def components(self) -> ConfiguratorComponentsListComponent:
+        if self.__components is None:
+            self.__components = ConfiguratorComponentsListComponent(self.root.locator("[data-name='app-content']"))
+        return self.__components
+
+    @property
+    def summary(self) -> ConfiguratorSummaryComponent:
+        if self.__summary is None:
+            self.__summary = ConfiguratorSummaryComponent(self.root.locator("div.max-body-w.bg-gray-porcelain"))
+        return self.__summary

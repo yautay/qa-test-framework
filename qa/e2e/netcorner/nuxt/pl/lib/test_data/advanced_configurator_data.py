@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class RegisterUserData:
+class AdvancedConfiguratorData:
     email: str
     password: str
     password_changed: str
@@ -16,12 +16,12 @@ class RegisterUserData:
 
 
 @dataclass(frozen=True)
-class RegisterUserCase:
+class AdvancedConfiguratorCase:
     case_id: str
-    factory: Callable[[], "RegisterUserData"]
+    factory: Callable[[], "AdvancedConfiguratorData"]
 
 
-class RegisterUserDataBuilder:
+class AdvancedConfiguratorDataBuilder:
     def __init__(self) -> None:
         unique = uuid.uuid4().hex[:6]
         self._email = f"client_{unique}@test.pl"  # Mailhog nie lubi domeny netcorner bo Wosina
@@ -33,22 +33,22 @@ class RegisterUserDataBuilder:
         self._nip = ""
         self._phone = ""
 
-    def with_business_offer(self) -> "RegisterUserDataBuilder":
+    def with_business_offer(self) -> "AdvancedConfiguratorDataBuilder":
         self._business_offer = True
         self._nip = "7770020640"
         self._phone = "791233545"
         return self
 
-    def with_required_terms(self) -> "RegisterUserDataBuilder":
+    def with_required_terms(self) -> "AdvancedConfiguratorDataBuilder":
         self._accept_required_terms = True
         return self
 
-    def with_marketing(self) -> "RegisterUserDataBuilder":
+    def with_marketing(self) -> "AdvancedConfiguratorDataBuilder":
         self._accept_marketing = True
         return self
 
-    def build(self) -> RegisterUserData:
-        return RegisterUserData(
+    def build(self) -> AdvancedConfiguratorData:
+        return AdvancedConfiguratorData(
             email=self._email,
             password=self._password,
             password_changed=self._password_changed,
@@ -60,44 +60,44 @@ class RegisterUserDataBuilder:
         )
 
 
-def valid_client_cases() -> list[RegisterUserCase]:
+def valid_client_cases() -> list[AdvancedConfiguratorCase]:
     return [
-        RegisterUserCase(
+        AdvancedConfiguratorCase(
             case_id="pl_terms_marketing_business",
             factory=lambda: (
-                RegisterUserDataBuilder().with_business_offer().with_required_terms().with_marketing().build()
+                AdvancedConfiguratorDataBuilder().with_business_offer().with_required_terms().with_marketing().build()
             ),
         ),
-        RegisterUserCase(
+        AdvancedConfiguratorCase(
             case_id="pl_terms_marketing",
-            factory=lambda: RegisterUserDataBuilder().with_required_terms().with_marketing().build(),
+            factory=lambda: AdvancedConfiguratorDataBuilder().with_required_terms().with_marketing().build(),
         ),
-        RegisterUserCase(
+        AdvancedConfiguratorCase(
             case_id="pl_terms_only",
-            factory=lambda: RegisterUserDataBuilder().with_required_terms().build(),
+            factory=lambda: AdvancedConfiguratorDataBuilder().with_required_terms().build(),
         ),
     ]
 
 
-def invalid_client_cases() -> list[RegisterUserCase]:
+def invalid_client_cases() -> list[AdvancedConfiguratorCase]:
     return [
-        RegisterUserCase(
+        AdvancedConfiguratorCase(
             case_id="pl_marketing_business",
-            factory=lambda: RegisterUserDataBuilder().with_business_offer().with_marketing().build(),
+            factory=lambda: AdvancedConfiguratorDataBuilder().with_business_offer().with_marketing().build(),
         ),
-        RegisterUserCase(
+        AdvancedConfiguratorCase(
             case_id="pl_marketing",
-            factory=lambda: RegisterUserDataBuilder().with_marketing().build(),
+            factory=lambda: AdvancedConfiguratorDataBuilder().with_marketing().build(),
         ),
-        RegisterUserCase(
+        AdvancedConfiguratorCase(
             case_id="pl_only",
-            factory=lambda: RegisterUserDataBuilder().build(),
+            factory=lambda: AdvancedConfiguratorDataBuilder().build(),
         ),
     ]
 
 
-def prod_registered_client() -> RegisterUserData:
-    return RegisterUserData(
+def prod_registered_client() -> AdvancedConfiguratorData:
+    return AdvancedConfiguratorData(
         email="nc-test-user@komputronik.pl",
         password="UjK_$CE4pCRB9hjn$_eX",
         password_changed="",
