@@ -4,10 +4,8 @@ from playwright.sync_api import Page
 
 from framework.base.page_objects import BaseComponent
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.configurator_components import (
-    ConfiguratorAdviseComponent,
-    ConfiguratorComponentsListComponent,
-    ConfiguratorRootComponent,
-    ConfiguratorSummaryComponent,
+    ConfiguratorAuxComponentsComponent, ConfiguratorComponentsComponent, ConfiguratorSummaryComponent,
+    ConfiguratorActionsComponent
 )
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.hero_component import HeroComponent
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.my_account_component import (
@@ -81,28 +79,28 @@ class HeroPageContentSection(ContentSection):
 class ConfiguratorContentSection(ContentSection):
     def __init__(self, page: Page) -> None:
         super().__init__(page)
-        self.__root: ConfiguratorRootComponent | None = None
-        self.__advise: ConfiguratorAdviseComponent | None = None
-        self.__components: ConfiguratorComponentsListComponent | None = None
+        self.__set_actions: ConfiguratorActionsComponent | None = None
+        self.__components: ConfiguratorComponentsComponent | None = None
+        self.__components_aux: ConfiguratorAuxComponentsComponent | None = None
         self.__summary: ConfiguratorSummaryComponent | None = None
 
     @property
-    def root_panel(self) -> ConfiguratorRootComponent:
-        if self.__root is None:
-            self.__root = ConfiguratorRootComponent(self.root.locator("main"))
-        return self.__root
+    def actions(self) -> ConfiguratorActionsComponent:
+        if self.__set_actions is None:
+            self.__set_actions = ConfiguratorActionsComponent(self.root.locator('//div[@data-name="configuratorHead"]/../..'))
+        return self.__set_actions
 
     @property
-    def advise(self) -> ConfiguratorAdviseComponent:
-        if self.__advise is None:
-            self.__advise = ConfiguratorAdviseComponent(self.root.locator("#komputronik-advise"))
-        return self.__advise
-
-    @property
-    def components(self) -> ConfiguratorComponentsListComponent:
+    def components(self) -> ConfiguratorComponentsComponent:
         if self.__components is None:
-            self.__components = ConfiguratorComponentsListComponent(self.root.locator("[data-name='app-content']"))
+            self.__components = ConfiguratorComponentsComponent(self.root.locator("#komputronik-advise"))
         return self.__components
+
+    @property
+    def aux_components(self) -> ConfiguratorAuxComponentsComponent:
+        if self.__components_aux is None:
+            self.__components_aux = ConfiguratorAuxComponentsComponent(self.root.locator("[data-name='app-content']"))
+        return self.__components_aux
 
     @property
     def summary(self) -> ConfiguratorSummaryComponent:

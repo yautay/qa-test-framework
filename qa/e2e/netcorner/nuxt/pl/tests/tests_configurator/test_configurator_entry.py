@@ -16,22 +16,18 @@ pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.configurator]
 @pytest.mark.parametrize("auth_case", auth_session_cases(), ids=lambda case: case.case_id)
 @pytest.mark.scenario("Wejście w konfigurator zestawów z banera na SG")
 def test_configurator_entry_from_banner(page, context, runtime_env, auth_case: AuthSessionCase):
-    _prepare_client_session(page, context, runtime_env, auth_case)
-    HomePage(page, runtime_env.base_url).wait_loaded().content.hero.go_to_pc_configurator_from_banner()
+    _test_logic(page, context, runtime_env, auth_case)
 
 
 @pytest.mark.parametrize("auth_case", auth_session_cases(), ids=lambda case: case.case_id)
 @pytest.mark.scenario("Wejście w konfigurator zestawów z swipe na SG")
 def test_configurator_entry_from_swipe(page, context, runtime_env, auth_case: AuthSessionCase):
-    _prepare_client_session(page, context, runtime_env, auth_case)
-    HomePage(page, runtime_env.base_url).wait_loaded().content.hero.go_to_pc_configurator_from_swiper()
-
+    _test_logic(page, context, runtime_env, auth_case)
 
 @pytest.mark.parametrize("auth_case", auth_session_cases(), ids=lambda case: case.case_id)
 @pytest.mark.scenario("Wejście w konfigurator zestawów z url")
 def test_configurator_entry_from_url(page, context, runtime_env, auth_case: AuthSessionCase):
-    _prepare_client_session(page, context, runtime_env, auth_case)
-    ConfiguratorPage(page, runtime_env.base_url).open().wait_loaded()
+    _test_logic(page, context, runtime_env, auth_case)
 
 
 def _prepare_client_session(page, context, runtime_env, auth_case: AuthSessionCase) -> bool:
@@ -43,3 +39,11 @@ def _prepare_client_session(page, context, runtime_env, auth_case: AuthSessionCa
         "Użytkownik nie został poprawnie zarejestrowany."
     )
     return True
+
+def _test_logic(page, context, runtime_env, auth_case: AuthSessionCase) -> bool:
+    if not _prepare_client_session(page, context, runtime_env, auth_case):
+        HomePage(page, runtime_env.base_url).open().wait_loaded()
+    HomePage(page, runtime_env.base_url).content.hero.go_to_pc_configurator_from_banner()
+    assert ConfiguratorPage(page,
+                            runtime_env.base_url).wait_loaded().content.actions.get_configuration_section_title != "", \
+        "Strona konfiguratora jest niewidoczna!"
