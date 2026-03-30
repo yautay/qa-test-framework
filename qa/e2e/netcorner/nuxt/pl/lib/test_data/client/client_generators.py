@@ -85,6 +85,18 @@ def auth_session_cases() -> list[AuthSessionCase]:
     ]
 
 
+def auth_session_not_registered() -> list[AuthSessionCase]:
+    return [
+        AuthSessionCase(case_id="anonymous", authenticated=False),
+    ]
+
+
+def auth_session_logged() -> list[AuthSessionCase]:
+    return [
+        AuthSessionCase(case_id="logged_in", authenticated=True),
+    ]
+
+
 def prod_registered_client() -> ClientData:
     return ClientData(
         email="nc-test-user@komputronik.pl",

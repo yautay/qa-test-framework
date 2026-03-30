@@ -87,23 +87,23 @@ class ConfiguratorContentSection(ContentSection):
     @property
     def actions(self) -> ConfiguratorActionsComponent:
         if self.__set_actions is None:
-            self.__set_actions = ConfiguratorActionsComponent(self.root.locator('//div[@data-name="configuratorHead"]/../..'))
+            self.__set_actions = ConfiguratorActionsComponent(self.root.locator('[@data-name="configuratorActions"]'))
         return self.__set_actions
 
     @property
     def components(self) -> ConfiguratorComponentsComponent:
         if self.__components is None:
-            self.__components = ConfiguratorComponentsComponent(self.root.locator("#komputronik-advise"))
+            self.__components = ConfiguratorComponentsComponent(self.root.locator('[@data-name="configuratorGrid"]'))
         return self.__components
 
     @property
     def aux_components(self) -> ConfiguratorAuxComponentsComponent:
         if self.__components_aux is None:
-            self.__components_aux = ConfiguratorAuxComponentsComponent(self.root.locator("[data-name='app-content']"))
+            self.__components_aux = ConfiguratorAuxComponentsComponent(self.root.locator("[data-name='configuratorGridOptionalElements']"))
         return self.__components_aux
 
     @property
     def summary(self) -> ConfiguratorSummaryComponent:
         if self.__summary is None:
-            self.__summary = ConfiguratorSummaryComponent(self.root.locator("div.max-body-w.bg-gray-porcelain"))
+            self.__summary = ConfiguratorSummaryComponent(self.root.locator("[data-name='configuratorFooter']"))
         return self.__summary
