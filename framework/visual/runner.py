@@ -252,19 +252,30 @@ class VisualRunner:
         freeze_style_id = _inject_freeze_styles(page) if bool(self._env.visual_freeze_animations) else ""
         if scenario.capture.full_page:
             _stabilize_full_page_capture(page)
-        cleanup_ids = _inject_masks(page, list(scenario.mask.selectors), scenario.mask.color)
+        mask_locators = _build_mask_locators(page, list(scenario.mask.selectors))
+        mask_color = _hex_to_rgba(scenario.mask.color, alpha=1)
         try:
             if scenario.capture.capture_type == "element" and scenario.capture.selector:
                 target_locator = _first_visible_locator(page.locator(scenario.capture.selector))
                 scroll_lock_style_id = _stabilize_element_capture(page, target_locator)
                 try:
-                    target_locator.screenshot(path=str(output_path))
+                    if mask_locators:
+                        target_locator.screenshot(path=str(output_path), mask=mask_locators, mask_color=mask_color)
+                    else:
+                        target_locator.screenshot(path=str(output_path))
                 finally:
                     _remove_freeze_styles(page, scroll_lock_style_id)
                 return
-            page.screenshot(path=str(output_path), full_page=scenario.capture.full_page)
+            if mask_locators:
+                page.screenshot(
+                    path=str(output_path),
+                    full_page=scenario.capture.full_page,
+                    mask=mask_locators,
+                    mask_color=mask_color,
+                )
+            else:
+                page.screenshot(path=str(output_path), full_page=scenario.capture.full_page)
         finally:
-            _remove_masks(page, cleanup_ids)
             _remove_freeze_styles(page, freeze_style_id)
 
 
@@ -298,6 +309,20 @@ def _hex_to_rgba(hex_color: str, alpha: float) -> str:
         except ValueError:
             return s
     return s
+
+
+def _build_mask_locators(page: Page, selectors: list[str]) -> list[Locator]:
+    """Build mask locators from scenario mask selectors."""
+    locators: list[Locator] = []
+    for selector in selectors:
+        token = str(selector or "").strip()
+        if not token:
+            continue
+        try:
+            locators.append(page.locator(token))
+        except Exception:
+            continue
+    return locators
 
 
 def _stabilize_full_page_capture(page: Page) -> None:
@@ -481,65 +506,6 @@ def _remove_freeze_styles(page: Page, style_id: str) -> None:
     """
     try:
         page.evaluate(script, token)
-    except Exception:
-        return
-
-
-def _inject_masks(page: Page, selectors: list[str], color: str) -> list[str]:
-    """Overlay the given selectors with translucent masks and return their DOM IDs."""
-    if not selectors:
-        return []
-
-    rgba = _hex_to_rgba(color, alpha=1)
-
-    script = """
-    (params) => {
-      const ids = [];
-      const color = params.color || 'rgba(0,255,0,1)';
-      for (const selector of params.selectors) {
-        document.querySelectorAll(selector).forEach((el) => {
-          const rect = el.getBoundingClientRect();
-          const mask = document.createElement('div');
-          const id = `visual-mask-${Math.random().toString(36).slice(2)}`;
-          mask.id = id;
-          mask.style.position = 'fixed';
-          mask.style.left = `${rect.left}px`;
-          mask.style.top = `${rect.top}px`;
-          mask.style.width = `${rect.width}px`;
-          mask.style.height = `${rect.height}px`;
-          mask.style.background = color;
-          mask.style.zIndex = '2147483647';
-          mask.style.pointerEvents = 'none';
-          document.body.appendChild(mask);
-          ids.push(id);
-        });
-      }
-      return ids;
-    }
-    """
-    try:
-        data: Any = page.evaluate(script, {"selectors": selectors, "color": rgba})
-        if isinstance(data, list):
-            return [str(x) for x in data]
-    except Exception:
-        return []
-    return []
-
-
-def _remove_masks(page: Page, ids: list[str]) -> None:
-    """Clean up DOM masks that were injected for the capture."""
-    if not ids:
-        return
-    script = """
-    (ids) => {
-      for (const id of ids) {
-        const el = document.getElementById(id);
-        if (el) el.remove();
-      }
-    }
-    """
-    try:
-        page.evaluate(script, ids)
     except Exception:
         return
 
