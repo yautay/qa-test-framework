@@ -247,16 +247,16 @@ class VisualRunner:
         raise ValueError(f"Unknown step action: {action!r}")
 
     def _capture(self, page: Page, scenario: VisualScenario, output_path: Path) -> None:
-        """Capture the screenshot based on capture settings while masking selectors."""
+        """Capture the screenshot based on capture settings while masking locators."""
         output_path.parent.mkdir(parents=True, exist_ok=True)
         freeze_style_id = _inject_freeze_styles(page) if bool(self._env.visual_freeze_animations) else ""
         if scenario.capture.full_page:
             _stabilize_full_page_capture(page)
-        mask_locators = _build_mask_locators(page, list(scenario.mask.selectors))
+        mask_locators = _build_mask_locators(page, list(scenario.mask.locators))
         mask_color = _hex_to_rgba(scenario.mask.color, alpha=1)
         try:
-            if scenario.capture.capture_type == "element" and scenario.capture.selector:
-                target_locator = _first_visible_locator(page.locator(scenario.capture.selector))
+            if scenario.capture.capture_type == "element" and scenario.capture.locator:
+                target_locator = _first_visible_locator(page.locator(scenario.capture.locator))
                 scroll_lock_style_id = _stabilize_element_capture(page, target_locator)
                 try:
                     if mask_locators:

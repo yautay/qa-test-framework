@@ -58,7 +58,7 @@ Minimalny przyklad:
 - `capture` (opcjonalne, obiekt)
   - `type`: `page` | `viewport` | `element` (domyslnie `page`)
   - `full_page`: bool (domyslnie `true`)
-  - `selector`: wymagany tylko dla `type = "element"`
+  - `locator`: wymagany tylko dla `type = "element"`
 - `thresholds` (opcjonalne, obiekt)
   - `pixel_max`, `lpips_max`, `dists_max` (number)
   - opcjonalnie:
@@ -67,7 +67,7 @@ Minimalny przyklad:
     - `dists_uncertain_delta`
     - `shift_compensation_y_px` (int, `0` = wylaczone)
 - `mask` (opcjonalne, obiekt)
-  - `selectors`: lista Playwright selector strings do zamaskowania (np. CSS, `role=...`, `data-testid=...`)
+  - `locators`: lista Playwright selector strings do zamaskowania (np. CSS, `role=...`, `data-testid=...`)
   - `color`: `#RRGGBB` (domyslnie `#DDF527`)
 - `steps` (opcjonalne, lista)
   - Kroki funkcjonalne wykonywane po wejsciu na `target_url`, przed screenshotem.

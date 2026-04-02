@@ -7,10 +7,10 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='headerBar']"
+      "locator": "[data-name='headerBar']"
     },
     "mask": {
-      "selectors": []
+      "locators": []
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -26,10 +26,10 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='navigationBar']"
+      "locator": "[data-name='navigationBar']"
     },
     "mask": {
-      "selectors": []
+      "locators": []
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -45,10 +45,10 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='filtersWrapper']"
+      "locator": "[data-name='filtersWrapper']"
     },
     "mask": {
-      "selectors": []
+      "locators": []
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -64,10 +64,10 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='footer']"
+      "locator": "[data-name='footer']"
     },
     "mask": {
-      "selectors": []
+      "locators": []
     },
     "thresholds": {
       "pixel_max": 0.001,

@@ -10,7 +10,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": []
+      "locators": []
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -29,7 +29,9 @@
       "full_page": true
     },
     "mask": {
-      "selectors": ["img"]
+      "locators": [
+        "img"
+      ]
     },
     "thresholds": {
       "pixel_max": 0.001,

@@ -8,10 +8,10 @@
     "capture": {
       "type": "page",
       "full_page": true,
-      "selector": "[data-name='replace-capture-selector']"
+      "locator": "[data-name='replace-capture-selector']"
     },
     "mask": {
-      "selectors": [
+      "locators": [
         "[data-role='productSlider']",
         "[data-testid='dynamic-banner']"
       ]
@@ -31,10 +31,10 @@
     "capture": {
       "type": "page",
       "full_page": true,
-      "selector": "[data-name='replace-capture-selector']"
+      "locator": "[data-name='replace-capture-selector']"
     },
     "mask": {
-      "selectors": [
+      "locators": [
         "[data-role='productSlider']",
         "[data-testid='dynamic-banner']"
       ]

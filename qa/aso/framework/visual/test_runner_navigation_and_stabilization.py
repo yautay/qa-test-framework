@@ -31,7 +31,7 @@ def _scenario_with_masks(*, full_page: bool, target_url: str, mask_selectors: li
             "suite_id": "suite-1",
             "compare_mode": "pixel",
             "capture": {"type": "page", "full_page": full_page},
-            "mask": {"selectors": mask_selectors, "color": "#123456"},
+            "mask": {"locators": mask_selectors, "color": "#123456"},
             "thresholds": {"pixel_max": 0.01, "lpips_max": 0.1, "dists_max": 0.1},
         }
     )
@@ -233,9 +233,9 @@ def test_capture_element_uses_first_visible_match(tmp_path: Path) -> None:
             "target_url": "/",
             "suite_id": "suite-1",
             "compare_mode": "pixel",
-            "capture": {"type": "element", "selector": capture_selector},
+            "capture": {"type": "element", "locator": capture_selector},
             "mask": {
-                "selectors": ["data-testid=dynamic-banner", "invalid::locator"],
+                "locators": ["data-testid=dynamic-banner", "invalid::locator"],
                 "color": "#123456",
             },
             "thresholds": {"pixel_max": 0.01, "lpips_max": 0.1, "dists_max": 0.1},

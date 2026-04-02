@@ -8,10 +8,10 @@
     "capture": {
       "type": "page",
       "full_page": true,
-      "selector": "[data-name='replace-capture-selector']"
+      "locator": "[data-name='replace-capture-selector']"
     },
     "mask": {
-      "selectors": [
+      "locators": [
         "div[data-name=\"loginDialogTrigger\"]"
       ]
     },
@@ -29,8 +29,8 @@
     "compare_mode": "hybrid",
     "capture": {
       "full_page": false,
-      "selector": "#komputronik-advise",
-      "type": "element"
+      "type": "element",
+      "locator": "#komputronik-advise"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -46,8 +46,8 @@
     "compare_mode": "hybrid",
     "capture": {
       "full_page": false,
-      "selector": "div > div:nth-of-type(4) > div > div > div > div:nth-of-type(2) > div:nth-of-type(2)",
-      "type": "element"
+      "type": "element",
+      "locator": "div > div:nth-of-type(4) > div > div > div > div:nth-of-type(2) > div:nth-of-type(2)"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -63,8 +63,8 @@
     "compare_mode": "hybrid",
     "capture": {
       "full_page": false,
-      "selector": "div.max-body-w.bg-gray-porcelain",
-      "type": "element"
+      "type": "element",
+      "locator": "div.max-body-w.bg-gray-porcelain"
     },
     "thresholds": {
       "pixel_max": 0.001,
