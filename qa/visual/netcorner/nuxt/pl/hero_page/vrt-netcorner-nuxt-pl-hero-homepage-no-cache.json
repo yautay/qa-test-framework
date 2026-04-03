@@ -5,13 +5,16 @@
     "suite_id": "netcorner/nuxt/pl/hero_page",
     "target_url": "/?a=0",
     "compare_mode": "hybrid",
-    "viewport": ["fhd", "tablet"],
+    "viewport": [
+      "fhd",
+      "tablet"
+    ],
     "capture": {
       "type": "page",
       "full_page": true
     },
     "mask": {
-      "selectors": [
+      "locators": [
         "[data-name='heroSlider']",
         "[data-name='offerSection']",
         "[data-name='newsSlider']",
@@ -36,13 +39,15 @@
     "suite_id": "netcorner/nuxt/pl/hero_page",
     "target_url": "/?a=0",
     "compare_mode": "hybrid",
-    "viewport": ["mobile"],
+    "viewport": [
+      "mobile"
+    ],
     "capture": {
       "type": "page",
       "full_page": true
     },
     "mask": {
-      "selectors": [
+      "locators": [
         "[data-name='heroSlider']",
         "[data-name='offerSection']",
         "[data-name='newsSlider']",

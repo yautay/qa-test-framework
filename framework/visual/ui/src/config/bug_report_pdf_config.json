@@ -36,8 +36,8 @@
       "required": true
     },
     {
-      "label": "scenario.capture.selector",
-      "path": "scenario.capture.selector",
+      "label": "scenario.capture.locator",
+      "path": "scenario.capture.locator",
       "required": false
     },
     {

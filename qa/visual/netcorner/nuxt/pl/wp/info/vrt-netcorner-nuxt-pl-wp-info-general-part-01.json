@@ -10,7 +10,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
+      "locators": [
         "img"
       ]
     },
@@ -31,7 +31,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
+      "locators": [
         ".articles-list"
       ]
     },
@@ -52,7 +52,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
+      "locators": [
         "img"
       ]
     },
@@ -73,7 +73,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
+      "locators": [
         ".articles-list"
       ]
     },
@@ -94,7 +94,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
+      "locators": [
         "img"
       ]
     },
@@ -115,7 +115,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
+      "locators": [
         "img"
       ]
     },
@@ -136,7 +136,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
+      "locators": [
         "img"
       ]
     },
@@ -157,7 +157,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
+      "locators": [
         "img"
       ]
     },
@@ -178,7 +178,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
+      "locators": [
         "img"
       ]
     },
@@ -199,7 +199,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
+      "locators": [
         ".articles-list"
       ]
     },

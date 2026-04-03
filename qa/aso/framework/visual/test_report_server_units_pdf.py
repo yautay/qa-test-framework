@@ -63,7 +63,7 @@ def test_generate_bug_pdf_handles_polish_characters(tmp_path: Path) -> None:
                 "target_url": "/produkt/łódź",
                 "viewport": "fhd",
                 "browser": "chromium",
-                "capture": {"selector": "#produkt"},
+                "capture": {"locator": "#produkt"},
             },
         },
     }

@@ -14,7 +14,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
+      "locators": [
         "[data-name='heroSlider']",
         "[data-name='offerSection']",
         "[data-name='newsSlider']",
@@ -47,7 +47,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
+      "locators": [
         "[data-name='heroSlider']",
         "[data-name='offerSection']",
         "[data-name='newsSlider']",
@@ -74,10 +74,10 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='DailyDealWidget']"
+      "locator": "[data-name='DailyDealWidget']"
     },
     "mask": {
-      "selectors": [
+      "locators": [
         "[data-name='TimeCounterDays']",
         "[data-name='TimeCounterHours']",
         "[data-name='TimeCounterMinutes']",
@@ -98,7 +98,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='headerBar']"
+      "locator": "[data-name='headerBar']"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -114,7 +114,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='navigationBar']"
+      "locator": "[data-name='navigationBar']"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -130,7 +130,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='subsidiaryBanner']"
+      "locator": "[data-name='subsidiaryBanner']"
     },
     "thresholds": {
       "pixel_max": 0.035,
@@ -146,7 +146,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='services']"
+      "locator": "[data-name='services']"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -162,7 +162,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='categoryListDesktop']"
+      "locator": "[data-name='categoryListDesktop']"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -178,7 +178,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='brandZone']"
+      "locator": "[data-name='brandZone']"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -194,7 +194,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='contactUs']"
+      "locator": "[data-name='contactUs']"
     },
     "thresholds": {
       "pixel_max": 0.025,
@@ -210,7 +210,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='visitUs']"
+      "locator": "[data-name='visitUs']"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -226,7 +226,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='newsletterSignup']"
+      "locator": "[data-name='newsletterSignup']"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -242,7 +242,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='linksCloud']"
+      "locator": "[data-name='linksCloud']"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -258,7 +258,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='aboutUs']"
+      "locator": "[data-name='aboutUs']"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -274,7 +274,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='footer']"
+      "locator": "[data-name='footer']"
     },
     "thresholds": {
       "pixel_max": 0.001,

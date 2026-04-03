@@ -7,7 +7,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='addToCartWrapper']"
+      "locator": "[data-name='addToCartWrapper']"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -23,7 +23,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='addToCartWrapper']"
+      "locator": "[data-name='addToCartWrapper']"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -39,7 +39,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='addToCartWrapper']"
+      "locator": "[data-name='addToCartWrapper']"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -55,7 +55,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='addToCartWrapper']"
+      "locator": "[data-name='addToCartWrapper']"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -71,7 +71,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='addToCartWrapper']"
+      "locator": "[data-name='addToCartWrapper']"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -87,7 +87,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='addToCartWrapper']"
+      "locator": "[data-name='addToCartWrapper']"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -103,7 +103,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='addToCartWrapper']"
+      "locator": "[data-name='addToCartWrapper']"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -119,7 +119,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='addToCartWrapper']"
+      "locator": "[data-name='addToCartWrapper']"
     },
     "thresholds": {
       "pixel_max": 0.001,
@@ -135,7 +135,7 @@
     "compare_mode": "hybrid",
     "capture": {
       "type": "element",
-      "selector": "[data-name='addToCartWrapper']"
+      "locator": "[data-name='addToCartWrapper']"
     },
     "thresholds": {
       "pixel_max": 0.001,
