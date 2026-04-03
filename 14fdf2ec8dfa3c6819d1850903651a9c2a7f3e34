@@ -1,0 +1,14 @@
+Addressed post-merge review findings excluding config/secret defaults.
+
+Changes:
+- fixed grid provider validation and auto fallback rules for Playwright/Selenium CDP
+- reported real BrowserSession execution metadata in test result payloads
+- unified visual scenario loading, restored legacy scenario_id support, and clarified locator validation/docs
+- improved xdist visual profile detection and skipped false warnings during --collect-only
+- deduplicated report toggle resolution into a shared helper
+
+Verification:
+- pytest qa/aso/framework/test_browser_session.py qa/aso/framework/test_reporting_payload_helpers.py qa/aso/framework/test_report_toggles_precedence.py qa/aso/framework/plugins/test_xdist_report_finalize.py qa/aso/framework/visual/test_scenario_loader.py
+- pytest qa/aso/framework/visual qa/aso/framework/plugins qa/aso/framework/test_e2e_suite_runtime_env.py qa/aso/framework/test_browser_session.py qa/aso/framework/test_reporting_payload_helpers.py qa/aso/framework/test_report_toggles_precedence.py
+- pytest qa/visual --collect-only
+- pytest qa/e2e --collect-only
