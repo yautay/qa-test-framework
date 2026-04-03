@@ -123,6 +123,40 @@ def test_open_browser_session_auto_falls_back_to_selenium_cdp(monkeypatch: pytes
     assert session.endpoint == "http://10.0.0.10:9222"
 
 
+def test_open_browser_session_allows_selenium_cdp_with_explicit_cdp_endpoint_only(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    env = replace(
+        load_env(),
+        is_grid_available=True,
+        grid_provider="selenium_cdp",
+        grid_ws_endpoint="",
+        grid_cdp_endpoint="ws://10.0.0.10:9222/devtools/browser/abc",
+        browser="chromium",
+    )
+    playwright = _FakePlaywright()
+
+    session = open_browser_session(cast(Any, playwright), env)
+
+    assert session.provider == "selenium_cdp"
+    assert playwright.chromium.connect_over_cdp_calls[0]["endpoint"] == "ws://10.0.0.10:9222/devtools/browser/abc"
+
+
+def test_open_browser_session_rejects_selenium_cdp_without_any_endpoint() -> None:
+    env = replace(
+        load_env(),
+        is_grid_available=True,
+        grid_provider="selenium_cdp",
+        grid_ws_endpoint="",
+        grid_cdp_endpoint="",
+        browser="chromium",
+    )
+    playwright = _FakePlaywright()
+
+    with pytest.raises(RuntimeError, match="requires GRID_CDP_ENDPOINT"):
+        open_browser_session(cast(Any, playwright), env)
+
+
 def test_open_browser_session_rejects_selenium_cdp_for_non_chromium_browser() -> None:
     env = replace(
         load_env(),
@@ -298,3 +332,34 @@ def test_open_browser_session_deletes_selenium_session_when_cdp_attach_fails(
 
     assert deleted["grid_url"] == "http://10.0.0.10:4444"
     assert deleted["session_id"] == "session-2"
+
+
+def test_open_browser_session_auto_skips_invalid_selenium_fallback_for_playwright_ws_endpoint(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    env = replace(
+        load_env(),
+        is_grid_available=True,
+        grid_provider="auto",
+        grid_ws_endpoint="ws://127.0.0.1:9323/",
+        grid_cdp_endpoint="",
+        browser="chromium",
+    )
+    playwright = _FakePlaywright()
+    selenium_attempted = False
+
+    def _raise_playwright(*_args, **_kwargs):
+        raise RuntimeError("not a playwright endpoint")
+
+    def _unexpected_selenium(*_args, **_kwargs):
+        nonlocal selenium_attempted
+        selenium_attempted = True
+        raise AssertionError("selenium fallback should be skipped")
+
+    monkeypatch.setattr("framework.browser.session._connect_playwright_grid", _raise_playwright)
+    monkeypatch.setattr("framework.browser.session._connect_selenium_cdp_grid", _unexpected_selenium)
+
+    with pytest.raises(RuntimeError, match="selenium_cdp=no GRID_CDP_ENDPOINT"):
+        open_browser_session(cast(Any, playwright), env)
+
+    assert selenium_attempted is False

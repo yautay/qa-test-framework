@@ -18,6 +18,7 @@ from loguru import logger
 
 import settings_cli
 from framework.artifacts import RunArtifacts, build_run_artifacts, resolve_artifacts_base_dir
+from framework.browser import BrowserSession
 from framework.env import RuntimeEnv, load_env
 from framework.git_info import get_git_metadata
 from framework.logger import add_reporting_api_sink, bind_test_context, configure_logging
@@ -538,6 +539,37 @@ def _build_event_envelope(
     }
 
 
+def _resolve_execution_context(env: RuntimeEnv, browser_session: object | None = None) -> dict[str, object]:
+    session = browser_session if isinstance(browser_session, BrowserSession) else None
+    if session is None:
+        return {
+            "browser": env.browser,
+            "headless": env.headless,
+            "grid_enabled": env.is_grid_available,
+            "grid_provider": env.grid_provider if env.is_grid_available else "",
+            "grid_endpoint": env.grid_ws_endpoint if env.is_grid_available else "",
+            "grid_cdp_endpoint": env.grid_cdp_endpoint if env.is_grid_available else "",
+        }
+
+    grid_enabled = session.provider != "local"
+    grid_endpoint = ""
+    grid_cdp_endpoint = ""
+    if session.provider == "playwright":
+        grid_endpoint = session.endpoint
+    elif session.provider == "selenium_cdp":
+        grid_endpoint = session.selenium_grid_url
+        grid_cdp_endpoint = session.endpoint
+
+    return {
+        "browser": env.browser,
+        "headless": env.headless,
+        "grid_enabled": grid_enabled,
+        "grid_provider": session.provider if grid_enabled else "",
+        "grid_endpoint": grid_endpoint,
+        "grid_cdp_endpoint": grid_cdp_endpoint,
+    }
+
+
 def _derive_test_status(item: pytest.Item) -> str:
     rep_setup = getattr(item, "rep_setup", None)
     rep_call = getattr(item, "rep_call", None)
@@ -928,12 +960,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
         ),
         "run_started_at": _utc_now(),
         "execution": {
-            "browser": env.browser,
-            "headless": env.headless,
-            "grid_enabled": env.is_grid_available,
-            "grid_provider": env.grid_provider if env.is_grid_available else "",
-            "grid_endpoint": env.grid_ws_endpoint if env.is_grid_available else "",
-            "grid_cdp_endpoint": env.grid_cdp_endpoint if env.is_grid_available else "",
+            **_resolve_execution_context(env),
             "viewport": str(getattr(session.config.option, "viewport", "fhd") or "fhd"),
             "profile": _resolve_run_profile(session.config),
         },
@@ -1100,6 +1127,7 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
         "status": status,
         "attempt": 1,
         "is_flaky": False,
+        "execution": _resolve_execution_context(env, getattr(item.config, "_browser_session", None)),
         "timing": {
             "started_at": started_at,
             "finished_at": finished_at,

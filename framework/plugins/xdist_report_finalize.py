@@ -494,12 +494,32 @@ def _send_test_result_updates(config: pytest.Config, run_root: Path, results: li
 
 def _is_visual_profile(config: pytest.Config) -> bool:
     markexpr = str(getattr(config.option, "markexpr", "") or "").strip()
-    return markexpr == "visual"
+    if "visual" in markexpr:
+        return True
+
+    root = Path(str(config.rootpath)).resolve()
+    visual_root = (root / "qa" / "visual").resolve()
+    raw_args = cast(tuple[Any, ...], tuple(getattr(config, "args", ()) or ()))
+    for raw in raw_args:
+        token = str(raw or "").strip()
+        if not token or token.startswith("-"):
+            continue
+        token_path = token.split("::", 1)[0]
+        candidate = Path(token_path)
+        if not candidate.is_absolute():
+            candidate = (root / candidate).resolve()
+        else:
+            candidate = candidate.resolve()
+        if candidate == visual_root or visual_root in candidate.parents:
+            return True
+    return False
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     _ = exitstatus
     config = session.config
+    if bool(getattr(config.option, "collectonly", False)):
+        return
     if not _is_xdist_controller(config):
         return
 

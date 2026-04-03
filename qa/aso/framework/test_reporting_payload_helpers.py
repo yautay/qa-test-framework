@@ -5,7 +5,10 @@ from pathlib import Path
 
 import pytest
 
+from framework.browser import BrowserSession
 from qa.conftest import _artifact_entry, _read_perceptual_quality_signals
+from framework.env import load_env
+from qa.conftest import _resolve_execution_context
 
 pytestmark = [pytest.mark.aso]
 
@@ -66,3 +69,21 @@ def test_read_perceptual_quality_signals_reads_status_payload(tmp_path: Path) ->
     assert payload["pms_jobs_done"] == 5
     assert payload["pms_jobs_error"] == 2
     assert payload["pms_jobs_skipped"] == 3
+
+
+def test_resolve_execution_context_uses_connected_browser_session() -> None:
+    env = load_env()
+    session = BrowserSession(
+        browser=object(),
+        provider="selenium_cdp",
+        endpoint="ws://10.0.0.10:9222/devtools/browser/abc",
+        selenium_session_id="session-1",
+        selenium_grid_url="http://10.0.0.10:4444",
+    )
+
+    payload = _resolve_execution_context(env, session)
+
+    assert payload["grid_enabled"] is True
+    assert payload["grid_provider"] == "selenium_cdp"
+    assert payload["grid_endpoint"] == "http://10.0.0.10:4444"
+    assert payload["grid_cdp_endpoint"] == "ws://10.0.0.10:9222/devtools/browser/abc"

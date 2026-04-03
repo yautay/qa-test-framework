@@ -122,9 +122,16 @@ def _scenario_from_payload(payload: dict[str, Any], file_path: Path, idx: int) -
     """Deserialize a single scenario object (dict) into a VisualScenario instance."""
     pfx = f"scenarios[{idx}]."
 
-    scenario_id = _as_str(payload.get("id") or f"{file_path.stem}__{idx + 1}").strip()
-    if not scenario_id:
-        raise _err(file_path, f"{pfx}id must be non-empty")
+    if "id" in payload:
+        scenario_id = _as_str(payload.get("id")).strip()
+        if not scenario_id:
+            raise _err(file_path, f"{pfx}id must be non-empty")
+    elif "scenario_id" in payload:
+        scenario_id = _as_str(payload.get("scenario_id")).strip()
+        if not scenario_id:
+            raise _err(file_path, f"{pfx}scenario_id must be non-empty")
+    else:
+        scenario_id = f"{file_path.stem}__{idx + 1}"
 
     name = _as_str(payload.get("name") or scenario_id).strip()
     suite_id = _as_str(payload.get("suite_id", "")).strip()

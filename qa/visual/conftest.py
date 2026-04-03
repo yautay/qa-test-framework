@@ -280,11 +280,14 @@ def playwright_instance() -> Playwright:
 
 
 @pytest.fixture(scope="session")
-def browser(playwright_instance: Playwright, runtime_env: RuntimeEnv) -> Browser:
+def browser(playwright_instance: Playwright, runtime_env: RuntimeEnv, pytestconfig: pytest.Config) -> Browser:
     """Session browser for visual tests (local launch or remote connect)."""
     session = open_browser_session(playwright_instance, runtime_env)
+    pytestconfig._browser_session = session
     yield session.browser
     close_browser_session(session, runtime_env)
+    if getattr(pytestconfig, "_browser_session", None) is session:
+        delattr(pytestconfig, "_browser_session")
 
 
 @pytest.fixture(scope="function")

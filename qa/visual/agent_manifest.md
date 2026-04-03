@@ -4,7 +4,7 @@ Cel: ograniczyc zuzycie tokenow i wymusic prace tylko na plikach niezbednych do 
 
 ## Read Only This (in order)
 
-1. `qa/visual/netcorner/nuxt/pl/visual_suite.py`
+1. `framework/visual/visual_suite.py`
 2. `framework/visual/scenario_loader.py`
 3. `framework/visual/models.py` (sekcje: `VisualScenario`, `VisualCapture`, `VisualMask`, `VisualThresholds`)
 4. `qa/visual/netcorner/nuxt/pl/listings/test_listings_visual.py`
@@ -38,7 +38,7 @@ Kazdy scenariusz JSON musi zawierac:
 
 Wymagane placeholdery:
 
-- `capture.locator: "[data-name='replace-capture-selector']"` (dla `type: page` jako placeholder)
+- `capture.locator: "[data-name='replace-capture-selector']"` tylko dla `type: element`
 - `mask.locators` zawiera `"[data-name='replace-mask-selector']"` (Playwright selector string; CSS nadal wspierany)
 - `mask.color: "#00FF00"`
 

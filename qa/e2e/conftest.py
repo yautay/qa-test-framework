@@ -20,6 +20,7 @@ except Exception:  # pragma: no cover - optional dependency
 from framework.artifacts import RunArtifacts, resolve_artifacts_base_dir
 from framework.browser import close_browser_session, open_browser_session, set_onetrust_consent_cookies
 from framework.env import RuntimeEnv, load_env
+from framework.reporting.toggles import resolve_report_toggles as _resolve_report_toggles
 from framework.screenshot_annotator import annotate_fail_screenshot, extract_selector_from_error
 from framework.video_utils import ensure_min_fail_video
 
@@ -61,14 +62,6 @@ def _resolve_allure_run_id(config: pytest.Config) -> str:
         return env_run_id
 
     return datetime.now(UTC).strftime("%Y%m%d_%H%M%S_%f")
-
-
-def _resolve_report_toggles(config: pytest.Config, env: RuntimeEnv) -> tuple[bool, bool]:
-    cli_allure_enabled = getattr(config.option, "allure_enabled", None)
-    cli_pytest_html_enabled = getattr(config.option, "pytest_html_enabled", None)
-    allure_enabled = env.allure_enabled if cli_allure_enabled is None else bool(cli_allure_enabled)
-    pytest_html_enabled = env.pytest_html_enabled if cli_pytest_html_enabled is None else bool(cli_pytest_html_enabled)
-    return allure_enabled, pytest_html_enabled
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -166,11 +159,14 @@ def playwright_instance() -> Iterator[Playwright]:
 
 
 @pytest.fixture(scope="session")
-def browser(playwright_instance: Playwright, runtime_env: RuntimeEnv) -> Iterator[Browser]:
+def browser(playwright_instance: Playwright, runtime_env: RuntimeEnv, pytestconfig: pytest.Config) -> Iterator[Browser]:
     """Session browser instance (local launch or remote grid connect)."""
     session = open_browser_session(playwright_instance, runtime_env)
+    pytestconfig._browser_session = session
     yield session.browser
     close_browser_session(session, runtime_env)
+    if getattr(pytestconfig, "_browser_session", None) is session:
+        delattr(pytestconfig, "_browser_session")
 
 
 @pytest.fixture(scope="function")

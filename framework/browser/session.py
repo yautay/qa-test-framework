@@ -22,15 +22,21 @@ def open_browser_session(playwright_instance: Playwright, runtime_env: RuntimeEn
     if not runtime_env.is_grid_available:
         return _launch_local_browser(playwright_instance, runtime_env)
 
-    if not runtime_env.grid_ws_endpoint:
-        raise RuntimeError("is_grid_available is enabled but GRID_WS_ENDPOINT is empty")
-
     provider = runtime_env.grid_provider.strip().lower()
     if provider == "playwright":
+        if not runtime_env.grid_ws_endpoint.strip():
+            raise RuntimeError("GRID_PROVIDER=playwright requires GRID_WS_ENDPOINT")
         return _connect_playwright_grid(playwright_instance, runtime_env)
     if provider == "selenium_cdp":
+        if not _can_attempt_selenium_cdp(runtime_env):
+            raise RuntimeError(
+                "GRID_PROVIDER=selenium_cdp requires GRID_CDP_ENDPOINT, a direct CDP GRID_WS_ENDPOINT, "
+                "or an HTTP(S) Selenium Grid URL"
+            )
         return _connect_selenium_cdp_grid(playwright_instance, runtime_env)
     if provider == "auto":
+        if not runtime_env.grid_ws_endpoint.strip() and not runtime_env.grid_cdp_endpoint.strip():
+            raise RuntimeError("GRID_PROVIDER=auto requires GRID_WS_ENDPOINT or GRID_CDP_ENDPOINT")
         return _connect_auto_grid(playwright_instance, runtime_env)
 
     raise RuntimeError(
@@ -78,15 +84,23 @@ def _launch_local_browser(playwright_instance: Playwright, runtime_env: RuntimeE
 def _connect_auto_grid(playwright_instance: Playwright, runtime_env: RuntimeEnv) -> BrowserSession:
     errors: list[str] = []
 
-    try:
-        return _connect_playwright_grid(playwright_instance, runtime_env)
-    except Exception as exc:
-        errors.append(f"playwright={exc}")
+    if runtime_env.grid_ws_endpoint.strip():
+        try:
+            return _connect_playwright_grid(playwright_instance, runtime_env)
+        except Exception as exc:
+            errors.append(f"playwright={exc}")
+    else:
+        errors.append("playwright=GRID_WS_ENDPOINT is empty")
 
-    try:
-        return _connect_selenium_cdp_grid(playwright_instance, runtime_env)
-    except Exception as exc:
-        errors.append(f"selenium_cdp={exc}")
+    if _can_attempt_selenium_cdp(runtime_env):
+        try:
+            return _connect_selenium_cdp_grid(playwright_instance, runtime_env)
+        except Exception as exc:
+            errors.append(f"selenium_cdp={exc}")
+    else:
+        errors.append(
+            "selenium_cdp=no GRID_CDP_ENDPOINT and GRID_WS_ENDPOINT is neither a direct CDP endpoint nor an HTTP(S) Grid URL"
+        )
 
     joined_errors = "; ".join(errors)
     raise RuntimeError(
@@ -167,7 +181,19 @@ def _connect_selenium_cdp_grid(playwright_instance: Playwright, runtime_env: Run
 
 def _is_direct_cdp_endpoint(endpoint: str) -> bool:
     token = endpoint.strip().lower()
-    return "/devtools/browser/" in token or ":9222" in token
+    return "/devtools/browser/" in token or "/se/cdp" in token or ":9222" in token
+
+
+def _is_http_grid_url(endpoint: str) -> bool:
+    token = endpoint.strip().lower()
+    return token.startswith("http://") or token.startswith("https://")
+
+
+def _can_attempt_selenium_cdp(runtime_env: RuntimeEnv) -> bool:
+    if runtime_env.grid_cdp_endpoint.strip():
+        return True
+    grid_ws_endpoint = runtime_env.grid_ws_endpoint.strip()
+    return _is_direct_cdp_endpoint(grid_ws_endpoint) or _is_http_grid_url(grid_ws_endpoint)
 
 
 def _normalize_grid_url(endpoint: str) -> str:
