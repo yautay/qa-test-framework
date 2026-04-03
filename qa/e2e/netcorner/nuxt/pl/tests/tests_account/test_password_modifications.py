@@ -8,22 +8,19 @@ from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.my_account_page import MyAccountPage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.password_recovery_page import PasswordRecoveryPage
-from qa.e2e.netcorner.nuxt.pl.lib.test_data.register_user_data import (
-    RegisterUserCase,
-    RegisterUserDataBuilder,
-)
+from qa.e2e.netcorner.nuxt.pl.lib.test_data.client import ClientCase, ClientDataBuilder
 
 pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
 
 
 @allure.feature("Konto użytkownika")
-@allure.severity(allure.severity_level.CRITICAL)
+@allure.severity(allure.severity_level.BLOCKER)
 @pytest.mark.parametrize(
     "user_case",
     [
-        RegisterUserCase(
+        ClientCase(
             case_id="pl_password_change",
-            factory=lambda: RegisterUserDataBuilder().with_required_terms().build(),
+            factory=lambda: ClientDataBuilder().with_required_terms().build(),
         )
     ],
     ids=lambda case: case.case_id,
@@ -46,13 +43,13 @@ def test_password_change(page, context, runtime_env, user_case):
 
 
 @allure.feature("Konto użytkownika")
-@allure.severity(allure.severity_level.CRITICAL)
+@allure.severity(allure.severity_level.BLOCKER)
 @pytest.mark.parametrize(
     "user_case",
     [
-        RegisterUserCase(
+        ClientCase(
             case_id="pl_password_recovery",
-            factory=lambda: RegisterUserDataBuilder().with_required_terms().build(),
+            factory=lambda: ClientDataBuilder().with_required_terms().build(),
         )
     ],
     ids=lambda case: case.case_id,

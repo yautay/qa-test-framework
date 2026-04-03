@@ -127,7 +127,7 @@ def _default_pdf_config() -> dict[str, Any]:
             {"label": "scenario.target_url", "path": "scenario.target_url", "required": True},
             {"label": "scenario.viewport", "path": "scenario.viewport", "required": True},
             {"label": "scenario.browser", "path": "scenario.browser", "required": True},
-            {"label": "scenario.capture.selector", "path": "scenario.capture.selector", "required": False},
+            {"label": "scenario.capture.locator", "path": "scenario.capture.locator", "required": False},
             {"label": "Notatka BUG", "path": "bug.note", "required": False},
             {"label": "Notatka ASO", "path": "aso.note", "required": False},
         ],

@@ -60,11 +60,11 @@ def _attach_result_metadata(
             "browser": result.browser,
             "capture": {
                 "type": scenario.capture.capture_type,
-                "selector": scenario.capture.selector,
+                "locator": scenario.capture.locator,
                 "full_page": scenario.capture.full_page,
             },
             "mask": {
-                "selectors": list(scenario.mask.selectors),
+                "locators": list(scenario.mask.locators),
                 "color": scenario.mask.color,
             },
             "json_source": {

@@ -164,7 +164,7 @@ def _scenario_from_payload(payload: dict[str, Any], file_path: Path, idx: int) -
         compare_mode=cast(CompareMode, compare_mode),
         capture=VisualCapture(
             capture_type=cast(CaptureType, capture_type),
-            selector=_as_str(capture_raw.get("selector", "")).strip(),
+            locator=_as_str(capture_raw.get("locator", capture_raw.get("selector", ""))).strip(),
             full_page=_as_bool(capture_raw.get("full_page", True), True, file_path, f"{pfx}capture.full_page"),
         ),
         viewport=viewport,
@@ -187,7 +187,9 @@ def _scenario_from_payload(payload: dict[str, Any], file_path: Path, idx: int) -
             ),
         ),
         mask=VisualMask(
-            selectors=tuple(_as_str_list(mask_raw.get("selectors"), file_path, f"{pfx}mask.selectors")),
+            locators=tuple(
+                _as_str_list(mask_raw.get("locators", mask_raw.get("selectors")), file_path, f"{pfx}mask.locators")
+            ),
             color=_as_str(mask_raw.get("color", DEFAULT_MASK_COLOR)),
         ),
         steps=_as_steps(payload.get("steps", []), file_path, pfx),

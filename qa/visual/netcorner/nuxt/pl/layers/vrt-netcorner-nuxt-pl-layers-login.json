@@ -9,7 +9,7 @@
     "full_page": true
   },
   "mask": {
-    "selectors": [
+    "locators": [
       ".cookie-banner",
       "[data-testid='dynamic-banner']"
     ]

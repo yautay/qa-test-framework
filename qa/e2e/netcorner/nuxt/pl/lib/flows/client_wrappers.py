@@ -9,7 +9,7 @@ from qa.e2e.conftest import allure
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.my_account_page import MyAccountPage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.register_page import RegisterPage
-from qa.e2e.netcorner.nuxt.pl.lib.test_data.register_user_data import RegisterUserData
+from qa.e2e.netcorner.nuxt.pl.lib.test_data.client import ClientData
 
 
 def _step(title: str):
@@ -24,7 +24,7 @@ class ClientWrappers:
         self.__context = context
         self.__runtime_env = runtime_env
 
-    def register_new_client(self, user_data: RegisterUserData) -> bool:
+    def register_new_client(self, user_data: ClientData, back_to_hero_page: bool = True) -> bool:
         home = HomePage(self.__page, self.__runtime_env.base_url)
         with _step("Otwieram stronę główną"):
             home = HomePage(self.__page, self.__runtime_env.base_url)
@@ -67,6 +67,8 @@ class ClientWrappers:
                     .content.menu_root.get_logged_as()
                 )
                 if logged_as == user_data.email:
+                    if back_to_hero_page:
+                        home.open().wait_loaded()
                     return True
             return False
 
