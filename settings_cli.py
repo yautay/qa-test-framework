@@ -5,7 +5,7 @@ tester = "Michal Pielaszkiewicz"
 
 # Execution
 browser = "chromium"
-is_session_headless = False
+is_session_headless = True
 
 # Environment
 server_name = "perpetum.gamma"
