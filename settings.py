@@ -17,7 +17,9 @@ highlight_on_fail = False
 min_expected_tests = 1
 
 # Grid
+grid_provider = "auto"
 grid_ws_endpoint = "http://10.21.69.57:4444"
+grid_cdp_endpoint = ""
 grid_connect_timeout_ms = 30000
 
 # Visual

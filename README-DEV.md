@@ -162,3 +162,9 @@ pytest --server-name demo
 Reporting notes:
 - `REPORTING_SOURCE_ORIGIN` can be left empty to auto-detect (`ci` when `CI` exists, otherwise `local`).
 - `source.framework_version` is auto-resolved from package metadata (falls back to `unknown` when metadata is unavailable).
+
+Grid notes:
+- `GRID_PROVIDER` supports: `auto` (default), `playwright`, `selenium_cdp`.
+- `auto` tries Playwright protocol first and then Selenium CDP bridge.
+- `selenium_cdp` is Chromium-only (`chromium`/`chrome`).
+- `GRID_CDP_ENDPOINT` can be used to provide explicit CDP endpoint when Selenium Grid does not expose `se:cdp`.
