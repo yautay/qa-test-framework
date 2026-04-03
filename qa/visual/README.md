@@ -58,7 +58,7 @@ Minimalny przyklad:
 - `capture` (opcjonalne, obiekt)
   - `type`: `page` | `viewport` | `element` (domyslnie `page`)
   - `full_page`: bool (domyslnie `true`)
-  - `selector`: wymagany tylko dla `type = "element"`
+  - `locator`: wymagany tylko dla `type = "element"`
 - `thresholds` (opcjonalne, obiekt)
   - `pixel_max`, `lpips_max`, `dists_max` (number)
   - opcjonalnie:
@@ -67,7 +67,7 @@ Minimalny przyklad:
     - `dists_uncertain_delta`
     - `shift_compensation_y_px` (int, `0` = wylaczone)
 - `mask` (opcjonalne, obiekt)
-  - `selectors`: lista CSS selectorow do zamaskowania
+  - `locators`: lista Playwright selector strings do zamaskowania (np. CSS, `role=...`, `data-testid=...`)
   - `color`: `#RRGGBB` (domyslnie `#DDF527`)
 - `steps` (opcjonalne, lista)
   - Kroki funkcjonalne wykonywane po wejsciu na `target_url`, przed screenshotem.
@@ -124,7 +124,12 @@ Przyklad:
   - scroll dol/gora (lazy-load),
   - krotki wait na obrazy i fonty.
 - Jesli `VISUAL_FREEZE_ANIMATIONS=1`, runner tymczasowo wylacza animacje/transitions na czas capture.
-- Dla `full_page = false` stabilizacja lazy-load nie jest wymuszana.
+- Dla `capture.type = element` runner wykonuje stabilizacje elementu:
+  - best-effort `networkidle`,
+  - `scroll_into_view_if_needed` dla celu,
+  - tymczasowy lock scrolla (`overflow: hidden`) na czas screenshotu,
+  - krotki wait na ustabilizowanie layoutu.
+- Dla `full_page = false` stabilizacja lazy-load calej strony nie jest wymuszana.
 - Nawigacja (`target_url` i step `goto`) failuje test przy bledach HTTP:
   - brak odpowiedzi (`None`) -> fail,
   - status `>= 400` (np. 404/500) -> fail.

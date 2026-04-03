@@ -257,6 +257,34 @@ def _probe_is_resolved(probe: object) -> bool:
     return bool(request_url)
 
 
+def _replace_with_retry(temp: Path, target: Path, *, retries: int = 6, base_delay_seconds: float = 0.05) -> None:
+    last_error: PermissionError | None = None
+    for attempt in range(retries):
+        try:
+            temp.replace(target)
+            return
+        except PermissionError as exc:
+            last_error = exc
+            if attempt >= retries - 1:
+                break
+            time.sleep(base_delay_seconds * (attempt + 1))
+    if last_error is not None:
+        raise last_error
+
+
+def _worker_environment_probe_path(run_artifacts: RunArtifacts, worker_id: str) -> Path:
+    return run_artifacts.root / "workers" / worker_id / "environment_probe.json"
+
+
+def _write_worker_environment_probe_file(run_artifacts: RunArtifacts, worker_id: str, probe: dict[str, Any]) -> None:
+    target = _worker_environment_probe_path(run_artifacts, worker_id)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temp = target.with_suffix(".json.tmp")
+    payload = {"environment_probe": dict(probe)}
+    temp.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    _replace_with_retry(temp, target)
+
+
 def _resolve_probe_base_url_from_items(config: pytest.Config, items: list[pytest.Item]) -> tuple[str, str]:
     env: RuntimeEnv | None = getattr(config, "_runtime_env", None)
     if env is None:
@@ -376,7 +404,10 @@ def _refresh_environment_probe_metadata(config: pytest.Config, items: list[pytes
 
     probe_resolved = _probe_is_resolved(probe)
     if probe_resolved and isinstance(run_artifacts, RunArtifacts):
-        _write_run_metadata_file(run_artifacts, metadata)
+        if _is_xdist_worker(config):
+            _write_worker_environment_probe_file(run_artifacts, _current_worker_id(), probe)
+        else:
+            _write_run_metadata_file(run_artifacts, metadata)
 
     config._environment_probe_resolved = probe_resolved
 
@@ -397,7 +428,10 @@ def _persist_environment_probe(config: pytest.Config, probe: dict[str, Any], sou
 
     run_artifacts = getattr(config, "_run_artifacts", None)
     if isinstance(run_artifacts, RunArtifacts):
-        _write_run_metadata_file(run_artifacts, metadata)
+        if _is_xdist_worker(config):
+            _write_worker_environment_probe_file(run_artifacts, _current_worker_id(), payload)
+        else:
+            _write_run_metadata_file(run_artifacts, metadata)
     return True
 
 
@@ -409,7 +443,7 @@ def _write_run_metadata_file(artifacts: RunArtifacts, metadata: dict[str, Any]) 
     target.parent.mkdir(parents=True, exist_ok=True)
     temp = target.parent / f"{target.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp"
     temp.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    temp.replace(target)
+    _replace_with_retry(temp, target)
 
 
 def _read_run_metadata_file(path: Path) -> dict[str, Any] | None:
@@ -624,7 +658,7 @@ def _persist_test_result_payload(config: pytest.Config, nodeid: str, payload: di
     target.parent.mkdir(parents=True, exist_ok=True)
     temp = target.with_suffix(".json.tmp")
     temp.write_text(json.dumps(payloads, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    temp.replace(target)
+    _replace_with_retry(temp, target)
 
 
 def _deduplicated_markers(item: pytest.Item) -> list[str]:

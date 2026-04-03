@@ -247,19 +247,35 @@ class VisualRunner:
         raise ValueError(f"Unknown step action: {action!r}")
 
     def _capture(self, page: Page, scenario: VisualScenario, output_path: Path) -> None:
-        """Capture the screenshot based on capture settings while masking selectors."""
+        """Capture the screenshot based on capture settings while masking locators."""
         output_path.parent.mkdir(parents=True, exist_ok=True)
         freeze_style_id = _inject_freeze_styles(page) if bool(self._env.visual_freeze_animations) else ""
         if scenario.capture.full_page:
             _stabilize_full_page_capture(page)
-        cleanup_ids = _inject_masks(page, list(scenario.mask.selectors), scenario.mask.color)
+        mask_locators = _build_mask_locators(page, list(scenario.mask.locators))
+        mask_color = _hex_to_rgba(scenario.mask.color, alpha=1)
         try:
-            if scenario.capture.capture_type == "element" and scenario.capture.selector:
-                _first_visible_locator(page.locator(scenario.capture.selector)).screenshot(path=str(output_path))
+            if scenario.capture.capture_type == "element" and scenario.capture.locator:
+                target_locator = _first_visible_locator(page.locator(scenario.capture.locator))
+                scroll_lock_style_id = _stabilize_element_capture(page, target_locator)
+                try:
+                    if mask_locators:
+                        target_locator.screenshot(path=str(output_path), mask=mask_locators, mask_color=mask_color)
+                    else:
+                        target_locator.screenshot(path=str(output_path))
+                finally:
+                    _remove_freeze_styles(page, scroll_lock_style_id)
                 return
-            page.screenshot(path=str(output_path), full_page=scenario.capture.full_page)
+            if mask_locators:
+                page.screenshot(
+                    path=str(output_path),
+                    full_page=scenario.capture.full_page,
+                    mask=mask_locators,
+                    mask_color=mask_color,
+                )
+            else:
+                page.screenshot(path=str(output_path), full_page=scenario.capture.full_page)
         finally:
-            _remove_masks(page, cleanup_ids)
             _remove_freeze_styles(page, freeze_style_id)
 
 
@@ -293,6 +309,20 @@ def _hex_to_rgba(hex_color: str, alpha: float) -> str:
         except ValueError:
             return s
     return s
+
+
+def _build_mask_locators(page: Page, selectors: list[str]) -> list[Locator]:
+    """Build mask locators from scenario mask selectors."""
+    locators: list[Locator] = []
+    for selector in selectors:
+        token = str(selector or "").strip()
+        if not token:
+            continue
+        try:
+            locators.append(page.locator(token))
+        except Exception:
+            continue
+    return locators
 
 
 def _stabilize_full_page_capture(page: Page) -> None:
@@ -373,6 +403,28 @@ def _stabilize_full_page_capture(page: Page) -> None:
         pass
 
 
+def _stabilize_element_capture(page: Page, locator: Locator) -> str:
+    """Stabilize element capture and lock page scrolling during screenshot."""
+    try:
+        page.wait_for_load_state("networkidle", timeout=3000)
+    except Exception:
+        pass
+
+    try:
+        locator.scroll_into_view_if_needed(timeout=3000)
+    except Exception:
+        pass
+
+    scroll_lock_style_id = _inject_scroll_lock_styles(page)
+
+    try:
+        page.wait_for_timeout(120)
+    except Exception:
+        pass
+
+    return scroll_lock_style_id
+
+
 def _inject_freeze_styles(page: Page) -> str:
     style_id = "visual-freeze-style"
     script = """
@@ -408,6 +460,38 @@ def _inject_freeze_styles(page: Page) -> str:
         return ""
 
 
+def _inject_scroll_lock_styles(page: Page) -> str:
+    style_id = "visual-scroll-lock-style"
+    script = """
+    (styleId) => {
+      try {
+        const existing = document.getElementById(styleId);
+        if (existing) {
+          return styleId;
+        }
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.textContent = `
+          html, body {
+            overflow: hidden !important;
+            overscroll-behavior: none !important;
+            scroll-behavior: auto !important;
+          }
+        `;
+        document.head.appendChild(style);
+        return styleId;
+      } catch (_) {
+        return "";
+      }
+    }
+    """
+    try:
+        value = page.evaluate(script, style_id)
+        return str(value or "")
+    except Exception:
+        return ""
+
+
 def _remove_freeze_styles(page: Page, style_id: str) -> None:
     token = str(style_id or "").strip()
     if not token:
@@ -422,65 +506,6 @@ def _remove_freeze_styles(page: Page, style_id: str) -> None:
     """
     try:
         page.evaluate(script, token)
-    except Exception:
-        return
-
-
-def _inject_masks(page: Page, selectors: list[str], color: str) -> list[str]:
-    """Overlay the given selectors with translucent masks and return their DOM IDs."""
-    if not selectors:
-        return []
-
-    rgba = _hex_to_rgba(color, alpha=1)
-
-    script = """
-    (params) => {
-      const ids = [];
-      const color = params.color || 'rgba(0,255,0,1)';
-      for (const selector of params.selectors) {
-        document.querySelectorAll(selector).forEach((el) => {
-          const rect = el.getBoundingClientRect();
-          const mask = document.createElement('div');
-          const id = `visual-mask-${Math.random().toString(36).slice(2)}`;
-          mask.id = id;
-          mask.style.position = 'fixed';
-          mask.style.left = `${rect.left}px`;
-          mask.style.top = `${rect.top}px`;
-          mask.style.width = `${rect.width}px`;
-          mask.style.height = `${rect.height}px`;
-          mask.style.background = color;
-          mask.style.zIndex = '2147483647';
-          mask.style.pointerEvents = 'none';
-          document.body.appendChild(mask);
-          ids.push(id);
-        });
-      }
-      return ids;
-    }
-    """
-    try:
-        data: Any = page.evaluate(script, {"selectors": selectors, "color": rgba})
-        if isinstance(data, list):
-            return [str(x) for x in data]
-    except Exception:
-        return []
-    return []
-
-
-def _remove_masks(page: Page, ids: list[str]) -> None:
-    """Clean up DOM masks that were injected for the capture."""
-    if not ids:
-        return
-    script = """
-    (ids) => {
-      for (const id of ids) {
-        const el = document.getElementById(id);
-        if (el) el.remove();
-      }
-    }
-    """
-    try:
-        page.evaluate(script, ids)
     except Exception:
         return
 

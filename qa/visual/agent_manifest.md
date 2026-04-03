@@ -38,8 +38,8 @@ Kazdy scenariusz JSON musi zawierac:
 
 Wymagane placeholdery:
 
-- `capture.selector: "[data-name='replace-capture-selector']"` (dla `type: page` jako placeholder)
-- `mask.selectors` zawiera `"[data-name='replace-mask-selector']"`
+- `capture.locator: "[data-name='replace-capture-selector']"` (dla `type: page` jako placeholder)
+- `mask.locators` zawiera `"[data-name='replace-mask-selector']"` (Playwright selector string; CSS nadal wspierany)
 - `mask.color: "#00FF00"`
 
 ## Suggested Agent Invocation

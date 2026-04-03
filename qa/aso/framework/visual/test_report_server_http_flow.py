@@ -337,6 +337,20 @@ def test_results_endpoint_preserves_execution_target_base_url_metadata(tmp_path:
         ),
         encoding="utf-8",
     )
+    (report_dir.parent / "run-metadata.json").write_text(
+        json.dumps(
+            {
+                "tester": "jan.k",
+                "run_note": "metadata merge",
+                "environment_probe": {
+                    "headers": {
+                        "x-env-git-branch": "feature/demo",
+                    }
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
 
     ui_dist = tmp_path / "ui-dist"
     ui_dist.mkdir(parents=True)

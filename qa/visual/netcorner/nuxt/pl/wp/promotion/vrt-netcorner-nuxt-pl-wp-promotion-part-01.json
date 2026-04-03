@@ -10,7 +10,7 @@
       "full_page": true
     },
     "mask": {
-      "selectors": [
+      "locators": [
         "img"
       ]
     },

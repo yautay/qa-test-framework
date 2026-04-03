@@ -1,0 +1,75 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-configurator-advanced-configurator",
+    "name": "Configurator /advanced-configurator",
+    "suite_id": "netcorner/nuxt/pl/configurator",
+    "target_url": "/advanced-configurator",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true,
+      "locator": "[data-name='replace-capture-selector']"
+    },
+    "mask": {
+      "locators": [
+        "div[data-name=\"loginDialogTrigger\"]"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-configurator-advanced-configurator-advise",
+    "name": "Configurator /advanced-configurator advise",
+    "suite_id": "netcorner/nuxt/pl/configurator",
+    "target_url": "/advanced-configurator",
+    "compare_mode": "hybrid",
+    "capture": {
+      "full_page": false,
+      "type": "element",
+      "locator": "#komputronik-advise"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-configurator-advanced-configurator-components",
+    "name": "Configurator /advanced-configurator components",
+    "suite_id": "netcorner/nuxt/pl/configurator",
+    "target_url": "/advanced-configurator",
+    "compare_mode": "hybrid",
+    "capture": {
+      "full_page": false,
+      "type": "element",
+      "locator": "div > div:nth-of-type(4) > div > div > div > div:nth-of-type(2) > div:nth-of-type(2)"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  },
+  {
+    "id": "vrt-netcorner-nuxt-pl-configurator-advanced-configurator-summary",
+    "name": "Configurator /advanced-configurator summary",
+    "suite_id": "netcorner/nuxt/pl/configurator",
+    "target_url": "/advanced-configurator",
+    "compare_mode": "hybrid",
+    "capture": {
+      "full_page": false,
+      "type": "element",
+      "locator": "div.max-body-w.bg-gray-porcelain"
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    }
+  }
+]

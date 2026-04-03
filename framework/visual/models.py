@@ -4,7 +4,7 @@ from __future__ import annotations
 
 Includes helpers to load VisualScenario definitions from JSON using the schema:
 - scenario id field: "id"
-- capture fields: {"type": "page|viewport|element", "full_page": bool, "selector": str}
+- capture fields: {"type": "page|viewport|element", "full_page": bool, "locator": str}
 """
 
 import json
@@ -268,9 +268,9 @@ class VisualThresholds:
 
 @dataclass(frozen=True)
 class VisualMask:
-    """Optional DOM selectors that receive translucent overlay masking."""
+    """Optional DOM locators that receive translucent overlay masking."""
 
-    selectors: tuple[str, ...] = ()
+    locators: tuple[str, ...] = ()
     color: str = DEFAULT_MASK_COLOR
 
     def __post_init__(self) -> None:
@@ -284,8 +284,9 @@ class VisualMask:
             return cls()
         if not isinstance(d, dict):
             raise ValueError("mask must be an object")
+        locators_raw = d.get("locators") if "locators" in d else d.get("selectors")
         return cls(
-            selectors=_as_tuple_str(d.get("selectors")),
+            locators=_as_tuple_str(locators_raw),
             color=_opt_str(d, "color", DEFAULT_MASK_COLOR),
         )
 
@@ -295,12 +296,12 @@ class VisualCapture:
     """Defines how screenshots should be captured (page/viewport/element)."""
 
     capture_type: CaptureType = "page"
-    selector: str = ""
+    locator: str = ""
     full_page: bool = True
 
     def __post_init__(self) -> None:
-        if self.capture_type == "element" and not self.selector.strip():
-            raise ValueError("capture.selector is required when capture_type='element'")
+        if self.capture_type == "element" and not self.locator.strip():
+            raise ValueError("capture.locator is required when capture_type='element'")
 
     @classmethod
     def from_dict(cls, d: dict[str, Any] | None) -> VisualCapture:
@@ -316,7 +317,7 @@ class VisualCapture:
 
         return cls(
             capture_type=cast(CaptureType, raw_type),
-            selector=_opt_str(d, "selector", ""),
+            locator=_opt_str(d, "locator", _opt_str(d, "selector", "")),
             full_page=_opt_bool(d, "full_page", True),
         )
 

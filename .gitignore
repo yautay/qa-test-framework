@@ -23,3 +23,4 @@ logs/*
 /framework/visual/ui/coverage/
 /qa/visual/baselines/
 /tmp/
+/tools/dbeaver/db_dump_config.json

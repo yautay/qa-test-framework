@@ -3,7 +3,8 @@ from __future__ import annotations
 from playwright.sync_api import Page
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_page import BasePage, LoadState
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import ContentSection
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.hero_component import HeroComponent
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import ContentSection, HeroPageContentSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.footer_section import FooterSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.header_section import HeaderSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.navigation_section import NavigationSection
@@ -14,7 +15,7 @@ class HomePage(BasePage):
 
     def __init__(self, page: Page, base_url: str):
         super().__init__(page, base_url)
-        self.__content: ContentSection | None = None
+        self.__content: HeroPageContentSection | None = None
         self.__header: HeaderSection | None = None
         self.__navigation: NavigationSection | None = None
         self.__footer: FooterSection | None = None
@@ -40,9 +41,9 @@ class HomePage(BasePage):
         return self.__navigation
 
     @property
-    def content(self) -> ContentSection:
+    def content(self) -> HeroPageContentSection:
         if self.__content is None:
-            self.__content = ContentSection(self.page)
+            self.__content = HeroPageContentSection(self.page)
         return self.__content
 
     @property

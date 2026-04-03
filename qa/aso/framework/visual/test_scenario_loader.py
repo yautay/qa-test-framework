@@ -46,12 +46,12 @@ def test_load_scenarios_single_object_defaults(tmp_path: Path) -> None:
     assert scenario.name == "sample__1"
     assert scenario.compare_mode == "hybrid"
     assert scenario.capture.capture_type == "page"
-    assert scenario.capture.selector == ""
+    assert scenario.capture.locator == ""
     assert scenario.capture.full_page is True
     assert scenario.thresholds.pixel_max == 0.005
     assert scenario.thresholds.lpips_max == 0.08
     assert scenario.thresholds.dists_max == 0.08
-    assert scenario.mask.selectors == ()
+    assert scenario.mask.locators == ()
     assert scenario.mask.color == DEFAULT_MASK_COLOR
     assert scenario.steps == ()
     assert scenario.perceptual_required is False
@@ -93,9 +93,9 @@ def test_load_scenarios_parses_steps_and_thresholds(tmp_path: Path) -> None:
         file_path,
         _base_payload(
             compare_mode="hybrid",
-            capture={"type": "element", "selector": "#hero", "full_page": False},
+            capture={"type": "element", "locator": "#hero", "full_page": False},
             thresholds={"pixel_max": "0.01", "lpips_max": 0.12, "dists_max": "0.2", "shift_compensation_y_px": 5},
-            mask={"selectors": [".badge"], "color": "#123456"},
+            mask={"locators": [".badge"], "color": "#123456"},
             steps=[
                 {
                     "action": "  click ",
@@ -113,13 +113,13 @@ def test_load_scenarios_parses_steps_and_thresholds(tmp_path: Path) -> None:
 
     assert scenario.compare_mode == "hybrid"
     assert scenario.capture.capture_type == "element"
-    assert scenario.capture.selector == "#hero"
+    assert scenario.capture.locator == "#hero"
     assert scenario.capture.full_page is False
     assert scenario.thresholds.pixel_max == 0.01
     assert scenario.thresholds.lpips_max == 0.12
     assert scenario.thresholds.dists_max == 0.2
     assert scenario.thresholds.shift_compensation_y_px == 5
-    assert scenario.mask.selectors == (".badge",)
+    assert scenario.mask.locators == (".badge",)
     assert scenario.mask.color == "#123456"
     assert scenario.steps[0].action == "click"
     assert scenario.steps[0].selector == "#cta"
@@ -127,7 +127,7 @@ def test_load_scenarios_parses_steps_and_thresholds(tmp_path: Path) -> None:
     assert scenario.steps[0].timeout_ms == 1500
     assert scenario.steps[0].url == "https://example.test/step"
     assert scenario.perceptual_required is True
-    assert scenario.raw_definition["capture"]["selector"] == "#hero"
+    assert scenario.raw_definition["capture"]["locator"] == "#hero"
     assert scenario.source_file == str(file_path)
 
 
@@ -147,7 +147,7 @@ def test_load_scenarios_rejects_invalid_top_level(tmp_path: Path) -> None:
         ({"capture": {"type": "zoom"}}, "capture.type must be"),
         ({"capture": {"full_page": "yes"}}, "capture.full_page must be a boolean"),
         ({"mask": ["x"]}, "mask must be an object"),
-        ({"mask": {"selectors": [".ok", 1]}}, "mask.selectors must be a list of strings"),
+        ({"mask": {"locators": [".ok", 1]}}, "mask.locators must be a list of strings"),
         ({"thresholds": ["x"]}, "thresholds must be an object"),
         ({"thresholds": {"pixel_max": "nope"}}, "thresholds.pixel_max must be a number"),
         ({"thresholds": {"shift_compensation_y_px": "2px"}}, "thresholds.shift_compensation_y_px must be an int"),
@@ -206,5 +206,5 @@ def test_load_scenarios_empty_lists_are_treated_as_missing_sections(tmp_path: Pa
     scenario = _load_scenarios(file_path)[0]
 
     assert scenario.capture.capture_type == "page"
-    assert scenario.mask.selectors == ()
+    assert scenario.mask.locators == ()
     assert scenario.thresholds.pixel_max == 0.005
