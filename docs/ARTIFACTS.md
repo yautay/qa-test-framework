@@ -68,13 +68,18 @@ Behavior guarantees:
 - probe is executed once per run (not per test),
 - probe failures never fail the test session,
 - failures are logged as `WARNING`,
-- payload is persisted even on error, so downstream reporting/UI keeps a stable shape.
+- payload is persisted even on error, so downstream reporting/UI keeps a stable shape,
+- URL resolution is aligned with `environment_probe` refresh (if `base_url` is unknown at startup, git-info is refreshed later when target URL is resolved).
+
+Notes:
+
+- endpoint can be relative (joined with resolved target `base_url`) or absolute (`https://...`),
+- when multiple target base URLs are detected in one run, the first sorted URL is used and a warning is logged,
+- accepted payload keys include `branch`/`branchName` and `commit`/`commit_hash`/`commitHash`.
 
 Config knobs (`settings.py` / env):
 
-- `run_git_info_frontend_url` / `RUN_GIT_INFO_FRONTEND_URL`
 - `run_git_info_frontend_endpoint` / `RUN_GIT_INFO_FRONTEND_ENDPOINT`
-- `run_git_info_backend_url` / `RUN_GIT_INFO_BACKEND_URL`
 - `run_git_info_backend_endpoint` / `RUN_GIT_INFO_BACKEND_ENDPOINT`
 - `run_git_info_timeout_seconds` / `RUN_GIT_INFO_TIMEOUT_SECONDS`
 

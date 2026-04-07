@@ -101,12 +101,12 @@ def test_load_env_uses_auto_grid_provider_by_default(monkeypatch):
 
 
 def test_load_env_reads_run_git_info_endpoints(monkeypatch):
-    monkeypatch.setenv("RUN_GIT_INFO_FRONTEND_URL", "https://frontend.example/git-info")
-    monkeypatch.setenv("RUN_GIT_INFO_BACKEND_URL", "https://backend.example/git-info")
+    monkeypatch.setenv("RUN_GIT_INFO_FRONTEND_ENDPOINT", "/front-git-info")
+    monkeypatch.setenv("RUN_GIT_INFO_BACKEND_ENDPOINT", "/back-git-info")
     monkeypatch.setenv("RUN_GIT_INFO_TIMEOUT_SECONDS", "7")
 
     env = load_env()
 
-    assert env.run_git_info_frontend_url == "https://frontend.example/git-info"
-    assert env.run_git_info_backend_url == "https://backend.example/git-info"
+    assert env.run_git_info_frontend_endpoint == "/front-git-info"
+    assert env.run_git_info_backend_endpoint == "/back-git-info"
     assert env.run_git_info_timeout_seconds == 7

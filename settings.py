@@ -18,9 +18,7 @@ highlight_on_fail = False
 min_expected_tests = 1
 
 # Target git-info probe
-run_git_info_frontend_url = ""
 run_git_info_frontend_endpoint = "/git-info"
-run_git_info_backend_url = ""
 run_git_info_backend_endpoint = "/git-info"
 run_git_info_timeout_seconds = 3
 

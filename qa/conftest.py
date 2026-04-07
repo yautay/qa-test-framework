@@ -242,11 +242,7 @@ def _default_target_git_info() -> dict[str, Any]:
     }
 
 
-def _resolve_git_info_url(*, base_url: str, explicit_url: str, endpoint: str) -> str:
-    explicit = str(explicit_url or "").strip()
-    if explicit:
-        return explicit
-
+def _resolve_git_info_url(*, base_url: str, endpoint: str) -> str:
     endpoint_token = str(endpoint or "").strip()
     if endpoint_token.startswith(("http://", "https://")):
         return endpoint_token
@@ -260,8 +256,8 @@ def _resolve_git_info_url(*, base_url: str, explicit_url: str, endpoint: str) ->
 def _extract_git_info_fields(payload: dict[str, Any]) -> tuple[str, str]:
     branch = ""
     commit = ""
-    branch_keys = ("branch", "baranch", "git_branch", "branch_name")
-    commit_keys = ("commit", "commit_hash", "hash", "sha")
+    branch_keys = ("branch", "baranch", "git_branch", "branch_name", "branchName")
+    commit_keys = ("commit", "commit_hash", "commitHash", "hash", "sha")
 
     for key in branch_keys:
         value = str(payload.get(key, "") or "").strip()
@@ -297,13 +293,12 @@ def _capture_git_info_endpoint(
     *,
     target: str,
     base_url: str,
-    explicit_url: str,
     endpoint: str,
     timeout_seconds: int,
     ignore_https_errors: bool,
 ) -> dict[str, Any]:
     endpoint_token = str(endpoint or "").strip() or "/git-info"
-    url = _resolve_git_info_url(base_url=base_url, explicit_url=explicit_url, endpoint=endpoint_token)
+    url = _resolve_git_info_url(base_url=base_url, endpoint=endpoint_token)
     payload = {
         "branch": "",
         "commit": "",
@@ -413,7 +408,6 @@ def _capture_target_git_info(env: RuntimeEnv) -> dict[str, Any]:
         frontend = _capture_git_info_endpoint(
             target="frontend",
             base_url=str(getattr(env, "base_url", "") or ""),
-            explicit_url=str(getattr(env, "run_git_info_frontend_url", "") or ""),
             endpoint=frontend_endpoint,
             timeout_seconds=timeout_seconds,
             ignore_https_errors=bool(getattr(env, "ignore_https_errors", True)),
@@ -434,8 +428,7 @@ def _capture_target_git_info(env: RuntimeEnv) -> dict[str, Any]:
     try:
         backend = _capture_git_info_endpoint(
             target="backend",
-            base_url="",
-            explicit_url=str(getattr(env, "run_git_info_backend_url", "") or ""),
+            base_url=str(getattr(env, "base_url", "") or ""),
             endpoint=backend_endpoint,
             timeout_seconds=timeout_seconds,
             ignore_https_errors=bool(getattr(env, "ignore_https_errors", True)),
@@ -594,18 +587,59 @@ def _resolve_probe_base_url_from_runtime_items(items: list[pytest.Item]) -> tupl
     return "", "runtime item base_url is not available"
 
 
-def _refresh_environment_probe_metadata(config: pytest.Config, items: list[pytest.Item]) -> None:
-    if bool(getattr(config, "_environment_probe_resolved", False)):
-        return
+def _target_git_info_needs_refresh(metadata: dict[str, Any]) -> bool:
+    payload = metadata.get("target_git_info")
+    if not isinstance(payload, dict):
+        return True
+    for target in ("frontend", "backend"):
+        target_payload = payload.get(target)
+        if not isinstance(target_payload, dict):
+            return True
+        status = str(target_payload.get("status", "") or "").strip().lower()
+        if not status or status == "not_configured":
+            return True
+    return False
 
+
+def _warn_target_git_info_once(config: pytest.Config, event: str, **fields: object) -> None:
+    warned_events = getattr(config, "_target_git_info_warned_events", None)
+    if not isinstance(warned_events, set):
+        warned_events = set()
+        config._target_git_info_warned_events = warned_events
+    if event in warned_events:
+        return
+    warned_events.add(event)
+    logger.warning(event, **fields)
+
+
+def _items_expect_target_git_info(items: list[pytest.Item]) -> bool:
+    for item in items:
+        marker = None
+        if hasattr(item, "get_closest_marker"):
+            try:
+                marker = item.get_closest_marker("target")
+            except Exception:
+                marker = None
+        if marker and getattr(marker, "args", None):
+            return True
+        nodeid = str(getattr(item, "nodeid", "") or "").replace("\\", "/")
+        if nodeid.startswith("qa/e2e/") or nodeid.startswith("qa/visual/"):
+            return True
+    return False
+
+
+def _refresh_environment_probe_metadata(config: pytest.Config, items: list[pytest.Item]) -> None:
     metadata = getattr(config, "_run_metadata", None)
     if not isinstance(metadata, dict):
         return
 
+    target_git_info_needs_refresh = _target_git_info_needs_refresh(metadata)
+
     existing_probe = metadata.get("environment_probe")
     if _probe_is_resolved(existing_probe):
         config._environment_probe_resolved = True
-        return
+        if not target_git_info_needs_refresh:
+            return
 
     run_artifacts = getattr(config, "_run_artifacts", None)
     metadata_path = None
@@ -618,41 +652,76 @@ def _refresh_environment_probe_metadata(config: pytest.Config, items: list[pytes
         if _probe_is_resolved(persisted_probe):
             config._run_metadata = persisted_metadata
             config._environment_probe_resolved = True
-            return
+            metadata = persisted_metadata
+            existing_probe = persisted_probe
+            target_git_info_needs_refresh = _target_git_info_needs_refresh(metadata)
+            if not target_git_info_needs_refresh:
+                return
 
     env: RuntimeEnv | None = getattr(config, "_runtime_env", None)
     if env is None:
         return
 
-    probe_base_url, source = _resolve_probe_base_url_from_runtime_items(items)
-    if not probe_base_url:
-        probe_base_url, source = _resolve_probe_base_url_from_items(config, items)
-    if probe_base_url:
-        probe = _capture_environment_probe(probe_base_url, env.ignore_https_errors)
-        probe["source"] = source
+    probe_base_url = ""
+    source = ""
+    if _probe_is_resolved(existing_probe):
+        probe_base_url = str(cast(dict[str, Any], existing_probe).get("request_url", "") or "").strip()
+        source = str(cast(dict[str, Any], existing_probe).get("source", "environment_probe") or "environment_probe")
+        probe = cast(dict[str, Any], existing_probe)
+        probe_resolved = True
     else:
-        probe = {
-            "request_url": "",
-            "method": "GET",
-            "status_code": None,
-            "final_url": "",
-            "headers": {},
-            "captured_at_utc": _utc_now(),
-            "error": source,
-            "source": source,
-        }
-
-    metadata["environment_probe"] = probe
-    config._run_metadata = metadata
-
-    probe_resolved = _probe_is_resolved(probe)
-    if probe_resolved and isinstance(run_artifacts, RunArtifacts):
-        if _is_xdist_worker(config):
-            _write_worker_environment_probe_file(run_artifacts, _current_worker_id(), probe)
+        probe_base_url, source = _resolve_probe_base_url_from_runtime_items(items)
+        if not probe_base_url:
+            probe_base_url, source = _resolve_probe_base_url_from_items(config, items)
+        if probe_base_url:
+            probe = _capture_environment_probe(probe_base_url, env.ignore_https_errors)
+            probe["source"] = source
         else:
-            _write_run_metadata_file(run_artifacts, metadata)
+            probe = {
+                "request_url": "",
+                "method": "GET",
+                "status_code": None,
+                "final_url": "",
+                "headers": {},
+                "captured_at_utc": _utc_now(),
+                "error": source,
+                "source": source,
+            }
+        metadata["environment_probe"] = probe
+        config._run_metadata = metadata
+        probe_resolved = _probe_is_resolved(probe)
+        if probe_resolved and isinstance(run_artifacts, RunArtifacts):
+            if _is_xdist_worker(config):
+                _write_worker_environment_probe_file(run_artifacts, _current_worker_id(), probe)
+            else:
+                _write_run_metadata_file(run_artifacts, metadata)
+        config._environment_probe_resolved = probe_resolved
 
-    config._environment_probe_resolved = probe_resolved
+    if not target_git_info_needs_refresh:
+        return
+
+    if not probe_base_url:
+        if _items_expect_target_git_info(items):
+            _warn_target_git_info_once(
+                config,
+                "target_git_info_base_url_unresolved",
+                reason=source,
+            )
+        return
+
+    if "first_of_many" in source:
+        _warn_target_git_info_once(
+            config,
+            "target_git_info_base_url_ambiguous",
+            source=source,
+            chosen_base_url=probe_base_url,
+        )
+
+    refreshed_env = replace(env, base_url=probe_base_url)
+    metadata["target_git_info"] = _capture_target_git_info(refreshed_env)
+    config._run_metadata = metadata
+    if isinstance(run_artifacts, RunArtifacts) and not _is_xdist_worker(config):
+        _write_run_metadata_file(run_artifacts, metadata)
 
 
 def _persist_environment_probe(config: pytest.Config, probe: dict[str, Any], source: str) -> bool:

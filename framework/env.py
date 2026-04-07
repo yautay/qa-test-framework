@@ -101,9 +101,7 @@ class RuntimeEnv:
     pytest_html_enabled: bool
     highlight_on_fail: bool
     min_expected_tests: int
-    run_git_info_frontend_url: str
     run_git_info_frontend_endpoint: str
-    run_git_info_backend_url: str
     run_git_info_backend_endpoint: str
     run_git_info_timeout_seconds: int
     visual_enabled: bool
@@ -295,17 +293,9 @@ def load_env() -> RuntimeEnv:
         pytest_html_enabled=env_bool("PYTEST_HTML_ENABLED", bool(settings.pytest_html_enabled)),
         highlight_on_fail=env_bool("HIGHLIGHT_ON_FAIL", settings.highlight_on_fail),
         min_expected_tests=env_int("MIN_EXPECTED_TESTS", settings.min_expected_tests),
-        run_git_info_frontend_url=env_str(
-            "RUN_GIT_INFO_FRONTEND_URL",
-            str(getattr(settings, "run_git_info_frontend_url", "")),
-        ),
         run_git_info_frontend_endpoint=env_str(
             "RUN_GIT_INFO_FRONTEND_ENDPOINT",
             str(getattr(settings, "run_git_info_frontend_endpoint", "/git-info")),
-        ),
-        run_git_info_backend_url=env_str(
-            "RUN_GIT_INFO_BACKEND_URL",
-            str(getattr(settings, "run_git_info_backend_url", "")),
         ),
         run_git_info_backend_endpoint=env_str(
             "RUN_GIT_INFO_BACKEND_ENDPOINT",
