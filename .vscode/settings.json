@@ -1,7 +1,13 @@
 {
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "python.testing.cwd": "${workspaceFolder}",
     "python.testing.pytestArgs": [
         "-q"
     ],
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.autoTestDiscoverOnSaveEnabled": true,
+    "testing.defaultGutterClickAction": "run",
+    "testing.automaticallyOpenPeekView": "never",
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.autoImportCompletions": true
 }

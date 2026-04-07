@@ -1,5 +1,6 @@
 # Logging
 console_log_level = "WARNING"
+console_suppress_reporting_api_logs = True
 tools_file_log_level = "WARNING"
 tools_logs_dir = "tools/logs"
 log_rotation = "50 MB"
