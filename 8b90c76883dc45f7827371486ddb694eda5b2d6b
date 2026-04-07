@@ -1,0 +1,1 @@
+Zmiana: dodano per-run pobieranie target git-info (frontend/backend) do run-metadata z pelnym fail-safe i logowaniem WARNING; metadane propagowane do report-server/UI oraz pokryte testami ASO i UI.
