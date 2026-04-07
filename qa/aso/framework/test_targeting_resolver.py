@@ -44,7 +44,7 @@ def test_resolve_target_context_for_wp_target_mapping() -> None:
     )
 
     assert context.target_id == "netcorner-wp-gaming"
-    assert context.base_url == "https://wp-komputronik-gamingweryfikacja.alfa.netcorner.pl"
+    assert context.base_url == "https://wp-komputronik-gaming-weryfikacja.alfa.netcorner.pl"
     assert context.source == "target_mapping"
     assert context.explicit_override is False
 

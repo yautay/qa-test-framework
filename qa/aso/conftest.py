@@ -20,6 +20,23 @@ def _aso_autouse(aso) -> None:
     _ = aso
 
 
+@pytest.fixture(scope="function", autouse=True)
+def _apply_extended_timeout_marker(request: pytest.FixtureRequest) -> None:
+    if request.node.get_closest_marker("extended_timeout") is None:
+        return
+    request.getfixturevalue("extended_timeout")
+
+
+@pytest.fixture(scope="function")
+def extended_timeout(request: pytest.FixtureRequest) -> None:
+    try:
+        page = request.getfixturevalue("page")
+    except pytest.FixtureLookupError:
+        return
+    page.set_default_timeout(60_000)
+    page.set_default_navigation_timeout(60_000)
+
+
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     aso_root = Path(__file__).resolve().parent
     for item in items:
