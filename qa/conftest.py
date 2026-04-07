@@ -1327,22 +1327,24 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     artifacts: RunArtifacts = session.config._run_artifacts
     run_uid = str(getattr(session.config, "_run_uid", "") or "")
     timings: dict[str, float] = session.config._test_case_timings
-    worker_id = _current_worker_id()
-    if _is_xdist_worker(session.config):
-        durations_path = artifacts.logs / f"test_durations_{worker_id}.json"
-        save_run_timings(durations_path, timings)
-    elif _is_xdist_controller(session.config):
-        merged_timings = _load_worker_timing_files(artifacts.logs)
-        durations_path = artifacts.logs / "test_durations.json"
-        save_run_timings(durations_path, merged_timings)
-        timings = merged_timings
-    else:
-        durations_path = artifacts.logs / "test_durations.json"
-        save_run_timings(durations_path, timings)
+    collect_only = bool(getattr(session.config.option, "collectonly", False))
+    if not collect_only:
+        worker_id = _current_worker_id()
+        if _is_xdist_worker(session.config):
+            durations_path = artifacts.logs / f"test_durations_{worker_id}.json"
+            save_run_timings(durations_path, timings)
+        elif _is_xdist_controller(session.config):
+            merged_timings = _load_worker_timing_files(artifacts.logs)
+            durations_path = artifacts.logs / "test_durations.json"
+            save_run_timings(durations_path, merged_timings)
+            timings = merged_timings
+        else:
+            durations_path = artifacts.logs / "test_durations.json"
+            save_run_timings(durations_path, timings)
 
-    previous = load_previous_timings(artifacts.root)
-    for regression in detect_slow_regressions(timings, previous):
-        logger.warning("test_case_slow_regression", **regression)
+        previous = load_previous_timings(artifacts.root)
+        for regression in detect_slow_regressions(timings, previous):
+            logger.warning("test_case_slow_regression", **regression)
 
     run_finish_payload = {
         **_build_event_envelope(

@@ -38,34 +38,39 @@ def load_previous_timings(current_run_dir: Path) -> dict[str, float]:
     if not run_dirs:
         return {}
 
-    # More robust than lexicographic sorting of directory names
-    latest = max(run_dirs, key=lambda p: p.stat().st_mtime)
-
-    candidate = latest / "logs" / "test_durations.json"
-    if not candidate.is_file():
-        return {}
-
-    try:
-        payload = json.loads(candidate.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, JSONDecodeError):
-        return {}
-
-    cases = payload.get("cases", {})
-    if not isinstance(cases, dict):
-        return {}
-
-    out: dict[str, float] = {}
-    for k, v in cases.items():
-        if not isinstance(k, str):
+    # Prefer the newest non-empty valid snapshot.
+    # This avoids losing regression detection after runs that only produced
+    # an empty timings file (for example collect-only/non-execution runs).
+    run_dirs = sorted(run_dirs, key=lambda p: p.stat().st_mtime, reverse=True)
+    for run_dir in run_dirs:
+        candidate = run_dir / "logs" / "test_durations.json"
+        if not candidate.is_file():
             continue
+
         try:
-            val = float(v)
-        except (TypeError, ValueError):
+            payload = json.loads(candidate.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, JSONDecodeError):
             continue
-        if math.isfinite(val):
-            out[k] = val
 
-    return out
+        cases = payload.get("cases", {})
+        if not isinstance(cases, dict):
+            continue
+
+        out: dict[str, float] = {}
+        for k, v in cases.items():
+            if not isinstance(k, str):
+                continue
+            try:
+                val = float(v)
+            except (TypeError, ValueError):
+                continue
+            if math.isfinite(val):
+                out[k] = val
+
+        if out:
+            return out
+
+    return {}
 
 
 def detect_slow_regressions(
