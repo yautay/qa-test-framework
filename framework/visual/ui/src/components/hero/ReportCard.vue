@@ -22,6 +22,14 @@
         <span class="meta-label">{{ t('card.runNote') }}:</span> {{ report.run_note }}
       </div>
 
+      <div v-if="frontendGitSummary" class="text-muted small run-note">
+        <span class="meta-label">{{ t('card.frontendGit') }}:</span> {{ frontendGitSummary }}
+      </div>
+
+      <div v-if="backendGitSummary" class="text-muted small run-note">
+        <span class="meta-label">{{ t('card.backendGit') }}:</span> {{ backendGitSummary }}
+      </div>
+
       <div data-name="build-info" class="d-flex flex-wrap gap-2 small">
         <span class="badge text-bg-success">{{ report.passed || 0 }}</span>
         <span class="badge text-bg-danger">{{ report.failed || 0 }}</span>
@@ -106,6 +114,42 @@ export default {
         `${t("sync.unsyncedCount")}: ${unsynced}`,
       ].join(", ");
       return `${base}: ${counters}`;
+    },
+    frontendGitSummary() {
+      const gitInfo = this.report?.run_metadata?.target_git_info?.frontend;
+      if (!gitInfo || typeof gitInfo !== "object") return "";
+      const branch = String(gitInfo.branch || "").trim();
+      const commit = String(gitInfo.commit || "").trim();
+      const status = String(gitInfo.status || "").trim();
+      const error = String(gitInfo.error || "").trim();
+      if (branch && commit) {
+        return `${branch} @ ${commit}`;
+      }
+      if (status === "not_configured") {
+        return t("card.gitInfoNotConfigured");
+      }
+      if (status && status !== "ok") {
+        return error || status;
+      }
+      return "";
+    },
+    backendGitSummary() {
+      const gitInfo = this.report?.run_metadata?.target_git_info?.backend;
+      if (!gitInfo || typeof gitInfo !== "object") return "";
+      const branch = String(gitInfo.branch || "").trim();
+      const commit = String(gitInfo.commit || "").trim();
+      const status = String(gitInfo.status || "").trim();
+      const error = String(gitInfo.error || "").trim();
+      if (branch && commit) {
+        return `${branch} @ ${commit}`;
+      }
+      if (status === "not_configured") {
+        return t("card.gitInfoNotConfigured");
+      }
+      if (status && status !== "ok") {
+        return error || status;
+      }
+      return "";
     },
   },
   methods: {

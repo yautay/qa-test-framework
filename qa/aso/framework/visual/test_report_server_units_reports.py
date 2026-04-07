@@ -59,6 +59,8 @@ def test_list_reports_payload_includes_stats_and_sorted_desc(tmp_path: Path) -> 
     assert payload[0]["skipped"] == 1
     assert payload[0]["tester"] == ""
     assert payload[0]["run_note"] == ""
+    assert payload[0]["run_metadata"]["target_git_info"]["frontend"]["status"] == "not_configured"
+    assert payload[0]["run_metadata"]["target_git_info"]["backend"]["status"] == "not_configured"
     assert payload[1]["failed"] == 1
 
 

@@ -9,6 +9,7 @@ from framework.browser import BrowserSession
 from qa.conftest import _artifact_entry, _read_perceptual_quality_signals
 from framework.env import load_env
 from qa.conftest import _resolve_execution_context
+from qa.conftest import _capture_target_git_info
 
 pytestmark = [pytest.mark.aso]
 
@@ -87,3 +88,39 @@ def test_resolve_execution_context_uses_connected_browser_session() -> None:
     assert payload["grid_provider"] == "selenium_cdp"
     assert payload["grid_endpoint"] == "http://10.0.0.10:4444"
     assert payload["grid_cdp_endpoint"] == "ws://10.0.0.10:9222/devtools/browser/abc"
+
+
+def test_capture_target_git_info_returns_not_configured_when_no_urls(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("RUN_GIT_INFO_FRONTEND_URL", raising=False)
+    monkeypatch.delenv("RUN_GIT_INFO_BACKEND_URL", raising=False)
+    monkeypatch.delenv("BASE_URL", raising=False)
+    monkeypatch.delenv("BASE_URL_OVERRIDE", raising=False)
+    env = load_env()
+
+    payload = _capture_target_git_info(env)
+
+    assert payload["frontend"]["status"] == "not_configured"
+    assert payload["backend"]["status"] == "not_configured"
+
+
+def test_capture_target_git_info_handles_invalid_payload_as_warning(monkeypatch: pytest.MonkeyPatch) -> None:
+    class _Response:
+        status_code = 200
+        url = "https://example.test/git-info"
+
+        @staticmethod
+        def json() -> object:
+            return {"branch": "feature/demo"}
+
+    def _fake_get(*_args, **_kwargs):
+        return _Response()
+
+    monkeypatch.setattr("qa.conftest.requests.get", _fake_get)
+    monkeypatch.setenv("RUN_GIT_INFO_FRONTEND_URL", "https://example.test/git-info")
+    monkeypatch.delenv("RUN_GIT_INFO_BACKEND_URL", raising=False)
+    env = load_env()
+
+    payload = _capture_target_git_info(env)
+
+    assert payload["frontend"]["status"] == "invalid_payload"
+    assert payload["frontend"]["error"] == "missing_branch_or_commit"

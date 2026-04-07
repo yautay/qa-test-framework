@@ -11,6 +11,7 @@ from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
+from urllib.parse import urljoin
 
 import pytest
 import requests
@@ -213,7 +214,248 @@ def _resolve_run_metadata(config: pytest.Config) -> dict[str, Any]:
     return {
         "tester": tester,
         "run_note": run_note,
+        "target_git_info": _default_target_git_info(),
     }
+
+
+def _default_target_git_info() -> dict[str, Any]:
+    now = _utc_now()
+    return {
+        "frontend": {
+            "branch": "",
+            "commit": "",
+            "endpoint": "/git-info",
+            "url": "",
+            "status": "not_configured",
+            "error": "",
+            "fetched_at_utc": now,
+        },
+        "backend": {
+            "branch": "",
+            "commit": "",
+            "endpoint": "/git-info",
+            "url": "",
+            "status": "not_configured",
+            "error": "",
+            "fetched_at_utc": now,
+        },
+    }
+
+
+def _resolve_git_info_url(*, base_url: str, explicit_url: str, endpoint: str) -> str:
+    explicit = str(explicit_url or "").strip()
+    if explicit:
+        return explicit
+
+    endpoint_token = str(endpoint or "").strip()
+    if endpoint_token.startswith(("http://", "https://")):
+        return endpoint_token
+
+    base = str(base_url or "").strip()
+    if not base:
+        return ""
+    return urljoin(base.rstrip("/") + "/", endpoint_token.lstrip("/"))
+
+
+def _extract_git_info_fields(payload: dict[str, Any]) -> tuple[str, str]:
+    branch = ""
+    commit = ""
+    branch_keys = ("branch", "baranch", "git_branch", "branch_name")
+    commit_keys = ("commit", "commit_hash", "hash", "sha")
+
+    for key in branch_keys:
+        value = str(payload.get(key, "") or "").strip()
+        if value:
+            branch = value
+            break
+
+    for key in commit_keys:
+        value = str(payload.get(key, "") or "").strip()
+        if value:
+            commit = value
+            break
+
+    git_section = payload.get("git")
+    if isinstance(git_section, dict):
+        if not branch:
+            for key in branch_keys:
+                value = str(git_section.get(key, "") or "").strip()
+                if value:
+                    branch = value
+                    break
+        if not commit:
+            for key in commit_keys:
+                value = str(git_section.get(key, "") or "").strip()
+                if value:
+                    commit = value
+                    break
+
+    return branch, commit
+
+
+def _capture_git_info_endpoint(
+    *,
+    target: str,
+    base_url: str,
+    explicit_url: str,
+    endpoint: str,
+    timeout_seconds: int,
+    ignore_https_errors: bool,
+) -> dict[str, Any]:
+    endpoint_token = str(endpoint or "").strip() or "/git-info"
+    url = _resolve_git_info_url(base_url=base_url, explicit_url=explicit_url, endpoint=endpoint_token)
+    payload = {
+        "branch": "",
+        "commit": "",
+        "endpoint": endpoint_token,
+        "url": url,
+        "status": "not_configured",
+        "error": "",
+        "fetched_at_utc": _utc_now(),
+    }
+    if not url:
+        return payload
+
+    payload["status"] = "error"
+    timeout = max(1, int(timeout_seconds or 3))
+    try:
+        response = requests.get(
+            url,
+            timeout=timeout,
+            verify=not ignore_https_errors,
+            allow_redirects=True,
+        )
+    except requests.RequestException as exc:
+        payload["error"] = str(exc)
+        logger.warning(
+            "target_git_info_fetch_failed",
+            target=target,
+            endpoint=endpoint_token,
+            url=url,
+            timeout_seconds=timeout,
+            error=str(exc),
+            error_type=type(exc).__name__,
+        )
+        return payload
+
+    payload["url"] = str(response.url or url)
+    if int(response.status_code) < 200 or int(response.status_code) >= 300:
+        preview = ""
+        try:
+            preview = str(response.text or "")[:200]
+        except Exception:
+            preview = ""
+        payload["error"] = f"unexpected_status:{response.status_code}"
+        logger.warning(
+            "target_git_info_invalid_http_status",
+            target=target,
+            endpoint=endpoint_token,
+            url=payload["url"],
+            status_code=int(response.status_code),
+            response_preview=preview,
+        )
+        return payload
+
+    try:
+        body = response.json()
+    except ValueError as exc:
+        payload["error"] = "invalid_json"
+        logger.warning(
+            "target_git_info_invalid_json",
+            target=target,
+            endpoint=endpoint_token,
+            url=payload["url"],
+            error=str(exc),
+            error_type=type(exc).__name__,
+        )
+        return payload
+
+    if not isinstance(body, dict):
+        payload["status"] = "invalid_payload"
+        payload["error"] = "payload_not_object"
+        logger.warning(
+            "target_git_info_invalid_payload",
+            target=target,
+            endpoint=endpoint_token,
+            url=payload["url"],
+            payload_type=type(body).__name__,
+        )
+        return payload
+
+    branch, commit = _extract_git_info_fields(body)
+    payload["branch"] = branch
+    payload["commit"] = commit
+    if branch and commit:
+        payload["status"] = "ok"
+        payload["error"] = ""
+        return payload
+
+    payload["status"] = "invalid_payload"
+    payload["error"] = "missing_branch_or_commit"
+    logger.warning(
+        "target_git_info_missing_required_fields",
+        target=target,
+        endpoint=endpoint_token,
+        url=payload["url"],
+        has_branch=bool(branch),
+        has_commit=bool(commit),
+    )
+    return payload
+
+
+def _capture_target_git_info(env: RuntimeEnv) -> dict[str, Any]:
+    default_payload = _default_target_git_info()
+    timeout_seconds = max(1, int(getattr(env, "run_git_info_timeout_seconds", 3) or 3))
+    frontend_endpoint = str(getattr(env, "run_git_info_frontend_endpoint", "/git-info") or "/git-info")
+    backend_endpoint = str(getattr(env, "run_git_info_backend_endpoint", "/git-info") or "/git-info")
+
+    try:
+        frontend = _capture_git_info_endpoint(
+            target="frontend",
+            base_url=str(getattr(env, "base_url", "") or ""),
+            explicit_url=str(getattr(env, "run_git_info_frontend_url", "") or ""),
+            endpoint=frontend_endpoint,
+            timeout_seconds=timeout_seconds,
+            ignore_https_errors=bool(getattr(env, "ignore_https_errors", True)),
+        )
+    except Exception as exc:
+        frontend = dict(default_payload["frontend"])
+        frontend["status"] = "error"
+        frontend["error"] = f"unexpected_error:{type(exc).__name__}"
+        frontend["fetched_at_utc"] = _utc_now()
+        logger.warning(
+            "target_git_info_unexpected_error",
+            target="frontend",
+            endpoint=frontend_endpoint,
+            error=str(exc),
+            error_type=type(exc).__name__,
+        )
+
+    try:
+        backend = _capture_git_info_endpoint(
+            target="backend",
+            base_url="",
+            explicit_url=str(getattr(env, "run_git_info_backend_url", "") or ""),
+            endpoint=backend_endpoint,
+            timeout_seconds=timeout_seconds,
+            ignore_https_errors=bool(getattr(env, "ignore_https_errors", True)),
+        )
+    except Exception as exc:
+        backend = dict(default_payload["backend"])
+        backend["status"] = "error"
+        backend["error"] = f"unexpected_error:{type(exc).__name__}"
+        backend["fetched_at_utc"] = _utc_now()
+        logger.warning(
+            "target_git_info_unexpected_error",
+            target="backend",
+            endpoint=backend_endpoint,
+            error=str(exc),
+            error_type=type(exc).__name__,
+        )
+
+    default_payload["frontend"] = frontend
+    default_payload["backend"] = backend
+    return default_payload
 
 
 def _capture_environment_probe(base_url: str, ignore_https_errors: bool) -> dict[str, Any]:
@@ -440,6 +682,24 @@ def _write_run_metadata_file(artifacts: RunArtifacts, metadata: dict[str, Any]) 
     payload = dict(metadata) if isinstance(metadata, dict) else {}
     payload["tester"] = str(payload.get("tester", "") or "")
     payload["run_note"] = str(payload.get("run_note", "") or "")
+    target_git_info = payload.get("target_git_info")
+    if not isinstance(target_git_info, dict):
+        target_git_info = _default_target_git_info()
+    for target in ("frontend", "backend"):
+        target_payload = target_git_info.get(target)
+        if not isinstance(target_payload, dict):
+            target_payload = {}
+        endpoint_default = "/git-info"
+        target_git_info[target] = {
+            "branch": str(target_payload.get("branch", "") or ""),
+            "commit": str(target_payload.get("commit", "") or ""),
+            "endpoint": str(target_payload.get("endpoint", endpoint_default) or endpoint_default),
+            "url": str(target_payload.get("url", "") or ""),
+            "status": str(target_payload.get("status", "not_configured") or "not_configured"),
+            "error": str(target_payload.get("error", "") or ""),
+            "fetched_at_utc": str(target_payload.get("fetched_at_utc", _utc_now()) or _utc_now()),
+        }
+    payload["target_git_info"] = target_git_info
     target = artifacts.root / "run-metadata.json"
     target.parent.mkdir(parents=True, exist_ok=True)
     temp = target.parent / f"{target.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp"
@@ -456,6 +716,9 @@ def _read_run_metadata_file(path: Path) -> dict[str, Any] | None:
         return None
     if not isinstance(payload, dict):
         return None
+    target_git_info = payload.get("target_git_info")
+    if not isinstance(target_git_info, dict):
+        payload["target_git_info"] = _default_target_git_info()
     return dict(payload)
 
 
@@ -875,9 +1138,11 @@ def pytest_configure(config: pytest.Config) -> None:
     else:
         initial_probe = _capture_environment_probe(env.base_url, env.ignore_https_errors)
         initial_probe["source"] = "runtime_env.base_url"
+        target_git_info = _capture_target_git_info(env)
         run_metadata = {
             **run_metadata,
             "environment_probe": initial_probe,
+            "target_git_info": target_git_info,
         }
     config._run_metadata = run_metadata
     config._environment_probe_resolved = _probe_is_resolved(run_metadata.get("environment_probe"))
