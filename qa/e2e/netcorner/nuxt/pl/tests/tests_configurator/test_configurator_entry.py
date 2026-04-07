@@ -40,7 +40,7 @@ def _prepare_client_session(page, context, runtime_env, auth_case: AuthSessionCa
     )
     return True
 
-def _test_logic(page, context, runtime_env, auth_case: AuthSessionCase) -> bool:
+def _test_logic(page, context, runtime_env, auth_case: AuthSessionCase):
     if not _prepare_client_session(page, context, runtime_env, auth_case):
         HomePage(page, runtime_env.base_url).open().wait_loaded()
     HomePage(page, runtime_env.base_url).content.hero.go_to_pc_configurator_from_banner()
