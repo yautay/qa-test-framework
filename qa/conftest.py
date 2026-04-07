@@ -1335,9 +1335,10 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
             save_run_timings(durations_path, timings)
         elif _is_xdist_controller(session.config):
             merged_timings = _load_worker_timing_files(artifacts.logs)
+            effective_timings = merged_timings or timings
             durations_path = artifacts.logs / "test_durations.json"
-            save_run_timings(durations_path, merged_timings)
-            timings = merged_timings
+            save_run_timings(durations_path, effective_timings)
+            timings = effective_timings
         else:
             durations_path = artifacts.logs / "test_durations.json"
             save_run_timings(durations_path, timings)

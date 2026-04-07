@@ -83,3 +83,54 @@ def test_pytest_sessionfinish_collect_only_skips_timing_snapshots_and_regression
     assert client.run_finish_calls
     assert client.flush_calls
     assert client.shutdown_calls
+
+
+def test_pytest_sessionfinish_controller_falls_back_to_local_timings_when_no_worker_files(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_artifacts = build_run_artifacts(str(tmp_path / "artifacts"), run_id="run-controller-fallback")
+
+    class _Client:
+        def run_finish(self, _payload: dict[str, object]) -> None:
+            return
+
+        def flush(self, timeout_seconds: int) -> None:
+            _ = timeout_seconds
+
+        def shutdown(self, timeout_seconds: int) -> None:
+            _ = timeout_seconds
+
+    class _PluginManager:
+        @staticmethod
+        def hasplugin(name: str) -> bool:
+            return name == "xdist"
+
+    monkeypatch.delenv("PYTEST_XDIST_WORKER", raising=False)
+
+    config = SimpleNamespace(
+        _run_artifacts=run_artifacts,
+        _run_uid="uid-2",
+        _test_case_timings={"qa/test.py::test_case": 1.234},
+        option=SimpleNamespace(collectonly=False),
+        pluginmanager=_PluginManager(),
+        _runtime_env=load_env(),
+        _run_metadata={"tester": "", "run_note": ""},
+        _result_counters={
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "xfailed": 0,
+            "xpassed": 0,
+            "error": 0,
+        },
+        _session_started=time.time() - 0.2,
+        _reporting_suspended=False,
+        _reporting_client=_Client(),
+    )
+    session = SimpleNamespace(config=config)
+
+    runtime_conftest.pytest_sessionfinish(session, 0)
+
+    payload = (run_artifacts.logs / "test_durations.json").read_text(encoding="utf-8")
+    assert "qa/test.py::test_case" in payload
