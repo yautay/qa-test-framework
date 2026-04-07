@@ -1,0 +1,1 @@
+Doprecyzowanie: usunieto URL override dla git-info (zostaly osobne endpointy front/backend), odswiezanie target_git_info powiazane z refresh environment_probe po rozwiazaniu target base_url; dodano warningi unresolved/ambiguous oraz parser commitHash/branchName + testy jednostkowe i aktualizacje docs.
