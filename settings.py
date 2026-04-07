@@ -55,7 +55,7 @@ visual_minio_secure = True
 
 # PMS
 pms_enabled = True
-pms_base_url = "https://pms.cpt-sztos.com"
+pms_base_url = "http://10.21.69.239:8080"
 pms_metric = "both"
 pms_model = "alex"
 pms_normalize = True
