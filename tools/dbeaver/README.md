@@ -2,10 +2,6 @@
 
 Script parses Test Wizard DOM and generates connection files ready for DBeaver import.
 
-Built import always includes two static demo connections (independent of VM/host filters):
-- `DEMO-PROMOTION` -> `mariadb-rw.demo.kt:3306` (`promotion_rw`)
-- `DEMO-NC` -> `master.demo.kt:3306` (`komputronikpl_rw`)
-
 ## What it does
 
 - Opens wizard page with Playwright and `Authorization` header.
@@ -31,6 +27,7 @@ cp tools/dbeaver/db_dump_config.example.json tools/dbeaver/db_dump_config.json
 - `test_vm.<vm>.mysql.username/password`
 - `defaults.mariadb-<service>` for microservice credentials/schema (e.g. `mariadb-promotions`)
 - `test_vm.<vm>.mariadb.schemas[]` for VM-specific schema-level overrides
+- `always_include_connections[]` for static connections that should always be exported (independent of VM/host filters)
 - `dbeaver.copy_enabled` + `dbeaver.target_data_sources_path` for optional auto-copy after generation
 - `dbeaver.target_credentials_config_path` (optional; default is sibling `credentials-config.json` next to `target_data_sources_path`)
 - `dbeaver.create_target_dir` to auto-create missing destination directory

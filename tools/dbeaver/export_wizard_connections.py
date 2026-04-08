@@ -17,27 +17,6 @@ from playwright.sync_api import Browser, Page, Playwright, sync_playwright
 DEFAULT_CONFIG_PATH = Path(__file__).resolve().parent / "db_dump_config.json"
 DEFAULT_OUT_DIR = Path(__file__).resolve().parent / "out"
 
-ALWAYS_INCLUDED_CONNECTIONS: list[dict[str, str]] = [
-    {
-        "name": "DEMO-PROMOTION",
-        "engine": "mariadb",
-        "host": "mariadb-rw.demo.kt",
-        "port": "3306",
-        "database": "",
-        "username": "promotion_rw",
-        "password": "EFe0d6G04hWD0Kkg",
-    },
-    {
-        "name": "DEMO-NC",
-        "engine": "mariadb",
-        "host": "master.demo.kt",
-        "port": "3306",
-        "database": "",
-        "username": "komputronikpl_rw",
-        "password": "2Rq6NPGPjXdpadjU",
-    },
-]
-
 
 def find_chrome_executable() -> str:
     if sys.platform.startswith("linux"):
@@ -523,17 +502,33 @@ def _row_connection_name(row: dict[str, Any]) -> str:
     return vm_id
 
 
-def _always_include_rows() -> list[dict[str, Any]]:
+def _always_include_rows(config: dict[str, Any]) -> list[dict[str, Any]]:
+    raw_connections = (
+        config.get("always_include_connections") if isinstance(config.get("always_include_connections"), list) else []
+    )
+
     out: list[dict[str, Any]] = []
-    for item in ALWAYS_INCLUDED_CONNECTIONS:
+    for item in raw_connections:
+        if not isinstance(item, dict):
+            continue
+
+        name = _safe_str(item.get("name"))
+        host = _safe_str(item.get("host"))
+        if not name or not host:
+            continue
+
+        engine = _normalize(item.get("engine")) or "mariadb"
+        if engine not in {"mysql", "mariadb"}:
+            continue
+
         out.append(
             {
-                "vm_id": _safe_str(item.get("name")),
+                "vm_id": name,
                 "env": "ALWAYS",
-                "name": _safe_str(item.get("name")),
+                "name": name,
                 "endpoint": DbEndpoint(
-                    engine=_safe_str(item.get("engine")) or "mariadb",
-                    host=_safe_str(item.get("host")),
+                    engine=engine,
+                    host=host,
                     port=_safe_str(item.get("port")) or "3306",
                     database=_safe_str(item.get("database")),
                     username=_safe_str(item.get("username")),
@@ -953,7 +948,7 @@ def main() -> int:
                         }
                     )
 
-    exported_rows.extend(_always_include_rows())
+    exported_rows.extend(_always_include_rows(config=config))
     exported_rows = _deduplicate_exported_rows(exported_rows)
 
     if not exported_rows:
