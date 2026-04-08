@@ -6,11 +6,31 @@
     "timeout_ms": 30000
   },
   "dbeaver": {
-    "copy_enabled": false,
+    "copy_enabled": true,
     "create_target_dir": false,
-    "target_data_sources_path": "C:/Users/********/AppData/Roaming/DBeaverData/workspace6/General/.dbeaver/data-sources.json",
-    "target_credentials_config_path": "C:/Users/********/AppData/Roaming/DBeaverData/workspace6/General/.dbeaver/credentials-config.json"
+    "target_data_sources_path": "C:/Users/m.pielaszkiewicz/AppData/Roaming/DBeaverData/workspace6/General/.dbeaver/data-sources.json",
+    "target_credentials_config_path": "C:/Users/m.pielaszkiewicz/AppData/Roaming/DBeaverData/workspace6/General/.dbeaver/credentials-config.json"
   },
+  "always_include_connections": [
+    {
+      "name": "DEMO-PROMOTION",
+      "engine": "mariadb",
+      "host": "mariadb-rw.demo.kt",
+      "port": 3306,
+      "database": "",
+      "username": "promotion_rw",
+      "password": "********"
+    },
+    {
+      "name": "DEMO-NC",
+      "engine": "mariadb",
+      "host": "master.demo.kt",
+      "port": 3306,
+      "database": "",
+      "username": "komputronikpl_rw",
+      "password": "********"
+    }
+  ],
   "defaults": {
     "mysql": {
       "username": "komputronikpl_up",

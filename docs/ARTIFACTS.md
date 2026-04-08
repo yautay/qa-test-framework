@@ -46,6 +46,43 @@ Run-level writing:
 - `logs/test_durations_<worker>.json` is written by each worker,
 - `logs/test_durations.json` is merged on xdist controller at session finish.
 
+### run-metadata target git info
+
+`run-metadata.json` includes run-level git info for target applications under:
+
+- `target_git_info.frontend`
+- `target_git_info.backend`
+
+Each target entry is normalized to:
+
+- `branch` (string)
+- `commit` (string)
+- `endpoint` (string)
+- `url` (string)
+- `status` (`ok`, `error`, `invalid_payload`, `not_configured`)
+- `error` (string)
+- `fetched_at_utc` (UTC timestamp)
+
+Behavior guarantees:
+
+- probe is executed once per run (not per test),
+- probe failures never fail the test session,
+- failures are logged as `WARNING`,
+- payload is persisted even on error, so downstream reporting/UI keeps a stable shape,
+- URL resolution is aligned with `environment_probe` refresh (if `base_url` is unknown at startup, git-info is refreshed later when target URL is resolved).
+
+Notes:
+
+- endpoint can be relative (joined with resolved target `base_url`) or absolute (`https://...`),
+- when multiple target base URLs are detected in one run, the first sorted URL is used and a warning is logged,
+- accepted payload keys include `branch`/`branchName` and `commit`/`commit_hash`/`commitHash`.
+
+Config knobs (`settings.py` / env):
+
+- `run_git_info_frontend_endpoint` / `RUN_GIT_INFO_FRONTEND_ENDPOINT`
+- `run_git_info_backend_endpoint` / `RUN_GIT_INFO_BACKEND_ENDPOINT`
+- `run_git_info_timeout_seconds` / `RUN_GIT_INFO_TIMEOUT_SECONDS`
+
 ## Visual flow (single process)
 
 Without xdist:

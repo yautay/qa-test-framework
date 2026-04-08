@@ -17,6 +17,18 @@ describe("ReportCard", () => {
           summary: "failed=4 passed=7 new=1",
           tester: "jan.k",
           run_note: "manual smoke",
+          run_metadata: {
+            target_git_info: {
+              frontend: {
+                branch: "feature/front",
+                commit: "abc1234",
+                status: "ok",
+              },
+              backend: {
+                status: "not_configured",
+              },
+            },
+          },
         },
       },
     });
@@ -27,6 +39,8 @@ describe("ReportCard", () => {
     expect(wrapper.find(".text-bg-danger").text()).toBe("4");
     expect(wrapper.text()).toContain("Tester: jan.k");
     expect(wrapper.text()).toContain("Run note: manual smoke");
+    expect(wrapper.text()).toContain("Frontend git: feature/front @ abc1234");
+    expect(wrapper.text()).toContain("Backend git: not configured");
     expect(wrapper.find("a.btn").attributes("href")).toBe("/reports/20260218_120000_000001");
   });
 

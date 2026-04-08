@@ -33,6 +33,18 @@ def test_report_server_endpoints_handle_listing_results_ref_tags_and_baseline_fl
             {
                 "tester": "jan.k",
                 "run_note": "manual smoke",
+                "target_git_info": {
+                    "frontend": {
+                        "branch": "feature/frontend",
+                        "commit": "abcdef1",
+                        "status": "ok",
+                    },
+                    "backend": {
+                        "branch": "",
+                        "commit": "",
+                        "status": "not_configured",
+                    },
+                },
                 "environment_probe": {
                     "status_code": 200,
                     "headers": {
@@ -120,6 +132,7 @@ def test_report_server_endpoints_handle_listing_results_ref_tags_and_baseline_fl
         assert payload["reports"][0]["failed"] == 1
         assert payload["reports"][0]["tester"] == "jan.k"
         assert payload["reports"][0]["run_note"] == "manual smoke"
+        assert payload["reports"][0]["run_metadata"]["target_git_info"]["frontend"]["branch"] == "feature/frontend"
         assert payload["reports"][0]["run_metadata"]["environment_probe"]["headers"]["x-env"] == "demo"
 
         status, payload = _http_json(base_url, f"/api/reports/{run_id}/results")
@@ -131,6 +144,7 @@ def test_report_server_endpoints_handle_listing_results_ref_tags_and_baseline_fl
         assert payload["results"][0]["scenario_id"] == "scenario-1"
         assert payload["results"][0]["tester"] == "jan.k"
         assert payload["results"][0]["run_note"] == "manual smoke"
+        assert payload["run_metadata"]["target_git_info"]["frontend"]["commit"] == "abcdef1"
         assert payload["results"][0]["test_metadata"]["run"]["run_id"] == run_id
         assert payload["results"][0]["test_metadata"]["run"]["environment_probe"]["headers"]["x-env"] == "demo"
 

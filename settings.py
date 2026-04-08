@@ -17,6 +17,11 @@ video_min_seconds = 30
 highlight_on_fail = False
 min_expected_tests = 1
 
+# Target git-info probe
+run_git_info_frontend_endpoint = "/git-info"
+run_git_info_backend_endpoint = "/git-info"
+run_git_info_timeout_seconds = 3
+
 # Grid
 grid_provider = "auto"
 grid_ws_endpoint = "http://10.21.69.57:4444"

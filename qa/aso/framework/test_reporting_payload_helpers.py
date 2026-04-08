@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -9,6 +11,8 @@ from framework.browser import BrowserSession
 from qa.conftest import _artifact_entry, _read_perceptual_quality_signals
 from framework.env import load_env
 from qa.conftest import _resolve_execution_context
+from qa.conftest import _capture_target_git_info
+from qa.conftest import _refresh_environment_probe_metadata
 
 pytestmark = [pytest.mark.aso]
 
@@ -87,3 +91,128 @@ def test_resolve_execution_context_uses_connected_browser_session() -> None:
     assert payload["grid_provider"] == "selenium_cdp"
     assert payload["grid_endpoint"] == "http://10.0.0.10:4444"
     assert payload["grid_cdp_endpoint"] == "ws://10.0.0.10:9222/devtools/browser/abc"
+
+
+def test_capture_target_git_info_returns_not_configured_when_no_urls(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("RUN_GIT_INFO_FRONTEND_ENDPOINT", raising=False)
+    monkeypatch.delenv("RUN_GIT_INFO_BACKEND_ENDPOINT", raising=False)
+    monkeypatch.delenv("BASE_URL", raising=False)
+    monkeypatch.delenv("BASE_URL_OVERRIDE", raising=False)
+    env = load_env()
+
+    payload = _capture_target_git_info(env)
+
+    assert payload["frontend"]["status"] == "not_configured"
+    assert payload["backend"]["status"] == "not_configured"
+
+
+def test_capture_target_git_info_handles_invalid_payload_as_warning(monkeypatch: pytest.MonkeyPatch) -> None:
+    class _Response:
+        status_code = 200
+        url = "https://example.test/git-info"
+
+        @staticmethod
+        def json() -> object:
+            return {"branch": "feature/demo"}
+
+    def _fake_get(*_args, **_kwargs):
+        return _Response()
+
+    monkeypatch.setattr("qa.conftest.requests.get", _fake_get)
+    monkeypatch.setenv("BASE_URL", "https://example.test")
+    monkeypatch.setenv("RUN_GIT_INFO_FRONTEND_ENDPOINT", "/git-info")
+    monkeypatch.setenv("RUN_GIT_INFO_BACKEND_ENDPOINT", "/backend-git-info")
+    env = load_env()
+
+    payload = _capture_target_git_info(env)
+
+    assert payload["frontend"]["status"] == "invalid_payload"
+    assert payload["frontend"]["error"] == "missing_branch_or_commit"
+
+
+def test_capture_target_git_info_accepts_commit_hash_camel_case(monkeypatch: pytest.MonkeyPatch) -> None:
+    class _Response:
+        status_code = 200
+        url = "https://example.test/git-info"
+        headers = {}
+        text = "{}"
+
+        @staticmethod
+        def json() -> object:
+            return {"branch": "feature/demo", "commitHash": "abc1234"}
+
+    def _fake_get(*_args, **_kwargs):
+        return _Response()
+
+    monkeypatch.setattr("qa.conftest.requests.get", _fake_get)
+    monkeypatch.setenv("BASE_URL", "https://example.test")
+    monkeypatch.setenv("RUN_GIT_INFO_FRONTEND_ENDPOINT", "/git-info")
+    monkeypatch.setenv("RUN_GIT_INFO_BACKEND_ENDPOINT", "/git-info")
+    env = load_env()
+
+    payload = _capture_target_git_info(env)
+
+    assert payload["frontend"]["status"] == "ok"
+    assert payload["frontend"]["branch"] == "feature/demo"
+    assert payload["frontend"]["commit"] == "abc1234"
+
+
+def test_refresh_environment_probe_updates_target_git_info_from_resolved_base_url(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    class _Response:
+        status_code = 200
+        url = "https://komputronik-kokoko.gamma.netcorner.pl/git-info"
+        headers = {}
+        text = "{}"
+
+        @staticmethod
+        def json() -> object:
+            return {"branch": "feature/demo", "commit": "abc1234"}
+
+    def _fake_get(url: str, **_kwargs):
+        if url.rstrip("/") == "https://komputronik-kokoko.gamma.netcorner.pl":
+            return _Response()
+        if url.endswith("/git-info"):
+            return _Response()
+        raise RuntimeError(f"unexpected url: {url}")
+
+    monkeypatch.setattr("qa.conftest.requests.get", _fake_get)
+    monkeypatch.setattr(
+        "qa.conftest._resolve_probe_base_url_from_items",
+        lambda _config, _items: ("https://komputronik-kokoko.gamma.netcorner.pl", "target_mapping"),
+    )
+    env = replace(
+        load_env(),
+        base_url="",
+        server_name="kokoko.gamma",
+        run_git_info_frontend_endpoint="/git-info",
+        run_git_info_backend_endpoint="/git-info",
+    )
+
+    metadata = {
+        "tester": "",
+        "run_note": "",
+        "target_git_info": {
+            "frontend": {"status": "not_configured"},
+            "backend": {"status": "not_configured"},
+        },
+        "environment_probe": {
+            "request_url": "",
+        },
+    }
+    config = SimpleNamespace(
+        _runtime_env=env,
+        _run_metadata=metadata,
+        _environment_probe_resolved=False,
+        _target_git_info_warned_events=set(),
+        _run_artifacts=None,
+    )
+    item = SimpleNamespace(nodeid="qa/e2e/netcorner/nuxt/pl/tests/test_dummy.py::test_case")
+
+    _refresh_environment_probe_metadata(config, [item])
+
+    assert config._run_metadata["target_git_info"]["frontend"]["status"] == "ok"
+    assert config._run_metadata["target_git_info"]["frontend"]["branch"] == "feature/demo"
+    assert config._run_metadata["target_git_info"]["frontend"]["commit"] == "abc1234"
