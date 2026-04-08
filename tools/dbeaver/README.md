@@ -2,6 +2,10 @@
 
 Script parses Test Wizard DOM and generates connection files ready for DBeaver import.
 
+Built import always includes two static demo connections (independent of VM/host filters):
+- `DEMO-PROMOTION` -> `mariadb-rw.demo.kt:3306` (`promotion_rw`)
+- `DEMO-NC` -> `master.demo.kt:3306` (`komputronikpl_rw`)
+
 ## What it does
 
 - Opens wizard page with Playwright and `Authorization` header.
