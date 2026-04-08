@@ -6,10 +6,10 @@
     "timeout_ms": 30000
   },
   "dbeaver": {
-    "copy_enabled": false,
+    "copy_enabled": true,
     "create_target_dir": false,
-    "target_data_sources_path": "C:/Users/********/AppData/Roaming/DBeaverData/workspace6/General/.dbeaver/data-sources.json",
-    "target_credentials_config_path": "C:/Users/********/AppData/Roaming/DBeaverData/workspace6/General/.dbeaver/credentials-config.json"
+    "target_data_sources_path": "C:/Users/m.pielaszkiewicz/AppData/Roaming/DBeaverData/workspace6/General/.dbeaver/data-sources.json",
+    "target_credentials_config_path": "C:/Users/m.pielaszkiewicz/AppData/Roaming/DBeaverData/workspace6/General/.dbeaver/credentials-config.json"
   },
   "always_include_connections": [
     {
