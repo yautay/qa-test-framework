@@ -242,6 +242,34 @@ def _default_target_git_info() -> dict[str, Any]:
     }
 
 
+def _normalize_target_git_info_payload(value: object) -> dict[str, Any]:
+    source = value if isinstance(value, dict) else {}
+    output = _default_target_git_info()
+    for target in ("frontend", "backend"):
+        item = source.get(target) if isinstance(source, dict) else None
+        if not isinstance(item, dict):
+            continue
+        endpoint_default = "/git-info"
+        output[target] = {
+            "branch": str(item.get("branch", "") or ""),
+            "commit": str(item.get("commit", "") or ""),
+            "endpoint": str(item.get("endpoint", endpoint_default) or endpoint_default),
+            "url": str(item.get("url", "") or ""),
+            "status": str(item.get("status", "not_configured") or "not_configured"),
+            "error": str(item.get("error", "") or ""),
+            "fetched_at_utc": str(item.get("fetched_at_utc", _utc_now()) or _utc_now()),
+        }
+    return output
+
+
+def _normalize_run_metadata_payload(value: object) -> dict[str, Any]:
+    payload = dict(value) if isinstance(value, dict) else {}
+    payload["tester"] = str(payload.get("tester", "") or "")
+    payload["run_note"] = str(payload.get("run_note", "") or "")
+    payload["target_git_info"] = _normalize_target_git_info_payload(payload.get("target_git_info"))
+    return payload
+
+
 def _resolve_git_info_url(*, base_url: str, endpoint: str) -> str:
     endpoint_token = str(endpoint or "").strip()
     if endpoint_token.startswith(("http://", "https://")):
@@ -748,27 +776,7 @@ def _persist_environment_probe(config: pytest.Config, probe: dict[str, Any], sou
 
 
 def _write_run_metadata_file(artifacts: RunArtifacts, metadata: dict[str, Any]) -> None:
-    payload = dict(metadata) if isinstance(metadata, dict) else {}
-    payload["tester"] = str(payload.get("tester", "") or "")
-    payload["run_note"] = str(payload.get("run_note", "") or "")
-    target_git_info = payload.get("target_git_info")
-    if not isinstance(target_git_info, dict):
-        target_git_info = _default_target_git_info()
-    for target in ("frontend", "backend"):
-        target_payload = target_git_info.get(target)
-        if not isinstance(target_payload, dict):
-            target_payload = {}
-        endpoint_default = "/git-info"
-        target_git_info[target] = {
-            "branch": str(target_payload.get("branch", "") or ""),
-            "commit": str(target_payload.get("commit", "") or ""),
-            "endpoint": str(target_payload.get("endpoint", endpoint_default) or endpoint_default),
-            "url": str(target_payload.get("url", "") or ""),
-            "status": str(target_payload.get("status", "not_configured") or "not_configured"),
-            "error": str(target_payload.get("error", "") or ""),
-            "fetched_at_utc": str(target_payload.get("fetched_at_utc", _utc_now()) or _utc_now()),
-        }
-    payload["target_git_info"] = target_git_info
+    payload = _normalize_run_metadata_payload(metadata)
     target = artifacts.root / "run-metadata.json"
     target.parent.mkdir(parents=True, exist_ok=True)
     temp = target.parent / f"{target.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp"
@@ -785,10 +793,28 @@ def _read_run_metadata_file(path: Path) -> dict[str, Any] | None:
         return None
     if not isinstance(payload, dict):
         return None
-    target_git_info = payload.get("target_git_info")
-    if not isinstance(target_git_info, dict):
-        payload["target_git_info"] = _default_target_git_info()
-    return dict(payload)
+    return _normalize_run_metadata_payload(payload)
+
+
+def _resolve_run_metadata_for_finish(config: pytest.Config, run_artifacts: RunArtifacts) -> dict[str, Any]:
+    current = _normalize_run_metadata_payload(getattr(config, "_run_metadata", None))
+    metadata_path = run_artifacts.root / "run-metadata.json"
+    persisted = _read_run_metadata_file(metadata_path)
+    if not isinstance(persisted, dict):
+        return current
+
+    merged = dict(persisted)
+    merged.update(current)
+
+    if not str(merged.get("tester", "") or "").strip():
+        merged["tester"] = str(persisted.get("tester", "") or "")
+    if not str(merged.get("run_note", "") or "").strip():
+        merged["run_note"] = str(persisted.get("run_note", "") or "")
+
+    if _target_git_info_needs_refresh(merged) and not _target_git_info_needs_refresh(persisted):
+        merged["target_git_info"] = persisted.get("target_git_info", _default_target_git_info())
+
+    return _normalize_run_metadata_payload(merged)
 
 
 def _resolve_run_profile(config: pytest.Config) -> str:
@@ -1325,6 +1351,8 @@ def pytest_runtest_makereport(item: pytest.Item, call):
 @pytest.hookimpl(trylast=True)
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     artifacts: RunArtifacts = session.config._run_artifacts
+    run_finish_metadata = _resolve_run_metadata_for_finish(session.config, artifacts)
+    session.config._run_metadata = run_finish_metadata
     run_uid = str(getattr(session.config, "_run_uid", "") or "")
     timings: dict[str, float] = session.config._test_case_timings
     collect_only = bool(getattr(session.config.option, "collectonly", False))
@@ -1354,7 +1382,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
             run_uid=run_uid,
             event_type="run_finish",
             worker_id=os.getenv("PYTEST_XDIST_WORKER", "master"),
-            metadata=session.config._run_metadata,
+            metadata=run_finish_metadata,
         ),
         "run_finished_at": _utc_now(),
         "exit_status": exitstatus,
@@ -1370,7 +1398,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         },
     }
     if not getattr(session.config, "_reporting_suspended", False):
-        logger.info("reporting_run_finish", run_id=artifacts.run_id, **session.config._run_metadata)
+        logger.info("reporting_run_finish", run_id=artifacts.run_id, **run_finish_metadata)
         session.config._reporting_client.run_finish(run_finish_payload)
     session.config._reporting_client.flush(
         timeout_seconds=session.config._runtime_env.reporting_async_flush_timeout_seconds

@@ -97,7 +97,7 @@ Every event includes common envelope fields:
 - `source` (`project`, `framework_version`, `producer_id`, `instance_id`, `host`, `user`, `worker_id`, `origin`)
 - `run_id`
 - `run_uid`
-- `metadata` (`tester`, `run_note`)
+- `metadata` (`tester`, `run_note`, `target_git_info`)
 
 `idempotency_key` is stable per semantic event and uses `run_uid` to avoid collisions in multi-device runs:
 - `run_start:{run_uid}:{worker_id}`
