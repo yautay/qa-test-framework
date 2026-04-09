@@ -1,0 +1,1 @@
+Zmiana: target_git_info propagowane do test_metadata.run (Visual UI) oraz do payloadu run_finish (/test-run/finish) z fallbackiem z run-metadata.json; dodane testy kontraktowe i aktualizacja dokumentacji API.
