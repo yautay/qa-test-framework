@@ -1,0 +1,1 @@
+Zmiana: target_git_info publikowane także do raportów Allure (environment.properties) i pytest-html (metadata stash); zaktualizowane lokalizacje etykiet kafla na Frontend/Backend branch + testy UI i ASO.
