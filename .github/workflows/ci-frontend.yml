@@ -1,0 +1,37 @@
+name: CI Frontend UI
+
+on:
+  push:
+    branches:
+      - develop
+      - netquarner
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend-ui:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: framework/visual/ui
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: framework/visual/ui/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Build frontend
+        run: npm run build:fast

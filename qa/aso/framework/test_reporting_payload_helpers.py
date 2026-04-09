@@ -8,17 +8,20 @@ from types import SimpleNamespace
 import pytest
 
 from framework.browser import BrowserSession
-from qa.conftest import _artifact_entry, _read_perceptual_quality_signals
 from framework.env import load_env
-from qa.conftest import _resolve_execution_context
-from qa.conftest import _capture_target_git_info
-from qa.conftest import _refresh_environment_probe_metadata
-from qa.conftest import _publish_report_metadata
+from qa.conftest import (
+    _artifact_entry,
+    _capture_target_git_info,
+    _publish_report_metadata,
+    _read_perceptual_quality_signals,
+    _refresh_environment_probe_metadata,
+    _resolve_execution_context,
+)
 
 try:
-    from pytest_metadata.plugin import metadata_key as _PYTEST_METADATA_KEY
+    from pytest_metadata.plugin import metadata_key as pytest_metadata_key
 except Exception:  # pragma: no cover - optional dependency
-    _PYTEST_METADATA_KEY = None
+    pytest_metadata_key = None
 
 pytestmark = [pytest.mark.aso]
 
@@ -261,7 +264,7 @@ def test_publish_report_metadata_writes_allure_environment_properties(tmp_path: 
 
 
 def test_publish_report_metadata_updates_pytest_html_metadata_stash() -> None:
-    if _PYTEST_METADATA_KEY is None:
+    if pytest_metadata_key is None:
         pytest.skip("pytest-metadata plugin unavailable")
 
     config = SimpleNamespace(
@@ -287,7 +290,7 @@ def test_publish_report_metadata_updates_pytest_html_metadata_stash() -> None:
         },
     )
 
-    payload = config.stash[_PYTEST_METADATA_KEY]
+    payload = config.stash[pytest_metadata_key]
     assert payload["tester"] == "qa-user"
     assert payload["run_note"] == "nightly"
     assert payload["target_git_frontend_branch"] == "feature/demo-ui"
