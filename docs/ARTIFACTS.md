@@ -131,6 +131,18 @@ Assets are copied file-by-file (not metadata-preserving copy). This avoids cross
 - `logs/test_durations_<worker>.json` - worker-local timing snapshots,
 - `logs/test_durations.json` - merged timing snapshot.
 
+## Allure and pytest-html metadata
+
+When report plugins are enabled:
+
+- Allure writes `allure-results/environment.properties` with run metadata fields,
+- pytest-html environment metadata is enriched with the same fields.
+
+Target git info is exported as normalized keys:
+
+- `target_git_frontend`, `target_git_frontend_branch`, `target_git_frontend_commit`, `target_git_frontend_status`
+- `target_git_backend`, `target_git_backend_branch`, `target_git_backend_commit`, `target_git_backend_status`
+
 ## Troubleshooting checklist
 
 If visual report files are missing:

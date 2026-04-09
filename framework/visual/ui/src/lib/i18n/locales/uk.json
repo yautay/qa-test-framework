@@ -24,8 +24,8 @@
     "openReport": "Відкрити звіт",
     "tester": "Тестер",
     "runNote": "Примітка запуску",
-    "frontendGit": "Git фронтенду",
-    "backendGit": "Git бекенду",
+    "frontendGit": "Гілка фронтенду",
+    "backendGit": "Гілка бекенду",
     "gitInfoNotConfigured": "не налаштовано"
   },
   "listing": {

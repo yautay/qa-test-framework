@@ -17,6 +17,11 @@ import pytest
 import requests
 from loguru import logger
 
+try:
+    from pytest_metadata.plugin import metadata_key as _PYTEST_METADATA_KEY
+except Exception:  # pragma: no cover - optional dependency
+    _PYTEST_METADATA_KEY = None
+
 import settings_cli
 from framework.artifacts import RunArtifacts, build_run_artifacts, resolve_artifacts_base_dir
 from framework.browser import BrowserSession
@@ -268,6 +273,96 @@ def _normalize_run_metadata_payload(value: object) -> dict[str, Any]:
     payload["run_note"] = str(payload.get("run_note", "") or "")
     payload["target_git_info"] = _normalize_target_git_info_payload(payload.get("target_git_info"))
     return payload
+
+
+def _format_report_target_git_value(target_payload: dict[str, Any]) -> str:
+    branch = str(target_payload.get("branch", "") or "").strip()
+    commit = str(target_payload.get("commit", "") or "").strip()
+    status = str(target_payload.get("status", "") or "").strip()
+    error = str(target_payload.get("error", "") or "").strip()
+    if branch and commit:
+        return f"{branch} @ {commit}"
+    if branch:
+        return branch
+    if commit:
+        return commit
+    if error:
+        return error
+    if status:
+        return status
+    return "not_configured"
+
+
+def _report_metadata_fields(metadata: dict[str, Any]) -> dict[str, str]:
+    payload = _normalize_run_metadata_payload(metadata)
+    target_git_info = _normalize_target_git_info_payload(payload.get("target_git_info"))
+    frontend = target_git_info.get("frontend", {})
+    backend = target_git_info.get("backend", {})
+    return {
+        "tester": str(payload.get("tester", "") or ""),
+        "run_note": str(payload.get("run_note", "") or ""),
+        "target_git_frontend": _format_report_target_git_value(frontend),
+        "target_git_frontend_branch": str(frontend.get("branch", "") or ""),
+        "target_git_frontend_commit": str(frontend.get("commit", "") or ""),
+        "target_git_frontend_status": str(frontend.get("status", "") or ""),
+        "target_git_backend": _format_report_target_git_value(backend),
+        "target_git_backend_branch": str(backend.get("branch", "") or ""),
+        "target_git_backend_commit": str(backend.get("commit", "") or ""),
+        "target_git_backend_status": str(backend.get("status", "") or ""),
+    }
+
+
+def _resolve_allure_results_dir(config: pytest.Config) -> Path | None:
+    alluredir = ""
+    try:
+        alluredir = str(config.getoption("--alluredir") or "")
+    except Exception:
+        option = getattr(config, "option", None)
+        alluredir = str(getattr(option, "allure_report_dir", "") or "")
+    token = alluredir.strip()
+    if not token:
+        return None
+    return Path(token)
+
+
+def _write_allure_environment_properties(config: pytest.Config, metadata: dict[str, Any]) -> None:
+    results_dir = _resolve_allure_results_dir(config)
+    if results_dir is None:
+        return
+    results_dir.mkdir(parents=True, exist_ok=True)
+    fields = _report_metadata_fields(metadata)
+
+    target = results_dir / "environment.properties"
+    payload_lines = [
+        f"{key}={str(value or '').replace(chr(10), ' ').replace(chr(13), ' ')}" for key, value in fields.items()
+    ]
+    temp = target.with_suffix(".properties.tmp")
+    temp.write_text("\n".join(payload_lines) + "\n", encoding="utf-8")
+    temp.replace(target)
+
+
+def _update_pytest_report_environment(config: pytest.Config, metadata: dict[str, Any]) -> None:
+    if _PYTEST_METADATA_KEY is None:
+        return
+    stash = getattr(config, "stash", None)
+    if stash is None:
+        return
+
+    try:
+        existing = stash.get(_PYTEST_METADATA_KEY, {})
+    except Exception:
+        return
+    metadata_section = dict(existing) if isinstance(existing, dict) else {}
+    metadata_section.update(_report_metadata_fields(metadata))
+    try:
+        stash[_PYTEST_METADATA_KEY] = metadata_section
+    except Exception:
+        return
+
+
+def _publish_report_metadata(config: pytest.Config, metadata: dict[str, Any]) -> None:
+    _write_allure_environment_properties(config, metadata)
+    _update_pytest_report_environment(config, metadata)
 
 
 def _resolve_git_info_url(*, base_url: str, endpoint: str) -> str:
@@ -683,6 +778,7 @@ def _refresh_environment_probe_metadata(config: pytest.Config, items: list[pytes
             metadata = persisted_metadata
             existing_probe = persisted_probe
             target_git_info_needs_refresh = _target_git_info_needs_refresh(metadata)
+            _publish_report_metadata(config, metadata)
             if not target_git_info_needs_refresh:
                 return
 
@@ -717,6 +813,7 @@ def _refresh_environment_probe_metadata(config: pytest.Config, items: list[pytes
             }
         metadata["environment_probe"] = probe
         config._run_metadata = metadata
+        _publish_report_metadata(config, metadata)
         probe_resolved = _probe_is_resolved(probe)
         if probe_resolved and isinstance(run_artifacts, RunArtifacts):
             if _is_xdist_worker(config):
@@ -748,6 +845,7 @@ def _refresh_environment_probe_metadata(config: pytest.Config, items: list[pytes
     refreshed_env = replace(env, base_url=probe_base_url)
     metadata["target_git_info"] = _capture_target_git_info(refreshed_env)
     config._run_metadata = metadata
+    _publish_report_metadata(config, metadata)
     if isinstance(run_artifacts, RunArtifacts) and not _is_xdist_worker(config):
         _write_run_metadata_file(run_artifacts, metadata)
 
@@ -765,6 +863,7 @@ def _persist_environment_probe(config: pytest.Config, probe: dict[str, Any], sou
     metadata["environment_probe"] = payload
     config._run_metadata = metadata
     config._environment_probe_resolved = True
+    _publish_report_metadata(config, metadata)
 
     run_artifacts = getattr(config, "_run_artifacts", None)
     if isinstance(run_artifacts, RunArtifacts):
@@ -1240,6 +1339,7 @@ def pytest_configure(config: pytest.Config) -> None:
             "target_git_info": target_git_info,
         }
     config._run_metadata = run_metadata
+    _publish_report_metadata(config, run_metadata)
     config._environment_probe_resolved = _probe_is_resolved(run_metadata.get("environment_probe"))
     config._run_artifacts = artifacts
     config._git_metadata = git_metadata
@@ -1353,6 +1453,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     artifacts: RunArtifacts = session.config._run_artifacts
     run_finish_metadata = _resolve_run_metadata_for_finish(session.config, artifacts)
     session.config._run_metadata = run_finish_metadata
+    _publish_report_metadata(session.config, run_finish_metadata)
     run_uid = str(getattr(session.config, "_run_uid", "") or "")
     timings: dict[str, float] = session.config._test_case_timings
     collect_only = bool(getattr(session.config.option, "collectonly", False))

@@ -24,8 +24,8 @@
     "openReport": "Otwórz raport",
     "tester": "Tester",
     "runNote": "Notatka runa",
-    "frontendGit": "Git frontend",
-    "backendGit": "Git backend",
+    "frontendGit": "Branch frontendu",
+    "backendGit": "Branch backendu",
     "gitInfoNotConfigured": "nie skonfigurowano"
   },
   "listing": {
