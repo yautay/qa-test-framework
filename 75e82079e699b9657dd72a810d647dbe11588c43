@@ -1,0 +1,1 @@
+CI rollout: added GitHub/GitLab/Bitbucket/Jenkins pipelines for develop/netquarner + all PRs, validated ASO and frontend checks locally, and updated README badges.
