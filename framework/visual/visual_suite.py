@@ -19,6 +19,23 @@ from framework.visual.scenario_loader import format_load_errors, load_scenarios_
 def _worker_id() -> str:
     return str(os.getenv("PYTEST_XDIST_WORKER") or "master")
 
+def _apply_scenario_cookies(page, scenario, url: str):
+    cookies = scenario.raw_definition.get("cookies")
+    if not cookies:
+        return
+
+    from urllib.parse import urlparse
+    domain = urlparse(url).hostname
+
+    page.context.add_cookies([
+        {
+            "name": c["name"],
+            "value": c["value"],
+            "domain": domain,
+            "path": "/",
+        }
+        for c in cookies
+    ])
 
 def _default_target_git_info() -> dict[str, dict[str, str]]:
     return {
@@ -301,6 +318,7 @@ def execute_visual_scenario(
             worker_id=worker_id,
         )
         runner = VisualRunner(target_env, repo_root, visual_output_dir)
+        _apply_scenario_cookies(page, scenario, effective_base_url)
         target_pass_started = time.perf_counter()
         result = runner.run(page, scenario, viewport=viewport)
         target_pass_duration_ms = int((time.perf_counter() - target_pass_started) * 1000)
@@ -403,6 +421,7 @@ def execute_visual_scenario(
             reference_cache_dir=str(reference_cache_dir),
         )
         reference_pass_started = time.perf_counter()
+        _apply_scenario_cookies(page, scenario, reference_url)
         reference_runner = VisualRunner(reference_env, repo_root, reference_output_dir)
         reference_result = reference_runner.run(page, scenario, viewport=viewport)
         reference_pass_duration_ms = int((time.perf_counter() - reference_pass_started) * 1000)
@@ -448,6 +467,7 @@ def execute_visual_scenario(
         )
         target_pass_started = time.perf_counter()
         target_runner = VisualRunner(compare_env, repo_root, visual_output_dir)
+        _apply_scenario_cookies(page, scenario, effective_base_url)
         result = target_runner.run(page, scenario, viewport=viewport)
         target_pass_duration_ms = int((time.perf_counter() - target_pass_started) * 1000)
         dual_pass_total_ms = int((time.perf_counter() - dual_started) * 1000)
