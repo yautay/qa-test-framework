@@ -4,7 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
-import conftest as root_conftest
+from qa.aso import conftest as aso_conftest
 
 pytestmark = [pytest.mark.aso]
 
@@ -25,7 +25,7 @@ def test_extended_timeout_sets_playwright_timeouts_to_60_seconds() -> None:
     page = _FakePage()
 
     request = SimpleNamespace(getfixturevalue=lambda name: page)
-    root_conftest.extended_timeout.__wrapped__(request)
+    aso_conftest.extended_timeout.__wrapped__(request)
 
     assert page.default_timeout == 60_000
     assert page.navigation_timeout == 60_000
@@ -40,7 +40,7 @@ def test_apply_extended_timeout_marker_requests_fixture_when_marker_present() ->
         return None
 
     request = SimpleNamespace(node=node, getfixturevalue=_getfixturevalue)
-    root_conftest._apply_extended_timeout_marker.__wrapped__(request)
+    aso_conftest._apply_extended_timeout_marker.__wrapped__(request)
 
     assert calls == ["extended_timeout"]
 
@@ -54,6 +54,6 @@ def test_apply_extended_timeout_marker_skips_when_marker_absent() -> None:
         return None
 
     request = SimpleNamespace(node=node, getfixturevalue=_getfixturevalue)
-    root_conftest._apply_extended_timeout_marker.__wrapped__(request)
+    aso_conftest._apply_extended_timeout_marker.__wrapped__(request)
 
     assert calls == []

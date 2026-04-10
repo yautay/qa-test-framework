@@ -52,6 +52,25 @@ def _resolve_console_log_level() -> str:
     return normalize_log_level(str(value), default="WARNING")
 
 
+def _as_bool(value: str | None, default: bool) -> bool:
+    if value is None:
+        return default
+    token = str(value).strip().lower()
+    if token in {"1", "true", "t", "yes", "y", "on"}:
+        return True
+    if token in {"0", "false", "f", "no", "n", "off"}:
+        return False
+    return default
+
+
+def _resolve_console_suppress_reporting_api_logs() -> bool:
+    raw = os.getenv(
+        "CONSOLE_SUPPRESS_REPORTING_API_LOGS",
+        str(getattr(settings, "console_suppress_reporting_api_logs", True)),
+    )
+    return _as_bool(raw, True)
+
+
 def _normalize_log_level(value: str, default: str = "WARNING") -> str:
     return normalize_log_level(value, default=default)
 
@@ -104,6 +123,22 @@ class _InterceptHandler(logging.Handler):
             depth += 1
 
         logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+
+
+def _is_reporting_api_transport_log(record: Any) -> bool:
+    if not isinstance(record, dict):
+        return False
+    source_name = str(record.get("name", "") or "").strip().lower()
+    if not source_name.startswith("framework.reporting."):
+        return False
+    message = str(record.get("message", "") or "").strip().lower()
+    return message.startswith("reporting_api_") or message.startswith("reporting_async_")
+
+
+def _allow_console_record(record: Any, *, suppress_reporting_api_logs: bool) -> bool:
+    if not suppress_reporting_api_logs:
+        return True
+    return not _is_reporting_api_transport_log(record)
 
 
 def _install_stdlib_logging_bridge() -> None:
@@ -162,11 +197,16 @@ def configure_logging(
         "nodeid": "(session)",  # safe default until bind_test_context() is used
     }
     logger.configure(extra=base_extra, patcher=cast(Any, _redact_record))
+    suppress_reporting_api_logs = _resolve_console_suppress_reporting_api_logs()
 
     # Human-readable console sink
     logger.add(
         _console_stream(),
         level=_resolve_console_log_level(),
+        filter=lambda record: _allow_console_record(
+            record,
+            suppress_reporting_api_logs=suppress_reporting_api_logs,
+        ),
         enqueue=False,  # console is fine without queue; lower overhead
         serialize=False,
         backtrace=False,
@@ -232,9 +272,14 @@ def configure_tools_logging(script_name: str) -> Path:
     logger.remove()
     _install_stdlib_logging_bridge()
     logger.configure(patcher=cast(Any, _redact_record))
+    suppress_reporting_api_logs = _resolve_console_suppress_reporting_api_logs()
     logger.add(
         _console_stream(),
         level=_resolve_console_log_level(),
+        filter=lambda record: _allow_console_record(
+            record,
+            suppress_reporting_api_logs=suppress_reporting_api_logs,
+        ),
         enqueue=False,
         serialize=False,
         backtrace=False,

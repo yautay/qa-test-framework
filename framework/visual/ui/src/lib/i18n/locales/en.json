@@ -23,7 +23,10 @@
     "tests": "tests",
     "openReport": "Open report",
     "tester": "Tester",
-    "runNote": "Run note"
+    "runNote": "Run note",
+    "frontendGit": "Frontend branch",
+    "backendGit": "Backend branch",
+    "gitInfoNotConfigured": "not configured"
   },
   "listing": {
     "scenario": "Scenario",

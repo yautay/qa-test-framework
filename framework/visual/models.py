@@ -160,7 +160,7 @@ def _opt_int(d: dict[str, Any], key: str, default: int) -> int:
     raise ValueError(f"Invalid int field: {key}")
 
 
-def _as_tuple_str(v: Any) -> tuple[str, ...]:
+def _as_tuple_str(v: Any, field_name: str = "selectors") -> tuple[str, ...]:
     """
     Normalize a list/tuple of strings into a tuple.
 
@@ -191,7 +191,7 @@ def _as_tuple_str(v: Any) -> tuple[str, ...]:
         return tuple(v)
     if isinstance(v, tuple) and all(isinstance(x, str) for x in v):
         return v
-    raise ValueError("selectors must be a list of strings")
+    raise ValueError(f"{field_name} must be a list of strings")
 
 
 def _as_tuple_dict(v: Any, field_name: str) -> tuple[dict[str, Any], ...]:
@@ -286,7 +286,7 @@ class VisualMask:
             raise ValueError("mask must be an object")
         locators_raw = d.get("locators") if "locators" in d else d.get("selectors")
         return cls(
-            locators=_as_tuple_str(locators_raw),
+            locators=_as_tuple_str(locators_raw, "mask.locators"),
             color=_opt_str(d, "color", DEFAULT_MASK_COLOR),
         )
 
@@ -403,7 +403,7 @@ class VisualScenario:
             target_url=_require_str(d, "target_url"),
             suite_id=_require_str(d, "suite_id"),
             compare_mode=cast(CompareMode, compare_mode),
-            viewport=_as_tuple_str(d.get("viewport")),
+            viewport=_as_tuple_str(d.get("viewport"), "viewport"),
             capture=VisualCapture.from_dict(d.get("capture")),
             thresholds=VisualThresholds.from_dict(d.get("thresholds")),
             mask=VisualMask.from_dict(d.get("mask")),
@@ -494,24 +494,7 @@ class VisualResult:
 
 
 def load_visual_scenarios_json(path: Path) -> tuple[VisualScenario, ...]:
-    """Load visual scenarios from a JSON file.
+    """Load visual scenarios using the runtime loader contract."""
+    from framework.visual.scenario_loader import _load_scenarios
 
-    Supports top-level:
-      - a single scenario object
-      - a list of scenario objects
-      - {"scenarios": [ ... ]}
-    """
-    data = json.loads(path.read_text(encoding="utf-8"))
-
-    if isinstance(data, dict) and "scenarios" in data:
-        scenarios_raw = data["scenarios"]
-    else:
-        scenarios_raw = data
-
-    if isinstance(scenarios_raw, dict):
-        scenarios_raw = [scenarios_raw]
-
-    if not isinstance(scenarios_raw, list) or not all(isinstance(x, dict) for x in scenarios_raw):
-        raise ValueError("JSON must be a scenario object, a list of scenario objects, or {'scenarios': [...]}")
-
-    return tuple(VisualScenario.from_dict(s) for s in scenarios_raw)
+    return tuple(_load_scenarios(path))

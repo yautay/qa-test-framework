@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from framework.visual.models import DEFAULT_MASK_COLOR
+from framework.visual.models import DEFAULT_MASK_COLOR, VisualMask, load_visual_scenarios_json
 from framework.visual.scenario_loader import (
     ScenarioLoadError,
     _load_scenarios,
@@ -85,6 +85,42 @@ def test_load_scenarios_supports_list_and_container(tmp_path: Path) -> None:
 
     assert [s.scenario_id for s in list_scenarios] == ["scenario-a", "scenario-b"]
     assert [s.scenario_id for s in dict_scenarios] == ["scenario-c", "scenario-d"]
+
+
+def test_load_scenarios_supports_legacy_scenario_id(tmp_path: Path) -> None:
+    file_path = tmp_path / "legacy.json"
+    _write_json(
+        file_path,
+        {
+            "scenario_id": "legacy-scenario",
+            "suite_id": "suite-1",
+            "target_url": "https://example.test/",
+        },
+    )
+
+    scenario = _load_scenarios(file_path)[0]
+
+    assert scenario.scenario_id == "legacy-scenario"
+    assert scenario.name == "legacy-scenario"
+
+
+def test_load_visual_scenarios_json_uses_runtime_loader_defaults(tmp_path: Path) -> None:
+    file_path = tmp_path / "runtime_loader.json"
+    _write_json(
+        file_path,
+        {
+            "scenario_id": "legacy-runtime",
+            "suite_id": "suite-1",
+            "target_url": "https://example.test/",
+        },
+    )
+
+    scenarios = load_visual_scenarios_json(file_path)
+
+    assert len(scenarios) == 1
+    assert scenarios[0].scenario_id == "legacy-runtime"
+    assert scenarios[0].name == "legacy-runtime"
+    assert scenarios[0].compare_mode == "hybrid"
 
 
 def test_load_scenarios_parses_steps_and_thresholds(tmp_path: Path) -> None:
@@ -179,6 +215,11 @@ def test_load_scenarios_with_errors_collects_failures_and_duplicates(tmp_path: P
     assert len(errors) == 2
     assert any("invalid JSON" in error.message for error in errors)
     assert any("Duplicate scenario id" in error.message for error in errors)
+
+
+def test_visual_mask_uses_renamed_locators_error_message() -> None:
+    with pytest.raises(ValueError, match="mask.locators must be a list of strings"):
+        VisualMask.from_dict({"locators": [".ok", 1]})
 
 
 def test_format_load_errors() -> None:

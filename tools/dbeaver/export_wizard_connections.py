@@ -490,6 +490,78 @@ def _connection_name(vm_id: str, endpoint: DbEndpoint) -> str:
     return f"{vm_id} | {endpoint.engine.upper()} | {suffix}"
 
 
+def _row_connection_name(row: dict[str, Any]) -> str:
+    explicit_name = _safe_str(row.get("name"))
+    if explicit_name:
+        return explicit_name
+
+    vm_id = _safe_str(row.get("vm_id"))
+    endpoint = row.get("endpoint")
+    if isinstance(endpoint, DbEndpoint):
+        return _connection_name(vm_id, endpoint)
+    return vm_id
+
+
+def _always_include_rows(config: dict[str, Any]) -> list[dict[str, Any]]:
+    raw_connections = (
+        config.get("always_include_connections") if isinstance(config.get("always_include_connections"), list) else []
+    )
+
+    out: list[dict[str, Any]] = []
+    for item in raw_connections:
+        if not isinstance(item, dict):
+            continue
+
+        name = _safe_str(item.get("name"))
+        host = _safe_str(item.get("host"))
+        if not name or not host:
+            continue
+
+        engine = _normalize(item.get("engine")) or "mariadb"
+        if engine not in {"mysql", "mariadb"}:
+            continue
+
+        out.append(
+            {
+                "vm_id": name,
+                "env": "ALWAYS",
+                "name": name,
+                "endpoint": DbEndpoint(
+                    engine=engine,
+                    host=host,
+                    port=_safe_str(item.get("port")) or "3306",
+                    database=_safe_str(item.get("database")),
+                    username=_safe_str(item.get("username")),
+                    password=_safe_str(item.get("password")),
+                ),
+            }
+        )
+    return out
+
+
+def _deduplicate_exported_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    deduped: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str, str, str, str, str]] = set()
+    for row in rows:
+        endpoint = row.get("endpoint")
+        if not isinstance(endpoint, DbEndpoint):
+            continue
+        dedupe_key = (
+            _normalize(_row_connection_name(row)),
+            endpoint.engine,
+            _normalize(endpoint.host),
+            endpoint.port,
+            _normalize(endpoint.database),
+            _normalize(endpoint.username),
+            _normalize(_safe_str(row.get("env"))),
+        )
+        if dedupe_key in seen:
+            continue
+        seen.add(dedupe_key)
+        deduped.append(row)
+    return deduped
+
+
 def _parse_vm_tokens(value: str) -> list[str]:
     token = _safe_str(value)
     if not token:
@@ -553,7 +625,7 @@ def _to_data_sources_json(entries: list[dict[str, Any]]) -> dict[str, Any]:
         connections[conn_id] = {
             "provider": provider,
             "driver": driver,
-            "name": _connection_name(vm_id, endpoint),
+            "name": _row_connection_name(row),
             "auth-model": "native",
             "save-password": True,
             "show-system-objects": True,
@@ -636,7 +708,7 @@ def _write_outputs(
                 "username": endpoint.username,
                 "password": endpoint.password,
                 "profile": endpoint.profile,
-                "name": _connection_name(_safe_str(row.get("vm_id")), endpoint),
+                "name": _row_connection_name(row),
             }
         )
 
@@ -875,6 +947,9 @@ def main() -> int:
                             "endpoint": schema_endpoint,
                         }
                     )
+
+    exported_rows.extend(_always_include_rows(config=config))
+    exported_rows = _deduplicate_exported_rows(exported_rows)
 
     if not exported_rows:
         raise RuntimeError("No MySQL/MariaDB endpoints extracted from wizard DOM.")

@@ -9,6 +9,8 @@ import settings
 
 from framework.artifacts import resolve_artifacts_base_dir
 from framework.env import RuntimeEnv, load_env
+from framework.reporting.toggles import resolve_report_toggles
+from framework.reporting.toggles import resolve_report_toggles as _resolve_report_toggles
 
 
 pytest_plugins = ("framework.plugins.xdist_report_finalize",)
@@ -61,11 +63,7 @@ def _resolve_report_run_id(config: pytest.Config) -> str:
 
 
 def _resolve_report_toggles(config: pytest.Config, env: RuntimeEnv) -> tuple[bool, bool]:
-    cli_allure_enabled = getattr(config.option, "allure_enabled", None)
-    cli_pytest_html_enabled = getattr(config.option, "pytest_html_enabled", None)
-    allure_enabled = env.allure_enabled if cli_allure_enabled is None else bool(cli_allure_enabled)
-    pytest_html_enabled = env.pytest_html_enabled if cli_pytest_html_enabled is None else bool(cli_pytest_html_enabled)
-    return allure_enabled, pytest_html_enabled
+    return resolve_report_toggles(config, env)
 
 
 @pytest.hookimpl(tryfirst=True)

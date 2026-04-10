@@ -1,5 +1,6 @@
 .pytest_cache
 .idea
+/.vscode/
 __pycache__
 Screenshots
 *.png

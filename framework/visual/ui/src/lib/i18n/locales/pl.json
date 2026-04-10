@@ -23,7 +23,10 @@
     "tests": "testów",
     "openReport": "Otwórz raport",
     "tester": "Tester",
-    "runNote": "Notatka runa"
+    "runNote": "Notatka runa",
+    "frontendGit": "Branch frontendu",
+    "backendGit": "Branch backendu",
+    "gitInfoNotConfigured": "nie skonfigurowano"
   },
   "listing": {
     "scenario": "Scenariusz",

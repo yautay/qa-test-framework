@@ -116,6 +116,7 @@ Scenario JSON reference and authoring guide: `qa/visual/README.md`
 
 - Artifact guide: `docs/ARTIFACTS.md`
 - Reporting API details: `docs/REPORTING_HTTP_INTEGRATION.md`
+- Allure / pytest-html metadata include run-level target git fields (`target_git_frontend_*`, `target_git_backend_*`)
 
 Windows cleanup:
 - `tools/windows/Cleanup_Windows.cmd`

@@ -28,18 +28,61 @@ def _read_results_rows(report_dir: Path) -> list[dict[str, Any]]:
 
 
 def _read_run_metadata(report_dir: Path) -> dict[str, Any]:
+    default_git_info = {
+        "frontend": {
+            "branch": "",
+            "commit": "",
+            "endpoint": "/git-info",
+            "url": "",
+            "status": "not_configured",
+            "error": "",
+            "fetched_at_utc": "",
+        },
+        "backend": {
+            "branch": "",
+            "commit": "",
+            "endpoint": "/git-info",
+            "url": "",
+            "status": "not_configured",
+            "error": "",
+            "fetched_at_utc": "",
+        },
+    }
+
+    def _normalize_target_git_info(value: Any) -> dict[str, Any]:
+        source = value if isinstance(value, dict) else {}
+        output = {
+            "frontend": dict(default_git_info["frontend"]),
+            "backend": dict(default_git_info["backend"]),
+        }
+        for target in ("frontend", "backend"):
+            item = source.get(target) if isinstance(source, dict) else None
+            if not isinstance(item, dict):
+                continue
+            output[target] = {
+                "branch": str(item.get("branch", "") or "").strip(),
+                "commit": str(item.get("commit", "") or "").strip(),
+                "endpoint": str(item.get("endpoint", "/git-info") or "/git-info").strip(),
+                "url": str(item.get("url", "") or "").strip(),
+                "status": str(item.get("status", "not_configured") or "not_configured").strip(),
+                "error": str(item.get("error", "") or "").strip(),
+                "fetched_at_utc": str(item.get("fetched_at_utc", "") or "").strip(),
+            }
+        return output
+
     candidate = report_dir.parent / "run-metadata.json"
     if not candidate.is_file():
-        return {"tester": "", "run_note": ""}
+        return {"tester": "", "run_note": "", "target_git_info": _normalize_target_git_info(None)}
     try:
         data = json.loads(candidate.read_text(encoding="utf-8"))
     except Exception:
-        return {"tester": "", "run_note": ""}
+        return {"tester": "", "run_note": "", "target_git_info": _normalize_target_git_info(None)}
     if not isinstance(data, dict):
-        return {"tester": "", "run_note": ""}
+        return {"tester": "", "run_note": "", "target_git_info": _normalize_target_git_info(None)}
     payload = dict(data)
     payload["tester"] = str(payload.get("tester", "") or "").strip()
     payload["run_note"] = str(payload.get("run_note", "") or "").strip()
+    payload["target_git_info"] = _normalize_target_git_info(payload.get("target_git_info"))
     return payload
 
 

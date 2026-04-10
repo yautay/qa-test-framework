@@ -38,7 +38,22 @@ def _make_pytestconfig(tmp_path: Path) -> SimpleNamespace:
     run_root.mkdir(parents=True, exist_ok=True)
     return SimpleNamespace(
         rootpath=tmp_path,
-        _run_metadata={"tester": "qa", "run_note": "dual"},
+        _run_metadata={
+            "tester": "qa",
+            "run_note": "dual",
+            "target_git_info": {
+                "frontend": {
+                    "branch": "feature/visual",
+                    "commit": "abc1234",
+                    "status": "ok",
+                },
+                "backend": {
+                    "branch": "",
+                    "commit": "",
+                    "status": "not_configured",
+                },
+            },
+        },
         _run_artifacts=SimpleNamespace(root=run_root, run_id="run-1"),
     )
 
@@ -130,7 +145,10 @@ def test_execute_visual_scenario_uses_dual_pass_when_reference_host_is_set(monke
     assert len(visual_results) == 1
     test_metadata = cast(dict[str, Any], visual_results[0].test_metadata)
     execution = cast(dict[str, Any], test_metadata["execution"])
+    run = cast(dict[str, Any], test_metadata["run"])
     assert execution["target_base_url"] == "https://target.example"
+    assert run["target_git_info"]["frontend"]["branch"] == "feature/visual"
+    assert run["target_git_info"]["frontend"]["commit"] == "abc1234"
     payload = request.node._visual_payload
     assert payload["execution"]["dual_pass"] is True
     assert payload["execution"]["reference_host"] == "demo"
@@ -208,7 +226,9 @@ def test_execute_visual_scenario_uses_single_pass_when_reference_host_is_empty(m
     assert len(visual_results) == 1
     test_metadata = cast(dict[str, Any], visual_results[0].test_metadata)
     execution = cast(dict[str, Any], test_metadata["execution"])
+    run = cast(dict[str, Any], test_metadata["run"])
     assert execution["target_base_url"] == "https://target.example"
+    assert run["target_git_info"]["frontend"]["status"] == "ok"
     payload = request.node._visual_payload
     assert payload["execution"]["dual_pass"] is False
     assert payload["execution"]["pms_usage_state"] in {"deferred", "disabled", "not_applicable"}
@@ -279,4 +299,6 @@ def test_execute_visual_scenario_uses_base_url_argument_for_target_runner(monkey
     assert calls == ["https://fixture-base.example"]
     test_metadata = cast(dict[str, Any], visual_results[0].test_metadata)
     execution = cast(dict[str, Any], test_metadata["execution"])
+    run = cast(dict[str, Any], test_metadata["run"])
     assert execution["target_base_url"] == "https://fixture-base.example"
+    assert run["target_git_info"]["frontend"]["branch"] == "feature/visual"

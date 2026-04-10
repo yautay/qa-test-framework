@@ -23,7 +23,10 @@
     "tests": "тестів",
     "openReport": "Відкрити звіт",
     "tester": "Тестер",
-    "runNote": "Примітка запуску"
+    "runNote": "Примітка запуску",
+    "frontendGit": "Гілка фронтенду",
+    "backendGit": "Гілка бекенду",
+    "gitInfoNotConfigured": "не налаштовано"
   },
   "listing": {
     "scenario": "Сценарій",

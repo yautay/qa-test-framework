@@ -1,5 +1,6 @@
 # Logging
 console_log_level = "WARNING"
+console_suppress_reporting_api_logs = True
 tools_file_log_level = "WARNING"
 tools_logs_dir = "tools/logs"
 log_rotation = "50 MB"
@@ -15,6 +16,11 @@ record_video = True
 video_min_seconds = 30
 highlight_on_fail = False
 min_expected_tests = 1
+
+# Target git-info probe
+run_git_info_frontend_endpoint = "/git-info"
+run_git_info_backend_endpoint = "/git-info"
+run_git_info_timeout_seconds = 3
 
 # Grid
 grid_provider = "auto"
@@ -55,7 +61,7 @@ visual_minio_secure = True
 
 # PMS
 pms_enabled = True
-pms_base_url = "https://pms.cpt-sztos.com"
+pms_base_url = "http://10.21.69.239:8080"
 pms_metric = "both"
 pms_model = "alex"
 pms_normalize = True

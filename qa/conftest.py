@@ -11,13 +11,20 @@ from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, cast
+from urllib.parse import urljoin
 
 import pytest
 import requests
 from loguru import logger
 
+try:
+    from pytest_metadata.plugin import metadata_key as _PYTEST_METADATA_KEY
+except Exception:  # pragma: no cover - optional dependency
+    _PYTEST_METADATA_KEY = None
+
 import settings_cli
 from framework.artifacts import RunArtifacts, build_run_artifacts, resolve_artifacts_base_dir
+from framework.browser import BrowserSession
 from framework.env import RuntimeEnv, load_env
 from framework.git_info import get_git_metadata
 from framework.logger import add_reporting_api_sink, bind_test_context, configure_logging
@@ -212,7 +219,359 @@ def _resolve_run_metadata(config: pytest.Config) -> dict[str, Any]:
     return {
         "tester": tester,
         "run_note": run_note,
+        "target_git_info": _default_target_git_info(),
     }
+
+
+def _default_target_git_info() -> dict[str, Any]:
+    now = _utc_now()
+    return {
+        "frontend": {
+            "branch": "",
+            "commit": "",
+            "endpoint": "/git-info",
+            "url": "",
+            "status": "not_configured",
+            "error": "",
+            "fetched_at_utc": now,
+        },
+        "backend": {
+            "branch": "",
+            "commit": "",
+            "endpoint": "/git-info",
+            "url": "",
+            "status": "not_configured",
+            "error": "",
+            "fetched_at_utc": now,
+        },
+    }
+
+
+def _normalize_target_git_info_payload(value: object) -> dict[str, Any]:
+    source = value if isinstance(value, dict) else {}
+    output = _default_target_git_info()
+    for target in ("frontend", "backend"):
+        item = source.get(target) if isinstance(source, dict) else None
+        if not isinstance(item, dict):
+            continue
+        endpoint_default = "/git-info"
+        output[target] = {
+            "branch": str(item.get("branch", "") or ""),
+            "commit": str(item.get("commit", "") or ""),
+            "endpoint": str(item.get("endpoint", endpoint_default) or endpoint_default),
+            "url": str(item.get("url", "") or ""),
+            "status": str(item.get("status", "not_configured") or "not_configured"),
+            "error": str(item.get("error", "") or ""),
+            "fetched_at_utc": str(item.get("fetched_at_utc", _utc_now()) or _utc_now()),
+        }
+    return output
+
+
+def _normalize_run_metadata_payload(value: object) -> dict[str, Any]:
+    payload = dict(value) if isinstance(value, dict) else {}
+    payload["tester"] = str(payload.get("tester", "") or "")
+    payload["run_note"] = str(payload.get("run_note", "") or "")
+    payload["target_git_info"] = _normalize_target_git_info_payload(payload.get("target_git_info"))
+    return payload
+
+
+def _format_report_target_git_value(target_payload: dict[str, Any]) -> str:
+    branch = str(target_payload.get("branch", "") or "").strip()
+    commit = str(target_payload.get("commit", "") or "").strip()
+    status = str(target_payload.get("status", "") or "").strip()
+    error = str(target_payload.get("error", "") or "").strip()
+    if branch and commit:
+        return f"{branch} @ {commit}"
+    if branch:
+        return branch
+    if commit:
+        return commit
+    if error:
+        return error
+    if status:
+        return status
+    return "not_configured"
+
+
+def _report_metadata_fields(metadata: dict[str, Any]) -> dict[str, str]:
+    payload = _normalize_run_metadata_payload(metadata)
+    target_git_info = _normalize_target_git_info_payload(payload.get("target_git_info"))
+    frontend = target_git_info.get("frontend", {})
+    backend = target_git_info.get("backend", {})
+    return {
+        "tester": str(payload.get("tester", "") or ""),
+        "run_note": str(payload.get("run_note", "") or ""),
+        "target_git_frontend": _format_report_target_git_value(frontend),
+        "target_git_frontend_branch": str(frontend.get("branch", "") or ""),
+        "target_git_frontend_commit": str(frontend.get("commit", "") or ""),
+        "target_git_frontend_status": str(frontend.get("status", "") or ""),
+        "target_git_backend": _format_report_target_git_value(backend),
+        "target_git_backend_branch": str(backend.get("branch", "") or ""),
+        "target_git_backend_commit": str(backend.get("commit", "") or ""),
+        "target_git_backend_status": str(backend.get("status", "") or ""),
+    }
+
+
+def _resolve_allure_results_dir(config: pytest.Config) -> Path | None:
+    alluredir = ""
+    try:
+        alluredir = str(config.getoption("--alluredir") or "")
+    except Exception:
+        option = getattr(config, "option", None)
+        alluredir = str(getattr(option, "allure_report_dir", "") or "")
+    token = alluredir.strip()
+    if not token:
+        return None
+    return Path(token)
+
+
+def _write_allure_environment_properties(config: pytest.Config, metadata: dict[str, Any]) -> None:
+    results_dir = _resolve_allure_results_dir(config)
+    if results_dir is None:
+        return
+    results_dir.mkdir(parents=True, exist_ok=True)
+    fields = _report_metadata_fields(metadata)
+
+    target = results_dir / "environment.properties"
+    payload_lines = [
+        f"{key}={str(value or '').replace(chr(10), ' ').replace(chr(13), ' ')}" for key, value in fields.items()
+    ]
+    temp = target.with_suffix(".properties.tmp")
+    temp.write_text("\n".join(payload_lines) + "\n", encoding="utf-8")
+    temp.replace(target)
+
+
+def _update_pytest_report_environment(config: pytest.Config, metadata: dict[str, Any]) -> None:
+    if _PYTEST_METADATA_KEY is None:
+        return
+    stash = getattr(config, "stash", None)
+    if stash is None:
+        return
+
+    try:
+        existing = stash.get(_PYTEST_METADATA_KEY, {})
+    except Exception:
+        return
+    metadata_section = dict(existing) if isinstance(existing, dict) else {}
+    metadata_section.update(_report_metadata_fields(metadata))
+    try:
+        stash[_PYTEST_METADATA_KEY] = metadata_section
+    except Exception:
+        return
+
+
+def _publish_report_metadata(config: pytest.Config, metadata: dict[str, Any]) -> None:
+    _write_allure_environment_properties(config, metadata)
+    _update_pytest_report_environment(config, metadata)
+
+
+def _resolve_git_info_url(*, base_url: str, endpoint: str) -> str:
+    endpoint_token = str(endpoint or "").strip()
+    if endpoint_token.startswith(("http://", "https://")):
+        return endpoint_token
+
+    base = str(base_url or "").strip()
+    if not base:
+        return ""
+    return urljoin(base.rstrip("/") + "/", endpoint_token.lstrip("/"))
+
+
+def _extract_git_info_fields(payload: dict[str, Any]) -> tuple[str, str]:
+    branch = ""
+    commit = ""
+    branch_keys = ("branch", "baranch", "git_branch", "branch_name", "branchName")
+    commit_keys = ("commit", "commit_hash", "commitHash", "hash", "sha")
+
+    for key in branch_keys:
+        value = str(payload.get(key, "") or "").strip()
+        if value:
+            branch = value
+            break
+
+    for key in commit_keys:
+        value = str(payload.get(key, "") or "").strip()
+        if value:
+            commit = value
+            break
+
+    git_section = payload.get("git")
+    if isinstance(git_section, dict):
+        if not branch:
+            for key in branch_keys:
+                value = str(git_section.get(key, "") or "").strip()
+                if value:
+                    branch = value
+                    break
+        if not commit:
+            for key in commit_keys:
+                value = str(git_section.get(key, "") or "").strip()
+                if value:
+                    commit = value
+                    break
+
+    return branch, commit
+
+
+def _capture_git_info_endpoint(
+    *,
+    target: str,
+    base_url: str,
+    endpoint: str,
+    timeout_seconds: int,
+    ignore_https_errors: bool,
+) -> dict[str, Any]:
+    endpoint_token = str(endpoint or "").strip() or "/git-info"
+    url = _resolve_git_info_url(base_url=base_url, endpoint=endpoint_token)
+    payload = {
+        "branch": "",
+        "commit": "",
+        "endpoint": endpoint_token,
+        "url": url,
+        "status": "not_configured",
+        "error": "",
+        "fetched_at_utc": _utc_now(),
+    }
+    if not url:
+        return payload
+
+    payload["status"] = "error"
+    timeout = max(1, int(timeout_seconds or 3))
+    try:
+        response = requests.get(
+            url,
+            timeout=timeout,
+            verify=not ignore_https_errors,
+            allow_redirects=True,
+        )
+    except requests.RequestException as exc:
+        payload["error"] = str(exc)
+        logger.warning(
+            "target_git_info_fetch_failed",
+            target=target,
+            endpoint=endpoint_token,
+            url=url,
+            timeout_seconds=timeout,
+            error=str(exc),
+            error_type=type(exc).__name__,
+        )
+        return payload
+
+    payload["url"] = str(response.url or url)
+    if int(response.status_code) < 200 or int(response.status_code) >= 300:
+        preview = ""
+        try:
+            preview = str(response.text or "")[:200]
+        except Exception:
+            preview = ""
+        payload["error"] = f"unexpected_status:{response.status_code}"
+        logger.warning(
+            "target_git_info_invalid_http_status",
+            target=target,
+            endpoint=endpoint_token,
+            url=payload["url"],
+            status_code=int(response.status_code),
+            response_preview=preview,
+        )
+        return payload
+
+    try:
+        body = response.json()
+    except ValueError as exc:
+        payload["error"] = "invalid_json"
+        logger.warning(
+            "target_git_info_invalid_json",
+            target=target,
+            endpoint=endpoint_token,
+            url=payload["url"],
+            error=str(exc),
+            error_type=type(exc).__name__,
+        )
+        return payload
+
+    if not isinstance(body, dict):
+        payload["status"] = "invalid_payload"
+        payload["error"] = "payload_not_object"
+        logger.warning(
+            "target_git_info_invalid_payload",
+            target=target,
+            endpoint=endpoint_token,
+            url=payload["url"],
+            payload_type=type(body).__name__,
+        )
+        return payload
+
+    branch, commit = _extract_git_info_fields(body)
+    payload["branch"] = branch
+    payload["commit"] = commit
+    if branch and commit:
+        payload["status"] = "ok"
+        payload["error"] = ""
+        return payload
+
+    payload["status"] = "invalid_payload"
+    payload["error"] = "missing_branch_or_commit"
+    logger.warning(
+        "target_git_info_missing_required_fields",
+        target=target,
+        endpoint=endpoint_token,
+        url=payload["url"],
+        has_branch=bool(branch),
+        has_commit=bool(commit),
+    )
+    return payload
+
+
+def _capture_target_git_info(env: RuntimeEnv) -> dict[str, Any]:
+    default_payload = _default_target_git_info()
+    timeout_seconds = max(1, int(getattr(env, "run_git_info_timeout_seconds", 3) or 3))
+    frontend_endpoint = str(getattr(env, "run_git_info_frontend_endpoint", "/git-info") or "/git-info")
+    backend_endpoint = str(getattr(env, "run_git_info_backend_endpoint", "/git-info") or "/git-info")
+
+    try:
+        frontend = _capture_git_info_endpoint(
+            target="frontend",
+            base_url=str(getattr(env, "base_url", "") or ""),
+            endpoint=frontend_endpoint,
+            timeout_seconds=timeout_seconds,
+            ignore_https_errors=bool(getattr(env, "ignore_https_errors", True)),
+        )
+    except Exception as exc:
+        frontend = dict(default_payload["frontend"])
+        frontend["status"] = "error"
+        frontend["error"] = f"unexpected_error:{type(exc).__name__}"
+        frontend["fetched_at_utc"] = _utc_now()
+        logger.warning(
+            "target_git_info_unexpected_error",
+            target="frontend",
+            endpoint=frontend_endpoint,
+            error=str(exc),
+            error_type=type(exc).__name__,
+        )
+
+    try:
+        backend = _capture_git_info_endpoint(
+            target="backend",
+            base_url=str(getattr(env, "base_url", "") or ""),
+            endpoint=backend_endpoint,
+            timeout_seconds=timeout_seconds,
+            ignore_https_errors=bool(getattr(env, "ignore_https_errors", True)),
+        )
+    except Exception as exc:
+        backend = dict(default_payload["backend"])
+        backend["status"] = "error"
+        backend["error"] = f"unexpected_error:{type(exc).__name__}"
+        backend["fetched_at_utc"] = _utc_now()
+        logger.warning(
+            "target_git_info_unexpected_error",
+            target="backend",
+            endpoint=backend_endpoint,
+            error=str(exc),
+            error_type=type(exc).__name__,
+        )
+
+    default_payload["frontend"] = frontend
+    default_payload["backend"] = backend
+    return default_payload
 
 
 def _capture_environment_probe(base_url: str, ignore_https_errors: bool) -> dict[str, Any]:
@@ -351,18 +710,59 @@ def _resolve_probe_base_url_from_runtime_items(items: list[pytest.Item]) -> tupl
     return "", "runtime item base_url is not available"
 
 
-def _refresh_environment_probe_metadata(config: pytest.Config, items: list[pytest.Item]) -> None:
-    if bool(getattr(config, "_environment_probe_resolved", False)):
-        return
+def _target_git_info_needs_refresh(metadata: dict[str, Any]) -> bool:
+    payload = metadata.get("target_git_info")
+    if not isinstance(payload, dict):
+        return True
+    for target in ("frontend", "backend"):
+        target_payload = payload.get(target)
+        if not isinstance(target_payload, dict):
+            return True
+        status = str(target_payload.get("status", "") or "").strip().lower()
+        if not status or status == "not_configured":
+            return True
+    return False
 
+
+def _warn_target_git_info_once(config: pytest.Config, event: str, **fields: object) -> None:
+    warned_events = getattr(config, "_target_git_info_warned_events", None)
+    if not isinstance(warned_events, set):
+        warned_events = set()
+        config._target_git_info_warned_events = warned_events
+    if event in warned_events:
+        return
+    warned_events.add(event)
+    logger.warning(event, **fields)
+
+
+def _items_expect_target_git_info(items: list[pytest.Item]) -> bool:
+    for item in items:
+        marker = None
+        if hasattr(item, "get_closest_marker"):
+            try:
+                marker = item.get_closest_marker("target")
+            except Exception:
+                marker = None
+        if marker and getattr(marker, "args", None):
+            return True
+        nodeid = str(getattr(item, "nodeid", "") or "").replace("\\", "/")
+        if nodeid.startswith("qa/e2e/") or nodeid.startswith("qa/visual/"):
+            return True
+    return False
+
+
+def _refresh_environment_probe_metadata(config: pytest.Config, items: list[pytest.Item]) -> None:
     metadata = getattr(config, "_run_metadata", None)
     if not isinstance(metadata, dict):
         return
 
+    target_git_info_needs_refresh = _target_git_info_needs_refresh(metadata)
+
     existing_probe = metadata.get("environment_probe")
     if _probe_is_resolved(existing_probe):
         config._environment_probe_resolved = True
-        return
+        if not target_git_info_needs_refresh:
+            return
 
     run_artifacts = getattr(config, "_run_artifacts", None)
     metadata_path = None
@@ -375,41 +775,79 @@ def _refresh_environment_probe_metadata(config: pytest.Config, items: list[pytes
         if _probe_is_resolved(persisted_probe):
             config._run_metadata = persisted_metadata
             config._environment_probe_resolved = True
-            return
+            metadata = persisted_metadata
+            existing_probe = persisted_probe
+            target_git_info_needs_refresh = _target_git_info_needs_refresh(metadata)
+            _publish_report_metadata(config, metadata)
+            if not target_git_info_needs_refresh:
+                return
 
     env: RuntimeEnv | None = getattr(config, "_runtime_env", None)
     if env is None:
         return
 
-    probe_base_url, source = _resolve_probe_base_url_from_runtime_items(items)
-    if not probe_base_url:
-        probe_base_url, source = _resolve_probe_base_url_from_items(config, items)
-    if probe_base_url:
-        probe = _capture_environment_probe(probe_base_url, env.ignore_https_errors)
-        probe["source"] = source
+    probe_base_url = ""
+    source = ""
+    if _probe_is_resolved(existing_probe):
+        probe_base_url = str(cast(dict[str, Any], existing_probe).get("request_url", "") or "").strip()
+        source = str(cast(dict[str, Any], existing_probe).get("source", "environment_probe") or "environment_probe")
+        probe = cast(dict[str, Any], existing_probe)
+        probe_resolved = True
     else:
-        probe = {
-            "request_url": "",
-            "method": "GET",
-            "status_code": None,
-            "final_url": "",
-            "headers": {},
-            "captured_at_utc": _utc_now(),
-            "error": source,
-            "source": source,
-        }
-
-    metadata["environment_probe"] = probe
-    config._run_metadata = metadata
-
-    probe_resolved = _probe_is_resolved(probe)
-    if probe_resolved and isinstance(run_artifacts, RunArtifacts):
-        if _is_xdist_worker(config):
-            _write_worker_environment_probe_file(run_artifacts, _current_worker_id(), probe)
+        probe_base_url, source = _resolve_probe_base_url_from_runtime_items(items)
+        if not probe_base_url:
+            probe_base_url, source = _resolve_probe_base_url_from_items(config, items)
+        if probe_base_url:
+            probe = _capture_environment_probe(probe_base_url, env.ignore_https_errors)
+            probe["source"] = source
         else:
-            _write_run_metadata_file(run_artifacts, metadata)
+            probe = {
+                "request_url": "",
+                "method": "GET",
+                "status_code": None,
+                "final_url": "",
+                "headers": {},
+                "captured_at_utc": _utc_now(),
+                "error": source,
+                "source": source,
+            }
+        metadata["environment_probe"] = probe
+        config._run_metadata = metadata
+        _publish_report_metadata(config, metadata)
+        probe_resolved = _probe_is_resolved(probe)
+        if probe_resolved and isinstance(run_artifacts, RunArtifacts):
+            if _is_xdist_worker(config):
+                _write_worker_environment_probe_file(run_artifacts, _current_worker_id(), probe)
+            else:
+                _write_run_metadata_file(run_artifacts, metadata)
+        config._environment_probe_resolved = probe_resolved
 
-    config._environment_probe_resolved = probe_resolved
+    if not target_git_info_needs_refresh:
+        return
+
+    if not probe_base_url:
+        if _items_expect_target_git_info(items):
+            _warn_target_git_info_once(
+                config,
+                "target_git_info_base_url_unresolved",
+                reason=source,
+            )
+        return
+
+    if "first_of_many" in source:
+        _warn_target_git_info_once(
+            config,
+            "target_git_info_base_url_ambiguous",
+            source=source,
+            chosen_base_url=probe_base_url,
+        )
+
+    refreshed_env = replace(env, base_url=probe_base_url)
+    metadata["target_git_info"] = _capture_target_git_info(refreshed_env)
+    config._run_metadata = metadata
+    _publish_report_metadata(config, metadata)
+    if isinstance(run_artifacts, RunArtifacts) and not _is_xdist_worker(config):
+        _write_run_metadata_file(run_artifacts, metadata)
 
 
 def _persist_environment_probe(config: pytest.Config, probe: dict[str, Any], source: str) -> bool:
@@ -425,6 +863,7 @@ def _persist_environment_probe(config: pytest.Config, probe: dict[str, Any], sou
     metadata["environment_probe"] = payload
     config._run_metadata = metadata
     config._environment_probe_resolved = True
+    _publish_report_metadata(config, metadata)
 
     run_artifacts = getattr(config, "_run_artifacts", None)
     if isinstance(run_artifacts, RunArtifacts):
@@ -436,9 +875,7 @@ def _persist_environment_probe(config: pytest.Config, probe: dict[str, Any], sou
 
 
 def _write_run_metadata_file(artifacts: RunArtifacts, metadata: dict[str, Any]) -> None:
-    payload = dict(metadata) if isinstance(metadata, dict) else {}
-    payload["tester"] = str(payload.get("tester", "") or "")
-    payload["run_note"] = str(payload.get("run_note", "") or "")
+    payload = _normalize_run_metadata_payload(metadata)
     target = artifacts.root / "run-metadata.json"
     target.parent.mkdir(parents=True, exist_ok=True)
     temp = target.parent / f"{target.name}.{os.getpid()}.{uuid.uuid4().hex}.tmp"
@@ -455,7 +892,28 @@ def _read_run_metadata_file(path: Path) -> dict[str, Any] | None:
         return None
     if not isinstance(payload, dict):
         return None
-    return dict(payload)
+    return _normalize_run_metadata_payload(payload)
+
+
+def _resolve_run_metadata_for_finish(config: pytest.Config, run_artifacts: RunArtifacts) -> dict[str, Any]:
+    current = _normalize_run_metadata_payload(getattr(config, "_run_metadata", None))
+    metadata_path = run_artifacts.root / "run-metadata.json"
+    persisted = _read_run_metadata_file(metadata_path)
+    if not isinstance(persisted, dict):
+        return current
+
+    merged = dict(persisted)
+    merged.update(current)
+
+    if not str(merged.get("tester", "") or "").strip():
+        merged["tester"] = str(persisted.get("tester", "") or "")
+    if not str(merged.get("run_note", "") or "").strip():
+        merged["run_note"] = str(persisted.get("run_note", "") or "")
+
+    if _target_git_info_needs_refresh(merged) and not _target_git_info_needs_refresh(persisted):
+        merged["target_git_info"] = persisted.get("target_git_info", _default_target_git_info())
+
+    return _normalize_run_metadata_payload(merged)
 
 
 def _resolve_run_profile(config: pytest.Config) -> str:
@@ -535,6 +993,37 @@ def _build_event_envelope(
         "run_id": run_id,
         "run_uid": run_uid,
         "metadata": metadata,
+    }
+
+
+def _resolve_execution_context(env: RuntimeEnv, browser_session: object | None = None) -> dict[str, object]:
+    session = browser_session if isinstance(browser_session, BrowserSession) else None
+    if session is None:
+        return {
+            "browser": env.browser,
+            "headless": env.headless,
+            "grid_enabled": env.is_grid_available,
+            "grid_provider": env.grid_provider if env.is_grid_available else "",
+            "grid_endpoint": env.grid_ws_endpoint if env.is_grid_available else "",
+            "grid_cdp_endpoint": env.grid_cdp_endpoint if env.is_grid_available else "",
+        }
+
+    grid_enabled = session.provider != "local"
+    grid_endpoint = ""
+    grid_cdp_endpoint = ""
+    if session.provider == "playwright":
+        grid_endpoint = session.endpoint
+    elif session.provider == "selenium_cdp":
+        grid_endpoint = session.selenium_grid_url
+        grid_cdp_endpoint = session.endpoint
+
+    return {
+        "browser": env.browser,
+        "headless": env.headless,
+        "grid_enabled": grid_enabled,
+        "grid_provider": session.provider if grid_enabled else "",
+        "grid_endpoint": grid_endpoint,
+        "grid_cdp_endpoint": grid_cdp_endpoint,
     }
 
 
@@ -843,11 +1332,14 @@ def pytest_configure(config: pytest.Config) -> None:
     else:
         initial_probe = _capture_environment_probe(env.base_url, env.ignore_https_errors)
         initial_probe["source"] = "runtime_env.base_url"
+        target_git_info = _capture_target_git_info(env)
         run_metadata = {
             **run_metadata,
             "environment_probe": initial_probe,
+            "target_git_info": target_git_info,
         }
     config._run_metadata = run_metadata
+    _publish_report_metadata(config, run_metadata)
     config._environment_probe_resolved = _probe_is_resolved(run_metadata.get("environment_probe"))
     config._run_artifacts = artifacts
     config._git_metadata = git_metadata
@@ -928,12 +1420,7 @@ def pytest_sessionstart(session: pytest.Session) -> None:
         ),
         "run_started_at": _utc_now(),
         "execution": {
-            "browser": env.browser,
-            "headless": env.headless,
-            "grid_enabled": env.is_grid_available,
-            "grid_provider": env.grid_provider if env.is_grid_available else "",
-            "grid_endpoint": env.grid_ws_endpoint if env.is_grid_available else "",
-            "grid_cdp_endpoint": env.grid_cdp_endpoint if env.is_grid_available else "",
+            **_resolve_execution_context(env),
             "viewport": str(getattr(session.config.option, "viewport", "fhd") or "fhd"),
             "profile": _resolve_run_profile(session.config),
         },
@@ -964,24 +1451,30 @@ def pytest_runtest_makereport(item: pytest.Item, call):
 @pytest.hookimpl(trylast=True)
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     artifacts: RunArtifacts = session.config._run_artifacts
+    run_finish_metadata = _resolve_run_metadata_for_finish(session.config, artifacts)
+    session.config._run_metadata = run_finish_metadata
+    _publish_report_metadata(session.config, run_finish_metadata)
     run_uid = str(getattr(session.config, "_run_uid", "") or "")
     timings: dict[str, float] = session.config._test_case_timings
-    worker_id = _current_worker_id()
-    if _is_xdist_worker(session.config):
-        durations_path = artifacts.logs / f"test_durations_{worker_id}.json"
-        save_run_timings(durations_path, timings)
-    elif _is_xdist_controller(session.config):
-        merged_timings = _load_worker_timing_files(artifacts.logs)
-        durations_path = artifacts.logs / "test_durations.json"
-        save_run_timings(durations_path, merged_timings)
-        timings = merged_timings
-    else:
-        durations_path = artifacts.logs / "test_durations.json"
-        save_run_timings(durations_path, timings)
+    collect_only = bool(getattr(session.config.option, "collectonly", False))
+    if not collect_only:
+        worker_id = _current_worker_id()
+        if _is_xdist_worker(session.config):
+            durations_path = artifacts.logs / f"test_durations_{worker_id}.json"
+            save_run_timings(durations_path, timings)
+        elif _is_xdist_controller(session.config):
+            merged_timings = _load_worker_timing_files(artifacts.logs)
+            effective_timings = merged_timings or timings
+            durations_path = artifacts.logs / "test_durations.json"
+            save_run_timings(durations_path, effective_timings)
+            timings = effective_timings
+        else:
+            durations_path = artifacts.logs / "test_durations.json"
+            save_run_timings(durations_path, timings)
 
-    previous = load_previous_timings(artifacts.root)
-    for regression in detect_slow_regressions(timings, previous):
-        logger.warning("test_case_slow_regression", **regression)
+        previous = load_previous_timings(artifacts.root)
+        for regression in detect_slow_regressions(timings, previous):
+            logger.warning("test_case_slow_regression", **regression)
 
     run_finish_payload = {
         **_build_event_envelope(
@@ -990,7 +1483,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
             run_uid=run_uid,
             event_type="run_finish",
             worker_id=os.getenv("PYTEST_XDIST_WORKER", "master"),
-            metadata=session.config._run_metadata,
+            metadata=run_finish_metadata,
         ),
         "run_finished_at": _utc_now(),
         "exit_status": exitstatus,
@@ -1006,7 +1499,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
         },
     }
     if not getattr(session.config, "_reporting_suspended", False):
-        logger.info("reporting_run_finish", run_id=artifacts.run_id, **session.config._run_metadata)
+        logger.info("reporting_run_finish", run_id=artifacts.run_id, **run_finish_metadata)
         session.config._reporting_client.run_finish(run_finish_payload)
     session.config._reporting_client.flush(
         timeout_seconds=session.config._runtime_env.reporting_async_flush_timeout_seconds
@@ -1100,6 +1593,7 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
         "status": status,
         "attempt": 1,
         "is_flaky": False,
+        "execution": _resolve_execution_context(env, getattr(item.config, "_browser_session", None)),
         "timing": {
             "started_at": started_at,
             "finished_at": finished_at,

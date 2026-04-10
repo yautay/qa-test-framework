@@ -20,11 +20,18 @@ class _PluginManager:
         return name == "xdist" and self._enabled
 
 
-def _config(*, xdist_enabled: bool = True, root: Path | None = None) -> SimpleNamespace:
+def _config(
+    *,
+    xdist_enabled: bool = True,
+    root: Path | None = None,
+    args: tuple[str, ...] = (),
+    collectonly: bool = False,
+) -> SimpleNamespace:
     return SimpleNamespace(
         pluginmanager=_PluginManager(xdist_enabled),
         rootpath=root or Path("/repo"),
-        option=SimpleNamespace(markexpr=""),
+        option=SimpleNamespace(markexpr="", collectonly=collectonly),
+        args=args,
     )
 
 
@@ -197,6 +204,62 @@ def test_pytest_sessionfinish_writes_visual_report_for_controller(
     assert captured["report_dir"] == run_root / "visual"
     assert captured["results_len"] == 1
     assert captured["write_calls"] == 2
+
+
+def test_is_visual_profile_detects_visual_path_selection(tmp_path: Path) -> None:
+    config = _config(root=tmp_path, args=("qa/visual",))
+
+    assert plugin._is_visual_profile(config) is True
+
+
+def test_pytest_sessionfinish_warns_for_visual_path_without_worker_results(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_root = tmp_path / "artifacts" / "20260223_123000_000005"
+    run_root.mkdir(parents=True)
+    warnings: list[dict[str, object]] = []
+
+    monkeypatch.setattr(plugin, "_ensure_run_metadata", lambda _root, _config: None)
+    monkeypatch.setattr(plugin, "_merge_worker_durations", lambda _root: None)
+    monkeypatch.setattr(
+        plugin.logger, "warning", lambda message, **kwargs: warnings.append({"message": message, **kwargs})
+    )
+    monkeypatch.setenv("PYTEST_XDIST_WORKER", "master")
+
+    config = _config(root=tmp_path, args=("qa/visual",))
+    config._run_artifacts = SimpleNamespace(root=run_root)
+    session = SimpleNamespace(config=config)
+
+    plugin.pytest_sessionfinish(session, 0)
+
+    assert warnings == [
+        {
+            "message": "visual_worker_results_missing",
+            "run_root": str(run_root),
+            "workers_root": str(run_root / "workers"),
+        }
+    ]
+
+
+def test_pytest_sessionfinish_skips_visual_warning_for_collect_only(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_root = tmp_path / "artifacts" / "20260223_123000_000006"
+    run_root.mkdir(parents=True)
+    warnings: list[dict[str, object]] = []
+
+    monkeypatch.setattr(
+        plugin.logger, "warning", lambda message, **kwargs: warnings.append({"message": message, **kwargs})
+    )
+    monkeypatch.setenv("PYTEST_XDIST_WORKER", "master")
+
+    config = _config(root=tmp_path, args=("qa/visual",), collectonly=True)
+    config._run_artifacts = SimpleNamespace(root=run_root)
+    session = SimpleNamespace(config=config)
+
+    plugin.pytest_sessionfinish(session, 0)
+
+    assert warnings == []
 
 
 def test_send_test_result_updates_uses_worker_payload_snapshot(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
