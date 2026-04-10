@@ -21,17 +21,25 @@ pytestmark = [pytest.mark.aso]
 
 
 class _FakeJiraClient:
-    def __init__(self, *, subtask_error: JiraClientError | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        subtask_error: JiraClientError | None = None,
+        existing_subtask_summaries: list[str] | None = None,
+    ) -> None:
         self.comments: list[tuple[str, str]] = []
         self.attachments: list[tuple[str, str]] = []
         self.subtasks: list[tuple[str, str, str]] = []
         self._subtask_error = subtask_error
+        self._existing_subtask_summaries = list(existing_subtask_summaries or [])
 
     def add_comment(self, issue_key: str, body: str) -> dict[str, Any]:
         self.comments.append((issue_key, body))
         return {"id": issue_key}
 
     def add_attachment(self, issue_key: str, file_path: Path) -> dict[str, Any]:
+        if not file_path.is_file():
+            raise JiraClientError(f"attachment missing: {file_path}")
         self.attachments.append((issue_key, str(file_path)))
         return {"status": "ok"}
 
@@ -39,7 +47,14 @@ class _FakeJiraClient:
         if self._subtask_error is not None:
             raise self._subtask_error
         self.subtasks.append((parent_issue_key, summary, description))
+        self._existing_subtask_summaries.append(summary)
         return {"key": "ABC-200"}
+
+    def list_subtasks(self, parent_issue_key: str) -> list[dict[str, Any]]:
+        return [
+            {"key": f"{parent_issue_key}-{idx + 1}", "summary": summary}
+            for idx, summary in enumerate(self._existing_subtask_summaries)
+        ]
 
 
 def _prepare_report(tmp_path: Path, run_id: str) -> tuple[Path, Path, Path]:
@@ -178,8 +193,32 @@ def test_jira_comment_mode_subtask_creates_subtask_and_uploads_attachment(tmp_pa
         assert payload["mode"] == "subtask"
         assert payload["issue"] == "ABC-200"
         assert len(fake_client.subtasks) == 1
+        assert fake_client.subtasks[0][1].startswith("[bug] VRT #1 - ")
         assert not fake_client.comments
         assert fake_client.attachments[0][0] == "ABC-200"
+    finally:
+        _stop_server(server, thread)
+
+
+def test_jira_comment_mode_subtask_increments_existing_counter(tmp_path: Path) -> None:
+    repo_root, report_dir, _ = _prepare_report(tmp_path, "run-jira")
+    fake_client = _FakeJiraClient(
+        existing_subtask_summaries=["[bug] VRT #1 - 01/04/2026 09:10", "[bug] VRT #4 - 01/04/2026 11:11"]
+    )
+    context = _build_context(repo_root, report_dir, fake_client)
+    server, base_url, thread = _start_server(context)
+    try:
+        status, payload = _http_json(
+            base_url,
+            "/api/reports/run-jira/jira/comment",
+            method="POST",
+            body={"jira_ticket": "ABC-1", "user_note": "note", "mode": "subtask"},
+            headers={"Host": "localhost"},
+        )
+        assert status == 200
+        assert payload["accepted"] is True
+        assert payload["mode"] == "subtask"
+        assert fake_client.subtasks[0][1].startswith("[bug] VRT #5 - ")
     finally:
         _stop_server(server, thread)
 
@@ -268,6 +307,9 @@ def test_jira_comment_includes_execution_target_full_url_in_metadata(tmp_path: P
         assert status == 200
         assert payload["accepted"] is True
         body = fake_client.comments[0][1]
+        assert "🟢" not in body
+        assert "🔴 visual-regression: FAIL" in body
+        assert "{panel:title=BUG SECTION" in body
         assert "execution.target_full_url: https://shop.example.com/produkt/lodz" in body
     finally:
         _stop_server(server, thread)

@@ -134,3 +134,35 @@ class JiraClient:
         if not isinstance(data, dict):
             return {"status": "ok"}
         return data
+
+    def list_subtasks(self, parent_issue_key: str) -> list[dict[str, Any]]:
+        if not self.base_url:
+            raise JiraClientError("Jira base URL is not configured")
+        parent = str(parent_issue_key or "").strip()
+        if not parent:
+            raise JiraClientError("parent issue key is required for listing Jira sub-tasks")
+        url = f"{self.base_url}/rest/api/2/issue/{parent}?fields=subtasks"
+        headers = {"Accept": "application/json"}
+        headers.update(self._auth_header())
+        response = self._request("GET", url, headers=headers)
+        try:
+            payload = response.json()
+        except ValueError:
+            return []
+        if not isinstance(payload, dict):
+            return []
+        fields = payload.get("fields")
+        if not isinstance(fields, dict):
+            return []
+        raw_subtasks = fields.get("subtasks")
+        if not isinstance(raw_subtasks, list):
+            return []
+        out: list[dict[str, Any]] = []
+        for item in raw_subtasks:
+            if not isinstance(item, dict):
+                continue
+            key = str(item.get("key", "") or "").strip()
+            details = item.get("fields") if isinstance(item.get("fields"), dict) else {}
+            summary = str(details.get("summary", "") or "")
+            out.append({"key": key, "summary": summary})
+        return out
