@@ -101,6 +101,7 @@ def _build_app_info_payload(context: ReportServerContext) -> dict[str, Any]:
                 "default_password": default_password,
                 "default_mode": "auto",
                 "framework_mode": str(getattr(context, "framework_mode", "server") or "server").strip().lower(),
+                "submit_timeout_ms": max(10000, int(getattr(context, "jira_submit_timeout_ms", 120000) or 120000)),
             },
         },
     }

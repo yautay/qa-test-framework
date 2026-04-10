@@ -26,12 +26,23 @@ class _FakeJiraClient:
         *,
         subtask_error: JiraClientError | None = None,
         existing_subtask_summaries: list[str] | None = None,
+        create_issue_errors: list[JiraClientError] | None = None,
     ) -> None:
         self.comments: list[tuple[str, str]] = []
         self.attachments: list[tuple[str, str]] = []
         self.subtasks: list[tuple[str, str, str]] = []
+        self.created_issues: list[dict[str, Any]] = []
         self._subtask_error = subtask_error
         self._existing_subtask_summaries = list(existing_subtask_summaries or [])
+        self._create_issue_errors = list(create_issue_errors or [])
+        self._create_meta_fields: dict[str, Any] = {
+            "parent": {},
+            "project": {},
+            "summary": {},
+            "issuetype": {},
+            "description": {},
+            "customfield_10010": {},
+        }
 
     def add_comment(self, issue_key: str, body: str) -> dict[str, Any]:
         self.comments.append((issue_key, body))
@@ -50,11 +61,39 @@ class _FakeJiraClient:
         self._existing_subtask_summaries.append(summary)
         return {"key": "ABC-200"}
 
+    def create_issue(self, fields: dict[str, Any]) -> dict[str, Any]:
+        if self._subtask_error is not None:
+            raise self._subtask_error
+        if self._create_issue_errors:
+            raise self._create_issue_errors.pop(0)
+        payload = dict(fields or {})
+        self.created_issues.append(payload)
+        parent = payload.get("parent") if isinstance(payload.get("parent"), dict) else {}
+        parent_issue_key = str(parent.get("key", "ABC-1") or "ABC-1")
+        summary = str(payload.get("summary", "") or "")
+        description = str(payload.get("description", "") or "")
+        self.subtasks.append((parent_issue_key, summary, description))
+        self._existing_subtask_summaries.append(summary)
+        return {"key": "ABC-200"}
+
     def list_subtasks(self, parent_issue_key: str) -> list[dict[str, Any]]:
         return [
             {"key": f"{parent_issue_key}-{idx + 1}", "summary": summary}
             for idx, summary in enumerate(self._existing_subtask_summaries)
         ]
+
+    def get_issue_details(self, issue_key: str, *, fields: str = "*all") -> dict[str, Any]:
+        return {
+            "id": "10001",
+            "key": issue_key,
+            "fields": {
+                "project": {"key": "ABC"},
+                "customfield_10010": "inherited-value",
+            },
+        }
+
+    def get_create_meta_fields(self, project_key: str, issue_type_name: str = "Sub-task") -> dict[str, Any] | None:
+        return dict(self._create_meta_fields)
 
 
 def _prepare_report(tmp_path: Path, run_id: str) -> tuple[Path, Path, Path]:
@@ -249,6 +288,37 @@ def test_jira_comment_mode_auto_falls_back_to_comment_when_subtask_fails(tmp_pat
         assert payload["requested_mode"] == "auto"
         assert fake_client.comments[0][0] == "ABC-1"
         assert fake_client.attachments[0][0] == "ABC-1"
+    finally:
+        _stop_server(server, thread)
+
+
+def test_jira_comment_mode_subtask_retries_with_required_parent_fields(tmp_path: Path) -> None:
+    repo_root, report_dir, _ = _prepare_report(tmp_path, "run-jira")
+    fake_client = _FakeJiraClient(
+        create_issue_errors=[
+            JiraClientError(
+                "status=400 body=required field",
+                status=400,
+                payload={"errors": {"customfield_10010": "Field is required"}},
+            )
+        ]
+    )
+    context = _build_context(repo_root, report_dir, fake_client)
+    server, base_url, thread = _start_server(context)
+    try:
+        status, payload = _http_json(
+            base_url,
+            "/api/reports/run-jira/jira/comment",
+            method="POST",
+            body={"jira_ticket": "ABC-1", "user_note": "note", "mode": "subtask"},
+            headers={"Host": "localhost"},
+        )
+        assert status == 200
+        assert payload["accepted"] is True
+        assert payload["mode"] == "subtask"
+        assert fake_client.created_issues
+        last_fields = fake_client.created_issues[-1]
+        assert last_fields.get("customfield_10010") == "inherited-value"
     finally:
         _stop_server(server, thread)
 

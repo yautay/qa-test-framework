@@ -46,6 +46,7 @@ The hero page can post structured comments to Jira for visual runs. Configure it
 - `JIRA_API_TOKEN` – required when `JIRA_AUTH_MODE=token`.
 - `JIRA_VERIFY_SSL` (`0|1`) – toggles SSL verification for Jira API calls.
 - `JIRA_RETRY_MAX` – number of attempts for comments/attachments before failing.
+- `JIRA_SUBMIT_TIMEOUT_MS` – UI/backend Jira submission timeout budget (used by modal request timeout and Jira client request timeout).
 - `JIRA_UPLOAD_DELAY_SECONDS` – pause between consecutive pixel diff uploads.
 - `JIRA_PIXEL_DIFF_MAX_WIDTH_PX` – maximum width for resized diff attachments (default `320`).
 - `JIRA_ASO_MENTIONS` – comma-separated Jira user handles inserted when ASO cases exist (examples: `michal.pielaszkiewicz,weronika.bakowska`).
@@ -53,7 +54,7 @@ The hero page can post structured comments to Jira for visual runs. Configure it
   - `local` uploads diff screenshots as Jira attachments and renders thumbnail references in the Jira table,
   - `server` skips Jira attachments and keeps diff links pointing to the report server URL.
 
-Logging: retries emit warnings with ticket/run metadata, terminal failures log errors without the comment body or credentials, and all Jira payload text is normalized to ASCII before submission.
+Logging: retries emit warnings with ticket/run metadata, terminal failures log errors without the comment body or credentials.
 
 Example:
 

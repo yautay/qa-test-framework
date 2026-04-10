@@ -48,6 +48,7 @@ class ReportServerContext:
     jira_auth_mode: str = "basic"
     jira_auth_configured: bool = False
     jira_retry_max: int = 3
+    jira_submit_timeout_ms: int = 120000
     jira_upload_delay_seconds: float = 1.0
     jira_pixel_diff_max_width_px: int = 320
     jira_aso_mentions: list[str] = field(default_factory=list)

@@ -46,6 +46,13 @@ const defaultNote = computed(() => String(jiraConfig.value.default_note || ""));
 const defaultUsername = computed(() => String(jiraConfig.value.default_username || ""));
 const defaultPassword = computed(() => String(jiraConfig.value.default_password || ""));
 const defaultMode = computed(() => String(jiraConfig.value.default_mode || "auto"));
+const jiraSubmitTimeoutMs = computed(() => {
+  const raw = Number(jiraConfig.value.submit_timeout_ms || 120000);
+  if (!Number.isFinite(raw)) {
+    return 120000;
+  }
+  return Math.max(10000, Math.floor(raw));
+});
 
 const openModal = (report) => {
   selectedReport.value = report;
@@ -74,7 +81,7 @@ const handleSendJira = async (payload) => {
     if (payload.auth) {
       body.auth = payload.auth;
     }
-    await sendJiraComment(selectedReport.value.run_id, body);
+    await sendJiraComment(selectedReport.value.run_id, body, { timeoutMs: jiraSubmitTimeoutMs.value });
     await store.fetchReports();
     closeModal();
   } catch (error) {

@@ -35,6 +35,7 @@ vi.mock("../lib/api/reportsApi", () => ({
         default_username: "qa.user",
         default_password: "secret",
         default_mode: "auto",
+        submit_timeout_ms: 180000,
         auth_configured: true,
         auth_mode: "basic",
       },
@@ -128,7 +129,7 @@ describe("HeroPage", () => {
       jira_ticket: "ABC-123",
       user_note: "hello",
       mode: "comment",
-    });
+    }, { timeoutMs: 180000 });
     wrapper.unmount();
   });
 });

@@ -27,6 +27,8 @@ except ImportError:  # pragma: no cover - optional dependency
 
 
 SUBTASK_SUMMARY_PATTERN = re.compile(r"^\[bug\] VRT #(\d+) - ")
+ISSUE_KEY_PATTERN = re.compile(r"^([A-Z][A-Z0-9]+)-\d+$")
+SUBTASK_MAX_ATTEMPTS = 8
 
 
 def _jira_safe_text(text: str) -> str:
@@ -234,11 +236,205 @@ def _resolve_browser_details(row: dict[str, Any], source: dict[str, dict[str, An
     return " | ".join(chunks)
 
 
+def _payload_to_text(payload: Any) -> str:
+    if payload is None:
+        return ""
+    if isinstance(payload, str):
+        return payload.strip()
+    if not isinstance(payload, dict):
+        return str(payload).strip()
+    fragments: list[str] = []
+    error_messages = payload.get("errorMessages")
+    if isinstance(error_messages, list):
+        items = [str(item).strip() for item in error_messages if str(item).strip()]
+        if items:
+            fragments.append("; ".join(items))
+    errors = payload.get("errors")
+    if isinstance(errors, dict):
+        for key, value in errors.items():
+            message = str(value or "").strip()
+            if message:
+                fragments.append(f"{key}: {message}")
+    raw = str(payload.get("raw", "") or "").strip()
+    if raw:
+        fragments.append(raw)
+    return " | ".join(fragments).strip()
+
+
+def _extract_project_key(issue_key: str) -> str:
+    token = str(issue_key or "").strip().upper()
+    match = ISSUE_KEY_PATTERN.match(token)
+    if not match:
+        return ""
+    return match.group(1)
+
+
+def _extract_cannot_set_fields(payload: Any) -> list[str]:
+    errors = payload.get("errors") if isinstance(payload, dict) else None
+    if not isinstance(errors, dict):
+        return []
+    out: list[str] = []
+    for key, value in errors.items():
+        message = str(value or "").strip().lower()
+        if (
+            "cannot be set" in message
+            or "unknown" in message
+            or "does not support update" in message
+            or "not supported" in message
+            or "must be a string" in message
+        ):
+            out.append(str(key))
+    return out
+
+
+def _extract_required_field_keys(payload: Any) -> list[str]:
+    errors = payload.get("errors") if isinstance(payload, dict) else None
+    if not isinstance(errors, dict):
+        return []
+    out: list[str] = []
+    for key, value in errors.items():
+        message = str(value or "").strip().lower()
+        if "is required" in message:
+            out.append(str(key))
+    return out
+
+
+def _is_issue_does_not_exist_error(error: JiraClientError) -> bool:
+    if int(error.status or 0) != 404:
+        return False
+    details = f"{error} {_payload_to_text(getattr(error, 'payload', None))}".lower()
+    return "issue does not exist" in details or "issue does not exists" in details or "does not exist" in details
+
+
+def _pick_required_fields_from_parent(parent_fields: dict[str, Any], required_field_keys: list[str]) -> dict[str, Any]:
+    out: dict[str, Any] = {}
+    for key in required_field_keys:
+        if key in parent_fields and parent_fields.get(key) is not None:
+            out[key] = parent_fields.get(key)
+    return out
+
+
+def _filter_fields_by_createmeta(fields: dict[str, Any], create_meta_fields: dict[str, Any] | None) -> dict[str, Any]:
+    if not create_meta_fields:
+        return fields
+    always = {"parent", "project", "summary", "issuetype", "description"}
+    out: dict[str, Any] = {}
+    for key, value in fields.items():
+        if key in always or key in create_meta_fields:
+            out[key] = value
+    return out
+
+
+def _build_subtask_fields(
+    *,
+    client: JiraClient,
+    parent_issue_key: str,
+    summary: str,
+    description: str,
+    parent_issue: dict[str, Any] | None,
+    required_field_keys: list[str],
+    parent_by_id: bool,
+) -> dict[str, Any]:
+    parent_fields = (
+        parent_issue.get("fields")
+        if isinstance(parent_issue, dict) and isinstance(parent_issue.get("fields"), dict)
+        else {}
+    )
+    inherited = _pick_required_fields_from_parent(parent_fields, required_field_keys)
+    project_key = ""
+    if isinstance(parent_fields.get("project"), dict):
+        project_key = str(parent_fields.get("project", {}).get("key", "") or "").strip()
+    if not project_key:
+        project_key = _extract_project_key(parent_issue_key)
+    project = {"key": project_key} if project_key else {}
+    create_meta_fields = client.get_create_meta_fields(project_key, "Sub-task") if project_key else None
+    parent_payload: dict[str, str]
+    if parent_by_id:
+        parent_id = str(parent_issue.get("id", "") if isinstance(parent_issue, dict) else "").strip()
+        parent_payload = {"id": parent_id} if parent_id else {"key": parent_issue_key}
+    else:
+        parent_payload = {"key": parent_issue_key}
+    raw_fields: dict[str, Any] = {
+        **inherited,
+        "parent": parent_payload,
+        "project": project,
+        "summary": summary,
+        "issuetype": {"name": "Sub-task"},
+        "description": description,
+    }
+    return _filter_fields_by_createmeta(raw_fields, create_meta_fields)
+
+
+def _create_subtask_with_assistant_strategy(
+    *,
+    client: JiraClient,
+    parent_issue_key: str,
+    summary: str,
+    description: str,
+) -> dict[str, Any]:
+    parent_issue: dict[str, Any] | None = None
+    attempt_fields = _build_subtask_fields(
+        client=client,
+        parent_issue_key=parent_issue_key,
+        summary=summary,
+        description=description,
+        parent_issue=None,
+        required_field_keys=[],
+        parent_by_id=False,
+    )
+    parent_by_id = False
+    last_error: JiraClientError | None = None
+
+    for _ in range(SUBTASK_MAX_ATTEMPTS):
+        try:
+            return client.create_issue(attempt_fields)
+        except JiraClientError as exc:
+            last_error = exc
+
+            if _is_issue_does_not_exist_error(exc) and not parent_by_id:
+                parent_issue = parent_issue or client.get_issue_details(parent_issue_key)
+                parent_id = str(parent_issue.get("id", "") if isinstance(parent_issue, dict) else "").strip()
+                if parent_id:
+                    attempt_fields = {**attempt_fields, "parent": {"id": parent_id}}
+                    parent_by_id = True
+                    continue
+
+            blocked = _extract_cannot_set_fields(getattr(exc, "payload", None))
+            if int(exc.status or 0) == 400 and blocked:
+                for key in blocked:
+                    attempt_fields.pop(key, None)
+                continue
+
+            required = _extract_required_field_keys(getattr(exc, "payload", None))
+            if int(exc.status or 0) == 400 and required:
+                parent_issue = parent_issue or client.get_issue_details(parent_issue_key)
+                next_fields = _build_subtask_fields(
+                    client=client,
+                    parent_issue_key=parent_issue_key,
+                    summary=summary,
+                    description=description,
+                    parent_issue=parent_issue,
+                    required_field_keys=required,
+                    parent_by_id=parent_by_id,
+                )
+                for key in list(attempt_fields.keys()):
+                    if key not in next_fields:
+                        attempt_fields.pop(key, None)
+                attempt_fields.update(next_fields)
+                continue
+
+            raise
+
+    if last_error is not None:
+        raise last_error
+    raise JiraClientError("jira sub-task creation failed after retries", status=None)
+
+
 def _is_subtask_fallback_error(error: JiraClientError) -> bool:
     status = int(error.status or 0)
     if status not in {400, 403, 404, 422}:
         return False
-    details = str(error).lower()
+    details = f"{error} {_payload_to_text(getattr(error, 'payload', None))}".lower()
     tokens = [
         "sub-task",
         "subtask",
@@ -622,11 +818,16 @@ def send_jira_comment(
             summary = _build_subtask_summary(next_number, subtask_timestamp)
             try:
                 subtask_result = _with_retries(
-                    attempts=max(1, int(context.jira_retry_max)),
+                    attempts=1,
                     action="create_subtask",
                     issue_key=issue_key,
                     run_id=run_id,
-                    fn=lambda: client.create_subtask(issue_key, summary, comment_body),
+                    fn=lambda: _create_subtask_with_assistant_strategy(
+                        client=client,
+                        parent_issue_key=issue_key,
+                        summary=summary,
+                        description=comment_body,
+                    ),
                 )
                 subtask_key = ""
                 if isinstance(subtask_result, dict):

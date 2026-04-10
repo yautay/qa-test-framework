@@ -145,6 +145,7 @@ class RuntimeEnv:
     jira_auth_mode: str
     jira_api_token: str
     jira_retry_max: int
+    jira_submit_timeout_ms: int
     jira_upload_delay_seconds: float
     jira_pixel_diff_max_width_px: int
     jira_aso_mentions: tuple[str, ...]
@@ -475,6 +476,10 @@ def load_env() -> RuntimeEnv:
         jira_auth_mode=env_str("JIRA_AUTH_MODE", str(getattr(settings, "jira_auth_mode", "basic"))).strip().lower(),
         jira_api_token=env_str("JIRA_API_TOKEN", str(getattr(settings, "jira_api_token", ""))),
         jira_retry_max=env_int("JIRA_RETRY_MAX", int(getattr(settings, "jira_retry_max", 3))),
+        jira_submit_timeout_ms=env_int(
+            "JIRA_SUBMIT_TIMEOUT_MS",
+            int(getattr(settings, "jira_submit_timeout_ms", 120000)),
+        ),
         jira_upload_delay_seconds=env_float(
             "JIRA_UPLOAD_DELAY_SECONDS",
             float(getattr(settings, "jira_upload_delay_seconds", 1)),

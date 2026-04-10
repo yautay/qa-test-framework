@@ -90,7 +90,12 @@ def main() -> int:
             if username and password:
                 auth = JiraAuth(mode="basic", username=username, password=password, api_token=api_token)
         if auth:
-            jira_client = JiraClient(base_url=jira_url, verify_ssl=bool(env.jira_verify_ssl), auth=auth)
+            jira_client = JiraClient(
+                base_url=jira_url,
+                verify_ssl=bool(env.jira_verify_ssl),
+                auth=auth,
+                timeout_seconds=max(5, int(float(env.jira_submit_timeout_ms) / 1000)),
+            )
             jira_auth_configured = True
         else:
             logger.debug(
@@ -127,6 +132,7 @@ def main() -> int:
         jira_auth_mode=jira_mode,
         jira_auth_configured=jira_auth_configured,
         jira_retry_max=int(env.jira_retry_max),
+        jira_submit_timeout_ms=max(10000, int(env.jira_submit_timeout_ms)),
         jira_upload_delay_seconds=float(env.jira_upload_delay_seconds),
         jira_pixel_diff_max_width_px=int(env.jira_pixel_diff_max_width_px),
         jira_aso_mentions=list(env.jira_aso_mentions),

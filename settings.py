@@ -107,6 +107,7 @@ jira_enabled = True
 jira_auth_mode = "basic"
 jira_api_token = ""
 jira_retry_max = 3
+jira_submit_timeout_ms = 180000
 jira_upload_delay_seconds = 1
 jira_pixel_diff_max_width_px = 320
 jira_aso_mentions = ["michal.pielaszkiewicz", "karolina.krajewska", "weronika.bakowska"]
