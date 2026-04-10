@@ -130,6 +130,7 @@ def main() -> int:
         jira_upload_delay_seconds=float(env.jira_upload_delay_seconds),
         jira_pixel_diff_max_width_px=int(env.jira_pixel_diff_max_width_px),
         jira_aso_mentions=list(env.jira_aso_mentions),
+        framework_mode=str(getattr(env, "framework_mode", "server") or "server").strip().lower(),
         jira_client=jira_client,
     )
     handler = _build_handler(context)

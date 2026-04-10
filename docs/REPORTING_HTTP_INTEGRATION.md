@@ -49,6 +49,9 @@ The hero page can post structured comments to Jira for visual runs. Configure it
 - `JIRA_UPLOAD_DELAY_SECONDS` – pause between consecutive pixel diff uploads.
 - `JIRA_PIXEL_DIFF_MAX_WIDTH_PX` – maximum width for resized diff attachments (default `320`).
 - `JIRA_ASO_MENTIONS` – comma-separated Jira user handles inserted when ASO cases exist (examples: `michal.pielaszkiewicz,weronika.bakowska`).
+- `FRAMEWORK_MODE` (`local|server`) – controls Jira diff artifact strategy:
+  - `local` uploads diff screenshots as Jira attachments and renders thumbnail references in the Jira table,
+  - `server` skips Jira attachments and keeps diff links pointing to the report server URL.
 
 Logging: retries emit warnings with ticket/run metadata, terminal failures log errors without the comment body or credentials, and all Jira payload text is normalized to ASCII before submission.
 

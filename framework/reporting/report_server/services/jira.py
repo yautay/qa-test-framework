@@ -3,6 +3,7 @@ from __future__ import annotations
 import tempfile
 import time
 import re
+import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -173,6 +174,66 @@ def _build_target_full_url(base_url: str, target_url: str) -> str:
         return ""
 
 
+def _normalize_framework_mode(value: str) -> str:
+    token = str(value or "").strip().lower()
+    if token == "local":
+        return "local"
+    return "server"
+
+
+def _build_attachment_filename(*, idx: int, scenario: str, suffix: str) -> str:
+    ext = str(suffix or ".png").strip()
+    if not ext.startswith("."):
+        ext = f".{ext}"
+    safe_scenario = re.sub(r"[^a-zA-Z0-9._-]+", "-", str(scenario or "")).strip("-") or "scenario"
+    return f"bug-{max(1, int(idx)):03d}-{safe_scenario}{ext}"
+
+
+def _extract_run_git_info(rows: list[dict[str, Any]]) -> dict[str, dict[str, str]]:
+    out = {
+        "frontend": {"branch": "", "commit": ""},
+        "backend": {"branch": "", "commit": ""},
+    }
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        metadata = row.get("test_metadata") if isinstance(row.get("test_metadata"), dict) else {}
+        run_meta = metadata.get("run") if isinstance(metadata.get("run"), dict) else {}
+        target_git_info = run_meta.get("target_git_info") if isinstance(run_meta.get("target_git_info"), dict) else {}
+        for target in ("frontend", "backend"):
+            info = target_git_info.get(target) if isinstance(target_git_info.get(target), dict) else {}
+            branch = str(info.get("branch", "") or "").strip()
+            commit = str(info.get("commit", "") or "").strip()
+            if branch:
+                out[target]["branch"] = branch
+            if commit:
+                out[target]["commit"] = commit
+    return out
+
+
+def _resolve_browser_details(row: dict[str, Any], source: dict[str, dict[str, Any]]) -> str:
+    metadata = row.get("test_metadata") if isinstance(row.get("test_metadata"), dict) else {}
+    execution_meta = metadata.get("execution") if isinstance(metadata.get("execution"), dict) else {}
+    browser = _jira_safe_text(str(source.get("scenario", {}).get("browser", "") or row.get("browser", "")))
+    version = ""
+    for key in ("browser_version", "browserVersion", "playwright_browser_version", "playwrightBrowserVersion"):
+        token = _jira_safe_text(str(execution_meta.get(key, "") or row.get(key, "")))
+        if token:
+            version = token
+            break
+    user_agent = _jira_safe_text(str(execution_meta.get("user_agent", "") or execution_meta.get("userAgent", "")))
+    if user_agent and len(user_agent) > 180:
+        user_agent = f"{user_agent[:177]}..."
+    chunks = []
+    if browser:
+        chunks.append(browser)
+    if version:
+        chunks.append(f"version={version}")
+    if user_agent:
+        chunks.append(f"ua={user_agent}")
+    return " | ".join(chunks)
+
+
 def _is_subtask_fallback_error(error: JiraClientError) -> bool:
     status = int(error.status or 0)
     if status not in {400, 403, 404, 422}:
@@ -293,11 +354,19 @@ def _build_comment_body(
     bug_entries: list[dict[str, Any]],
     aso_entries: list[dict[str, Any]],
     aso_mentions: list[str],
+    frontend_git: dict[str, str],
+    backend_git: dict[str, str],
 ) -> str:
+    front_branch = _escape_table_cell(frontend_git.get("branch", "") or "-")
+    front_commit = _escape_table_cell(frontend_git.get("commit", "") or "-")
+    back_branch = _escape_table_cell(backend_git.get("branch", "") or "-")
+    back_commit = _escape_table_cell(backend_git.get("commit", "") or "-")
     lines: list[str] = [
         "h2. Visual Regression Report",
         f"*Run:* {_escape_table_cell(run_id)}",
         f"*Timestamp:* {_escape_table_cell(timestamp)}",
+        f"*Backend Git:* branch={back_branch} | commit={back_commit}",
+        f"*Frontend Git:* branch={front_branch} | commit={front_commit}",
         "",
         "*Status badges:*",
     ]
@@ -326,7 +395,12 @@ def _build_comment_body(
             full_url_cell = _format_jira_link("open", full_url) if full_url else "-"
             diff_url = _jira_safe_text(str(item.get("diff_url", "") or ""))
             missing_note = _jira_safe_text(str(item.get("missing_note", "") or ""))
-            diff_cell = _format_jira_link("diff", diff_url) if diff_url else _escape_table_cell(missing_note)
+            attachment_thumb = _jira_safe_text(str(item.get("diff_attachment_thumb", "") or ""))
+            attachment_file = _jira_safe_text(str(item.get("diff_attachment_file", "") or ""))
+            if attachment_thumb:
+                diff_cell = f"{attachment_thumb} [^{_escape_table_cell(attachment_file)}]"
+            else:
+                diff_cell = _format_jira_link("diff", diff_url) if diff_url else _escape_table_cell(missing_note)
             lines.append(
                 "| {idx} | {scenario} | {suite} | {target} | {full} | {viewport} | {browser} | {note} | {report} | {diff} |".format(
                     idx=int(item.get("idx", 0) or 0),
@@ -354,7 +428,7 @@ def _build_comment_body(
                 f"*BUG #{int(item.get('idx', 0) or 0)}: {_escape_table_cell(str(item.get('scenario', '') or ''))}*"
             )
             for metadata_line in item.get("metadata_lines", []):
-                lines.append(f"- {_escape_table_cell(str(metadata_line or ''))}")
+                lines.append(f"- {_jira_safe_text(str(metadata_line or ''))}")
             missing_note = _jira_safe_text(str(item.get("missing_note", "") or ""))
             if missing_note:
                 lines.append(f"- Diff attachment: {_escape_table_cell(missing_note)}")
@@ -409,6 +483,7 @@ def send_jira_comment(
 ) -> dict[str, Any]:
     client = _build_client(context, auth)
     rows = _read_results_rows(report_dir)
+    run_git_info = _extract_run_git_info(rows)
     state = _load_state(report_dir.parent)
     rows_by_key = {_row_tag_key(row): row for row in rows}
     bugs = []
@@ -428,6 +503,8 @@ def send_jira_comment(
     timestamp = now_local.strftime("%Y-%m-%d %H:%M:%S %Z")
     subtask_timestamp = now_local.strftime("%d/%m/%Y %H:%M")
     badge_lines = _build_badge_line(bug_count, aso_count)
+    framework_mode = _normalize_framework_mode(getattr(context, "framework_mode", "server"))
+    local_artifacts_mode = framework_mode == "local"
     attachments: list[Path] = []
     bug_entries: list[dict[str, Any]] = []
     aso_entries: list[dict[str, Any]] = []
@@ -460,19 +537,36 @@ def send_jira_comment(
                 value = _value_by_path(source, path)
                 if value:
                     field_lines.append(f"{label}: {value}")
+            browser_details = _resolve_browser_details(row, source)
+            if browser_details:
+                field_lines.append(f"browser.details: {browser_details}")
             diff_rel = str(row.get("diff_path", ""))
             missing_note = None
             diff_url = ""
+            diff_attachment_thumb = ""
+            diff_attachment_file = ""
             if diff_rel:
                 diff_file = (report_dir / diff_rel).resolve(strict=False)
-                scaled = _prepare_attachment(diff_file, context.jira_pixel_diff_max_width_px, scratch_path)
-                if scaled and scaled.is_file():
-                    attachments.append(scaled)
+                if local_artifacts_mode:
+                    scaled = _prepare_attachment(diff_file, context.jira_pixel_diff_max_width_px, scratch_path)
+                    if scaled and scaled.is_file():
+                        attachment_name = _build_attachment_filename(
+                            idx=index,
+                            scenario=str(source["scenario"].get("name", "") or row.get("scenario_id", "scenario")),
+                            suffix=Path(scaled).suffix or ".png",
+                        )
+                        upload_path = scratch_path / attachment_name
+                        if scaled.resolve(strict=False) != upload_path.resolve(strict=False):
+                            shutil.copy2(scaled, upload_path)
+                        attachments.append(upload_path)
+                        diff_attachment_file = attachment_name
+                        diff_attachment_thumb = f"!{attachment_name}|thumbnail!"
+                    else:
+                        missing_note = f"{row.get('scenario_id', 'unknown')} ({diff_rel})"
                 else:
-                    missing_note = f"{row.get('scenario_id', 'unknown')} ({diff_rel})"
-                diff_url = (
-                    f"{report_url}/{diff_rel}" if base_url else f"/reports/{run_id}/{diff_rel}".replace("//", "/")
-                )
+                    diff_url = (
+                        f"{report_url}/{diff_rel}" if base_url else f"/reports/{run_id}/{diff_rel}".replace("//", "/")
+                    )
             else:
                 missing_note = f"{row.get('scenario_id', 'unknown')} (missing path)"
             bug_entries.append(
@@ -488,6 +582,8 @@ def send_jira_comment(
                     "metadata_lines": field_lines,
                     "report_url": report_url,
                     "diff_url": diff_url,
+                    "diff_attachment_thumb": diff_attachment_thumb,
+                    "diff_attachment_file": diff_attachment_file,
                     "missing_note": missing_note or "",
                 }
             )
@@ -517,6 +613,8 @@ def send_jira_comment(
             bug_entries=bug_entries,
             aso_entries=aso_entries,
             aso_mentions=list(context.jira_aso_mentions),
+            frontend_git=run_git_info.get("frontend", {}),
+            backend_git=run_git_info.get("backend", {}),
         )
 
         if requested_mode in {"auto", "subtask"}:
@@ -571,6 +669,7 @@ def send_jira_comment(
         "issue": target_issue,
         "parent_issue": issue_key,
         "run_id": run_id,
+        "framework_mode": framework_mode,
         "mode": effective_mode,
         "requested_mode": requested_mode,
         "attachments": len(attachments),

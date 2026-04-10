@@ -9,6 +9,7 @@ log_compression = "zip"
 
 # Runtime
 artifacts_dir = "artifacts"
+framework_mode = "local"  # local | server
 ignore_https_errors = True
 allure_enabled = False
 pytest_html_enabled = True

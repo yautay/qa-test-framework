@@ -97,7 +97,13 @@ def _prepare_report(tmp_path: Path, run_id: str) -> tuple[Path, Path, Path]:
     return repo_root, report_dir, repo_root / "ui-dist"
 
 
-def _build_context(repo_root: Path, report_dir: Path, jira_client: _FakeJiraClient) -> ReportServerContext:
+def _build_context(
+    repo_root: Path,
+    report_dir: Path,
+    jira_client: _FakeJiraClient,
+    *,
+    framework_mode: str = "local",
+) -> ReportServerContext:
     ui_dist = repo_root / "ui-dist"
     ui_dist.mkdir(parents=True)
     (ui_dist / "index.html").write_text("<html></html>", encoding="utf-8")
@@ -115,6 +121,7 @@ def _build_context(repo_root: Path, report_dir: Path, jira_client: _FakeJiraClie
         jira_retry_max=1,
         jira_upload_delay_seconds=0,
         jira_pixel_diff_max_width_px=320,
+        framework_mode=framework_mode,
     )
 
 
@@ -246,6 +253,31 @@ def test_jira_comment_mode_auto_falls_back_to_comment_when_subtask_fails(tmp_pat
         _stop_server(server, thread)
 
 
+def test_jira_comment_server_mode_keeps_diff_url_and_skips_attachments(tmp_path: Path) -> None:
+    repo_root, report_dir, _ = _prepare_report(tmp_path, "run-jira")
+    fake_client = _FakeJiraClient()
+    context = _build_context(repo_root, report_dir, fake_client, framework_mode="server")
+    server, base_url, thread = _start_server(context)
+    try:
+        status, payload = _http_json(
+            base_url,
+            "/api/reports/run-jira/jira/comment",
+            method="POST",
+            body={"jira_ticket": "ABC-1", "user_note": "note", "mode": "comment"},
+            headers={"Host": "localhost"},
+        )
+        assert status == 200
+        assert payload["accepted"] is True
+        assert payload["framework_mode"] == "server"
+        assert payload["attachments"] == 0
+        body = fake_client.comments[0][1]
+        assert "[diff|http://localhost/reports/run-jira/diff/case-1.png]" in body
+        assert "thumbnail" not in body
+        assert len(fake_client.attachments) == 0
+    finally:
+        _stop_server(server, thread)
+
+
 def test_jira_comment_includes_execution_target_full_url_in_metadata(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
@@ -271,6 +303,13 @@ def test_jira_comment_includes_execution_target_full_url_in_metadata(tmp_path: P
                             },
                             "execution": {
                                 "target_base_url": "https://shop.example.com",
+                                "browser_version": "123.0.1",
+                            },
+                            "run": {
+                                "target_git_info": {
+                                    "frontend": {"branch": "feature/front", "commit": "abc1234"},
+                                    "backend": {"branch": "feature/back", "commit": "def5678"},
+                                }
                             },
                         },
                     }
@@ -310,6 +349,10 @@ def test_jira_comment_includes_execution_target_full_url_in_metadata(tmp_path: P
         assert "🟢" not in body
         assert "🔴 visual-regression: FAIL" in body
         assert "{panel:title=BUG SECTION" in body
+        assert "*Backend Git:* branch=feature/back | commit=def5678" in body
+        assert "*Frontend Git:* branch=feature/front | commit=abc1234" in body
+        assert "browser.details: chromium | version=123.0.1" in body
         assert "execution.target_full_url: https://shop.example.com/produkt/lodz" in body
+        assert "thumbnail" in body
     finally:
         _stop_server(server, thread)

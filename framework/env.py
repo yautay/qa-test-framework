@@ -70,6 +70,7 @@ class RuntimeEnv:
     headless: bool
     ignore_https_errors: bool
     base_url: str
+    framework_mode: str
     server_name: str
     reference_host: str
     record_video: bool
@@ -212,6 +213,9 @@ def load_env() -> RuntimeEnv:
     reference_host = env_str("REFERENCE_HOST", str(getattr(settings_cli, "reference_host", "")))
 
     base_url = env_value("BASE_URL") or env_value("BASE_URL_OVERRIDE") or settings_cli.base_url_override or ""
+    framework_mode = env_str("FRAMEWORK_MODE", str(getattr(settings, "framework_mode", "server"))).strip().lower()
+    if framework_mode not in {"local", "server"}:
+        framework_mode = "server"
 
     return RuntimeEnv(
         browser=browser,
@@ -229,6 +233,7 @@ def load_env() -> RuntimeEnv:
             settings.ignore_https_errors,
         ),
         base_url=base_url,
+        framework_mode=framework_mode,
         server_name=server_name,
         reference_host=reference_host,
         record_video=env_bool("RECORD_VIDEO", bool(settings.record_video)),

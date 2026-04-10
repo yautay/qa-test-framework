@@ -51,6 +51,7 @@ class ReportServerContext:
     jira_upload_delay_seconds: float = 1.0
     jira_pixel_diff_max_width_px: int = 320
     jira_aso_mentions: list[str] = field(default_factory=list)
+    framework_mode: str = "server"
     jira_client: JiraClient | None = None
 
     def resolve_run_dir(self, run_id: str) -> Path | None:

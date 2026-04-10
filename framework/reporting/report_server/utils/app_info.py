@@ -100,6 +100,7 @@ def _build_app_info_payload(context: ReportServerContext) -> dict[str, Any]:
                 "default_username": default_username,
                 "default_password": default_password,
                 "default_mode": "auto",
+                "framework_mode": str(getattr(context, "framework_mode", "server") or "server").strip().lower(),
             },
         },
     }
