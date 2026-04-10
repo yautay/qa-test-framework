@@ -3,22 +3,88 @@
     <AppHeader />
     <HeroHeader :total="store.filteredReports.length" />
     <ReportsFilters />
-    <ReportsList :reports="store.filteredReports" />
+    <ReportsList :reports="store.filteredReports" @send-jira="openModal" />
+    <JiraSendModal
+      :visible="modalVisible"
+      :report="selectedReport"
+      :default-ticket="defaultTicket"
+      :auth-mode="jiraConfig.auth_mode"
+      :auth-configured="jiraConfig.auth_configured"
+      :error-message="errorMessage"
+      :is-submitting="isSubmitting"
+      @submit="handleSendJira"
+      @cancel="closeModal"
+    />
   </section>
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { t } from "../lib/i18n";
 import AppHeader from "../components/AppHeader.vue";
 import HeroHeader from "../components/hero/HeroHeader.vue";
 import ReportsFilters from "../components/hero/ReportsFilters.vue";
 import ReportsList from "../components/hero/ReportsList.vue";
+import JiraSendModal from "../components/hero/JiraSendModal.vue";
+import { fetchAppInfo, sendJiraComment } from "../lib/api/reportsApi";
 import { useReportsStore } from "../stores/reportsStore";
 
 const store = useReportsStore();
+const appInfo = ref(null);
+const modalVisible = ref(false);
+const selectedReport = ref(null);
+const isSubmitting = ref(false);
+const errorMessage = ref("");
+
+const jiraConfig = computed(() => appInfo.value?.ui_config?.jira || {});
+const defaultTicket = computed(() => (jiraConfig.value.default_ticket || "").trim());
+
+const openModal = (report) => {
+  selectedReport.value = report;
+  errorMessage.value = "";
+  modalVisible.value = true;
+};
+
+const closeModal = () => {
+  modalVisible.value = false;
+  selectedReport.value = null;
+};
+
+const handleSendJira = async (payload) => {
+  if (!selectedReport.value) {
+    errorMessage.value = t("jira.errors.noReport");
+    return;
+  }
+  isSubmitting.value = true;
+  errorMessage.value = "";
+  try {
+    const body = {
+      jira_ticket: payload.ticket.toUpperCase(),
+      user_note: payload.note,
+    };
+    if (payload.auth) {
+      body.auth = payload.auth;
+    }
+    await sendJiraComment(selectedReport.value.run_id, body);
+    await store.fetchReports();
+    closeModal();
+  } catch (error) {
+    errorMessage.value = error?.message || t("jira.errors.unexpected");
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+
+const loadAppInfo = async () => {
+  try {
+    appInfo.value = await fetchAppInfo();
+  } catch (error) {
+    console.warn("failed to load app info", error);
+  }
+};
 
 onMounted(async () => {
-  await store.fetchReports();
+  await Promise.all([store.fetchReports(), loadAppInfo()]);
   store.startAutoRefresh();
 });
 

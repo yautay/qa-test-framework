@@ -6,7 +6,7 @@ If you develop the framework itself, use `README-DEV.md`.
 
 ## CI status
 
-### GitHub Actions (priv)
+### CI Actions
 
 | Job | develop | netquarner |
 | --- | --- | --- |

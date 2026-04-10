@@ -26,7 +26,9 @@
     "runNote": "Notatka runa",
     "frontendGit": "Branch frontendu",
     "backendGit": "Branch backendu",
-    "gitInfoNotConfigured": "nie skonfigurowano"
+    "gitInfoNotConfigured": "nie skonfigurowano",
+    "sendJira": "Wyślij do Jira",
+    "pmsPendingHint": "Poczekaj na zakończenie PMS"
   },
   "listing": {
     "scenario": "Scenariusz",
@@ -190,6 +192,31 @@
     "secondsOne": "sekunda",
     "secondsFew": "sekundy",
     "secondsMany": "sekund"
+  },
+  "jira": {
+    "modalTitle": "Wyślij raport visual do Jira",
+    "ticketLabel": "Bilet Jira",
+    "ticketPlaceholder": "ABC-123",
+    "ticketInvalid": "Podaj poprawny bilet (ABC-123)",
+    "noteLabel": "Opcjonalna notatka",
+    "notePlaceholder": "Dodaj kontekst (max 500 znaków)",
+    "authTitle": "Dane Jira",
+    "authHint": "Podaj login lub token API do Jira",
+    "authToken": "Token API",
+    "authUsername": "Nazwa użytkownika lub email",
+    "authPassword": "Hasło",
+    "summaryHeading": "Podsumowanie",
+    "summaryRun": "Uruchomienie",
+    "summaryBugs": "BUGi",
+    "summaryAsos": "Zgłoszenia ASO",
+    "summaryTotal": "Wszystkie testy",
+    "submit": "Wyślij do Jira",
+    "cancel": "Anuluj",
+    "progress": "Wysyłanie do Jira…",
+    "errors": {
+      "noReport": "Nie wybrano raportu",
+      "unexpected": "Nie udało się wysłać do Jira"
+    }
   },
   "message": {
     "pixelThresholdExceeded": "Przekroczono próg pikseli",

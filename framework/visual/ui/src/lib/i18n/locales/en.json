@@ -26,7 +26,9 @@
     "runNote": "Run note",
     "frontendGit": "Frontend branch",
     "backendGit": "Backend branch",
-    "gitInfoNotConfigured": "not configured"
+    "gitInfoNotConfigured": "not configured",
+    "sendJira": "Send to Jira",
+    "pmsPendingHint": "Waiting for PMS to finish"
   },
   "listing": {
     "scenario": "Scenario",
@@ -178,6 +180,31 @@
     "hours": "hours",
     "minutes": "minutes",
     "seconds": "seconds"
+  },
+  "jira": {
+    "modalTitle": "Send visual report to Jira",
+    "ticketLabel": "Jira ticket",
+    "ticketPlaceholder": "ABC-123",
+    "ticketInvalid": "Enter a valid ticket (ABC-123)",
+    "noteLabel": "Optional note",
+    "notePlaceholder": "Add context for testers (max 500 chars)",
+    "authTitle": "Jira credentials",
+    "authHint": "Provide Jira login or API token for this submission.",
+    "authToken": "API token",
+    "authUsername": "Username or email",
+    "authPassword": "Password",
+    "summaryHeading": "Report summary",
+    "summaryRun": "Run",
+    "summaryBugs": "BUGs",
+    "summaryAsos": "ASO requests",
+    "summaryTotal": "Total tests",
+    "submit": "Send to Jira",
+    "cancel": "Cancel",
+    "progress": "Sending to Jira…",
+    "errors": {
+      "noReport": "No report selected",
+      "unexpected": "Unable to send to Jira right now"
+    }
   },
   "message": {
     "pixelThresholdExceeded": "Pixel threshold exceeded",

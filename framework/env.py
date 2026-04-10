@@ -136,6 +136,17 @@ class RuntimeEnv:
     visual_uncertain_pixel_delta: float
     visual_uncertain_lpips_delta: float
     visual_uncertain_dists_delta: float
+    jira_enabled: bool
+    jira_url: str
+    jira_username: str
+    jira_password: str
+    jira_verify_ssl: bool
+    jira_auth_mode: str
+    jira_api_token: str
+    jira_retry_max: int
+    jira_upload_delay_seconds: float
+    jira_pixel_diff_max_width_px: int
+    jira_aso_mentions: tuple[str, ...]
 
 
 def load_env() -> RuntimeEnv:
@@ -166,6 +177,13 @@ def load_env() -> RuntimeEnv:
 
     def env_bool(name: str, default: bool) -> bool:
         return _as_bool(env_value(name), default)
+
+    def env_list(name: str, default: str) -> tuple[str, ...]:
+        v = env_value(name)
+        raw = default if v is None else v
+        if not raw:
+            return ()
+        return tuple(item.strip() for item in str(raw).split(",") if item.strip())
 
     # --- defaults from settings ----------------------------------------
 
@@ -440,5 +458,28 @@ def load_env() -> RuntimeEnv:
         visual_uncertain_dists_delta=env_float(
             "VISUAL_UNCERTAIN_DISTS_DELTA",
             float(settings.visual_uncertain_dists_delta),
+        ),
+        jira_enabled=env_bool("JIRA_ENABLED", bool(getattr(settings, "jira_enabled", False))),
+        jira_url=env_str("JIRA_URL", str(getattr(settings, "jira_url", ""))),
+        jira_username=env_str("JIRA_USERNAME", str(getattr(settings, "jira_username", ""))),
+        jira_password=env_str("JIRA_PASSWORD", str(getattr(settings, "jira_password", ""))),
+        jira_verify_ssl=env_bool(
+            "JIRA_VERIFY_SSL",
+            bool(getattr(settings, "jira_verify_ssl", False)),
+        ),
+        jira_auth_mode=env_str("JIRA_AUTH_MODE", str(getattr(settings, "jira_auth_mode", "basic"))).strip().lower(),
+        jira_api_token=env_str("JIRA_API_TOKEN", str(getattr(settings, "jira_api_token", ""))),
+        jira_retry_max=env_int("JIRA_RETRY_MAX", int(getattr(settings, "jira_retry_max", 3))),
+        jira_upload_delay_seconds=env_float(
+            "JIRA_UPLOAD_DELAY_SECONDS",
+            float(getattr(settings, "jira_upload_delay_seconds", 1)),
+        ),
+        jira_pixel_diff_max_width_px=env_int(
+            "JIRA_PIXEL_DIFF_MAX_WIDTH_PX",
+            int(getattr(settings, "jira_pixel_diff_max_width_px", 320)),
+        ),
+        jira_aso_mentions=env_list(
+            "JIRA_ASO_MENTIONS",
+            ",".join(getattr(settings, "jira_aso_mentions", []) or []),
         ),
     )

@@ -157,3 +157,11 @@ Przyklad:
 Docelowo mozna dodac `precondition.flow` mapowany na funkcje Python z uzyciem Page Object z E2E (np. `login_client`).
 
 Ten mechanizm nie jest jeszcze aktywny w runnerze visual. Aktualnie wspierane sa kroki przez `steps`.
+
+## Jira tile action
+
+- Włącz integrację przez `JIRA_ENABLED=1` i skonfiguruj `JIRA_URL`, poświadczenia (`JIRA_USERNAME`/`JIRA_PASSWORD` lub `JIRA_AUTH_MODE=token` + `JIRA_API_TOKEN`) oraz opcjonalne `JIRA_ASO_MENTIONS`.
+- Uruchom `make report-serve` (albo `python -m pytest --server-name ...`) i otwórz hero page; ikona koperty jest aktywna tylko gdy `pms_pending_count==0` i PMS nie jest w toku.
+- Modal pozwala wpisać bilet Jira, opcjonalną notatkę, oraz, gdy poświadczenia nie są skonfigurowane, dane logowania do Jira.
+- Po zatwierdzeniu backend waliduje ticket, generuje ASCII-komentarz ze znaczkami `visual-regression`, separacją BUG/ASO, nazwami scenariuszy, linkiem do raportu oraz, w razie potrzeby, wzmiankami `[~user]`.
+- Dla błędów BUG załączane są przeskalowane `pixel_diff`y (max szerokość `JIRA_PIXEL_DIFF_MAX_WIDTH_PX`) wysyłane sekwencyjnie z opóźnieniem `JIRA_UPLOAD_DELAY_SECONDS`.

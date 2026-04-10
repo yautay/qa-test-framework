@@ -35,6 +35,23 @@ Supported variables:
 - `REPORTING_ASYNC_MAX_RETRY_AGE_SECONDS`
 - `REPORTING_ASYNC_FLUSH_TIMEOUT_SECONDS`
 
+## Jira visual reporting
+
+The hero page can post structured comments to Jira for visual runs. Configure it with the following variables:
+
+- `JIRA_ENABLED` (`0|1`) – enables the hero tile action and backend endpoint.
+- `JIRA_URL` – Jira base URL for REST API v2 (`https://jira.example`).
+- `JIRA_USERNAME` / `JIRA_PASSWORD` – credentials for `JIRA_AUTH_MODE=basic`.
+- `JIRA_AUTH_MODE` (`basic|token`) – controls whether to send a traditional login or an API token in place of the password.
+- `JIRA_API_TOKEN` – required when `JIRA_AUTH_MODE=token`.
+- `JIRA_VERIFY_SSL` (`0|1`) – toggles SSL verification for Jira API calls.
+- `JIRA_RETRY_MAX` – number of attempts for comments/attachments before failing.
+- `JIRA_UPLOAD_DELAY_SECONDS` – pause between consecutive pixel diff uploads.
+- `JIRA_PIXEL_DIFF_MAX_WIDTH_PX` – maximum width for resized diff attachments (default `320`).
+- `JIRA_ASO_MENTIONS` – comma-separated Jira user handles inserted when ASO cases exist (examples: `michal.pielaszkiewicz,weronika.bakowska`).
+
+Logging: retries emit warnings with ticket/run metadata, terminal failures log errors without the comment body or credentials, and all Jira payload text is normalized to ASCII before submission.
+
 Example:
 
 ```env

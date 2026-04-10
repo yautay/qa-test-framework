@@ -132,4 +132,33 @@ describe("ReportCard", () => {
     expect(wrapper.find(".pms-signal.bg-warning").attributes("title")).toContain("1");
     expect(wrapper.find(".pms-signal.bg-success").attributes("title")).toContain("7");
   });
+
+  it("disables the Jira send button while PMS is pending", () => {
+    const wrapper = mount(ReportCard, {
+      props: {
+        report: {
+          run_id: "run-disabled",
+          pms_pending_count: 1,
+          pms_in_progress: true,
+        },
+      },
+    });
+
+    const button = wrapper.find("button");
+    expect(button.attributes("disabled")).toBeDefined();
+  });
+
+  it("emits send-jira when the Jira button is clicked and PMS finished", async () => {
+    const report = {
+      run_id: "run-ok",
+      pms_pending_count: 0,
+      pms_in_progress: false,
+    };
+    const wrapper = mount(ReportCard, { props: { report } });
+
+    await wrapper.find("button").trigger("click");
+
+    expect(wrapper.emitted("send-jira")).toBeTruthy();
+    expect(wrapper.emitted("send-jira")?.[0]?.[0]).toEqual(report);
+  });
 });

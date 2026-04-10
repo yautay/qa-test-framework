@@ -9,6 +9,7 @@ from typing import Any, cast
 from loguru import logger
 
 from framework.env import load_env
+from framework.integrations.jira import JiraAuth, JiraClient
 from framework.logger import add_reporting_api_sink, configure_tools_logging
 from framework.reporting_client import ReportingClient
 from framework.visual.baseline_store import BaselineStore
@@ -72,6 +73,32 @@ def main() -> int:
                 retries=env.reporting_api_retries,
             )
             add_reporting_api_sink(reporting_client, env.reporting_api_log_level)
+    jira_client: JiraClient | None = None
+    jira_auth_configured = False
+    jira_url = str(env.jira_url or "").strip()
+    jira_enabled = bool(env.jira_enabled)
+    jira_mode = str(env.jira_auth_mode or "basic").strip().lower()
+    if jira_enabled and jira_url:
+        username = str(env.jira_username or "").strip()
+        password = str(env.jira_password or "").strip()
+        api_token = str(env.jira_api_token or "").strip()
+        auth: JiraAuth | None = None
+        if jira_mode == "token":
+            if username and api_token:
+                auth = JiraAuth(mode="token", username=username, password="", api_token=api_token)
+        else:
+            if username and password:
+                auth = JiraAuth(mode="basic", username=username, password=password, api_token=api_token)
+        if auth:
+            jira_client = JiraClient(base_url=jira_url, verify_ssl=bool(env.jira_verify_ssl), auth=auth)
+            jira_auth_configured = True
+        else:
+            logger.debug(
+                "jira_auth_missing_credentials",
+                mode=jira_mode,
+                username=bool(username),
+                api_token=bool(api_token),
+            )
     context = ReportServerContext(
         repo_root=REPO_ROOT,
         ui_dist_dir=ui_dist_dir,
@@ -94,6 +121,16 @@ def main() -> int:
         bug_pdf_config_path=(
             REPO_ROOT / "framework" / "visual" / "ui" / "src" / "config" / "bug_report_pdf_config.json"
         ),
+        jira_enabled=jira_enabled,
+        jira_url=jira_url,
+        jira_verify_ssl=bool(env.jira_verify_ssl),
+        jira_auth_mode=jira_mode,
+        jira_auth_configured=jira_auth_configured,
+        jira_retry_max=int(env.jira_retry_max),
+        jira_upload_delay_seconds=float(env.jira_upload_delay_seconds),
+        jira_pixel_diff_max_width_px=int(env.jira_pixel_diff_max_width_px),
+        jira_aso_mentions=list(env.jira_aso_mentions),
+        jira_client=jira_client,
     )
     handler = _build_handler(context)
     server = ThreadingHTTPServer((args.host, int(args.port)), handler)
@@ -117,7 +154,8 @@ def main() -> int:
         "POST /api/builds/<run_id>/lock/release, "
         "POST /api/builds/<run_id>/report, "
         "POST /api/reports/<run_id>/baseline/challenge, "
-        "POST /api/reports/<run_id>/baseline/send"
+        "POST /api/reports/<run_id>/baseline/send, "
+        "POST /api/reports/<run_id>/jira/comment"
     )
 
     try:

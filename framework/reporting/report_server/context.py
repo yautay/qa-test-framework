@@ -5,6 +5,7 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
+from framework.integrations.jira import JiraClient
 from framework.reporting_client import ReportingClient
 from framework.visual.baseline_store import BaselineStore
 
@@ -41,6 +42,16 @@ class ReportServerContext:
     pms_poll_interval_ms: int = 5000
     pms_poll_idle_multiplier: float = 1.0
     _lock: Any = field(default_factory=Lock)
+    jira_enabled: bool = False
+    jira_url: str = ""
+    jira_verify_ssl: bool = False
+    jira_auth_mode: str = "basic"
+    jira_auth_configured: bool = False
+    jira_retry_max: int = 3
+    jira_upload_delay_seconds: float = 1.0
+    jira_pixel_diff_max_width_px: int = 320
+    jira_aso_mentions: list[str] = field(default_factory=list)
+    jira_client: JiraClient | None = None
 
     def resolve_run_dir(self, run_id: str) -> Path | None:
         with self._lock:

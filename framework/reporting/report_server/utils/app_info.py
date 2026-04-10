@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import settings_cli
 import subprocess
 import tomllib
 from pathlib import Path
@@ -77,11 +78,20 @@ def _build_app_info_payload(context: ReportServerContext) -> dict[str, Any]:
         "commit": build_info.get("commit", "unknown"),
         "built_at": build_info.get("built_at", "unknown"),
     }
+    ticket = str(getattr(settings_cli, "nn_ticket", "") or "").strip()
+    if ticket.lower() == "none":
+        ticket = ""
     return {
         "runtime": runtime,
         "ui_build": ui_build,
         "ui_config": {
             "pms_poll_interval_ms": max(100, int(context.pms_poll_interval_ms or 5000)),
             "pms_poll_idle_multiplier": max(1.0, float(context.pms_poll_idle_multiplier or 1.0)),
+            "jira": {
+                "enabled": bool(context.jira_enabled),
+                "auth_mode": str(context.jira_auth_mode or "").strip() or "",
+                "auth_configured": bool(context.jira_auth_configured),
+                "default_ticket": ticket,
+            },
         },
     }
