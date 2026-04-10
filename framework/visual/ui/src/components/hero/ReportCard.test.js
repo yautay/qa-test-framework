@@ -39,8 +39,8 @@ describe("ReportCard", () => {
     expect(wrapper.find(".text-bg-danger").text()).toBe("4");
     expect(wrapper.text()).toContain("Tester: jan.k");
     expect(wrapper.text()).toContain("Run note: manual smoke");
-    expect(wrapper.text()).toContain("Frontend git: feature/front @ abc1234");
-    expect(wrapper.text()).toContain("Backend git: not configured");
+    expect(wrapper.text()).toContain("Frontend branch: feature/front @ abc1234");
+    expect(wrapper.text()).toContain("Backend branch: not configured");
     expect(wrapper.find("a.btn").attributes("href")).toBe("/reports/20260218_120000_000001");
   });
 

@@ -1,0 +1,38 @@
+name: CI Lint Format Typecheck
+
+on:
+  push:
+    branches:
+      - develop
+      - netquarner
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-format-typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Ruff lint
+        run: python -m ruff check framework tools qa/aso
+
+      - name: Black format check
+        run: python -m black --check framework tools qa/aso
+
+      - name: MyPy typecheck
+        run: python -m mypy framework

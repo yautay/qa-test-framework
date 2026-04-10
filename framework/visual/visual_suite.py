@@ -20,6 +20,49 @@ def _worker_id() -> str:
     return str(os.getenv("PYTEST_XDIST_WORKER") or "master")
 
 
+def _default_target_git_info() -> dict[str, dict[str, str]]:
+    return {
+        "frontend": {
+            "branch": "",
+            "commit": "",
+            "endpoint": "/git-info",
+            "url": "",
+            "status": "not_configured",
+            "error": "",
+            "fetched_at_utc": "",
+        },
+        "backend": {
+            "branch": "",
+            "commit": "",
+            "endpoint": "/git-info",
+            "url": "",
+            "status": "not_configured",
+            "error": "",
+            "fetched_at_utc": "",
+        },
+    }
+
+
+def _normalize_target_git_info(value: object) -> dict[str, dict[str, str]]:
+    source = value if isinstance(value, dict) else {}
+    output = _default_target_git_info()
+    for target in ("frontend", "backend"):
+        item = source.get(target) if isinstance(source, dict) else None
+        if not isinstance(item, dict):
+            continue
+        endpoint_default = "/git-info"
+        output[target] = {
+            "branch": str(item.get("branch", "") or ""),
+            "commit": str(item.get("commit", "") or ""),
+            "endpoint": str(item.get("endpoint", endpoint_default) or endpoint_default),
+            "url": str(item.get("url", "") or ""),
+            "status": str(item.get("status", "not_configured") or "not_configured"),
+            "error": str(item.get("error", "") or ""),
+            "fetched_at_utc": str(item.get("fetched_at_utc", "") or ""),
+        }
+    return output
+
+
 def _attach_result_metadata(
     *,
     result: VisualResult,
@@ -27,6 +70,7 @@ def _attach_result_metadata(
     viewport: str,
     tester: str,
     run_note: str,
+    target_git_info: dict[str, dict[str, str]],
     dual_pass: bool,
     target_base_url: str,
     reference_host: str,
@@ -49,6 +93,7 @@ def _attach_result_metadata(
         "run": {
             "tester": tester,
             "run_note": run_note,
+            "target_git_info": target_git_info,
         },
         "scenario": {
             "id": scenario.scenario_id,
@@ -226,9 +271,11 @@ def execute_visual_scenario(
     run_metadata = getattr(pytestconfig, "_run_metadata", {})
     tester = ""
     run_note = ""
+    target_git_info = _default_target_git_info()
     if isinstance(run_metadata, dict):
         tester = str(run_metadata.get("tester", "") or "")
         run_note = str(run_metadata.get("run_note", "") or "")
+        target_git_info = _normalize_target_git_info(run_metadata.get("target_git_info"))
 
     reference_host = str(getattr(runtime_env, "reference_host", "") or "").strip()
     worker_id = _worker_id()
@@ -263,6 +310,7 @@ def execute_visual_scenario(
             viewport=viewport,
             tester=tester,
             run_note=run_note,
+            target_git_info=target_git_info,
             dual_pass=False,
             target_base_url=effective_base_url,
             reference_host="",
@@ -419,6 +467,7 @@ def execute_visual_scenario(
             viewport=viewport,
             tester=tester,
             run_note=run_note,
+            target_git_info=target_git_info,
             dual_pass=True,
             target_base_url=effective_base_url,
             reference_host=reference_host,

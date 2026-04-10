@@ -147,6 +147,10 @@ def test_report_server_endpoints_handle_listing_results_ref_tags_and_baseline_fl
         assert payload["run_metadata"]["target_git_info"]["frontend"]["commit"] == "abcdef1"
         assert payload["results"][0]["test_metadata"]["run"]["run_id"] == run_id
         assert payload["results"][0]["test_metadata"]["run"]["environment_probe"]["headers"]["x-env"] == "demo"
+        assert (
+            payload["results"][0]["test_metadata"]["run"]["target_git_info"]["frontend"]["branch"] == "feature/frontend"
+        )
+        assert payload["results"][0]["test_metadata"]["run"]["target_git_info"]["frontend"]["commit"] == "abcdef1"
 
         query = urlencode(
             {
@@ -387,5 +391,6 @@ def test_results_endpoint_preserves_execution_target_base_url_metadata(tmp_path:
         assert row["test_metadata"]["execution"]["target_base_url"] == "https://shop.example.com"
         assert row["test_metadata"]["run"]["tester"] == "jan.k"
         assert row["test_metadata"]["run"]["environment_probe"]["headers"]["x-env-git-branch"] == "feature/demo"
+        assert row["test_metadata"]["run"]["target_git_info"]["frontend"]["status"] == "not_configured"
     finally:
         _stop_server(server, thread)

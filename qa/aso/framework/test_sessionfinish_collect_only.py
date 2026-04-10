@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import time
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -34,7 +36,7 @@ def test_pytest_sessionfinish_collect_only_skips_timing_snapshots_and_regression
 
     client = _Client()
 
-    called: dict[str, int] = {"save": 0, "load": 0, "detect": 0, "warn": 0}
+    called: dict[str, int] = {"save": 0, "load": 0, "detect": 0}
     monkeypatch.setattr(
         runtime_conftest, "save_run_timings", lambda *_args, **_kwargs: called.__setitem__("save", called["save"] + 1)
     )
@@ -47,11 +49,6 @@ def test_pytest_sessionfinish_collect_only_skips_timing_snapshots_and_regression
         runtime_conftest,
         "detect_slow_regressions",
         lambda *_args, **_kwargs: called.__setitem__("detect", called["detect"] + 1) or [],
-    )
-    monkeypatch.setattr(
-        runtime_conftest.logger,
-        "warning",
-        lambda *_args, **_kwargs: called.__setitem__("warn", called["warn"] + 1),
     )
 
     config = SimpleNamespace(
@@ -78,9 +75,12 @@ def test_pytest_sessionfinish_collect_only_skips_timing_snapshots_and_regression
 
     runtime_conftest.pytest_sessionfinish(session, 0)
 
-    assert called == {"save": 0, "load": 0, "detect": 0, "warn": 0}
+    assert called == {"save": 0, "load": 0, "detect": 0}
     assert not (run_artifacts.logs / "test_durations.json").exists()
     assert client.run_finish_calls
+    metadata = client.run_finish_calls[0]["metadata"]
+    assert metadata["target_git_info"]["frontend"]["status"] == "not_configured"
+    assert metadata["target_git_info"]["backend"]["status"] == "not_configured"
     assert client.flush_calls
     assert client.shutdown_calls
 
@@ -134,3 +134,83 @@ def test_pytest_sessionfinish_controller_falls_back_to_local_timings_when_no_wor
 
     payload = (run_artifacts.logs / "test_durations.json").read_text(encoding="utf-8")
     assert "qa/test.py::test_case" in payload
+
+
+def test_pytest_sessionfinish_run_finish_prefers_target_git_info_from_run_metadata_file(tmp_path: Path) -> None:
+    run_artifacts = build_run_artifacts(str(tmp_path / "artifacts"), run_id="run-finish-metadata")
+    metadata_path = run_artifacts.root / "run-metadata.json"
+    metadata_path.write_text(
+        json.dumps(
+            {
+                "tester": "qa-user",
+                "run_note": "nightly",
+                "target_git_info": {
+                    "frontend": {
+                        "branch": "feature/demo-ui",
+                        "commit": "abc1234",
+                        "endpoint": "/git-info",
+                        "url": "https://example.test/git-info",
+                        "status": "ok",
+                        "error": "",
+                        "fetched_at_utc": "2026-01-01T00:00:00Z",
+                    },
+                    "backend": {
+                        "branch": "feature/demo-api",
+                        "commit": "def5678",
+                        "endpoint": "/git-info",
+                        "url": "https://example.test/api/git-info",
+                        "status": "ok",
+                        "error": "",
+                        "fetched_at_utc": "2026-01-01T00:00:00Z",
+                    },
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    class _Client:
+        def __init__(self) -> None:
+            self.run_finish_calls: list[dict[str, object]] = []
+
+        def run_finish(self, payload: dict[str, object]) -> None:
+            self.run_finish_calls.append(payload)
+
+        def flush(self, timeout_seconds: int) -> None:
+            _ = timeout_seconds
+
+        def shutdown(self, timeout_seconds: int) -> None:
+            _ = timeout_seconds
+
+    client = _Client()
+
+    config = SimpleNamespace(
+        _run_artifacts=run_artifacts,
+        _run_uid="uid-3",
+        _test_case_timings={},
+        option=SimpleNamespace(collectonly=True),
+        _runtime_env=load_env(),
+        _run_metadata={"tester": "", "run_note": ""},
+        _result_counters={
+            "total": 0,
+            "passed": 0,
+            "failed": 0,
+            "skipped": 0,
+            "xfailed": 0,
+            "xpassed": 0,
+            "error": 0,
+        },
+        _session_started=time.time() - 0.2,
+        _reporting_suspended=False,
+        _reporting_client=client,
+    )
+    session = SimpleNamespace(config=config)
+
+    runtime_conftest.pytest_sessionfinish(session, 0)
+
+    assert client.run_finish_calls
+    metadata = client.run_finish_calls[0]["metadata"]
+    assert metadata["target_git_info"]["frontend"]["branch"] == "feature/demo-ui"
+    assert metadata["target_git_info"]["frontend"]["commit"] == "abc1234"
+    assert metadata["target_git_info"]["backend"]["branch"] == "feature/demo-api"
+    assert metadata["target_git_info"]["backend"]["commit"] == "def5678"

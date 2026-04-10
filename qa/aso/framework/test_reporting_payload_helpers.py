@@ -8,11 +8,20 @@ from types import SimpleNamespace
 import pytest
 
 from framework.browser import BrowserSession
-from qa.conftest import _artifact_entry, _read_perceptual_quality_signals
 from framework.env import load_env
-from qa.conftest import _resolve_execution_context
-from qa.conftest import _capture_target_git_info
-from qa.conftest import _refresh_environment_probe_metadata
+from qa.conftest import (
+    _artifact_entry,
+    _capture_target_git_info,
+    _publish_report_metadata,
+    _read_perceptual_quality_signals,
+    _refresh_environment_probe_metadata,
+    _resolve_execution_context,
+)
+
+try:
+    from pytest_metadata.plugin import metadata_key as pytest_metadata_key
+except Exception:  # pragma: no cover - optional dependency
+    pytest_metadata_key = None
 
 pytestmark = [pytest.mark.aso]
 
@@ -216,3 +225,74 @@ def test_refresh_environment_probe_updates_target_git_info_from_resolved_base_ur
     assert config._run_metadata["target_git_info"]["frontend"]["status"] == "ok"
     assert config._run_metadata["target_git_info"]["frontend"]["branch"] == "feature/demo"
     assert config._run_metadata["target_git_info"]["frontend"]["commit"] == "abc1234"
+
+
+def test_publish_report_metadata_writes_allure_environment_properties(tmp_path: Path) -> None:
+    allure_dir = tmp_path / "allure-results"
+    config = SimpleNamespace(
+        option=SimpleNamespace(allure_report_dir=str(allure_dir)),
+        getoption=lambda _name: str(allure_dir),
+        stash={},
+    )
+
+    _publish_report_metadata(
+        config,
+        {
+            "tester": "qa-user",
+            "run_note": "nightly",
+            "target_git_info": {
+                "frontend": {
+                    "branch": "feature/demo-ui",
+                    "commit": "abc1234",
+                    "status": "ok",
+                },
+                "backend": {
+                    "branch": "feature/demo-api",
+                    "commit": "def5678",
+                    "status": "ok",
+                },
+            },
+        },
+    )
+
+    environment_path = allure_dir / "environment.properties"
+    assert environment_path.is_file()
+    content = environment_path.read_text(encoding="utf-8")
+    assert "target_git_frontend=feature/demo-ui @ abc1234" in content
+    assert "target_git_backend=feature/demo-api @ def5678" in content
+    assert "target_git_frontend_status=ok" in content
+
+
+def test_publish_report_metadata_updates_pytest_html_metadata_stash() -> None:
+    if pytest_metadata_key is None:
+        pytest.skip("pytest-metadata plugin unavailable")
+
+    config = SimpleNamespace(
+        option=SimpleNamespace(allure_report_dir=""),
+        stash={},
+    )
+
+    _publish_report_metadata(
+        config,
+        {
+            "tester": "qa-user",
+            "run_note": "nightly",
+            "target_git_info": {
+                "frontend": {
+                    "branch": "feature/demo-ui",
+                    "commit": "abc1234",
+                    "status": "ok",
+                },
+                "backend": {
+                    "status": "not_configured",
+                },
+            },
+        },
+    )
+
+    payload = config.stash[pytest_metadata_key]
+    assert payload["tester"] == "qa-user"
+    assert payload["run_note"] == "nightly"
+    assert payload["target_git_frontend_branch"] == "feature/demo-ui"
+    assert payload["target_git_frontend_commit"] == "abc1234"
+    assert payload["target_git_backend_status"] == "not_configured"

@@ -1,0 +1,83 @@
+options:
+  max-time: 30
+
+definitions:
+  caches:
+    node-ui: framework/visual/ui/node_modules
+
+  steps:
+    - step: &lint_format_typecheck
+        name: Lint Format Typecheck
+        image: python:3.13-slim
+        caches:
+          - pip
+        script:
+          - python -m pip install --upgrade pip
+          - python -m pip install -e ".[dev]"
+          - python -m ruff check framework tools qa/aso
+          - python -m black --check framework tools qa/aso
+          - python -m mypy framework
+
+    - step: &security
+        name: Security
+        image: python:3.13-slim
+        caches:
+          - pip
+        script:
+          - python -m pip install --upgrade pip
+          - python -m pip install -e ".[dev]"
+          - make security
+
+    - step: &aso_tests
+        name: ASO Tests
+        image: python:3.13-slim
+        caches:
+          - pip
+        script:
+          - export HEADLESS=1
+          - export IS_GRID_AVAILABLE=0
+          - export REPORTING_ENABLED=0
+          - export ALLURE_ENABLED=0
+          - export PYTEST_HTML_ENABLED=0
+          - export RECORD_VIDEO=0
+          - python -m pip install --upgrade pip
+          - python -m pip install -e ".[dev]"
+          - make verify-discovery
+          - make verify-scenarios
+          - make test-aso
+        artifacts:
+          - artifacts/**
+
+    - step: &frontend_ui
+        name: Frontend UI
+        image: node:22-slim
+        caches:
+          - node-ui
+        script:
+          - cd framework/visual/ui
+          - npm ci
+          - npm run test:unit
+          - npm run build:fast
+
+pipelines:
+  branches:
+    develop:
+      - parallel:
+          - step: *lint_format_typecheck
+          - step: *security
+          - step: *aso_tests
+          - step: *frontend_ui
+    netquarner:
+      - parallel:
+          - step: *lint_format_typecheck
+          - step: *security
+          - step: *aso_tests
+          - step: *frontend_ui
+
+  pull-requests:
+    "**":
+      - parallel:
+          - step: *lint_format_typecheck
+          - step: *security
+          - step: *aso_tests
+          - step: *frontend_ui

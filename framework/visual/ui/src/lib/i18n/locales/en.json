@@ -24,8 +24,8 @@
     "openReport": "Open report",
     "tester": "Tester",
     "runNote": "Run note",
-    "frontendGit": "Frontend git",
-    "backendGit": "Backend git",
+    "frontendGit": "Frontend branch",
+    "backendGit": "Backend branch",
     "gitInfoNotConfigured": "not configured"
   },
   "listing": {

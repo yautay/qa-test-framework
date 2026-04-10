@@ -42,7 +42,7 @@ Per-test writing:
 
 Run-level writing:
 
-- `run-metadata.json` is written early in `qa/conftest.py` (tester + run_note),
+- `run-metadata.json` is written early in `qa/conftest.py` (tester + run_note + target_git_info),
 - `logs/test_durations_<worker>.json` is written by each worker,
 - `logs/test_durations.json` is merged on xdist controller at session finish.
 
@@ -116,6 +116,9 @@ With xdist:
 - `visual/vrt-tags.json` - tags snapshot file,
 - `visual/.report-ready.json` - readiness marker for report discovery.
 
+`visual/results.json` includes per-result metadata under `results[].test_metadata.run`,
+including normalized `target_git_info` propagated from run metadata.
+
 `actual/` and `diff/` are produced by visual runner execution. PMS post-process writes LPIPS heatmaps into `visual/heatmaps/` and updates `results.json` (`perceptual.*` + compatibility `lpips/dists/heatmap_path`).
 
 ## Asset copy behavior
@@ -127,6 +130,18 @@ Assets are copied file-by-file (not metadata-preserving copy). This avoids cross
 - `logs/run_<run_id>_<worker>.log` - structured Loguru JSON logs (per worker + controller file),
 - `logs/test_durations_<worker>.json` - worker-local timing snapshots,
 - `logs/test_durations.json` - merged timing snapshot.
+
+## Allure and pytest-html metadata
+
+When report plugins are enabled:
+
+- Allure writes `allure-results/environment.properties` with run metadata fields,
+- pytest-html environment metadata is enriched with the same fields.
+
+Target git info is exported as normalized keys:
+
+- `target_git_frontend`, `target_git_frontend_branch`, `target_git_frontend_commit`, `target_git_frontend_status`
+- `target_git_backend`, `target_git_backend_branch`, `target_git_backend_commit`, `target_git_backend_status`
 
 ## Troubleshooting checklist
 

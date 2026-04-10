@@ -1,0 +1,69 @@
+stages:
+  - test
+
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "netquarner"'
+    - when: never
+
+.ci_rules: &ci_rules
+  - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+  - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "netquarner"'
+
+.python_job:
+  image: python:3.13-slim
+  stage: test
+  cache:
+    key: "pip-${CI_COMMIT_REF_SLUG}"
+    paths:
+      - .cache/pip/
+  before_script:
+    - python -m pip install --upgrade pip
+    - python -m pip install -e ".[dev]"
+  rules: *ci_rules
+
+lint_format_typecheck:
+  extends: .python_job
+  script:
+    - python -m ruff check framework tools qa/aso
+    - python -m black --check framework tools qa/aso
+    - python -m mypy framework
+
+security:
+  extends: .python_job
+  script:
+    - make security
+
+aso_tests:
+  extends: .python_job
+  variables:
+    HEADLESS: "1"
+    IS_GRID_AVAILABLE: "0"
+    REPORTING_ENABLED: "0"
+    ALLURE_ENABLED: "0"
+    PYTEST_HTML_ENABLED: "0"
+    RECORD_VIDEO: "0"
+  script:
+    - make verify-discovery
+    - make verify-scenarios
+    - make test-aso
+  artifacts:
+    when: on_failure
+    expire_in: 7 days
+    paths:
+      - artifacts/
+
+frontend_ui:
+  image: node:22-slim
+  stage: test
+  cache:
+    key: "node-ui-${CI_COMMIT_REF_SLUG}"
+    paths:
+      - framework/visual/ui/node_modules/
+  rules: *ci_rules
+  script:
+    - cd framework/visual/ui
+    - npm ci
+    - npm run test:unit
+    - npm run build:fast

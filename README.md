@@ -4,6 +4,22 @@
 
 If you develop the framework itself, use `README-DEV.md`.
 
+## CI status
+
+### GitHub Actions (priv)
+
+| Job | develop | netquarner |
+| --- | --- | --- |
+| Lint/Format/Typecheck | [![Lint develop](https://github.com/yautay/qa-test-framework/actions/workflows/ci-lint.yml/badge.svg?branch=develop)](https://github.com/yautay/qa-test-framework/actions/workflows/ci-lint.yml?query=branch%3Adevelop) | [![Lint netquarner](https://github.com/yautay/qa-test-framework/actions/workflows/ci-lint.yml/badge.svg?branch=netquarner)](https://github.com/yautay/qa-test-framework/actions/workflows/ci-lint.yml?query=branch%3Anetquarner) |
+| Security | [![Security develop](https://github.com/yautay/qa-test-framework/actions/workflows/ci-security.yml/badge.svg?branch=develop)](https://github.com/yautay/qa-test-framework/actions/workflows/ci-security.yml?query=branch%3Adevelop) | [![Security netquarner](https://github.com/yautay/qa-test-framework/actions/workflows/ci-security.yml/badge.svg?branch=netquarner)](https://github.com/yautay/qa-test-framework/actions/workflows/ci-security.yml?query=branch%3Anetquarner) |
+| ASO tests | [![ASO develop](https://github.com/yautay/qa-test-framework/actions/workflows/ci-aso.yml/badge.svg?branch=develop)](https://github.com/yautay/qa-test-framework/actions/workflows/ci-aso.yml?query=branch%3Adevelop) | [![ASO netquarner](https://github.com/yautay/qa-test-framework/actions/workflows/ci-aso.yml/badge.svg?branch=netquarner)](https://github.com/yautay/qa-test-framework/actions/workflows/ci-aso.yml?query=branch%3Anetquarner) |
+| Frontend UI | [![Frontend develop](https://github.com/yautay/qa-test-framework/actions/workflows/ci-frontend.yml/badge.svg?branch=develop)](https://github.com/yautay/qa-test-framework/actions/workflows/ci-frontend.yml?query=branch%3Adevelop) | [![Frontend netquarner](https://github.com/yautay/qa-test-framework/actions/workflows/ci-frontend.yml/badge.svg?branch=netquarner)](https://github.com/yautay/qa-test-framework/actions/workflows/ci-frontend.yml?query=branch%3Anetquarner) |
+
+### GitLab, Bitbucket, Jenkins
+
+CI configs are included in this repository (`.gitlab-ci.yml`, `bitbucket-pipelines.yml`, `Jenkinsfile`).
+If your GitLab/Bitbucket/Jenkins instances expose public badge URLs, add them here using each platform-specific badge endpoint.
+
 ## Quick start
 
 ### Windows (recommended)
@@ -116,6 +132,7 @@ Scenario JSON reference and authoring guide: `qa/visual/README.md`
 
 - Artifact guide: `docs/ARTIFACTS.md`
 - Reporting API details: `docs/REPORTING_HTTP_INTEGRATION.md`
+- Allure / pytest-html metadata include run-level target git fields (`target_git_frontend_*`, `target_git_backend_*`)
 
 Windows cleanup:
 - `tools/windows/Cleanup_Windows.cmd`

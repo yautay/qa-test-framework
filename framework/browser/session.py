@@ -99,7 +99,8 @@ def _connect_auto_grid(playwright_instance: Playwright, runtime_env: RuntimeEnv)
             errors.append(f"selenium_cdp={exc}")
     else:
         errors.append(
-            "selenium_cdp=no GRID_CDP_ENDPOINT and GRID_WS_ENDPOINT is neither a direct CDP endpoint nor an HTTP(S) Grid URL"
+            "selenium_cdp=no GRID_CDP_ENDPOINT and GRID_WS_ENDPOINT is neither "
+            "a direct CDP endpoint nor an HTTP(S) Grid URL"
         )
 
     joined_errors = "; ".join(errors)
