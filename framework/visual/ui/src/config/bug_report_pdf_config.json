@@ -26,6 +26,11 @@
       "required": true
     },
     {
+      "label": "execution.target_full_url",
+      "path": "execution.target_full_url",
+      "required": false
+    },
+    {
       "label": "scenario.viewport",
       "path": "scenario.viewport",
       "required": true

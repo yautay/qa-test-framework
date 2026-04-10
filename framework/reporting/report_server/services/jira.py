@@ -6,6 +6,7 @@ import unicodedata
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urljoin
 
 from loguru import logger
 from zoneinfo import ZoneInfo
@@ -42,6 +43,10 @@ def _build_metadata_source(row: dict[str, Any], case_state: dict[str, Any]) -> d
     metadata = row.get("test_metadata") if isinstance(row.get("test_metadata"), dict) else {}
     run_meta = metadata.get("run") if isinstance(metadata.get("run"), dict) else {}
     scenario_meta = metadata.get("scenario") if isinstance(metadata.get("scenario"), dict) else {}
+    execution_meta = metadata.get("execution") if isinstance(metadata.get("execution"), dict) else {}
+    target_url = str(scenario_meta.get("target_url", row.get("target_url", "")) or "")
+    target_base_url = str(execution_meta.get("target_base_url", "") or "")
+    target_full_url = _build_target_full_url(target_base_url, target_url)
     return {
         "run": {
             "tester": str(run_meta.get("tester", row.get("tester", "")) or ""),
@@ -50,10 +55,14 @@ def _build_metadata_source(row: dict[str, Any], case_state: dict[str, Any]) -> d
         "scenario": {
             "name": str(scenario_meta.get("name", row.get("scenario_id", "")) or ""),
             "suite_id": str(scenario_meta.get("suite_id", row.get("suite_id", "")) or ""),
-            "target_url": str(scenario_meta.get("target_url", row.get("target_url", "")) or ""),
+            "target_url": target_url,
             "viewport": str(scenario_meta.get("viewport", row.get("viewport", "")) or ""),
             "browser": str(scenario_meta.get("browser", row.get("browser", "")) or ""),
             "capture": scenario_meta.get("capture", {}) if isinstance(scenario_meta.get("capture"), dict) else {},
+        },
+        "execution": {
+            "target_base_url": target_base_url,
+            "target_full_url": target_full_url,
         },
         "bug": {
             "note": str(case_state.get("bug", {}).get("note", "") or ""),
@@ -133,6 +142,55 @@ def _run_base_url(host: str, scheme: str) -> str:
     return f"{proto}://{host_str}"
 
 
+def _build_target_full_url(base_url: str, target_url: str) -> str:
+    endpoint = str(target_url or "").strip()
+    if not endpoint:
+        return ""
+    lowered = endpoint.lower()
+    if lowered.startswith("http://") or lowered.startswith("https://"):
+        return endpoint
+    base = str(base_url or "").strip()
+    if not base:
+        return ""
+    try:
+        return urljoin(base.rstrip("/") + "/", endpoint)
+    except Exception:
+        return ""
+
+
+def _is_subtask_fallback_error(error: JiraClientError) -> bool:
+    status = int(error.status or 0)
+    if status not in {400, 403, 404, 422}:
+        return False
+    details = str(error).lower()
+    tokens = [
+        "sub-task",
+        "subtask",
+        "parent",
+        "issue type",
+        "issuetype",
+        "cannot create",
+        "project",
+        "project is required",
+    ]
+    return any(token in details for token in tokens)
+
+
+def _should_fallback_to_comment(requested_mode: str, error: JiraClientError) -> bool:
+    if requested_mode != "auto":
+        return False
+    status = int(error.status or 0)
+    if status == 401:
+        return False
+    if _is_subtask_fallback_error(error):
+        return True
+    return True
+
+
+def _build_subtask_summary(run_id: str, bug_count: int, aso_count: int) -> str:
+    return f"[visual] run={run_id} bugs={bug_count} aso={aso_count}"
+
+
 def _log_attempt(
     level: str,
     issue_key: str,
@@ -183,6 +241,7 @@ def send_jira_comment(
     report_dir: Path,
     issue_key: str,
     user_note: str,
+    mode: str,
     auth: dict[str, str] | None,
     scheme: str,
     host: str,
@@ -275,25 +334,60 @@ def send_jira_comment(
                 if aso_note:
                     lines.append(f"  - ASO note: {aso_note}")
     comment_body = _ascii_safe("\n".join(lines))
-    result = _with_retries(
-        attempts=max(1, int(context.jira_retry_max)),
-        action="add_comment",
-        issue_key=issue_key,
-        run_id=run_id,
-        fn=lambda: client.add_comment(issue_key, comment_body),
-    )
+    requested_mode = str(mode or "comment").strip().lower()
+    if requested_mode not in {"auto", "comment", "subtask"}:
+        requested_mode = "comment"
+
+    effective_mode = "comment"
+    target_issue = issue_key
+    result: Any = {}
+
+    if requested_mode in {"auto", "subtask"}:
+        summary = _ascii_safe(_build_subtask_summary(run_id, bug_count, aso_count))
+        try:
+            subtask_result = _with_retries(
+                attempts=max(1, int(context.jira_retry_max)),
+                action="create_subtask",
+                issue_key=issue_key,
+                run_id=run_id,
+                fn=lambda: client.create_subtask(issue_key, summary, comment_body),
+            )
+            subtask_key = ""
+            if isinstance(subtask_result, dict):
+                subtask_key = str(subtask_result.get("key", "") or "").strip()
+            if not subtask_key:
+                raise JiraClientError("jira sub-task response missing key", status=None)
+            target_issue = subtask_key
+            effective_mode = "subtask"
+            result = subtask_result
+        except JiraClientError as exc:
+            if not _should_fallback_to_comment(requested_mode, exc):
+                raise
+
+    if effective_mode == "comment":
+        result = _with_retries(
+            attempts=max(1, int(context.jira_retry_max)),
+            action="add_comment",
+            issue_key=target_issue,
+            run_id=run_id,
+            fn=lambda: client.add_comment(target_issue, comment_body),
+        )
+
     for attachment in attachments:
         _with_retries(
             attempts=max(1, int(context.jira_retry_max)),
             action="add_attachment",
-            issue_key=issue_key,
+            issue_key=target_issue,
             run_id=run_id,
-            fn=lambda path=attachment: client.add_attachment(issue_key, path),
+            fn=lambda path=attachment: client.add_attachment(target_issue, path),
         )
         time.sleep(max(0, float(context.jira_upload_delay_seconds)))
     return {
-        "issue": issue_key,
+        "issue": target_issue,
+        "parent_issue": issue_key,
         "run_id": run_id,
+        "mode": effective_mode,
+        "requested_mode": requested_mode,
         "attachments": len(attachments),
         "result": result,
     }

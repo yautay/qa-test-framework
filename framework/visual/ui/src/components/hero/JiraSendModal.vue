@@ -45,6 +45,20 @@
             ></textarea>
           </div>
 
+          <div class="mb-3">
+            <label class="form-label" for="jira-mode">{{ t('jira.modeLabel') }}</label>
+            <select
+              id="jira-mode"
+              class="form-select"
+              v-model="modeInput"
+              :disabled="isSubmitting"
+            >
+              <option value="auto">{{ t('jira.modeAuto') }}</option>
+              <option value="comment">{{ t('jira.modeComment') }}</option>
+              <option value="subtask">{{ t('jira.modeSubtask') }}</option>
+            </select>
+          </div>
+
           <div v-if="!authConfigured" class="mb-3">
             <div class="jira-auth-title">{{ t('jira.authTitle') }}</div>
             <p class="jira-auth-hint">{{ t('jira.authHint') }}</p>
@@ -132,6 +146,22 @@ const props = defineProps({
     type: String,
     default: "",
   },
+  defaultNote: {
+    type: String,
+    default: "",
+  },
+  defaultUsername: {
+    type: String,
+    default: "",
+  },
+  defaultPassword: {
+    type: String,
+    default: "",
+  },
+  defaultMode: {
+    type: String,
+    default: "auto",
+  },
   authConfigured: {
     type: Boolean,
     default: false,
@@ -156,23 +186,34 @@ const noteDraft = ref("");
 const authUsername = ref("");
 const authPassword = ref("");
 const authToken = ref("");
+const modeInput = ref("auto");
 const ticketRegex = /^[A-Z][A-Z0-9]+-[0-9]+$/;
+
+function normalizeMode(value) {
+  const mode = String(value || "").trim().toLowerCase();
+  if (mode === "comment" || mode === "subtask") {
+    return mode;
+  }
+  return "auto";
+}
 
 watch(
   () => props.visible,
   (visible) => {
     if (!visible) return;
     ticketInput.value = props.defaultTicket || "";
-    noteDraft.value = "";
-    authUsername.value = "";
-    authPassword.value = "";
+    noteDraft.value = props.defaultNote || "";
+    authUsername.value = props.defaultUsername || "";
+    authPassword.value = props.defaultPassword || "";
     authToken.value = "";
+    modeInput.value = normalizeMode(props.defaultMode);
   }
 );
 
 const ticketValue = computed(() => (ticketInput.value || "").trim());
 const ticketValid = computed(() => ticketRegex.test(ticketValue.value.toUpperCase()));
 const noteValue = computed(() => sanitizeNoteText(noteDraft.value));
+const modeValue = computed(() => normalizeMode(modeInput.value));
 const authRequired = computed(() => !props.authConfigured);
 const authReady = computed(() => {
   if (!authRequired.value) {
@@ -189,22 +230,23 @@ const emitCancel = () => {
   emit("cancel");
 };
 
-  const handleSubmit = () => {
-    if (!canSubmit.value) return;
-    const payload = {
-      ticket: ticketValue.value.toUpperCase(),
-      note: noteValue.value,
-    };
-    if (authRequired.value) {
-      payload.auth = {
-        username: authUsername.value.trim(),
-        password: authPassword.value.trim(),
-        api_token: authToken.value.trim(),
-        mode: props.authMode,
-      };
-    }
-    emit("submit", payload);
+const handleSubmit = () => {
+  if (!canSubmit.value) return;
+  const payload = {
+    ticket: ticketValue.value.toUpperCase(),
+    note: noteValue.value,
+    mode: modeValue.value,
   };
+  if (authRequired.value) {
+    payload.auth = {
+      username: authUsername.value.trim(),
+      password: authPassword.value.trim(),
+      api_token: authToken.value.trim(),
+      mode: props.authMode,
+    };
+  }
+  emit("submit", payload);
+};
 </script>
 
 <style scoped>

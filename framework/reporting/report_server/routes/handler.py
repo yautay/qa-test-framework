@@ -605,6 +605,9 @@ def _build_handler(context: ReportServerContext):
                         note = _normalize_text(payload.get("user_note"), trim=True)
                         if len(note) > TEXT_MAX_LENGTH:
                             raise ValueError("note exceeds limit")
+                        requested_mode = _normalize_text(payload.get("mode"), trim=True).lower() or "comment"
+                        if requested_mode not in {"auto", "comment", "subtask"}:
+                            raise ValueError("invalid mode")
                         auth_payload: dict[str, str] | None = None
                         if not context.jira_auth_configured:
                             raw_auth = payload.get("auth")
@@ -613,8 +616,8 @@ def _build_handler(context: ReportServerContext):
                             username = _normalize_text(raw_auth.get("username"), trim=True)
                             password = _normalize_text(raw_auth.get("password"), trim=True)
                             api_token = _normalize_text(raw_auth.get("api_token"), trim=True)
-                            mode = context.jira_auth_mode or "basic"
-                            if mode == "token":
+                            auth_mode = context.jira_auth_mode or "basic"
+                            if auth_mode == "token":
                                 if not username or not api_token:
                                     raise ValueError("jira auth username+token required")
                             else:
@@ -624,7 +627,7 @@ def _build_handler(context: ReportServerContext):
                                 "username": username,
                                 "password": password,
                                 "api_token": api_token,
-                                "mode": mode,
+                                "mode": auth_mode,
                             }
                         scheme = "https" if self.headers.get("X-Forwarded-Proto", "").lower() == "https" else "http"
                         host = str(self.headers.get("Host", "")).strip()
@@ -634,6 +637,7 @@ def _build_handler(context: ReportServerContext):
                             report_dir=report_dir,
                             issue_key=ticket,
                             user_note=note,
+                            mode=requested_mode,
                             auth=auth_payload,
                             scheme=scheme,
                             host=host,

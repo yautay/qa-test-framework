@@ -27,7 +27,19 @@ vi.mock("../lib/api/reportsApi", () => ({
       run_note: "",
     },
   ]),
-  fetchAppInfo: vi.fn(async () => ({ ui_config: { jira: { default_ticket: "ABC-123", auth_configured: true, auth_mode: "basic" } } })),
+  fetchAppInfo: vi.fn(async () => ({
+    ui_config: {
+      jira: {
+        default_ticket: "ABC-123",
+        default_note: "manual smoke",
+        default_username: "qa.user",
+        default_password: "secret",
+        default_mode: "auto",
+        auth_configured: true,
+        auth_mode: "basic",
+      },
+    },
+  })),
   sendJiraComment: vi.fn(async () => ({})),
 }));
 
@@ -109,10 +121,14 @@ describe("HeroPage", () => {
     await wrapper.vm.$nextTick();
 
     const modal = wrapper.findComponent({ name: "JiraSendModal" });
-    await modal.vm.$emit("submit", { ticket: "ABC-123", note: "hello" });
+    await modal.vm.$emit("submit", { ticket: "ABC-123", note: "hello", mode: "comment" });
     await new Promise((resolve) => setTimeout(resolve, 10));
 
-    expect(sendJiraComment).toHaveBeenCalled();
+    expect(sendJiraComment).toHaveBeenCalledWith("20260218_120000_000001", {
+      jira_ticket: "ABC-123",
+      user_note: "hello",
+      mode: "comment",
+    });
     wrapper.unmount();
   });
 });

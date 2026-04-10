@@ -8,6 +8,10 @@
       :visible="modalVisible"
       :report="selectedReport"
       :default-ticket="defaultTicket"
+      :default-note="defaultNote"
+      :default-username="defaultUsername"
+      :default-password="defaultPassword"
+      :default-mode="defaultMode"
       :auth-mode="jiraConfig.auth_mode"
       :auth-configured="jiraConfig.auth_configured"
       :error-message="errorMessage"
@@ -38,6 +42,10 @@ const errorMessage = ref("");
 
 const jiraConfig = computed(() => appInfo.value?.ui_config?.jira || {});
 const defaultTicket = computed(() => (jiraConfig.value.default_ticket || "").trim());
+const defaultNote = computed(() => String(jiraConfig.value.default_note || ""));
+const defaultUsername = computed(() => String(jiraConfig.value.default_username || ""));
+const defaultPassword = computed(() => String(jiraConfig.value.default_password || ""));
+const defaultMode = computed(() => String(jiraConfig.value.default_mode || "auto"));
 
 const openModal = (report) => {
   selectedReport.value = report;
@@ -61,6 +69,7 @@ const handleSendJira = async (payload) => {
     const body = {
       jira_ticket: payload.ticket.toUpperCase(),
       user_note: payload.note,
+      mode: String(payload.mode || "auto"),
     };
     if (payload.auth) {
       body.auth = payload.auth;

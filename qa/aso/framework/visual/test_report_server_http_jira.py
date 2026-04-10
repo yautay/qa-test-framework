@@ -6,6 +6,7 @@ from typing import Any
 
 import pytest
 
+from framework.integrations.jira import JiraClientError
 from framework.reporting.report_server.context import ReportServerContext
 from framework.visual.baseline_store import BaselineStore
 from qa.aso.framework.visual.report_server_http_test_helpers import (
@@ -20,9 +21,11 @@ pytestmark = [pytest.mark.aso]
 
 
 class _FakeJiraClient:
-    def __init__(self) -> None:
+    def __init__(self, *, subtask_error: JiraClientError | None = None) -> None:
         self.comments: list[tuple[str, str]] = []
         self.attachments: list[tuple[str, str]] = []
+        self.subtasks: list[tuple[str, str, str]] = []
+        self._subtask_error = subtask_error
 
     def add_comment(self, issue_key: str, body: str) -> dict[str, Any]:
         self.comments.append((issue_key, body))
@@ -31,6 +34,12 @@ class _FakeJiraClient:
     def add_attachment(self, issue_key: str, file_path: Path) -> dict[str, Any]:
         self.attachments.append((issue_key, str(file_path)))
         return {"status": "ok"}
+
+    def create_subtask(self, parent_issue_key: str, summary: str, description: str) -> dict[str, Any]:
+        if self._subtask_error is not None:
+            raise self._subtask_error
+        self.subtasks.append((parent_issue_key, summary, description))
+        return {"key": "ABC-200"}
 
 
 def _prepare_report(tmp_path: Path, run_id: str) -> tuple[Path, Path, Path]:
@@ -147,5 +156,118 @@ def test_jira_comment_success_uploads_comment_and_attachment(tmp_path: Path) -> 
         assert payload["accepted"] is True
         assert fake_client.comments[0][0] == "ABC-1"
         assert len(fake_client.attachments) == 1
+    finally:
+        _stop_server(server, thread)
+
+
+def test_jira_comment_mode_subtask_creates_subtask_and_uploads_attachment(tmp_path: Path) -> None:
+    repo_root, report_dir, _ = _prepare_report(tmp_path, "run-jira")
+    fake_client = _FakeJiraClient()
+    context = _build_context(repo_root, report_dir, fake_client)
+    server, base_url, thread = _start_server(context)
+    try:
+        status, payload = _http_json(
+            base_url,
+            "/api/reports/run-jira/jira/comment",
+            method="POST",
+            body={"jira_ticket": "ABC-1", "user_note": "note", "mode": "subtask"},
+            headers={"Host": "localhost"},
+        )
+        assert status == 200
+        assert payload["accepted"] is True
+        assert payload["mode"] == "subtask"
+        assert payload["issue"] == "ABC-200"
+        assert len(fake_client.subtasks) == 1
+        assert not fake_client.comments
+        assert fake_client.attachments[0][0] == "ABC-200"
+    finally:
+        _stop_server(server, thread)
+
+
+def test_jira_comment_mode_auto_falls_back_to_comment_when_subtask_fails(tmp_path: Path) -> None:
+    repo_root, report_dir, _ = _prepare_report(tmp_path, "run-jira")
+    fake_client = _FakeJiraClient(subtask_error=JiraClientError("cannot create sub-task", status=400))
+    context = _build_context(repo_root, report_dir, fake_client)
+    server, base_url, thread = _start_server(context)
+    try:
+        status, payload = _http_json(
+            base_url,
+            "/api/reports/run-jira/jira/comment",
+            method="POST",
+            body={"jira_ticket": "ABC-1", "user_note": "note", "mode": "auto"},
+            headers={"Host": "localhost"},
+        )
+        assert status == 200
+        assert payload["accepted"] is True
+        assert payload["mode"] == "comment"
+        assert payload["requested_mode"] == "auto"
+        assert fake_client.comments[0][0] == "ABC-1"
+        assert fake_client.attachments[0][0] == "ABC-1"
+    finally:
+        _stop_server(server, thread)
+
+
+def test_jira_comment_includes_execution_target_full_url_in_metadata(tmp_path: Path) -> None:
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    run_id = "run-jira"
+    report_dir = repo_root / "artifacts" / run_id / "visual"
+    report_dir.mkdir(parents=True)
+    (report_dir / ".report-ready.json").write_text('{"ready": true}\n', encoding="utf-8")
+    (report_dir / "results.json").write_text(
+        json.dumps(
+            {
+                "results": [
+                    {
+                        "scenario_id": "case-1",
+                        "status": "failed",
+                        "suite_id": "suite-1",
+                        "viewport": "fhd",
+                        "browser": "chromium",
+                        "actual_path": "actual/case-1.png",
+                        "diff_path": "diff/case-1.png",
+                        "test_metadata": {
+                            "scenario": {
+                                "target_url": "/produkt/lodz",
+                            },
+                            "execution": {
+                                "target_base_url": "https://shop.example.com",
+                            },
+                        },
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    diff_dir = report_dir / "diff"
+    diff_dir.mkdir(parents=True)
+    (diff_dir / "case-1.png").write_bytes(b"diff")
+    state = {
+        "test_cases": {
+            "case-1::actual/case-1.png::::diff/case-1.png": {
+                "bug": {"locked": True, "synced": False, "note": "bug"},
+                "aso": {"locked": False, "synced": False, "note": ""},
+            }
+        },
+        "outbox": [],
+    }
+    (report_dir.parent / "state.json").write_text(json.dumps(state), encoding="utf-8")
+
+    fake_client = _FakeJiraClient()
+    context = _build_context(repo_root, report_dir, fake_client)
+    server, base_url, thread = _start_server(context)
+    try:
+        status, payload = _http_json(
+            base_url,
+            "/api/reports/run-jira/jira/comment",
+            method="POST",
+            body={"jira_ticket": "ABC-1", "user_note": "note", "mode": "comment"},
+            headers={"Host": "localhost"},
+        )
+        assert status == 200
+        assert payload["accepted"] is True
+        body = fake_client.comments[0][1]
+        assert "execution.target_full_url: https://shop.example.com/produkt/lodz" in body
     finally:
         _stop_server(server, thread)

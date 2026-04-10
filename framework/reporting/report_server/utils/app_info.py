@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import settings
 import settings_cli
 import subprocess
 import tomllib
@@ -81,6 +82,9 @@ def _build_app_info_payload(context: ReportServerContext) -> dict[str, Any]:
     ticket = str(getattr(settings_cli, "nn_ticket", "") or "").strip()
     if ticket.lower() == "none":
         ticket = ""
+    default_note = str(getattr(settings_cli, "run_note", "") or "").strip()
+    default_username = str(getattr(settings, "jira_username", "") or "").strip()
+    default_password = str(getattr(settings, "jira_password", "") or "")
     return {
         "runtime": runtime,
         "ui_build": ui_build,
@@ -92,6 +96,10 @@ def _build_app_info_payload(context: ReportServerContext) -> dict[str, Any]:
                 "auth_mode": str(context.jira_auth_mode or "").strip() or "",
                 "auth_configured": bool(context.jira_auth_configured),
                 "default_ticket": ticket,
+                "default_note": default_note,
+                "default_username": default_username,
+                "default_password": default_password,
+                "default_mode": "auto",
             },
         },
     }

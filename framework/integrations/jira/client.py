@@ -105,3 +105,32 @@ class JiraClient:
             return response.json()
         except ValueError:
             return {"status": "ok"}
+
+    def create_subtask(self, parent_issue_key: str, summary: str, description: str) -> dict[str, Any]:
+        if not self.base_url:
+            raise JiraClientError("Jira base URL is not configured")
+        parent = str(parent_issue_key or "").strip()
+        if not parent:
+            raise JiraClientError("parent issue key is required for Jira sub-task")
+        title = str(summary or "").strip()
+        if not title:
+            raise JiraClientError("sub-task summary is required")
+        url = f"{self.base_url}/rest/api/2/issue"
+        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+        headers.update(self._auth_header())
+        payload = {
+            "fields": {
+                "parent": {"key": parent},
+                "summary": title,
+                "issuetype": {"name": "Sub-task"},
+                "description": str(description or ""),
+            }
+        }
+        response = self._request("POST", url, json=payload, headers=headers)
+        try:
+            data = response.json()
+        except ValueError:
+            return {"status": "ok"}
+        if not isinstance(data, dict):
+            return {"status": "ok"}
+        return data
