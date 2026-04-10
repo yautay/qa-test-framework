@@ -7,7 +7,6 @@ Includes helpers to load VisualScenario definitions from JSON using the schema:
 - capture fields: {"type": "page|viewport|element", "full_page": bool, "locator": str}
 """
 
-import json
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path

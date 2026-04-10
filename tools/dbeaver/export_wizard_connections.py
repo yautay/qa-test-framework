@@ -125,7 +125,8 @@ def _dbeaver_copy_settings(
     target_path_raw = _safe_str(args.dbeaver_target_path) or _safe_str((dbeaver or {}).get("target_data_sources_path"))
     if not target_path_raw:
         raise RuntimeError(
-            "Missing DBeaver target path. Fill dbeaver.target_data_sources_path in config or pass --dbeaver-target-path."
+            "Missing DBeaver target path. Fill dbeaver.target_data_sources_path in config "
+            "or pass --dbeaver-target-path."
         )
 
     credentials_path_raw = _safe_str((dbeaver or {}).get("target_credentials_config_path"))
@@ -170,8 +171,7 @@ def _host_allowed(host: str, include_tokens: list[str], exclude_tokens: list[str
 
 
 def _extract_records_from_dom(page: Page) -> list[dict[str, Any]]:
-    payload = page.evaluate(
-        r"""
+    payload = page.evaluate(r"""
 () => {
   const clean = (v) => (v == null ? "" : String(v)).trim();
   const out = [];
@@ -209,8 +209,7 @@ def _extract_records_from_dom(page: Page) -> list[dict[str, Any]]:
 
   return out;
 }
-        """
-    )
+        """)
     if not isinstance(payload, list):
         return []
     return [item for item in payload if isinstance(item, dict)]
@@ -605,7 +604,7 @@ def _connection_id(vm_id: str, endpoint: DbEndpoint, driver: str) -> str:
             _normalize(endpoint.profile),
         ]
     )
-    token = hashlib.sha1(fingerprint.encode("utf-8")).hexdigest()[:24]
+    token = hashlib.sha256(fingerprint.encode("utf-8")).hexdigest()[:24]
     return f"{driver}-{token}"
 
 
