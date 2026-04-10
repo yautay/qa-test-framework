@@ -99,13 +99,13 @@ reporting_async_flush_timeout_seconds = 3
 
 # Jira
 jira_url = "https://jira.netcorner.pl"
-jira_username = ""
+jira_username = "michal.pielaszkiewicz"
 jira_password = ""
 jira_verify_ssl = False
-jira_enabled = False
+jira_enabled = True
 jira_auth_mode = "basic"
 jira_api_token = ""
 jira_retry_max = 3
 jira_upload_delay_seconds = 1
 jira_pixel_diff_max_width_px = 320
-jira_aso_mentions = []
+jira_aso_mentions = ["michal.pielaszkiewicz", "karolina.krajewska", "weronika.bakowska"]

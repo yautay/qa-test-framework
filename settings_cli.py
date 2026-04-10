@@ -1,6 +1,6 @@
 # Run metadata
-nn_ticket = "none"
-run_note = "testy loger"
+nn_ticket = "NN-23888"
+run_note = "testy integracjiz Jira"
 tester = "Michal Pielaszkiewicz"
 
 # Execution
