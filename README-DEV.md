@@ -114,6 +114,13 @@ make debug-minio-down
 
 - Make target: `make test-api`
 
+## Jira visual reporting flow
+
+- Enable Jira integration by configuring `JIRA_ENABLED=1`, `JIRA_URL`, and either credentials (`JIRA_USERNAME`+`JIRA_PASSWORD`) or `JIRA_AUTH_MODE=token` with `JIRA_API_TOKEN`.
+- Set optional `JIRA_ASO_MENTIONS` to `[~username]` tokens demarking ASO owners who should be mentioned in comments.
+- Run `make report-serve`, open the hero page, and click the new envelope action available once PMS is finished; fill in the Jira ticket, optional note, and credentials when prompted.
+- Use `npm run test:unit` (in `framework/visual/ui`) to cover the UI modal and API wrapper, and `python -m pytest qa/aso/framework/visual/test_report_server_http_jira.py -q` to exercise the new backend route.
+
 ## Remote/grid helpers
 
 ```bash

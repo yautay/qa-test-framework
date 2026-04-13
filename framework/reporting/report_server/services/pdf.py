@@ -125,6 +125,7 @@ def _default_pdf_config() -> dict[str, Any]:
             {"label": "scenario.name", "path": "scenario.name", "required": True},
             {"label": "scenario.suite_id", "path": "scenario.suite_id", "required": True},
             {"label": "scenario.target_url", "path": "scenario.target_url", "required": True},
+            {"label": "execution.target_full_url", "path": "execution.target_full_url", "required": False},
             {"label": "scenario.viewport", "path": "scenario.viewport", "required": True},
             {"label": "scenario.browser", "path": "scenario.browser", "required": True},
             {"label": "scenario.capture.locator", "path": "scenario.capture.locator", "required": False},
@@ -187,6 +188,7 @@ def _generate_bug_pdf(
         metadata = _as_dict(row.get("test_metadata"))
         run_meta = _as_dict(metadata.get("run"))
         scenario_meta = _as_dict(metadata.get("scenario"))
+        execution_meta = _as_dict(metadata.get("execution"))
         bug_state = _as_dict(case_state.get("bug"))
         aso_state = _as_dict(case_state.get("aso"))
         source = {
@@ -202,6 +204,9 @@ def _generate_bug_pdf(
                 "viewport": str(scenario_meta.get("viewport", row.get("viewport", "")) or ""),
                 "browser": str(scenario_meta.get("browser", row.get("browser", "")) or ""),
                 "capture": _as_dict(scenario_meta.get("capture")),
+            },
+            "execution": {
+                "target_full_url": str(execution_meta.get("target_full_url", "") or ""),
             },
             "bug": {
                 "note": str(bug_state.get("note", "") or "").strip(),

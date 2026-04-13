@@ -26,7 +26,9 @@
     "runNote": "Примітка запуску",
     "frontendGit": "Гілка фронтенду",
     "backendGit": "Гілка бекенду",
-    "gitInfoNotConfigured": "не налаштовано"
+    "gitInfoNotConfigured": "не налаштовано",
+    "sendJira": "Надіслати до Jira",
+    "pmsPendingHint": "Очікуйте завершення PMS"
   },
   "listing": {
     "scenario": "Сценарій",
@@ -190,6 +192,35 @@
     "secondsOne": "секунда",
     "secondsFew": "секунди",
     "secondsMany": "секунд"
+  },
+  "jira": {
+    "modalTitle": "Надіслати звіт visual у Jira",
+    "ticketLabel": "Квиток Jira",
+    "ticketPlaceholder": "ABC-123",
+    "ticketInvalid": "Вкажіть дійсний квиток (ABC-123)",
+    "noteLabel": "Необов'язкова примітка",
+    "notePlaceholder": "Додайте контекст (до 500 символів)",
+    "modeLabel": "Режим",
+    "modeAuto": "Авто (sub-task -> коментар)",
+    "modeComment": "Коментар",
+    "modeSubtask": "Sub-task",
+    "authTitle": "Дані Jira",
+    "authHint": "Введіть логін або токен API для Jira",
+    "authToken": "Token API",
+    "authUsername": "Імʼя користувача або email",
+    "authPassword": "Пароль",
+    "summaryHeading": "Підсумок",
+    "summaryRun": "Запуск",
+    "summaryBugs": "BUG-и",
+    "summaryAsos": "Запити ASO",
+    "summaryTotal": "Усього тестів",
+    "submit": "Надіслати до Jira",
+    "cancel": "Скасувати",
+    "progress": "Надсилається до Jira…",
+    "errors": {
+      "noReport": "Не вибрано звіт",
+      "unexpected": "Не вдалося надіслати до Jira"
+    }
   },
   "message": {
     "pixelThresholdExceeded": "Поріг пікселів перевищено",

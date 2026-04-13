@@ -110,3 +110,27 @@ def test_load_env_reads_run_git_info_endpoints(monkeypatch):
     assert env.run_git_info_frontend_endpoint == "/front-git-info"
     assert env.run_git_info_backend_endpoint == "/back-git-info"
     assert env.run_git_info_timeout_seconds == 7
+
+
+def test_load_env_reads_framework_mode(monkeypatch):
+    monkeypatch.setenv("FRAMEWORK_MODE", "local")
+
+    env = load_env()
+
+    assert env.framework_mode == "local"
+
+
+def test_load_env_falls_back_to_server_for_invalid_framework_mode(monkeypatch):
+    monkeypatch.setenv("FRAMEWORK_MODE", "invalid-mode")
+
+    env = load_env()
+
+    assert env.framework_mode == "server"
+
+
+def test_load_env_reads_jira_submit_timeout_ms(monkeypatch):
+    monkeypatch.setenv("JIRA_SUBMIT_TIMEOUT_MS", "150000")
+
+    env = load_env()
+
+    assert env.jira_submit_timeout_ms == 150000

@@ -46,7 +46,18 @@
         </div>
       </div>
 
-      <a :href="reportUrl" class="btn btn-primary btn-sm mt-2" @click="navigateToReport">{{ t('card.openReport') }}</a>
+      <div class="d-flex gap-2 mt-2">
+        <button
+          type="button"
+          class="btn btn-outline-secondary btn-sm"
+          :disabled="!pmsFinished"
+          :title="pmsFinished ? t('card.sendJira') : t('card.pmsPendingHint')"
+          @click="emitSendJira"
+        >
+          ✉ {{ t('card.sendJira') }}
+        </button>
+        <a :href="reportUrl" class="btn btn-primary btn-sm" @click="navigateToReport">{{ t('card.openReport') }}</a>
+      </div>
     </div>
   </article>
 </template>
@@ -101,6 +112,9 @@ export default {
     pmsSuccessTitle() {
       return `${t("pms.successBuild")}: ${this.pmsSuccessCount}`;
     },
+    pmsFinished() {
+      return Number(this.report?.pms_pending_count || 0) === 0 && !Boolean(this.report?.pms_in_progress);
+    },
     syncWarningTitle() {
       const base = t("sync.buildHasErrors");
       const failed = Number(this.report?.sync_failed_count || 0);
@@ -152,13 +166,19 @@ export default {
       return "";
     },
   },
-  methods: {
-    navigateToReport(evt) {
-      evt.preventDefault();
-      window.history.pushState(null, "", this.reportUrl);
-      window.dispatchEvent(new PopStateEvent("popstate"));
+    methods: {
+      navigateToReport(evt) {
+        evt.preventDefault();
+        window.history.pushState(null, "", this.reportUrl);
+        window.dispatchEvent(new PopStateEvent("popstate"));
+      },
+      emitSendJira() {
+        if (!this.pmsFinished) {
+          return;
+        }
+        this.$emit("send-jira", this.report);
+      },
     },
-  },
   setup() {
     return { t };
   },

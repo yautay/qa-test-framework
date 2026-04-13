@@ -56,13 +56,21 @@ def _env() -> SimpleNamespace:
     )
 
 
-def _http_json(base_url: str, path: str, method: str = "GET", body: dict | None = None) -> tuple[int, dict]:
+def _http_json(
+    base_url: str,
+    path: str,
+    method: str = "GET",
+    body: dict | None = None,
+    headers: dict[str, str] | None = None,
+) -> tuple[int, dict]:
     data = None
-    headers = {"Connection": "close"}
+    request_headers: dict[str, str] = {"Connection": "close"}
+    if headers:
+        request_headers.update(headers)
     if body is not None:
         data = json.dumps(body).encode("utf-8")
-        headers["Content-Type"] = "application/json"
-    req = Request(f"{base_url}{path}", method=method, data=data, headers=headers)
+        request_headers["Content-Type"] = "application/json"
+    req = Request(f"{base_url}{path}", method=method, data=data, headers=request_headers)
     try:
         with _urlopen_with_retry(req) as resp:
             raw = resp.read()

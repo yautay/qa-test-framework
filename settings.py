@@ -9,6 +9,7 @@ log_compression = "zip"
 
 # Runtime
 artifacts_dir = "artifacts"
+framework_mode = "local"  # local | server
 ignore_https_errors = True
 allure_enabled = False
 pytest_html_enabled = True
@@ -99,6 +100,14 @@ reporting_async_flush_timeout_seconds = 3
 
 # Jira
 jira_url = "https://jira.netcorner.pl"
-jira_username = ""
+jira_username = "michal.pielaszkiewicz"
 jira_password = ""
 jira_verify_ssl = False
+jira_enabled = True
+jira_auth_mode = "basic"
+jira_api_token = ""
+jira_retry_max = 3
+jira_submit_timeout_ms = 180000
+jira_upload_delay_seconds = 1
+jira_pixel_diff_max_width_px = 320
+jira_aso_mentions = ["michal.pielaszkiewicz", "karolina.krajewska", "weronika.bakowska"]
