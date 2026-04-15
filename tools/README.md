@@ -48,9 +48,6 @@ make debug-remote-grid-down
 make debug-minio-up
 make debug-minio-down
 python tools/opencode/register_project_commands.py
-python tools/opencode/job_init.py --job-id=sample --title="Sample E2E job" --server-name=kadwa.zeta --scenario="Sample scenario"
-python tools/opencode/job_analyze.py --job-id=sample --path=/ --path=/laptopy-biurowe
-python tools/opencode/job_finalize_analysis.py --job-id=sample --answers-text="Captured chat answers"
 ```
 
 ## Notes
@@ -61,5 +58,5 @@ python tools/opencode/job_finalize_analysis.py --job-id=sample --answers-text="C
 - Baseline operations in `tools/visual/baseline_ops/` are split by responsibility (copy, lifecycle, listing, scan, models) with `versioning.py` as compatibility re-export.
 - Visual report server: `python -m framework.reporting.report_server` (hero page + run listing).
 - Windows launchers/scripts live in `tools/windows/`.
-- OpenCode setup and command catalog: `tools/opencode/README.md`.
+- OpenCode setup and command catalog: `tools/opencode/README.md` (three commands: `project:e2e:job:init`, `project:e2e:job:analyze`, `project:e2e:job:implement`).
 - Versioned E2E job workspace: `work/e2e-jobs/README.md`.

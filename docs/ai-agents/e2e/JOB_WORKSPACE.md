@@ -6,14 +6,13 @@ Use a versioned per-job workspace under `work/e2e-jobs/<job_id>/` to separate an
 
 - exploratory analysis can navigate multiple pages and collect findings,
 - implementation can reuse collected data without repeating DOM collection,
-- handoff status is explicit and auditable.
+- ticket status is explicit and auditable.
 
 ## Required files per job
 
-- `job.json` - metadata and current status.
+- `ticket.md` - metadata, current status, and artifact links.
 - `scenario.md` - source scenario prompt and constraints.
-- `analysis/` - journey map, open questions, locator gaps, refined contract.
-- `handoff/analysis_contract.json` - handoff status between passes.
+- `analysis/` - journey map, DOM inventory, locator gaps, open questions, implementation plan.
 - `implementation/` - implementation notes and review output.
 
 ## Two-pass model
@@ -22,20 +21,11 @@ Use a versioned per-job workspace under `work/e2e-jobs/<job_id>/` to separate an
    - run exploratory browsing,
    - collect DOM snapshots and notes,
    - generate questions and locator gap report,
-   - ask follow-up questions in chat and persist user answers,
-   - set handoff to `needs_user_answers`.
+   - ask follow-up questions in chat only when needed,
+   - write/update ticket status to `analyzed` and list produced artifacts.
 2. **Implementation pass**
-   - starts only when handoff is `ready_for_implementation`,
+   - starts only when analysis artifacts are present and ticket is ready,
    - uses analysis artifacts as input,
    - applies framework coding rules for E2E test generation.
 
-## Handoff contract
-
-`handoff/analysis_contract.json` must include:
-
-- `status` (`draft`, `needs_user_answers`, `ready_for_implementation`),
-- `ready_for_implementation` (boolean),
-- `analysis_outputs` (paths to analysis artifacts),
-- `updated_at_utc`.
-
-Implementation commands should stop when handoff is not ready.
+Implementation commands should stop when ticket context is incomplete.

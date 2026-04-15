@@ -6,7 +6,7 @@
 - [ ] Is the correct suite selected (`qa/e2e/...`)?
 - [ ] Is environment URL routing handled via `--server-name` or `--base-url`?
 - [ ] Did the agent check existing page/section/component methods before adding new ones?
-- [ ] If job workspace mode is used, is `handoff/analysis_contract.json` status `ready_for_implementation`?
+- [ ] If job workspace mode is used, is `ticket.md` complete and status ready for implementation?
 
 ## During coding
 

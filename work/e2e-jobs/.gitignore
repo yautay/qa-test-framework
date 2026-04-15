@@ -2,11 +2,11 @@
 */analysis/cache/
 */analysis/cache/**
 
-# Keep handoff, scenario, and analysis notes versioned.
+# Keep scenario, ticket, and analysis notes versioned.
 !*/analysis/
 !*/analysis/*.md
 !*/analysis/*.json
-!*/handoff/
-!*/handoff/*.json
 !*/implementation/
 !*/implementation/*.md
+!*/ticket.md
+!*/scenario.md

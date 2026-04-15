@@ -1,4 +1,4 @@
-# E2E job: implement from handoff
+# E2E job: implement
 
 Input:
 
@@ -6,25 +6,28 @@ Input:
 
 Task:
 
-1. Read and validate handoff status from:
-   - `work/e2e-jobs/$JOB_ID/handoff/analysis_contract.json`
-2. If status is not `ready_for_implementation`, stop and explain what is missing.
-3. Implement tests and minimal required POM changes using job artifacts:
+1. Read ticket context and analysis artifacts:
+   - `work/e2e-jobs/$JOB_ID/ticket.md`
    - `work/e2e-jobs/$JOB_ID/scenario.md`
-   - `work/e2e-jobs/$JOB_ID/analysis/refined_behavior_contract.md`
+   - `work/e2e-jobs/$JOB_ID/analysis/implementation_plan.md`
    - `work/e2e-jobs/$JOB_ID/analysis/locator_gaps.md`
-   - `work/e2e-jobs/$JOB_ID/analysis/dom_inventory.json`
+2. If key inputs are missing, ask targeted questions in chat before coding.
+3. Implement test and minimal POM/framework changes in repo code.
 4. Follow framework rules:
    - E2E only
    - runtime URL resolution via `--server-name`
    - `page.section.component.method`
    - `@step(...)` in public PO methods
    - wrappers only for reusable complex flows
-   - component class guidance from `qa-test-tools/lokomokopom` (component layer only)
 5. Save implementation notes to:
    - `work/e2e-jobs/$JOB_ID/implementation/implementation_notes.md`
+6. Update `ticket.md` and include:
+   - status set to `implemented`,
+   - changed code files,
+   - validation commands run and outcomes,
+   - remaining risks or follow-ups.
 
 Validation:
 
 - `make verify-discovery`
-- `python -m pytest <new_or_updated_test_path> -q --server-name=<server_name_from_job>`
+- `python -m pytest <new_or_updated_test_path> -q --server-name=<server_name_from_ticket>`

@@ -15,9 +15,9 @@ Agent input:
 ## Job workspace handoff
 
 - Preferred mode: use a versioned job directory `work/e2e-jobs/<job_id>/`.
-- Analysis pass writes artifacts in `analysis/` and handoff status in `handoff/analysis_contract.json`.
+- Analysis pass writes artifacts in `analysis/` and status in `ticket.md`.
 - Implementation pass must consume those artifacts and should not recollect DOM when cache is available.
-- Start implementation only when handoff status is `ready_for_implementation`.
+- Start implementation only when ticket context is complete and analysis plan is present.
 
 ## Step 1: map runtime URL
 
@@ -37,7 +37,7 @@ Agent input:
   - find existing `page.section.component.method`,
   - reuse it without duplication.
 - Add missing elements minimally and locally.
-- Reuse cached DOM from `.opencode/dom-cache/**/latest/` before collecting DOM again.
+- Reuse existing artifacts from `work/e2e-jobs/<job_id>/analysis/` before collecting DOM again.
 
 ## Step 4: extend POM (only when required)
 
