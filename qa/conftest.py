@@ -18,7 +18,7 @@ import requests
 from loguru import logger
 
 try:
-    from pytest_metadata.plugin import metadata_key as _PYTEST_METADATA_KEY
+    from pytest_metadata.plugin import metadata_key as _PYTEST_METADATA_KEY  # noqa: N812
 except Exception:  # pragma: no cover - optional dependency
     _PYTEST_METADATA_KEY = None
 
@@ -920,6 +920,8 @@ def _resolve_run_profile(config: pytest.Config) -> str:
     markexpr = str(getattr(config.option, "markexpr", "") or "").strip()
     if markexpr == "aso":
         return "aso"
+    if markexpr == "orders":
+        return "orders"
     if markexpr == "smoke":
         return "smoke"
     if markexpr == "visual":

@@ -4,10 +4,17 @@ from playwright.sync_api import Page
 
 from framework.base.page_objects import BaseComponent
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.configurator_components import (
-    ConfiguratorAuxComponentsComponent, ConfiguratorComponentsComponent, ConfiguratorSummaryComponent,
-    ConfiguratorActionsComponent
+    ConfiguratorActionsComponent,
+    ConfiguratorAuxComponentsComponent,
+    ConfiguratorComponentsComponent,
+    ConfiguratorSummaryComponent,
 )
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.hero_component import HeroComponent
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.listing_components import (
+    ListingContentComponent,
+    ListingFiltersComponent,
+    ListingSortingComponent,
+)
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.my_account_component import (
     MyAccountComponent,
     MyAccountPasswordChangeComponent,
@@ -107,3 +114,29 @@ class ConfiguratorContentSection(ContentSection):
         if self.__summary is None:
             self.__summary = ConfiguratorSummaryComponent(self.root.locator("[data-name='configuratorFooter']"))
         return self.__summary
+
+
+class ListingContentSection(ContentSection):
+    def __init__(self, page: Page) -> None:
+        super().__init__(page)
+        self.__filters: ListingFiltersComponent | None = None
+        self.__sorting: ListingSortingComponent | None = None
+        self.__content: ListingContentComponent | None = None
+
+    @property
+    def filters(self) -> ListingFiltersComponent:
+        if self.__filters is None:
+            self.__filters = ListingFiltersComponent(self.root.locator('[@data-name="listingFilters"]'))
+        return self.__filters
+
+    @property
+    def sorting(self) -> ListingSortingComponent:
+        if self.__sorting is None:
+            self.__sorting = ListingSortingComponent(self.root.locator('[@data-name="listingSorting"]'))
+        return self.__sorting
+
+    @property
+    def content(self) -> ListingContentComponent:
+        if self.__content is None:
+            self.__content = ListingContentComponent(self.root.locator("[data-name='listingContent']"))
+        return self.__content
