@@ -1,5 +1,5 @@
 # Logging
-console_log_level = "WARNING"
+console_log_level = "ERROR"
 console_suppress_reporting_api_logs = True
 tools_file_log_level = "WARNING"
 tools_logs_dir = "tools/logs"
@@ -20,7 +20,7 @@ min_expected_tests = 1
 
 # Target git-info probe
 run_git_info_frontend_endpoint = "/git-info"
-run_git_info_backend_endpoint = "/git-info"
+run_git_info_backend_endpoint = "private-api/git-info"
 run_git_info_timeout_seconds = 3
 
 # Grid
