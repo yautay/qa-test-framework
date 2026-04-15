@@ -129,6 +129,7 @@ def main() -> int:
             dry_run=bool(args.dry_run),
         )
         print(f"Agent profiles: merged={merged}, skipped={skipped}, config='{target_config.relative_to(repo_root)}'")
+        print("Note: agent profiles are stored in '.opencode.json' (repo root), not under '.opencode/'.")
 
     if args.dry_run:
         print("Dry run complete. No files were written.")

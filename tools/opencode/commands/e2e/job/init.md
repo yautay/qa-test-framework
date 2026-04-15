@@ -2,16 +2,13 @@
 
 Input:
 
-- JOB_ID: $JOB_ID
-- JOB_TITLE: $JOB_TITLE
-- SERVER_NAME: $SERVER_NAME
-- SCENARIO_PROMPT: $SCENARIO_PROMPT
-- SEED_PATHS: $SEED_PATHS
+- Use natural language only (no env vars).
+- Collect all required fields interactively in chat during init.
 
 Task:
 
-1. Create a job workspace in `work/e2e-jobs/<job_id>/`.
-2. If any required data is missing, ask short follow-up questions in chat and fill it before writing files.
+1. Ask the user for required data in chat (job id or title, server, scenario, optional seed paths).
+2. Create a job workspace in `work/e2e-jobs/<job_id>/`.
 3. Create/update:
    - `work/e2e-jobs/<job_id>/ticket.md` (source of truth)
    - `work/e2e-jobs/<job_id>/scenario.md` (raw scenario copy)
@@ -23,10 +20,10 @@ Task:
    - seed paths,
    - status set to `new`,
    - empty sections for `Artifacts`, `Open Questions`, and `Implementation Notes`.
-5. Return created paths and exact next command: `project:e2e:job:analyze`.
+5. Return created paths and exact next command invocation with ticket context.
 
 Rules:
 
 - Keep it simple and interactive.
-- Do not run Python helper scripts for this flow.
+- No env-var style input contract.
 - Do not implement tests in this command.

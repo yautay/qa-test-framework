@@ -2,6 +2,8 @@
 
 This directory keeps only simple, interactive OpenCode command assets for E2E work.
 
+Commands are prompt-driven in chat (no env-var input contract).
+
 ## What is in this directory
 
 - `tools/opencode/commands/` - command templates copied to `.opencode/commands/`
@@ -31,6 +33,8 @@ Overwrite existing profile entries:
 ```bash
 python tools/opencode/register_project_commands.py --with-agent-profiles --overwrite-agent-profiles
 ```
+
+Agent profiles are merged into repo-root `.opencode.json` (not into `.opencode/` directory).
 
 ## Active command IDs
 
