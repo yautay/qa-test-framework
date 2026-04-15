@@ -13,11 +13,14 @@ For day-to-day test execution, use `README.md`.
 ## Docs index
 
 - `docs/ARTIFACTS.md`
+- `docs/ai-agents/README.md`
 - `docs/FIXTURES.md`
 - `docs/SCENARIO_MODEL.md`
 - `docs/REPORTING_HTTP_INTEGRATION.md`
 - `docs/visual-timeout-postmortem.md`
 - `tools/README.md`
+- `tools/opencode/README.md`
+- `work/e2e-jobs/README.md`
 
 ## Core commands
 

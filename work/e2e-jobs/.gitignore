@@ -1,0 +1,12 @@
+# Ignore heavy exploratory cache artifacts.
+*/analysis/cache/
+*/analysis/cache/**
+
+# Keep handoff, scenario, and analysis notes versioned.
+!*/analysis/
+!*/analysis/*.md
+!*/analysis/*.json
+!*/handoff/
+!*/handoff/*.json
+!*/implementation/
+!*/implementation/*.md

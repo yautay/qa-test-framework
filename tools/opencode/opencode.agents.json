@@ -1,0 +1,16 @@
+{
+  "agents": {
+    "e2e-planner": {
+      "model": "gpt-4.1",
+      "reasoningEffort": "high"
+    },
+    "e2e-generator": {
+      "model": "gpt-4.1",
+      "reasoningEffort": "high"
+    },
+    "e2e-reviewer": {
+      "model": "gpt-4.1-mini",
+      "reasoningEffort": "medium"
+    }
+  }
+}

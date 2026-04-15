@@ -23,5 +23,6 @@ logs/*
 /framework/visual/ui/node_modules/
 /framework/visual/ui/coverage/
 /qa/visual/baselines/
+/.opencode/
 /tmp/
 /tools/dbeaver/db_dump_config.json

@@ -24,6 +24,7 @@ Ten plik opisuje oczekiwany sposob pracy asystentow AI w tym repozytorium.
 4. Nie usuwaj danych, logow ani artefaktow, jezeli nie jest to wymagane.
 5. Minimalizuj zakres zmian i unikaj refactorow bez uzasadnienia.
 6. Prompt dla automatycznego CR: `docs/CR_AUDIT_PROMPT.md`.
+7. Dla automatycznego generowania testow E2E stosuj wytyczne z `docs/ai-agents/e2e/`.
 
 ## Standardy kodowania
 
