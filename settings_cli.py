@@ -1,11 +1,11 @@
 # Run metadata
-nn_ticket = "NN-23888"
-run_note = "testy integracjiz Jira"
+nn_ticket = "NN-23913"
+run_note = "testy Smoke Test NUXT"
 tester = "Michal Pielaszkiewicz"
 
 # Execution
 browser = "chromium"
-is_session_headless = True
+is_session_headless = False
 
 # Environment
 server_name = "kadwa.zeta"

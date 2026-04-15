@@ -32,3 +32,6 @@ class SelectProductWrappers:
             with _step(f"Wchodzę na URL kategorii: /{listings_data.category_url}"):
                 listing_page = ListingPage(self.__page, f"{self.__runtime_env.base_url}/{listings_data.category_url}")
                 listing_page.open().wait_loaded()
+            if listings_data.filters:
+                listing_page.content.filters.expand_all_filters()
+            
