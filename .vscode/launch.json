@@ -1,0 +1,44 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Pytest: Debug Test (breakpoint-friendly)",
+            "type": "debugpy",
+            "request": "launch",
+            "purpose": [
+                "debug-test"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "PYTEST_ADDOPTS": "-q -s --maxfail=1",
+                "HEADLESS": "0",
+                "IS_GRID_AVAILABLE": "0",
+                "REPORTING_ENABLED": "0",
+                "ALLURE_ENABLED": "0",
+                "PYTEST_HTML_ENABLED": "0",
+                "RECORD_VIDEO": "0",
+                "VISUAL_ENABLED": "0",
+                "PMS_ENABLED": "0"
+            }
+        },
+        {
+            "name": "Pytest: Debug Test (framework step-in)",
+            "type": "debugpy",
+            "request": "launch",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTEST_ADDOPTS": "-q -s --maxfail=1",
+                "HEADLESS": "0",
+                "IS_GRID_AVAILABLE": "0",
+                "REPORTING_ENABLED": "0",
+                "ALLURE_ENABLED": "0",
+                "PYTEST_HTML_ENABLED": "0",
+                "RECORD_VIDEO": "0",
+                "VISUAL_ENABLED": "0",
+                "PMS_ENABLED": "0"
+            }
+        }
+    ]
+}
