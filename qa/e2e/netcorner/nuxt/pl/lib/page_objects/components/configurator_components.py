@@ -1,17 +1,19 @@
 from __future__ import annotations
 
-from playwright.sync_api import Locator
+from playwright.sync_api import Locator, Page
 
 from framework.base.page_objects import BaseComponent
 from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
 
 
 class ConfiguratorActionsComponent(BaseComponent):
-    def __init__(self, root: Locator) -> None:
-        super().__init__(root, name="Configuration Actions Component")
+    ROOT_SELECTOR = "[data-name='configuratorActions']"
+
+    def __init__(self, scope: Page | Locator) -> None:
+        super().__init__(scope.locator(self.ROOT_SELECTOR).first, name="Configuration Actions Component")
 
         # locators (private)
-        self.__container = root
+        self.__container = self.root
         self.__text_configuration_name = self.__container.get_by_text("Nazwa konfiguracji", exact=True)
         self.__button_clear = self.__container.get_by_role("button", name="Wyczyść", exact=True)
         self.__button_create_copy = self.__container.get_by_role("button", name="Stwórz kopię", exact=True)
@@ -38,11 +40,13 @@ class ConfiguratorActionsComponent(BaseComponent):
 
 
 class ConfiguratorComponentsComponent(BaseComponent):
-    def __init__(self, root: Locator) -> None:
-        super().__init__(root, name="Sekcja komponentów konfiguratora")
+    ROOT_SELECTOR = "[data-name='configuratorGrid']"
+
+    def __init__(self, scope: Page | Locator) -> None:
+        super().__init__(scope.locator(self.ROOT_SELECTOR).first, name="Sekcja komponentów konfiguratora")
 
         # locators (private)
-        self.__container = root
+        self.__container = self.root
 
         self.__tile_cpu = self.__container.locator("[data-name=procesor]").locator("button")
         self.__tile_gpu = self.__container.locator("[data-name=karta-graficzna]").locator("button")
@@ -90,10 +94,14 @@ class ConfiguratorComponentsComponent(BaseComponent):
 
 
 class ConfiguratorAuxComponentsComponent(BaseComponent):
-    def __init__(self, root: Locator) -> None:
-        super().__init__(root, name="Configurator Aux Components")
+    ROOT_SELECTOR = "[data-name='configuratorGridOptionalElements']"
+
+    def __init__(self, scope: Page | Locator) -> None:
+        super().__init__(scope.locator(self.ROOT_SELECTOR).first, name="Configurator Aux Components")
 
 
 class ConfiguratorSummaryComponent(BaseComponent):
-    def __init__(self, root: Locator) -> None:
-        super().__init__(root, name="Configurator Summary Component")
+    ROOT_SELECTOR = "[data-name='configuratorFooter']"
+
+    def __init__(self, scope: Page | Locator) -> None:
+        super().__init__(scope.locator(self.ROOT_SELECTOR).first, name="Configurator Summary Component")

@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from playwright.sync_api import Locator, expect
+from playwright.sync_api import Locator, Page, expect
 
 from framework.base.page_objects import BaseComponent
 from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
 
 
 class PasswordRecoveryComponent(BaseComponent):
-    def __init__(self, root: Locator) -> None:
-        super().__init__(root, name="Password Recovery Component")
+    ROOT_SELECTOR = "[data-name='passwordResetPage']"
+
+    def __init__(self, scope: Page | Locator) -> None:
+        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Password Recovery Component")
 
         self.__input_new_password = self.find("#newPassword")
         self.__input_new_password_repeated = self.find("#newPasswordRepeated")

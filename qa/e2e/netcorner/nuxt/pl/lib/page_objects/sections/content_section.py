@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-from playwright.sync_api import Page
-
-from framework.base.page_objects import BaseComponent
+from playwright.sync_api import Locator, Page
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.content_root_component import ContentRootComponent
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.configurator_components import (
     ConfiguratorActionsComponent,
     ConfiguratorAuxComponentsComponent,
@@ -23,9 +22,17 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.password_recovery_comp
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.register_client_component import RegisterClientComponent
 
 
-class ContentSection(BaseComponent):
+class ContentSection:
     def __init__(self, page: Page):
-        super().__init__(page.locator("#pageContentWrapper"), name="Content Section")
+        self.__content_root = ContentRootComponent(page)
+
+    @property
+    def root(self) -> Locator:
+        return self.__content_root.root
+
+    def wait_visible(self):
+        self.__content_root.wait_visible()
+        return self
 
 
 class PasswordRecoveryContentSection(ContentSection):
@@ -36,7 +43,7 @@ class PasswordRecoveryContentSection(ContentSection):
     @property
     def recovery_form(self) -> PasswordRecoveryComponent:
         if self.__password_recovery is None:
-            self.__password_recovery = PasswordRecoveryComponent(self.root.locator("[data-name='passwordResetPage']"))
+            self.__password_recovery = PasswordRecoveryComponent(self.root)
         return self.__password_recovery
 
 
@@ -48,7 +55,7 @@ class RegisterContentSection(ContentSection):
     @property
     def register_form(self) -> RegisterClientComponent:
         if self.__register_client is None:
-            self.__register_client = RegisterClientComponent(self.root.locator("form"))
+            self.__register_client = RegisterClientComponent(self.root)
         return self.__register_client
 
 
@@ -61,13 +68,13 @@ class MyAccountContentSection(ContentSection):
     @property
     def menu_root(self) -> MyAccountComponent:
         if self.__my_account is None:
-            self.__my_account = MyAccountComponent(self.root.locator("#pageContent"))
+            self.__my_account = MyAccountComponent(self.root)
         return self.__my_account
 
     @property
     def menu_change_password(self) -> MyAccountPasswordChangeComponent:
         if self.__my_account_password_change is None:
-            self.__my_account_password_change = MyAccountPasswordChangeComponent(self.root.locator("#pageContent"))
+            self.__my_account_password_change = MyAccountPasswordChangeComponent(self.root)
         return self.__my_account_password_change
 
 
@@ -79,7 +86,7 @@ class HeroPageContentSection(ContentSection):
     @property
     def hero(self) -> HeroComponent:
         if self.__hero is None:
-            self.__hero = HeroComponent(self.root.locator("#pageContent"))
+            self.__hero = HeroComponent(self.root)
         return self.__hero
 
 
@@ -94,25 +101,25 @@ class ConfiguratorContentSection(ContentSection):
     @property
     def actions(self) -> ConfiguratorActionsComponent:
         if self.__set_actions is None:
-            self.__set_actions = ConfiguratorActionsComponent(self.root.locator('[@data-name="configuratorActions"]'))
+            self.__set_actions = ConfiguratorActionsComponent(self.root)
         return self.__set_actions
 
     @property
     def components(self) -> ConfiguratorComponentsComponent:
         if self.__components is None:
-            self.__components = ConfiguratorComponentsComponent(self.root.locator('[@data-name="configuratorGrid"]'))
+            self.__components = ConfiguratorComponentsComponent(self.root)
         return self.__components
 
     @property
     def aux_components(self) -> ConfiguratorAuxComponentsComponent:
         if self.__components_aux is None:
-            self.__components_aux = ConfiguratorAuxComponentsComponent(self.root.locator("[data-name='configuratorGridOptionalElements']"))
+            self.__components_aux = ConfiguratorAuxComponentsComponent(self.root)
         return self.__components_aux
 
     @property
     def summary(self) -> ConfiguratorSummaryComponent:
         if self.__summary is None:
-            self.__summary = ConfiguratorSummaryComponent(self.root.locator("[data-name='configuratorFooter']"))
+            self.__summary = ConfiguratorSummaryComponent(self.root)
         return self.__summary
 
 
@@ -126,17 +133,17 @@ class ListingContentSection(ContentSection):
     @property
     def filters(self) -> ListingFiltersComponent:
         if self.__filters is None:
-            self.__filters = ListingFiltersComponent(self.root.locator('[@data-name="listingFilters"]'))
+            self.__filters = ListingFiltersComponent(self.root)
         return self.__filters
 
     @property
     def sorting(self) -> ListingSortingComponent:
         if self.__sorting is None:
-            self.__sorting = ListingSortingComponent(self.root.locator('[@data-name="listingSorting"]'))
+            self.__sorting = ListingSortingComponent(self.root)
         return self.__sorting
 
     @property
     def content(self) -> ListingContentComponent:
         if self.__content is None:
-            self.__content = ListingContentComponent(self.root.locator("[data-name='listingContent']"))
+            self.__content = ListingContentComponent(self.root)
         return self.__content

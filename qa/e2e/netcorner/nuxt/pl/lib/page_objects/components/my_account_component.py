@@ -2,15 +2,17 @@ from __future__ import annotations
 
 import re
 
-from playwright.sync_api import Locator, expect
+from playwright.sync_api import Locator, Page, expect
 
 from framework.base.page_objects import BaseComponent
 from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
 
 
 class MyAccountComponent(BaseComponent):
-    def __init__(self, root: Locator) -> None:
-        super().__init__(root, name="My Account Root Component")
+    ROOT_SELECTOR = "#pageContent"
+
+    def __init__(self, scope: Page | Locator) -> None:
+        super().__init__(scope.locator(self.ROOT_SELECTOR), name="My Account Root Component")
 
         self.__logged_as_text = self.find("text=Jesteś zalogowany jako:")
         self.__logout = self.find('div.cursor-pointer.underline:has-text("(wyloguj)")')
@@ -83,8 +85,10 @@ class MyAccountComponent(BaseComponent):
 
 
 class MyAccountPasswordChangeComponent(BaseComponent):
-    def __init__(self, root: Locator) -> None:
-        super().__init__(root, name="My Account Password Change Component")
+    ROOT_SELECTOR = "#pageContent"
+
+    def __init__(self, scope: Page | Locator) -> None:
+        super().__init__(scope.locator(self.ROOT_SELECTOR), name="My Account Password Change Component")
 
         self.__breadcrumb_account = self.find('a[href="/customer/account"]')
         self.__input_old_password = self.find("#oldPassword")

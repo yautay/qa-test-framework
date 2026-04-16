@@ -1,14 +1,16 @@
 from __future__ import annotations
 
-from playwright.sync_api import Locator, expect
+from playwright.sync_api import Locator, Page, expect
 
 from framework.base.page_objects import BaseComponent
 from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
 
 
 class RegisterClientComponent(BaseComponent):
-    def __init__(self, root: Locator) -> None:
-        super().__init__(root, name="Register Client Component")
+    ROOT_SELECTOR = "form"
+
+    def __init__(self, scope: Page | Locator) -> None:
+        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Register Client Component")
 
         self.__input_login = self.find("#login")
         self.__input_password = self.find("#password")
