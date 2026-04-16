@@ -7,10 +7,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.flows.select_product_wrappers import SelectProductWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client import auth_session_cases
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_data_models import AuthSessionCase
-from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import (
-    ClientDataBuilder,
-    auth_session_cases,
-)
+from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listing_data_generators import first_aviable_laptop_case
 
 pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.orders]
