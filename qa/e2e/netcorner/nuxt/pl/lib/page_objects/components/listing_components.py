@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-from playwright.sync_api import Locator, Page
+from playwright.sync_api import Locator, Page, expect
 
 from framework.base.page_objects import BaseComponent
 from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
@@ -72,27 +72,35 @@ class ListingSortingComponent(BaseComponent):
     def __init__(self, scope: Page | Locator) -> None:
         super().__init__(scope.locator(self.ROOT_SELECTOR).first, name="Listing Sorting Component")
 
-        self.__sort_dropdown = self.find("[data-role='selectInputArea']")
-        self.__sort_options_container = self.__sort_dropdown.locator("xpath=following-sibling::*[1]")
+        self.__sort_dropdown = self.find("[data-role='selectInputArea']").first
+        self.__sort_options_container = self.__sort_dropdown.locator("xpath=following-sibling::*[1]").first
+        self.__availability_input = self.find("#barFilters").first
+        self.__availability_results = self.find("#autocomplete-results").first
         self.__show_unavailable_checkbox = self.find("#checkboxShowUnavailable")
+
+    def __select_from_custom_dropdown(
+        self,
+        trigger: Locator,
+        options_container: Locator,
+        option_label: str,
+        *,
+        timeout: int = 15_000,
+    ) -> None:
+        self.safe_click(trigger, timeout=timeout)
+        self.safe_click(options_container.get_by_text(option_label, exact=True).first, timeout=timeout)
 
     # actions
     @step("Wybieram opcję z listy sortowania: {option}")
     def select_sort_option(self, option: ListingSortingComponent.SortOption) -> None:
-        option_label = option.value if hasattr(option, "value") else str(option)
-        self.safe_click(self.__sort_dropdown)
-        self.safe_click(self.__sort_options_container.get_by_text(option_label, exact=True).first)
-        self.root.page.wait_for_load_state("domcontentloaded")
+        option_label = option.value
+        self.__select_from_custom_dropdown(self.__sort_dropdown, self.__sort_options_container, option_label)
+        expect(self.__sort_dropdown).to_contain_text(option_label, timeout=15_000)
 
     @step("Wybieram opcję z listy dostępności: {option}")
     def select_availability_option(self, option: ListingSortingComponent.AvailabilityOption) -> None:
-        option_label = option.value if hasattr(option, "value") else str(option)
-        availability_input = self.root.page.locator("#pageContentWrapper [data-role='barFilters'] #barFilters").first
-        availability_results = self.root.page.locator(
-            "#pageContentWrapper [data-role='barFilters'] #autocomplete-results"
-        ).first
-        self.safe_click(availability_input, timeout=15_000)
-        self.safe_click(availability_results.locator("li").filter(has_text=option_label).first, timeout=15_000)
+        option_label = option.value
+        self.__select_from_custom_dropdown(self.__availability_input, self.__availability_results, option_label)
+        expect(self.__availability_input).to_have_value(option_label, timeout=15_000)
 
     @step("Ustawiam checkbox 'Pokaż produkty niedostępne' na: {checked}")
     def set_show_unavailable(self, checked: bool) -> None:
