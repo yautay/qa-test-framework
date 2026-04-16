@@ -45,6 +45,29 @@ make check
 - `make verify-scenarios` runs `python tools/scenarios/verify_scenarios.py`
 - `make verify-discovery` runs `python framework/pytest_discovery_guard.py`
 
+## VSCode test debugging
+
+Repository-tracked debug profiles live in `.vscode/launch.json`.
+
+- `Pytest: Debug Test (breakpoint-friendly)` is the default for Test Explorer (`purpose: ["debug-test"]`).
+- `Pytest: Debug Test (framework step-in)` is for manual launch when stepping through framework/fixture internals.
+
+Both profiles keep local debugging responsive by disabling heavy extras:
+
+- `REPORTING_ENABLED=0`
+- `ALLURE_ENABLED=0`
+- `PYTEST_HTML_ENABLED=0`
+- `RECORD_VIDEO=0`
+- `VISUAL_ENABLED=0`
+- `PMS_ENABLED=0`
+
+Notes:
+
+- Target routing still comes from runtime defaults (`settings_cli.py`) unless you pass `--server-name` manually.
+- A short `about:blank` tab is expected: Playwright page is created before first test navigation.
+- For stable breakpoints, stop after first `open()/goto()` call, not before it.
+- After pulling launch config changes, run `Developer: Reload Window` in VSCode.
+
 ## Visual regression development
 
 Visual suites:
