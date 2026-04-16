@@ -78,14 +78,8 @@ class ListingSortingComponent(BaseComponent):
         self.__availability_results = self.find("#autocomplete-results").first
         self.__show_unavailable_checkbox = self.find("#checkboxShowUnavailable")
 
-    def __select_from_custom_dropdown(
-        self,
-        trigger: Locator,
-        options_container: Locator,
-        option_label: str,
-        *,
-        timeout: int = 15_000,
-    ) -> None:
+    def __select_from_custom_dropdown(self, trigger: Locator, options_container: Locator, option_label: str,
+                                      timeout: int = 10_000) -> None:
         self.safe_click(trigger, timeout=timeout)
         self.safe_click(options_container.get_by_text(option_label, exact=True).first, timeout=timeout)
 
@@ -113,3 +107,42 @@ class ListingContentComponent(BaseComponent):
 
     def __init__(self, scope: Page | Locator) -> None:
         super().__init__(scope.locator(self.ROOT_SELECTOR).first, name="Sekcja zawartości listingów")
+
+        self.__product_title = self.find("a[title] h2")
+        self.__system_code = self.find("p", has_text="Kod systemowy:")
+        self.__final_price = self.find("[data-price-type='final']")
+        self.__promotion_message = self.find("[data-name='promotion']").get_by_text("Ten produkt możesz kupić w promocji!")
+        self.__shipping_status = self.find("[data-name='statusAvailable'] .font-semibold")
+        self.__see_more_button = self.find("[data-name='listingTileActions']").get_by_role("button", name="Zobacz więcej")
+
+    # actions
+    @step("Klikam w przycisk 'Zobacz więcej'")
+    def click_see_more(self) -> None:
+        # INTERACT_ELEMENT: Perform interaction like click or activate on element.
+        self.safe_click(self.__see_more_button)
+
+    # getters
+    @step("Pobieram tytuł produktu")
+    def get_product_title(self) -> str:
+        # GET_TEXT: Read visible text from the element.
+        return (self.__product_title.text_content() or "").strip()
+
+    @step("Pobieram kod systemowy produktu")
+    def get_system_code(self) -> str:
+        # GET_TEXT: Read visible text from the element.
+        return (self.__system_code.text_content() or "").strip()
+
+    @step("Pobieram cenę końcową produktu")
+    def get_final_price(self) -> str:
+        # GET_TEXT: Read visible text from the element.
+        return (self.__final_price.text_content() or "").strip()
+
+    @step("Pobieram komunikat o promocji")
+    def get_promotion_message(self) -> str:
+        # GET_TEXT: Read visible text from the element.
+        return (self.__promotion_message.text_content() or "").strip()
+
+    @step("Pobieram status wysyłki")
+    def get_shipping_status(self) -> str:
+        # GET_TEXT: Read visible text from the element.
+        return (self.__shipping_status.text_content() or "").strip()
