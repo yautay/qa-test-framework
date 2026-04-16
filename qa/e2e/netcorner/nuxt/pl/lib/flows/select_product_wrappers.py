@@ -34,4 +34,3 @@ class SelectProductWrappers:
                 listing_page.open().wait_loaded()
             if listings_data.filters:
                 listing_page.content.filters.expand_all_filters()
-            
