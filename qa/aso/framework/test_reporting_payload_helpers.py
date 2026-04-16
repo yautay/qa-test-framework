@@ -7,6 +7,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from framework.artifacts import build_run_artifacts
 from framework.browser import BrowserSession
 from framework.env import load_env
 from qa.conftest import (
@@ -16,6 +17,7 @@ from qa.conftest import (
     _read_perceptual_quality_signals,
     _refresh_environment_probe_metadata,
     _resolve_execution_context,
+    _write_test_steps_artifact,
 )
 
 try:
@@ -45,6 +47,31 @@ def test_artifact_entry_marks_missing_as_unavailable() -> None:
     assert payload["size_bytes"] == 0
     assert payload["size_mib"] == 0.0
     assert payload["sha256"] == ""
+
+
+def test_write_test_steps_artifact_creates_json_file(tmp_path: Path) -> None:
+    run_artifacts = build_run_artifacts(str(tmp_path / "artifacts"), run_id="run-steps")
+    config = SimpleNamespace(_run_artifacts=run_artifacts)
+
+    artifact_path = _write_test_steps_artifact(
+        config,
+        nodeid="qa/e2e/sample.py::test_case[param]",
+        status="failed",
+        finished_at="2026-01-01T12:00:00+00:00",
+        steps=[
+            {
+                "title": "Krok 1",
+                "status": "passed",
+                "duration_ms": 123,
+            }
+        ],
+    )
+
+    assert artifact_path
+    payload = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
+    assert payload["nodeid"] == "qa/e2e/sample.py::test_case[param]"
+    assert payload["status"] == "failed"
+    assert payload["step_count"] == 1
 
 
 def test_read_perceptual_quality_signals_uses_defaults_without_status_file(tmp_path: Path) -> None:

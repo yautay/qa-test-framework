@@ -12,6 +12,7 @@ Typical structure for one run:
 - `artifacts/<run_id>/traces/`
 - `artifacts/<run_id>/visual/`
 - `artifacts/<run_id>/workers/` (xdist only)
+- `artifacts/<run_id>/workers/<worker_id>/steps/` (per-test executed steps)
 
 ## Run id and run root
 
@@ -38,6 +39,8 @@ Core run directories are created by `framework/artifacts.py`:
 Per-test writing:
 
 - screenshots, traces, videos are written by test/runtime helpers during test execution,
+- executed `@step(...)` and `with step_context(...)` traces are written as
+  `workers/<worker_id>/steps/<nodeid>.steps.json` (one file per test),
 - filenames are already worker-safe (unique test/node id based naming).
 
 Run-level writing:

@@ -1,21 +1,13 @@
 from __future__ import annotations
 
-from contextlib import nullcontext
-
 from playwright.sync_api import BrowserContext, Page
 
 from framework.env import RuntimeEnv
-from qa.e2e.conftest import allure
+from qa.e2e.netcorner.lib.step_api import step_context
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.my_account_page import MyAccountPage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.register_page import RegisterPage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client import ClientData
-
-
-def _step(title: str):
-    if allure is None:
-        return nullcontext()
-    return allure.step(title)
 
 
 class ClientWrappers:
@@ -26,15 +18,15 @@ class ClientWrappers:
 
     def register_new_client(self, user_data: ClientData, back_to_hero_page: bool = True) -> bool:
         home = HomePage(self.__page, self.__runtime_env.base_url)
-        with _step("Otwieram stronę główną"):
+        with step_context("Otwieram stronę główną"):
             home = HomePage(self.__page, self.__runtime_env.base_url)
             home.open().wait_loaded()
 
-        with _step("Otwieram panel logowania i wybieram formularz rejestracji"):
+        with step_context("Otwieram panel logowania i wybieram formularz rejestracji"):
             home.header.actions.open_login()
             home.overlays.login.enter_register_form()
 
-        with _step(f"Wypełniam formularz rejestracji {user_data}"):
+        with step_context(f"Wypełniam formularz rejestracji {user_data}"):
             register_page = RegisterPage(self.__page, self.__runtime_env.base_url)
             register_page.wait_loaded().content.register_form.fill_login(user_data.email)
             if user_data.business_offer:
@@ -48,14 +40,14 @@ class ClientWrappers:
             register_page.content.register_form.fill_repeated_password(user_data.password)
             register_page.content.register_form.solve_captcha()
 
-        with _step("Akceptuję zgody i wysyłam formularz"):
+        with step_context("Akceptuję zgody i wysyłam formularz"):
             if user_data.accept_marketing:
                 register_page.content.register_form.accept_marketing_terms()
             if user_data.accept_required_terms:
                 register_page.content.register_form.accept_required_terms()
             register_page.content.register_form.submit_registration()
 
-        with _step("Weryfikuję poprawną rejestrację"):
+        with step_context("Weryfikuję poprawną rejestrację"):
             home_after_submit = HomePage(self.__page, self.__runtime_env.base_url)
             home_after_submit.overlays.toast.get_toast(timeout=5_000)
             my_account_visible = home_after_submit.header.actions.is_my_account_available()
@@ -74,10 +66,10 @@ class ClientWrappers:
 
     def logout_client(self):
         home = HomePage(self.__page, self.__runtime_env.base_url)
-        with _step("Otwieram 'Moje Konto'"):
+        with step_context("Otwieram 'Moje Konto'"):
             home.open()
             home.wait_loaded()
             home.header.actions.open_account()
 
-        with _step("Klikam przycisk 'wyloguj'"):
+        with step_context("Klikam przycisk 'wyloguj'"):
             MyAccountPage(self.__page, self.__runtime_env.base_url).content.menu_root.logout()
