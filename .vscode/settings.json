@@ -46,6 +46,7 @@
         "framework/visual/ui/node_modules/**",
         "framework/visual/ui/coverage/**",
         "framework/visual/ui/dist/**",
-        "qa/visual/baselines/**"
+        "qa/visual/baselines/**",
+        "**/node_modules"
     ]
 }
