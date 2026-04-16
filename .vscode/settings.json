@@ -48,5 +48,14 @@
         "framework/visual/ui/dist/**",
         "qa/visual/baselines/**",
         "**/node_modules"
-    ]
+    ],
+    "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.mypy_cache": true,
+    "**/.ruff_cache": true,
+    "**/.coverage": true,
+    "**/htmlcov": true,
+    "**/.venv": true
+}
 }
