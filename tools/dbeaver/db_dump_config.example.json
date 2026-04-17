@@ -15,11 +15,11 @@
     {
       "name": "DEMO-SO",
       "engine": "mariadb",
-      "host": "mariadb-rw.demo.kt",
+      "host": "mariadb-ha.demo.kt",
       "port": 3306,
       "database": "kryzys_suppliers",
       "username": "suppliers_rw",
-      "password": "acvqk7mQ2ucMgXL4"
+      "password": "********"
     },
     {
       "name": "DEMO-PROMOTION",
