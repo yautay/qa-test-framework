@@ -7,6 +7,17 @@ from playwright.sync_api import Locator, Page, expect
 
 from framework.base.page_objects import BaseComponent
 from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
+from qa.e2e.netcorner.nuxt.pl.lib.test_data.products.products_data_models import (
+    AvailabilityStatus,
+    AvailabilityStatuses,
+)
+
+
+def _get_visible_text(locator: Locator) -> str:
+    element = locator.first
+    if element.count() == 0 or not element.is_visible():
+        return ""
+    return (element.text_content() or "").strip()
 
 
 class ListingFiltersComponent(BaseComponent):
@@ -109,8 +120,8 @@ class ListingProductData:
     product_title: str
     system_code: str
     final_price: str
-    promotion_message: str
-    shipping_status: str
+    promotion_message: bool
+    shipping_status: AvailabilityStatus | None
 
 
 class ListingProductTileComponent(BaseComponent):
@@ -133,21 +144,33 @@ class ListingProductTileComponent(BaseComponent):
         self.safe_click(self.__see_more_button)
 
     def get_product_title(self) -> str:
-        return (self.__product_title.text_content() or "").strip()
+        return _get_visible_text(self.__product_title)
 
     def get_system_code(self) -> str:
-        return (self.__system_code.text_content() or "").strip()
+        raw = _get_visible_text(self.__system_code)
+        return raw.replace("Kod systemowy:", "").strip()
 
     def get_final_price(self) -> str:
-        return (self.__final_price.text_content() or "").strip()
+        import re
 
-    def get_promotion_message(self) -> str:
-        if self.__promotion_message.count() == 0:
-            return ""
-        return (self.__promotion_message.text_content() or "").strip()
+        raw = _get_visible_text(self.__final_price)
+        match = re.search(r"([\d\s]+(?:[\.,]\d{2})?)", raw)
+        if match:
+            return match.group(1).replace(" ", "")
+        return raw
 
-    def get_shipping_status(self) -> str:
-        return (self.__shipping_status.text_content() or "").strip()
+    def get_promotion_message(self) -> bool:
+        promotion = self.__promotion_message.first
+        return promotion.count() > 0 and promotion.is_visible()
+
+    def get_shipping_status(self) -> AvailabilityStatus | None:
+        status_text = _get_visible_text(self.__shipping_status)
+        if not status_text:
+            return None
+        try:
+            return AvailabilityStatuses.from_status_text(status_text)
+        except ValueError:
+            return None
 
     def get_data(self) -> ListingProductData:
         return ListingProductData(
@@ -171,7 +194,9 @@ class ListingContentComponent(BaseComponent):
         return self.__tiles.count()
 
     @step("Wyszukuję pierwszy produkt o statusie dostępności: {shipping_status}")
-    def find_first_product_by_shipping_status(self, shipping_status: str) -> ListingProductTileComponent | None:
+    def find_first_product_by_shipping_status(
+        self, shipping_status: AvailabilityStatus
+    ) -> ListingProductTileComponent | None:
         tile_count = self.count()
         for index in range(tile_count):
             product_tile = ListingProductTileComponent(self.__tiles.nth(index))

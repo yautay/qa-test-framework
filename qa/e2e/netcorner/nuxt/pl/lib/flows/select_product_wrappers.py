@@ -35,9 +35,9 @@ class SelectProductWrappers:
             )
             content_section.sorting.set_show_unavailable(False)
 
-        expected_status = listings_data.product_availability_status.status
+        expected_status = listings_data.product_availability_status
         checked_pages = 1
-        with step_context(f"Szukam produktu o statusie: {expected_status}"):
+        with step_context(f"Szukam produktu o statusie: {expected_status.status}"):
             while True:
                 selected_product = content_section.content.find_first_product_by_shipping_status(expected_status)
                 if selected_product:
@@ -47,7 +47,7 @@ class SelectProductWrappers:
 
                 if not content_section.content.go_to_next_page():
                     raise AssertionError(
-                        f"Nie znaleziono produktu o statusie dostępności: '{expected_status}' "
+                        f"Nie znaleziono produktu o statusie dostępności: '{expected_status.status}' "
                         f"po sprawdzeniu {checked_pages} stron."
                     )
 

@@ -20,7 +20,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.orders]
 def test_basic_orders(page, context, runtime_env, auth_case: AuthSessionCase):
     _prepare_client_session(page, context, runtime_env, auth_case)
     listing_data = SelectProductWrappers(page, context, runtime_env).select_test_product(first_aviable_laptop_case())
-    pass
+    product_page_data = 
 
 def _prepare_client_session(page, context, runtime_env, auth_case: AuthSessionCase) -> bool:
     if not auth_case.authenticated:
