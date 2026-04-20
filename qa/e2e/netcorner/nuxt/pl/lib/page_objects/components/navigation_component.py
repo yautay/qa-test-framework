@@ -74,4 +74,3 @@ class CartNavigationComponent(BaseComponent):
             return int(raw)
         except ValueError:
             return 0
-

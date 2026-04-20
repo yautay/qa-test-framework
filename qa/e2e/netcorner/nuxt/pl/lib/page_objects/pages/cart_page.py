@@ -4,6 +4,7 @@ from playwright.sync_api import Page
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_page import BasePage, LoadState
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import CartContentSection
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.footer_section import CartFooterSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.navigation_section import CartNavigationSection
 
 
