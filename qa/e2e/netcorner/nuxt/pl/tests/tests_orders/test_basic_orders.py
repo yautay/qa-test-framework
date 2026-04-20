@@ -21,7 +21,14 @@ pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.orders]
 def test_basic_orders(page, context, runtime_env, auth_case: AuthSessionCase):
     _prepare_client_session(page, context, runtime_env, auth_case)
     listing_data = SelectProductWrappers(page, context, runtime_env).select_test_product(first_aviable_laptop_case())
-    product_page_data = ProductPage(page, runtime_env.base_url).wait_loaded().content.price.g
+    product_page_data = ProductPage(page, runtime_env.base_url).wait_loaded().content.price.add_to_cart()
+    assert product_page_data.availability_status == listing_data.availability_status, (
+        f"Oczekiwany status dostępności produktu '{listing_data.availability_status}' różni się od tego wyświetlanego na stronie '{product_page_data.availability_status}'."
+    )
+    assert product_page_data.final_price == listing_data.final_price, (
+        f"Oczekiwana cena produktu '{listing_data.final_price}' różni się od tej wyświetlanej na stronie '{product_page_data.final_price}'."
+    )
+
 
 def _prepare_client_session(page, context, runtime_env, auth_case: AuthSessionCase) -> bool:
     if not auth_case.authenticated:

@@ -24,7 +24,7 @@ class ListingFiltersComponent(BaseComponent):
     ROOT_SELECTOR = "[data-name='filtersDesktop']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(scope.locator(self.ROOT_SELECTOR).first, name="Listing Filters Component")
+        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Listing Filters Component")
 
         self._show_more_accordion_triggers = self.find("[data-name='accordionTrigger']").filter(has_text="Pokaż więcej")
         self._show_all_features_buttons = self.find("button").filter(has_text="Pokaż wszystkie cechy")
@@ -82,7 +82,7 @@ class ListingSortingComponent(BaseComponent):
     ROOT_SELECTOR = "[data-role='barFilters']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(scope.locator(self.ROOT_SELECTOR).first, name="Listing Sorting Component")
+        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Listing Sorting Component")
 
         self.__sort_dropdown = self.find("[data-role='selectInputArea']").first
         self.__sort_options_container = self.__sort_dropdown.locator("xpath=following-sibling::*[1]").first
@@ -186,7 +186,7 @@ class ListingContentComponent(BaseComponent):
     ROOT_SELECTOR = "[data-name='listingContent']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(scope.locator(self.ROOT_SELECTOR).first, name="Sekcja zawartości listingów")
+        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Sekcja zawartości listingów")
 
         self.__tiles = self.find("[data-name='listingTile']")
 

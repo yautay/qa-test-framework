@@ -47,7 +47,7 @@ class ProductRecapComponent(BaseComponent):
     ROOT_SELECTOR = "[data-name='productRecapInfo']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(scope.locator(self.ROOT_SELECTOR).first, name="Product Recap Component")
+        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Product Recap Component")
         self.__product_name = self.find("[data-name='productName']")
         self.__system_code = self.find("p").filter(has_text="Kod systemowy:")
         self.__reviews_link = self.find("a[href='#Opinie']")
@@ -64,7 +64,7 @@ class ProductPriceComponent(BaseComponent):
     ROOT_SELECTOR = "[data-name='addToCartWrapper']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(scope.locator(self.ROOT_SELECTOR).first, name="Product Price Component")
+        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Product Price Component")
 
         self.__final_price = self.find("[data-price-type='final']")
         self.__add_to_cart_button = self.find("[data-name='addToCartButton']")
