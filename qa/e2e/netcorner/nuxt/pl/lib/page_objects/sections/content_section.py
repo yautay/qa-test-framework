@@ -167,3 +167,21 @@ class ProductContentSection(ContentSection):
         if self.__price is None:
             self.__price = ProductPriceComponent(self.root)
         return self.__price
+
+class CartContentSection(ContentSection):
+    def __init__(self, page: Page) -> None:
+        super().__init__(page)
+        self.__cart: ProductRecapComponent | None = None
+        self.__summary: ProductPriceComponent | None = None
+
+    @property
+    def cart(self) -> ProductRecapComponent:
+        if self.__cart is None:
+            self.__cart = ProductRecapComponent(self.root)
+        return self.__cart
+
+    @property
+    def summary(self) -> ProductPriceComponent:
+        if self.__summary is None:
+            self.__summary = ProductPriceComponent(self.root)
+        return self.__summary

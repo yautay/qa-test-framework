@@ -3,23 +3,23 @@ from __future__ import annotations
 from playwright.sync_api import Page
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_page import BasePage, LoadState
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import ProductContentSection
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import ConfiguratorContentSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.footer_section import FooterSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.header_section import HeaderSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.navigation_section import NavigationSection
 
 
-class ProductPage(BasePage):
-    PATH = "/product/"
+class CartPage(BasePage):
+    PATH = "/cart"
 
     def __init__(self, page: Page, base_url: str):
         super().__init__(page, base_url)
-        self.__content: ProductContentSection | None = None
+        self.__content: CartContentSection | None = None
         self.__navigation: NavigationSection | None = None
         self.__header: HeaderSection | None = None
         self.__footer: FooterSection | None = None
 
-    def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> ProductPage:
+    def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> CartPage:
         super().wait_loaded(state=state, timeout=timeout)
         self.header.wait_visible()
         self.content.wait_visible()
@@ -40,9 +40,9 @@ class ProductPage(BasePage):
         return self.__navigation
 
     @property
-    def content(self) -> ProductContentSection:
+    def content(self) -> CartContentSection:
         if self.__content is None:
-            self.__content = ProductContentSection(self.page)
+            self.__content = CartContentSection(self.page)
         return self.__content
 
     @property

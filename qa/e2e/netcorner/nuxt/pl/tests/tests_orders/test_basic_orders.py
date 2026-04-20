@@ -4,7 +4,7 @@ import allure
 import pytest
 
 from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
-from qa.e2e.netcorner.nuxt.pl.lib.flows.select_product_wrappers import SelectProductWrappers
+from qa.e2e.netcorner.nuxt.pl.lib.flows.cart_and_checkout_wrappers import SelectProductWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.product_page import ProductPage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client import auth_session_cases
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_data_models import AuthSessionCase
@@ -28,6 +28,7 @@ def test_basic_orders(page, context, runtime_env, auth_case: AuthSessionCase):
     assert product_page_data.final_price == listing_data.final_price, (
         f"Oczekiwana cena produktu '{listing_data.final_price}' różni się od tej wyświetlanej na stronie '{product_page_data.final_price}'."
     )
+
 
 
 def _prepare_client_session(page, context, runtime_env, auth_case: AuthSessionCase) -> bool:
