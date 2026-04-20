@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
-from playwright.sync_api import Locator, Page
+from playwright.sync_api import Locator, Page, expect
 
 from framework.base.page_objects import BaseComponent
 from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
@@ -43,6 +44,13 @@ def _strip_prefix(text: str, prefix: str) -> str:
     return text.removeprefix(prefix).strip()
 
 
+def _normalize_price(text: str) -> str:
+    match = re.search(r"([\d\s]+(?:[\.,]\d{2})?)", text)
+    if match:
+        return match.group(1).replace(" ", "")
+    return text
+
+
 class ProductRecapComponent(BaseComponent):
     ROOT_SELECTOR = "[data-name='productRecapInfo']"
 
@@ -66,19 +74,25 @@ class ProductPriceComponent(BaseComponent):
     def __init__(self, scope: Page | Locator) -> None:
         super().__init__(scope.locator(self.ROOT_SELECTOR), name="Product Price Component")
 
-        self.__final_price = self.find("[data-price-type='final']")
-        self.__add_to_cart_button = self.find("[data-name='addToCartButton']")
-        self.__availability_status = self.find("[data-name='statusAvailable']")
-        self.__free_shipping = self.find("[data-name='freeShipping']")
+    def __resolved_root(self) -> Locator:
+        resolved_root = self.root.page.locator(f"{self.ROOT_SELECTOR}:visible").first
+        expect(resolved_root).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+        return resolved_root
 
     @step("Dodaję produkt do koszyka")
     def add_to_cart(self) -> ProductPriceData:
         data = self.get_data()
-        self.safe_click(self.__add_to_cart_button)
+        add_to_cart_button = self.__resolved_root().locator("[data-name='addToCartButton']:visible").first
+        self.safe_click(add_to_cart_button)
         return data
 
     def get_data(self) -> ProductPriceData:
-        status_text = _get_visible_text(self.__availability_status)
+        root = self.__resolved_root()
+        final_price = root.locator("[data-price-type='final']").first
+        availability_status_locator = root.locator("[data-name='statusAvailable'] .font-semibold").first
+        free_shipping = root.locator("[data-name='freeShipping']").first
+
+        status_text = _get_visible_text(availability_status_locator)
         availability_status: AvailabilityStatus | None = None
         if status_text:
             try:
@@ -86,9 +100,8 @@ class ProductPriceComponent(BaseComponent):
             except ValueError:
                 availability_status = None
 
-        free_shipping = self.__free_shipping.first
         return ProductPriceData(
-            final_price=_get_visible_text(self.__final_price).replace(" ", ""),
+            final_price=_normalize_price(_get_visible_text(final_price)),
             availability_status=availability_status,
             free_shipping=free_shipping.count() > 0 and free_shipping.is_visible(),
         )
