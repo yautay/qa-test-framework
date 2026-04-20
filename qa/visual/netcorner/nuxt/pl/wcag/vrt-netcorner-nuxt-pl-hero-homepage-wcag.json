@@ -1,0 +1,30 @@
+[
+  {
+  "capture": {
+    "full_page": false,
+    "selector": "div:nth-of-type(3) > div:nth-of-type(2) > div:nth-of-type(1) > div > a > div",
+    "type": "element"
+  },
+  "compare_mode": "hybrid",
+  "id": "vrt-netcorner-nuxt-jira-browse-nn-23698",
+  "mask": {
+    "selectors": [
+      "a[data-name='DailyDealWidget'] img"
+    ]
+  },
+  "name": "Visual browse-nn-23698",
+  "suite_id": "netcorner/nuxt/jira",
+  "target_url": "/",
+  "thresholds": {
+    "dists_max": 0.001,
+    "lpips_max": 0.001,
+    "pixel_max": 0.001
+  },
+  "cookies": [
+    {
+     "name": "kt-color-mode",
+     "value": "yellow-black"
+  }
+  ]
+}
+]
