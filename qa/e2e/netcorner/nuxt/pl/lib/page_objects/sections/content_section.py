@@ -19,6 +19,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.my_account_component i
     MyAccountPasswordChangeComponent,
 )
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.password_recovery_component import PasswordRecoveryComponent
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.product_components import ProductPriceComponent, ProductRecapComponent
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.register_client_component import RegisterClientComponent
 
 
@@ -147,3 +148,22 @@ class ListingContentSection(ContentSection):
         if self.__content is None:
             self.__content = ListingContentComponent(self.root)
         return self.__content
+
+
+class ProductContentSection(ContentSection):
+    def __init__(self, page: Page) -> None:
+        super().__init__(page)
+        self.__recap: ProductRecapComponent | None = None
+        self.__price: ProductPriceComponent | None = None
+
+    @property
+    def recap(self) -> ProductRecapComponent:
+        if self.__recap is None:
+            self.__recap = ProductRecapComponent(self.root)
+        return self.__recap
+
+    @property
+    def price(self) -> ProductPriceComponent:
+        if self.__price is None:
+            self.__price = ProductPriceComponent(self.root)
+        return self.__price
