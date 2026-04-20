@@ -1,13 +1,19 @@
 from __future__ import annotations
 
 from playwright.sync_api import Locator, Page
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.content_root_component import ContentRootComponent
+
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.cart_components import (
+    CartComponent,
+    CartOpsComponent,
+    CartSummaryComponent,
+)
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.configurator_components import (
     ConfiguratorActionsComponent,
     ConfiguratorAuxComponentsComponent,
     ConfiguratorComponentsComponent,
     ConfiguratorSummaryComponent,
 )
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.content_root_component import ContentRootComponent
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.hero_component import HeroComponent
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.listing_components import (
     ListingContentComponent,
@@ -19,7 +25,10 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.my_account_component i
     MyAccountPasswordChangeComponent,
 )
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.password_recovery_component import PasswordRecoveryComponent
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.product_components import ProductPriceComponent, ProductRecapComponent
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.product_components import (
+    ProductPriceComponent,
+    ProductRecapComponent,
+)
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.register_client_component import RegisterClientComponent
 
 
@@ -168,20 +177,28 @@ class ProductContentSection(ContentSection):
             self.__price = ProductPriceComponent(self.root)
         return self.__price
 
+
 class CartContentSection(ContentSection):
     def __init__(self, page: Page) -> None:
         super().__init__(page)
-        self.__cart: ProductRecapComponent | None = None
-        self.__summary: ProductPriceComponent | None = None
+        self.__cart: CartComponent | None = None
+        self.__summary: CartSummaryComponent | None = None
+        self.__ops: CartOpsComponent | None = None
 
     @property
-    def cart(self) -> ProductRecapComponent:
+    def cart(self) -> CartComponent:
         if self.__cart is None:
-            self.__cart = ProductRecapComponent(self.root)
+            self.__cart = CartComponent(self.root)
         return self.__cart
 
     @property
-    def summary(self) -> ProductPriceComponent:
+    def summary(self) -> CartSummaryComponent:
         if self.__summary is None:
-            self.__summary = ProductPriceComponent(self.root)
+            self.__summary = CartSummaryComponent(self.root)
         return self.__summary
+
+    @property
+    def ops(self) -> CartOpsComponent:
+        if self.__ops is None:
+            self.__ops = CartOpsComponent(self.root)
+        return self.__ops

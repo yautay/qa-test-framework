@@ -8,3 +8,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.footer_component impor
 class FooterSection(FooterComponent):
     def __init__(self, page: Page):
         super().__init__(page)
+
+class CartFooterSection(CartFooterComponent):
+    def __init__(self, page: Page):
+        super().__init__(page)
