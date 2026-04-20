@@ -6,6 +6,10 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.login_overlay import Log
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.password_recovery_overlay import (
     PasswordRecoveryOverlay,
 )
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.product_page_overlays import (
+    ProductPageGoToCartOverlay,
+    ProductPagePromotionsOverlay,
+)
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.toast_overlay import ToastOverlay
 
 
@@ -15,6 +19,8 @@ class Overlays:
         self.__login: LoginOverlay | None = None
         self.__password_recovery: PasswordRecoveryOverlay | None = None
         self.__toast: ToastOverlay | None = None
+        self.__go_to_cart: ProductPageGoToCartOverlay | None = None
+        self.__promotions: ProductPagePromotionsOverlay | None = None
 
     @property
     def login(self) -> LoginOverlay:
@@ -33,3 +39,15 @@ class Overlays:
         if self.__toast is None:
             self.__toast = ToastOverlay(self.page)
         return self.__toast
+
+    @property
+    def go_to_cart(self) -> ProductPageGoToCartOverlay:
+        if self.__go_to_cart is None:
+            self.__go_to_cart = ProductPageGoToCartOverlay(self.page)
+        return self.__go_to_cart
+
+    @property
+    def promotions(self) -> ProductPagePromotionsOverlay:
+        if self.__promotions is None:
+            self.__promotions = ProductPagePromotionsOverlay(self.page)
+        return self.__promotions

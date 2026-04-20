@@ -4,7 +4,7 @@ import allure
 import pytest
 
 from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
-from qa.e2e.netcorner.nuxt.pl.lib.flows.cart_and_checkout_wrappers import SelectProductWrappers
+from qa.e2e.netcorner.nuxt.pl.lib.flows.select_product_wrappers import SelectProductWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.product_page import ProductPage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client import auth_session_cases
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_data_models import AuthSessionCase

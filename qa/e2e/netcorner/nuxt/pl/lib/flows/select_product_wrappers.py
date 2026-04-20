@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+from typing import Any
+
 from playwright.sync_api import BrowserContext, Page
 
 from framework.env import RuntimeEnv
 from qa.e2e.netcorner.lib.step_api import step_context
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.listing_components import ListingProductData
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.overlays import Overlays
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.listing_page import ListingPage
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.product_page import ProductPage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listings_data_models import ListingsData
 
 
@@ -14,8 +18,9 @@ class SelectProductWrappers:
         self.__page = page
         self.__context = context
         self.__runtime_env = runtime_env
+        self.__data = []
 
-    def select_test_product(self, listings_data: ListingsData | None = None) -> ListingProductData | None:
+    def select_test_product(self, listings_data: ListingsData | None = None, add_to_cart: bool = True) -> Any | None:
         if listings_data is None:
             return None
 
@@ -52,3 +57,10 @@ class SelectProductWrappers:
                     )
 
                 checked_pages += 1
+
+        if add_to_cart:
+            with step_context("Dodaję produkt do koszyka"):
+                ProductPage(self.__page, self.__runtime_env.base_url).wait_loaded().content.price.add_to_cart()
+                overlays = Overlays(self.__page)
+                self.__data.append(overlays.promotions.click_buy_only_product())
+                overlays.go_to_cart.click_go_to_cart()
