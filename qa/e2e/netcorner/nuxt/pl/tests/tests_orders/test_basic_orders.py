@@ -33,15 +33,13 @@ def test_basic_orders(page, context, runtime_env, auth_case: AuthSessionCase, de
         f"Oczekiwana cena produktu '{listing_data.final_price}' różni się od tej wyświetlanej na stronie '{product_page_data.final_price}'."
     )
     checkout_wrappers = CartAndCheckoutWrappers(page, context, runtime_env)
-    _ = checkout_wrappers.process_cart()
-    _ = checkout_wrappers.process_checkout(
+    checkout_wrappers.process_cart()
+    checkout_wrappers.process_checkout(
         delivery_case.delivery_type,
         delivery_case.delivery_objects,
         delivery_case.purchaser_objects,
         delivery_case.payment_objects,
     )
-
-
 
 def _prepare_client_session(page, context, runtime_env, auth_case: AuthSessionCase) -> bool:
     if not auth_case.authenticated:
