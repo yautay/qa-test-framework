@@ -33,7 +33,8 @@ Test mówi wtedy, co robimy biznesowo, a nie jak dokładnie wygląda DOM.
 
 Najprostszy model mentalny wygląda tak:
 
-`Page -> Section -> Component -> Overlay -> Flow/Wrapper`
+`Page -> Section -> Component -> Flow/Wrapper`
+`Overlay -> Flow/Wrapper`
 
 Każda warstwa ma inne zadanie.
 
