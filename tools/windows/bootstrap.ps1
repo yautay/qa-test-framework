@@ -17,6 +17,11 @@ if ($Reinstall -and (Test-Path (Get-RepoPath ".venv"))) {
 
 Ensure-RepoEnvironment
 
+$hookInstaller = Get-RepoPath "tools/hooks/install-local-hooks.ps1"
+if ((Test-Path (Get-RepoPath ".git")) -and (Test-Path $hookInstaller)) {
+    & $hookInstaller
+}
+
 if (-not $SkipPlaywright) {
     $pythonVersion = Get-RequiredPythonVersion
     Invoke-Uv -Arguments @(
@@ -40,4 +45,5 @@ Write-Host "Bootstrap completed." -ForegroundColor Green
 Write-Host "Repo root: $repoRoot"
 Write-Host "Python: $(Get-RequiredPythonVersion)"
 Write-Host "Venv: $(Get-RepoPath '.venv')"
+Write-Host "Pre-commit hook: $(Get-RepoPath '.git/hooks/pre-commit')"
 Write-Host "Next: powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 doctor"

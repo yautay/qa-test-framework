@@ -27,33 +27,53 @@ If your GitLab/Bitbucket/Jenkins instances expose public badge URLs, add them he
 Option A (double-click):
 1. Open the `tools/windows` folder.
 2. Run `Setup_Windows.cmd`.
-3. Follow setup prompts.
+3. Wait for bootstrap to finish (`uv`, Python `3.13.2`, `.venv`, dependencies, Playwright Chromium).
 
 Option B (PowerShell):
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\windows\setup_windows.ps1
+powershell -ExecutionPolicy Bypass -File .\tools\windows\bootstrap.ps1
 ```
 
-Activate virtual environment:
+Recommended post-check:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\.venv\Scripts\Activate.ps1
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 doctor
 ```
+
+Daily Windows commands:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 aso
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 e2e
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 visual
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 report
+```
+
+Node is not required for testers on Windows. The report app uses committed `framework/visual/ui/dist/`.
+Node `22` is only needed when maintaining the report UI itself.
 
 ### Linux/macOS
 
 ```bash
-pyenv install -s 3.13.2
-pyenv local 3.13.2
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e .[dev]
-python -m playwright install chromium
+uv python install 3.13.2
+uv sync --frozen --extra dev
+uv run --frozen --extra dev python -m playwright install chromium
 ```
 
 ## Run tests
+
+### Windows
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 api
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 aso
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 e2e
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 visual
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 verify
+```
+
+### Linux/macOS
 
 ```bash
 make test-e2e
@@ -103,6 +123,15 @@ make debug-minio-up
 make debug-minio-down
 ```
 
+Windows equivalents:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 visual
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 report
+docker compose -f tools\minio\docker-compose.yml up -d
+docker compose -f tools\minio\docker-compose.yml down
+```
+
 Baseline review from report UI:
 
 - start report server (`make report-serve`),
@@ -137,6 +166,10 @@ Scenario JSON reference and authoring guide: `qa/visual/README.md`
 Windows cleanup:
 - `tools/windows/Cleanup_Windows.cmd`
 - or `powershell -ExecutionPolicy Bypass -File .\tools\windows\cleanup_windows.ps1`
+
+Windows hook install:
+- included in `tools/windows/bootstrap.ps1`
+- manual reinstall: `powershell -ExecutionPolicy Bypass -File .\tools\hooks\install-local-hooks.ps1`
 
 Artifacts cleanup:
 - `make clean` (full local cleanup: run artifacts + tools logs + common caches)

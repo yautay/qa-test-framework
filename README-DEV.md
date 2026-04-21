@@ -22,8 +22,11 @@ For day-to-day test execution, use `README.md`.
 ## Core commands
 
 ```bash
-python -m pytest --collect-only -q
-python framework/pytest_discovery_guard.py
+uv python install 3.13.2
+uv sync --frozen --extra dev
+
+uv run --frozen --extra dev python -m pytest --collect-only -q
+uv run --frozen --extra dev python framework/pytest_discovery_guard.py
 
 make test-aso
 make test-e2e
@@ -76,7 +79,13 @@ pytest qa/aso/framework/visual/test_report_server_units.py -q
 pytest qa/aso/framework/visual/test_report_server_http_endpoints.py -q
 ```
 
-Note: project runtime targets Python 3.13 (`pyproject.toml`), so run backend tests on Python 3.13.
+Note: project runtime targets Python `3.13.2` (`.python-version`, `uv.lock`), so run backend tests on Python `3.13.2`.
+
+## Report UI runtime
+
+- Testers use committed `framework/visual/ui/dist/`, so local report server works without Node.
+- Only maintainers of `framework/visual/ui` need Node `22` (`framework/visual/ui/.nvmrc`).
+- After UI changes, run `npm ci`, `npm run test:unit`, `npm run build:fast`, then commit updated `dist/`.
 
 Reference: `docs/VISUAL_BASELINE_APPROVAL_FLOW.md`
 
@@ -131,8 +140,9 @@ make debug-remote-grid-down
 ## Local git hooks
 
 - Hook source: `tools/hooks/pre-commit-aso.sh`
-- Install: `./tools/hooks/install-local-hooks.sh`
-- Hook behavior: runs `make test-aso` before commit
+- Install (Linux/macOS): `./tools/hooks/install-local-hooks.sh`
+- Install (Windows): `powershell -ExecutionPolicy Bypass -File .\tools\hooks\install-local-hooks.ps1`
+- Hook behavior: runs `python -m pytest -m aso -q` using the repo virtualenv when available
 
 ## Environment matrix (developer view)
 
