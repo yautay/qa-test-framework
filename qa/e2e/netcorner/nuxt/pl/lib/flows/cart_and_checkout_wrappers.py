@@ -46,7 +46,7 @@ class CartAndCheckoutWrappers:
     def process_cart(self) -> dict[str, CartProductData]:
         cart = CartPage(self.__page, self.__runtime_env.base_url).wait_loaded()
         cart_data = cart.content.cart.get_data()
-        cart.footer.click_continue()
+        cart.proceed_to_checkout()
         return cart_data
 
     def process_checkout(
@@ -111,8 +111,7 @@ class CartAndCheckoutWrappers:
             if payment_objects.required_consent:
                 payment_methods_component.set_required_consent(PaymentRequiredConsent.REGULATION)
 
-        summary_data = checkout.content.summary.wait_visible().click_place_order()
-        typ_summary_data = checkout.content.typ_summary.wait_visible().get_summary_data()
+        summary_data, typ_summary_data = checkout.submit_order()
         return CheckoutProcessData(
             delivery_types_aviable=delivery_types_aviable,
             available_payment_methods=available_payment_methods,

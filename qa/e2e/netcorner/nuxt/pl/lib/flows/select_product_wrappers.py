@@ -6,9 +6,7 @@ from playwright.sync_api import BrowserContext, Page
 
 from framework.env import RuntimeEnv
 from qa.e2e.netcorner.lib.step_api import step_context
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.overlays import Overlays
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.listing_page import ListingPage
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.product_page import ProductPage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listings_data_models import ListingsData
 
 
@@ -40,26 +38,10 @@ class SelectProductWrappers:
             content_section.sorting.set_show_unavailable(False)
 
         expected_status = listings_data.product_availability_status
-        checked_pages = 1
         with step_context(f"Szukam produktu o statusie: {expected_status.status}"):
-            while True:
-                selected_product = content_section.content.find_first_product_by_shipping_status(expected_status)
-                if selected_product:
-                    selected_product_data = selected_product.get_data()
-                    selected_product.click_see_more()
-                    return selected_product_data
+            result = listing_page.open_first_product_by_shipping_status(expected_status)
+            if result is None:
+                raise AssertionError(f"Nie znaleziono produktu o statusie dostępności: '{expected_status.status}'.")
 
-                if not content_section.content.go_to_next_page():
-                    raise AssertionError(
-                        f"Nie znaleziono produktu o statusie dostępności: '{expected_status.status}' "
-                        f"po sprawdzeniu {checked_pages} stron."
-                    )
-
-                checked_pages += 1
-
-        if add_to_cart:
-            with step_context("Dodaję produkt do koszyka"):
-                ProductPage(self.__page, self.__runtime_env.base_url).wait_loaded().content.price.add_to_cart()
-                overlays = Overlays(self.__page)
-                self.__data.append(overlays.promotions.click_buy_only_product())
-                overlays.go_to_cart.click_go_to_cart()
+            selected_product_data, _product_page = result
+            return selected_product_data

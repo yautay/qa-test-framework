@@ -40,3 +40,9 @@ class CartPage(BasePage):
         if self.__footer is None:
             self.__footer = CartFooterSection(self.page)
         return self.__footer
+
+    def proceed_to_checkout(self) -> CheckoutPage:
+        from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.checkout_page import CheckoutPage
+
+        self.footer.click_continue()
+        return CheckoutPage(self.page, self.base_url).wait_loaded()

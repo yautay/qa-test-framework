@@ -6,7 +6,6 @@ import pytest
 from qa.e2e.netcorner.mailhog.lib.flows.inbox_flow import MailInboxService
 from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.my_account_page import MyAccountPage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.password_recovery_page import PasswordRecoveryPage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client import ClientCase, ClientDataBuilder
 
@@ -32,13 +31,13 @@ def test_password_change(page, context, runtime_env, user_case):
         "Użytkownik nie został poprawnie zarejestrowany."
     )
     home_page = HomePage(page, runtime_env.base_url).wait_loaded()
-    home_page.header.actions.open_account()
-    my_account = MyAccountPage(page, runtime_env.base_url).wait_loaded()
-    my_account.content.menu_root.open_password_change()
-    my_account.content.menu_change_password.change_password(user_data.password, user_data.password_changed)
+    my_account = home_page.open_account_page()
+    my_account.open_password_change_page().content.menu_change_password.change_password(
+        user_data.password,
+        user_data.password_changed,
+    )
     my_account.overlays.login.log_client(user_data.email, user_data.password_changed)
-    my_account.header.actions.open_account()
-    my_account = MyAccountPage(page, runtime_env.base_url).wait_loaded()
+    my_account = my_account.open_account_page()
     assert my_account.content.menu_root.get_logged_as() == user_data.email, "Użytkownik nie został poprawnie zalogowany"
 
 
@@ -69,9 +68,8 @@ def test_password_recovery(page, context, runtime_env, user_case, mail_inbox: Ma
         context.add_cookies(consent_cookies)
 
     home = HomePage(page, runtime_env.base_url)
-    home.open()
-    home.wait_loaded().header.actions.open_login()
-    home.overlays.login.password_recovery(user_data.email)
+    home.open().wait_loaded()
+    home.open_login_overlay().password_recovery(user_data.email)
     reset_link = mail_inbox.get_password_reset_link(
         context=context,
         recipient=user_data.email,
@@ -92,8 +90,6 @@ def test_password_recovery(page, context, runtime_env, user_case, mail_inbox: Ma
         "Przycisk Zapisz zmiany nie jest aktywny"
     )
     password_recovery.content.recovery_form.submit_password_recovery()
-    password_recovery.header.actions.open_login()
-    password_recovery.overlays.login.log_client(user_data.email, user_data.password_changed)
-    password_recovery.header.actions.open_account()
-    my_account = MyAccountPage(page, runtime_env.base_url).wait_loaded()
+    password_recovery.open_login_overlay().log_client(user_data.email, user_data.password_changed)
+    my_account = password_recovery.open_account_page()
     assert my_account.content.menu_root.get_logged_as() == user_data.email, "Użutkownik jest niepoprawnie zalogowany"

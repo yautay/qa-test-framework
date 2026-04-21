@@ -3,8 +3,7 @@ from __future__ import annotations
 from playwright.sync_api import Page
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_page import BasePage, LoadState
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.hero_component import HeroComponent
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import ContentSection, HeroPageContentSection
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import HeroPageContentSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.footer_section import FooterSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.header_section import HeaderSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.navigation_section import NavigationSection
@@ -51,3 +50,31 @@ class HomePage(BasePage):
         if self.__footer is None:
             self.__footer = FooterSection(self.page)
         return self.__footer
+
+    def open_login_overlay(self):
+        self.header.actions.open_login()
+        return self.overlays.login.wait_visible()
+
+    def open_register_page(self) -> RegisterPage:
+        from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.register_page import RegisterPage
+
+        self.open_login_overlay().enter_register_form()
+        return RegisterPage(self.page, self.base_url).wait_loaded()
+
+    def open_account_page(self) -> MyAccountPage:
+        from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.my_account_page import MyAccountPage
+
+        self.header.actions.open_account()
+        return MyAccountPage(self.page, self.base_url).wait_loaded()
+
+    def open_configurator_from_banner(self) -> ConfiguratorPage:
+        from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.configurator_page import ConfiguratorPage
+
+        self.content.hero.go_to_pc_configurator_from_banner()
+        return ConfiguratorPage(self.page, self.base_url).wait_loaded()
+
+    def open_configurator_from_swiper(self) -> ConfiguratorPage:
+        from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.configurator_page import ConfiguratorPage
+
+        self.content.hero.go_to_pc_configurator_from_swiper()
+        return ConfiguratorPage(self.page, self.base_url).wait_loaded()

@@ -25,7 +25,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.orders]
 def test_basic_orders(page, context, runtime_env, auth_case: AuthSessionCase, delivery_case: CheckoutDeliveryCase):
     _prepare_client_session(page, context, runtime_env, auth_case)
     listing_data = SelectProductWrappers(page, context, runtime_env).select_test_product(first_aviable_laptop_case())
-    product_page_data = ProductPage(page, runtime_env.base_url).wait_loaded().content.price.add_to_cart()
+    product_page_data = ProductPage(page, runtime_env.base_url).wait_loaded().add_to_cart()
     assert product_page_data.availability_status == listing_data.shipping_status, (
         f"Oczekiwany status dostępności produktu '{listing_data.shipping_status}' różni się od tego wyświetlanego na stronie '{product_page_data.availability_status}'."
     )

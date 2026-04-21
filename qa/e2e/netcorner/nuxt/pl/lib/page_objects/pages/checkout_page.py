@@ -3,8 +3,8 @@ from __future__ import annotations
 from playwright.sync_api import Page
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_page import BasePage, LoadState
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.checkout_components import CheckoutSummaryData, TypSummaryData
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import (
-    CartContentSection,
     CheckoutContentSection,
 )
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.navigation_section import (
@@ -38,3 +38,7 @@ class CheckoutPage(BasePage):
             self.__content = CheckoutContentSection(self.page)
         return self.__content
 
+    def submit_order(self) -> tuple[CheckoutSummaryData, TypSummaryData]:
+        summary_data = self.content.summary.wait_visible().click_place_order()
+        typ_summary_data = self.content.typ_summary.wait_visible().get_summary_data()
+        return summary_data, typ_summary_data

@@ -3,6 +3,7 @@ from __future__ import annotations
 from playwright.sync_api import Page
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_page import BasePage, LoadState
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.product_components import ProductPriceData
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import ProductContentSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.footer_section import FooterSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.header_section import HeaderSection
@@ -50,3 +51,16 @@ class ProductPage(BasePage):
         if self.__footer is None:
             self.__footer = FooterSection(self.page)
         return self.__footer
+
+    def open_login_overlay(self):
+        self.header.actions.open_login()
+        return self.overlays.login.wait_visible()
+
+    def open_account_page(self) -> MyAccountPage:
+        from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.my_account_page import MyAccountPage
+
+        self.header.actions.open_account()
+        return MyAccountPage(self.page, self.base_url).wait_loaded()
+
+    def add_to_cart(self) -> ProductPriceData:
+        return self.content.price.add_to_cart()
