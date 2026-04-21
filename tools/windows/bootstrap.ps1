@@ -1,10 +1,10 @@
-$ErrorActionPreference = "Stop"
-$PSNativeCommandUseErrorActionPreference = $true
-
 param(
     [switch]$SkipPlaywright,
     [switch]$Reinstall
 )
+
+$ErrorActionPreference = "Stop"
+$PSNativeCommandUseErrorActionPreference = $true
 
 . (Join-Path $PSScriptRoot "common.ps1")
 

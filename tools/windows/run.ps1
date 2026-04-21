@@ -1,6 +1,3 @@
-$ErrorActionPreference = "Stop"
-$PSNativeCommandUseErrorActionPreference = $true
-
 param(
     [Parameter(Position = 0)]
     [string]$Command = "doctor",
@@ -8,6 +5,9 @@ param(
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$CommandArgs = @()
 )
+
+$ErrorActionPreference = "Stop"
+$PSNativeCommandUseErrorActionPreference = $true
 
 . (Join-Path $PSScriptRoot "common.ps1")
 
