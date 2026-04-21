@@ -54,10 +54,21 @@ function Test-UvExe {
 }
 
 function Resolve-UvExe {
-    $candidates = @(
+    $candidatePatterns = @(
         (Join-Path $env:USERPROFILE ".local\bin\uv.exe"),
-        (Join-Path $env:USERPROFILE ".cargo\bin\uv.exe")
+        (Join-Path $env:USERPROFILE ".cargo\bin\uv.exe"),
+        (Join-Path $env:LOCALAPPDATA "Programs\uv\uv.exe"),
+        (Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Links\uv.exe"),
+        (Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps\uv.exe"),
+        (Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Packages\astral-sh.uv_Microsoft.Winget.Source_*\uv.exe")
     )
+
+    $candidates = @()
+    foreach ($pattern in $candidatePatterns) {
+        if (-not [string]::IsNullOrWhiteSpace($pattern)) {
+            $candidates += @(Get-Item -Path $pattern -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+        }
+    }
 
     $commands = @(Get-Command uv -All -ErrorAction SilentlyContinue)
     foreach ($cmd in $commands) {
