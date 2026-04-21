@@ -11,12 +11,24 @@ class DeliveryTypes(Enum):
     STORE_PICKUP = "store_pickup"
 
 
+class PaymentMethods(Enum):
+    BLIK = "blik"
+    PREPAID_TRANSFER = "prepaid_transfer"
+    CASH_ON_DELIVERY_CASH = "cash_on_delivery_cash"
+    CASH_ON_DELIVERY_CARD = "cash_on_delivery_card"
+
+
+class PaymentRequiredConsent(Enum):
+    REGULATION = "regulation"
+
+
 @dataclass(frozen=True)
 class CheckoutDeliveryCase:
     case_id: str
     delivery_type: DeliveryTypes
     delivery_objects: DeliveryObjects | None = None
     purchaser_objects: PurchaserObjects | None = None
+    payment_objects: PaymentObjects | None = None
 
 
 class DeliveryObjects:
@@ -56,3 +68,14 @@ class CheckoutPurchaserData(PurchaserObjects):
     is_company: bool = False
     company_name: str | None = None
     tax_identification_number: str | None = None
+
+
+class PaymentObjects:
+    pass
+
+
+@dataclass
+class CheckoutPaymentData(PaymentObjects):
+    payment_method: PaymentMethods | None = None
+    comment: str | None = None
+    required_consent: bool = False

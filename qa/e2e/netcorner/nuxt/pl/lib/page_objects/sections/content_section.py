@@ -11,6 +11,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.checkout_components im
     CheckoutDeliveryMethodsComponent,
     CheckoutDeliveryObjectComponent,
     CheckoutDeliveryTypeComponent,
+    CheckoutPaymentMethodsComponent,
     CheckoutPurchaserComponent,
 )
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.configurator_components import (
@@ -216,6 +217,7 @@ class CheckoutContentSection(ContentSection):
         self.__delivery_type: CheckoutDeliveryTypeComponent | None = None
         self.__delivery_object: CheckoutDeliveryObjectComponent | None = None
         self.__delivery_methods: CheckoutDeliveryMethodsComponent | None = None
+        self.__payment_methods: CheckoutPaymentMethodsComponent | None = None
         self.__purchaser: CheckoutPurchaserComponent | None = None
         self.__summary: CartSummaryComponent | None = None
         self.__ops: CartOpsComponent | None = None
@@ -237,6 +239,12 @@ class CheckoutContentSection(ContentSection):
         if self.__delivery_methods is None:
             self.__delivery_methods = CheckoutDeliveryMethodsComponent(self.root)
         return self.__delivery_methods
+
+    @property
+    def payment_methods(self) -> CheckoutPaymentMethodsComponent:
+        if self.__payment_methods is None:
+            self.__payment_methods = CheckoutPaymentMethodsComponent(self.root)
+        return self.__payment_methods
 
     @property
     def purchaser(self) -> CheckoutPurchaserComponent:

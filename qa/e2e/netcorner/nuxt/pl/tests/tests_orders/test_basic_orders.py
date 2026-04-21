@@ -38,6 +38,7 @@ def test_basic_orders(page, context, runtime_env, auth_case: AuthSessionCase, de
         delivery_case.delivery_type,
         delivery_case.delivery_objects,
         delivery_case.purchaser_objects,
+        delivery_case.payment_objects,
     )
 
 

@@ -4,9 +4,11 @@ import uuid
 
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkout_data_models import (
     CheckoutDeliveryCase,
+    CheckoutPaymentData,
     CheckoutPurchaserData,
     DeliveryCourierReceiverData,
     DeliveryTypes,
+    PaymentMethods,
 )
 
 
@@ -145,6 +147,67 @@ def company_checkout_purchaser() -> CheckoutPurchaserData:
     return CheckoutPurchaserDataBuilder().build_company()
 
 
+class CheckoutPaymentDataBuilder:
+    def __init__(self) -> None:
+        self._payment_method: PaymentMethods | None = None
+        self._comment: str | None = None
+        self._required_consent: bool = False
+
+    def with_payment_method(self, payment_method: PaymentMethods) -> CheckoutPaymentDataBuilder:
+        self._payment_method = payment_method
+        return self
+
+    def with_blik(self) -> CheckoutPaymentDataBuilder:
+        self._payment_method = PaymentMethods.BLIK
+        return self
+
+    def with_prepaid_transfer(self) -> CheckoutPaymentDataBuilder:
+        self._payment_method = PaymentMethods.PREPAID_TRANSFER
+        return self
+
+    def with_cash_on_delivery_cash(self) -> CheckoutPaymentDataBuilder:
+        self._payment_method = PaymentMethods.CASH_ON_DELIVERY_CASH
+        return self
+
+    def with_cash_on_delivery_card(self) -> CheckoutPaymentDataBuilder:
+        self._payment_method = PaymentMethods.CASH_ON_DELIVERY_CARD
+        return self
+
+    def with_comment(self, comment: str) -> CheckoutPaymentDataBuilder:
+        self._comment = comment
+        return self
+
+    def with_required_consent(self, enabled: bool = True) -> CheckoutPaymentDataBuilder:
+        self._required_consent = enabled
+        return self
+
+    def with_required_terms(self) -> CheckoutPaymentDataBuilder:
+        return self.with_required_consent(True)
+
+    def build(self) -> CheckoutPaymentData:
+        return CheckoutPaymentData(
+            payment_method=self._payment_method,
+            comment=self._comment,
+            required_consent=self._required_consent,
+        )
+
+
+def checkout_payment_blik_required_terms() -> CheckoutPaymentData:
+    return CheckoutPaymentDataBuilder().with_blik().with_required_terms().build()
+
+
+def checkout_payment_prepaid_transfer_required_terms() -> CheckoutPaymentData:
+    return CheckoutPaymentDataBuilder().with_prepaid_transfer().with_required_terms().build()
+
+
+def checkout_payment_cash_on_delivery_cash_required_terms() -> CheckoutPaymentData:
+    return CheckoutPaymentDataBuilder().with_cash_on_delivery_cash().with_required_terms().build()
+
+
+def checkout_payment_cash_on_delivery_card_required_terms() -> CheckoutPaymentData:
+    return CheckoutPaymentDataBuilder().with_cash_on_delivery_card().with_required_terms().build()
+
+
 def delivery_types() -> list[DeliveryTypes]:
     return [
         DeliveryTypes.COURIER_SERVICE,
@@ -161,8 +224,21 @@ def checkout_delivery_cases() -> list[CheckoutDeliveryCase]:
             delivery_type=DeliveryTypes.COURIER_SERVICE,
             delivery_objects=private_person_delivery_courier_receiver(),
             purchaser_objects=private_person_checkout_purchaser(),
+            payment_objects=checkout_payment_blik_required_terms(),
         ),
-        CheckoutDeliveryCase(case_id="dhl_pop", delivery_type=DeliveryTypes.DHL_POP),
-        CheckoutDeliveryCase(case_id="inpost", delivery_type=DeliveryTypes.INPOST),
-        CheckoutDeliveryCase(case_id="store_pickup", delivery_type=DeliveryTypes.STORE_PICKUP),
+        CheckoutDeliveryCase(
+            case_id="dhl_pop",
+            delivery_type=DeliveryTypes.DHL_POP,
+            payment_objects=checkout_payment_blik_required_terms(),
+        ),
+        CheckoutDeliveryCase(
+            case_id="inpost",
+            delivery_type=DeliveryTypes.INPOST,
+            payment_objects=checkout_payment_blik_required_terms(),
+        ),
+        CheckoutDeliveryCase(
+            case_id="store_pickup",
+            delivery_type=DeliveryTypes.STORE_PICKUP,
+            payment_objects=checkout_payment_blik_required_terms(),
+        ),
     ]

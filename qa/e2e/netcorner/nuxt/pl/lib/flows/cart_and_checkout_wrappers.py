@@ -1,21 +1,33 @@
 from __future__ import annotations
 
-from typing import Any
+from dataclasses import dataclass
+from decimal import Decimal
 
 from playwright.sync_api import BrowserContext, Page
 
 from framework.env import RuntimeEnv
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.cart_components import CartProductData
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.checkout_components import DeliveryTypeData, PaymentMethodData
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.overlays import Overlays
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.cart_page import CartPage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.checkout_page import CheckoutPage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkout_data_models import (
+    CheckoutPaymentData,
     CheckoutPurchaserData,
     DeliveryCourierReceiverData,
     DeliveryObjects,
     DeliveryTypes,
+    PaymentObjects,
+    PaymentRequiredConsent,
     PurchaserObjects,
 )
+
+
+@dataclass(frozen=True, slots=True)
+class CheckoutProcessData:
+    delivery_types_aviable: DeliveryTypeData
+    available_payment_methods: list[PaymentMethodData]
+    payment_surcharge: Decimal
 
 
 class CartAndCheckoutWrappers:
@@ -35,9 +47,12 @@ class CartAndCheckoutWrappers:
         delivery_type: DeliveryTypes,
         delivery_objects: DeliveryObjects | None = None,
         purchaser_objects: PurchaserObjects | None = None,
-    ) -> Any:
+        payment_objects: PaymentObjects | None = None,
+    ) -> CheckoutProcessData:
         checkout = CheckoutPage(self.__page, self.__runtime_env.base_url).wait_loaded()
-        checkout.content.delivery_type.get_delivery_type_availability()
+        delivery_types_aviable = checkout.content.delivery_type.get_delivery_type_availability()
+        available_payment_methods: list[PaymentMethodData] = []
+        payment_surcharge = Decimal("0.00")
 
         match delivery_type:
             case DeliveryTypes.STORE_PICKUP:
@@ -66,8 +81,31 @@ class CartAndCheckoutWrappers:
                     "Argument purchaser_objects musi być typu CheckoutPurchaserData."
                 )
 
-            checkout.content.purchaser.wait_visible()
-            checkout.content.purchaser.click_add_data_tile()
-            purchaser_overlay = Overlays(self.__page).checkout_purchaser.wait_visible()
-            purchaser_overlay.fill_purchaser_data(purchaser_objects)
-            purchaser_overlay.click_add_details()
+            checkout.content.purchaser.wait_visible().click_add_data_tile()
+            Overlays(self.__page).checkout_purchaser.wait_visible().fill_purchaser_data(purchaser_objects).click_add_details()
+
+        if payment_objects is not None:
+            if not isinstance(payment_objects, CheckoutPaymentData):
+                raise TypeError(
+                    "Argument payment_objects musi być typu CheckoutPaymentData."
+                )
+
+            payment_methods_component = checkout.content.payment_methods.wait_visible()
+            available_payment_methods = payment_methods_component.get_available_payment_methods()
+
+            if payment_objects.payment_method is not None:
+                payment_surcharge = payment_methods_component.choose_payment_method(payment_objects.payment_method)
+            else:
+                payment_surcharge = payment_methods_component.choose_random_available_method()
+
+            if payment_objects.comment:
+                payment_methods_component.set_order_comment(payment_objects.comment)
+
+            if payment_objects.required_consent:
+                payment_methods_component.set_required_consent(PaymentRequiredConsent.REGULATION)
+
+        return CheckoutProcessData(
+            delivery_types_aviable=delivery_types_aviable,
+            available_payment_methods=available_payment_methods,
+            payment_surcharge=payment_surcharge,
+        )

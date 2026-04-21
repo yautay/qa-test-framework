@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import Self
 
 from playwright.sync_api import Locator, Page, expect
 
@@ -233,7 +234,7 @@ class CheckoutPurchaserOverlay(BaseComponent):
     def fill_purchaser_data(
         self,
         data: CheckoutPurchaserData,
-    ) -> None:
+    ) -> Self:
         if data.is_company:
             self.click_company()
             company_name = data.company_name or f"{data.first_name} {data.surname}"
@@ -254,3 +255,5 @@ class CheckoutPurchaserOverlay(BaseComponent):
             self.enter_city(data.city)
             self.enter_phone_number(data.phone_number)
             self.enter_email(data.email)
+
+        return self
