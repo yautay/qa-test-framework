@@ -3,9 +3,12 @@ from __future__ import annotations
 import allure
 import pytest
 
+from qa.e2e.netcorner.nuxt.pl.lib.flows.cart_and_checkout_wrappers import CartAndCheckoutWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.flows.select_product_wrappers import SelectProductWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.product_page import ProductPage
+from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkout_data_models import CheckoutDeliveryCase
+from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import checkout_delivery_cases
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client import auth_session_cases
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_data_models import AuthSessionCase
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
@@ -17,8 +20,9 @@ pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.orders]
 @allure.feature("Proces zakupowy")
 @allure.severity(allure.severity_level.BLOCKER)
 @pytest.mark.parametrize("auth_case", auth_session_cases(), ids=lambda case: case.case_id)
-@pytest.mark.scenario("Podstawowy proces zakupowy - wysyłka kurierem")
-def test_basic_orders(page, context, runtime_env, auth_case: AuthSessionCase):
+@pytest.mark.parametrize("delivery_case", checkout_delivery_cases(), ids=lambda case: case.case_id)
+@pytest.mark.scenario("Podstawowy proces zakupowy - typy dostawy")
+def test_basic_orders(page, context, runtime_env, auth_case: AuthSessionCase, delivery_case: CheckoutDeliveryCase):
     _prepare_client_session(page, context, runtime_env, auth_case)
     listing_data = SelectProductWrappers(page, context, runtime_env).select_test_product(first_aviable_laptop_case())
     product_page_data = ProductPage(page, runtime_env.base_url).wait_loaded().content.price.add_to_cart()
@@ -27,6 +31,13 @@ def test_basic_orders(page, context, runtime_env, auth_case: AuthSessionCase):
     )
     assert product_page_data.final_price == listing_data.final_price, (
         f"Oczekiwana cena produktu '{listing_data.final_price}' różni się od tej wyświetlanej na stronie '{product_page_data.final_price}'."
+    )
+    checkout_wrappers = CartAndCheckoutWrappers(page, context, runtime_env)
+    _ = checkout_wrappers.process_cart()
+    _ = checkout_wrappers.process_checkout(
+        delivery_case.delivery_type,
+        delivery_case.delivery_objects,
+        delivery_case.purchaser_objects,
     )
 
 

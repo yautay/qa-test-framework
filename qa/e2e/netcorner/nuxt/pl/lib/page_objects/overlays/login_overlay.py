@@ -3,7 +3,7 @@ from __future__ import annotations
 from playwright.sync_api import Page
 
 from framework.base.page_objects import BaseComponent
-from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
+from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.password_recovery_overlay import (
     PasswordRecoveryOverlay,
 )

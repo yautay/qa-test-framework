@@ -5,7 +5,7 @@ from playwright.sync_api import Page
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_page import BasePage, LoadState
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import CartContentSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.footer_section import CartFooterSection
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.navigation_section import CartNavigationSection
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.navigation_section import CheckoutNavigationSection
 
 
 class CartPage(BasePage):
@@ -14,7 +14,7 @@ class CartPage(BasePage):
     def __init__(self, page: Page, base_url: str):
         super().__init__(page, base_url)
         self.__content: CartContentSection | None = None
-        self.__navigation: CartNavigationSection | None = None
+        self.__navigation: CheckoutNavigationSection | None = None
         self.__footer: CartFooterSection | None = None
 
     def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> CartPage:
@@ -24,9 +24,9 @@ class CartPage(BasePage):
         return self
 
     @property
-    def navigation(self) -> CartNavigationSection:
+    def navigation(self) -> CheckoutNavigationSection:
         if self.__navigation is None:
-            self.__navigation = CartNavigationSection(self.page)
+            self.__navigation = CheckoutNavigationSection(self.page)
         return self.__navigation
 
     @property

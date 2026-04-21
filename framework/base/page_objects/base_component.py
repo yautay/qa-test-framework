@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Self
+
 from playwright.sync_api import Locator, expect
 
 
@@ -27,11 +29,11 @@ class BaseComponent:
 
         return locator.first
 
-    def wait_visible(self, timeout: int | None = None) -> BaseComponent:
+    def wait_visible(self, timeout: int | None = None) -> Self:
         expect(self.root).to_be_visible(timeout=timeout or self.DEFAULT_TIMEOUT)
         return self
 
-    def wait_hidden(self, timeout: int | None = None) -> BaseComponent:
+    def wait_hidden(self, timeout: int | None = None) -> Self:
         expect(self.root).to_be_hidden(timeout=timeout or self.DEFAULT_TIMEOUT)
         return self
 

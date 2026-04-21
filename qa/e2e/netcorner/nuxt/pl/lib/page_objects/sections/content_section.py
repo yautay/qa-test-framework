@@ -7,6 +7,12 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.cart_components import
     CartOpsComponent,
     CartSummaryComponent,
 )
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.checkout_components import (
+    CheckoutDeliveryMethodsComponent,
+    CheckoutDeliveryObjectComponent,
+    CheckoutDeliveryTypeComponent,
+    CheckoutPurchaserComponent,
+)
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.configurator_components import (
     ConfiguratorActionsComponent,
     ConfiguratorAuxComponentsComponent,
@@ -202,3 +208,38 @@ class CartContentSection(ContentSection):
         if self.__ops is None:
             self.__ops = CartOpsComponent(self.root)
         return self.__ops
+
+
+class CheckoutContentSection(ContentSection):
+    def __init__(self, page: Page) -> None:
+        super().__init__(page)
+        self.__delivery_type: CheckoutDeliveryTypeComponent | None = None
+        self.__delivery_object: CheckoutDeliveryObjectComponent | None = None
+        self.__delivery_methods: CheckoutDeliveryMethodsComponent | None = None
+        self.__purchaser: CheckoutPurchaserComponent | None = None
+        self.__summary: CartSummaryComponent | None = None
+        self.__ops: CartOpsComponent | None = None
+
+    @property
+    def delivery_type(self) -> CheckoutDeliveryTypeComponent:
+        if self.__delivery_type is None:
+            self.__delivery_type = CheckoutDeliveryTypeComponent(self.root)
+        return self.__delivery_type
+
+    @property
+    def delivery_object(self) -> CheckoutDeliveryObjectComponent:
+        if self.__delivery_object is None:
+            self.__delivery_object = CheckoutDeliveryObjectComponent(self.root)
+        return self.__delivery_object
+
+    @property
+    def delivery_methods(self) -> CheckoutDeliveryMethodsComponent:
+        if self.__delivery_methods is None:
+            self.__delivery_methods = CheckoutDeliveryMethodsComponent(self.root)
+        return self.__delivery_methods
+
+    @property
+    def purchaser(self) -> CheckoutPurchaserComponent:
+        if self.__purchaser is None:
+            self.__purchaser = CheckoutPurchaserComponent(self.root)
+        return self.__purchaser

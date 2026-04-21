@@ -13,7 +13,7 @@ class NavigationComponent(BaseComponent):
         super().__init__(scope.locator(self.ROOT_SELECTOR), name="Navigation Component")
 
 
-class CartNavigationComponent(BaseComponent):
+class CheckoutNavigationComponent(BaseComponent):
     ROOT_SELECTOR = '[data-role="order-stepper"]'
 
     def __init__(self, scope: Page | Locator) -> None:
