@@ -24,6 +24,9 @@ If your GitLab/Bitbucket/Jenkins instances expose public badge URLs, add them he
 
 ### Windows (recommended)
 
+Detailed step-by-step guide for testers: `docs/WINDOWS_SETUP_DLA_TESTERA.md`
+English version: `docs/WINDOWS_SETUP_FOR_TESTER.md`
+
 Option A (double-click):
 1. Open the `tools/windows` folder.
 2. Run `Setup_Windows.cmd`.
