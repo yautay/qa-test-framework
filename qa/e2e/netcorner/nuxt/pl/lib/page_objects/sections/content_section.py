@@ -4,7 +4,6 @@ from playwright.sync_api import Locator, Page
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.cart_components import (
     CartComponent,
-    CartOpsComponent,
     CartSummaryComponent,
 )
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.checkout_components import (
@@ -13,6 +12,8 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.checkout_components im
     CheckoutDeliveryTypeComponent,
     CheckoutPaymentMethodsComponent,
     CheckoutPurchaserComponent,
+    CheckoutSummaryComponent,
+    TypSummaryComponent,
 )
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.configurator_components import (
     ConfiguratorActionsComponent,
@@ -190,7 +191,6 @@ class CartContentSection(ContentSection):
         super().__init__(page)
         self.__cart: CartComponent | None = None
         self.__summary: CartSummaryComponent | None = None
-        self.__ops: CartOpsComponent | None = None
 
     @property
     def cart(self) -> CartComponent:
@@ -204,12 +204,6 @@ class CartContentSection(ContentSection):
             self.__summary = CartSummaryComponent(self.root)
         return self.__summary
 
-    @property
-    def ops(self) -> CartOpsComponent:
-        if self.__ops is None:
-            self.__ops = CartOpsComponent(self.root)
-        return self.__ops
-
 
 class CheckoutContentSection(ContentSection):
     def __init__(self, page: Page) -> None:
@@ -219,8 +213,8 @@ class CheckoutContentSection(ContentSection):
         self.__delivery_methods: CheckoutDeliveryMethodsComponent | None = None
         self.__payment_methods: CheckoutPaymentMethodsComponent | None = None
         self.__purchaser: CheckoutPurchaserComponent | None = None
-        self.__summary: CartSummaryComponent | None = None
-        self.__ops: CartOpsComponent | None = None
+        self.__summary: CheckoutSummaryComponent | None = None
+        self.__typ_summary: TypSummaryComponent | None = None
 
     @property
     def delivery_type(self) -> CheckoutDeliveryTypeComponent:
@@ -251,3 +245,15 @@ class CheckoutContentSection(ContentSection):
         if self.__purchaser is None:
             self.__purchaser = CheckoutPurchaserComponent(self.root)
         return self.__purchaser
+
+    @property
+    def summary(self) -> CheckoutSummaryComponent:
+        if self.__summary is None:
+            self.__summary = CheckoutSummaryComponent(self.root)
+        return self.__summary
+
+    @property
+    def typ_summary(self) -> TypSummaryComponent:
+        if self.__typ_summary is None:
+            self.__typ_summary = TypSummaryComponent(self.root)
+        return self.__typ_summary

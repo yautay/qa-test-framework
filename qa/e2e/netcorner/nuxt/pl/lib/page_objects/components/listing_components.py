@@ -5,26 +5,20 @@ from enum import StrEnum
 
 from playwright.sync_api import Locator, Page, expect
 
-from framework.base.page_objects import BaseComponent
-from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
+from qa.e2e.netcorner.lib.step_api import step
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.utils import get_visible_text, normalize_price, strip_prefix
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.products.products_data_models import (
     AvailabilityStatus,
     AvailabilityStatuses,
 )
 
 
-def _get_visible_text(locator: Locator) -> str:
-    element = locator.first
-    if element.count() == 0 or not element.is_visible():
-        return ""
-    return (element.text_content() or "").strip()
-
-
 class ListingFiltersComponent(BaseComponent):
     ROOT_SELECTOR = "[data-name='filtersDesktop']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Listing Filters Component")
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Listing Filters Component")
 
         self._show_more_accordion_triggers = self.find("[data-name='accordionTrigger']").filter(has_text="Pokaż więcej")
         self._show_all_features_buttons = self.find("button").filter(has_text="Pokaż wszystkie cechy")
@@ -82,7 +76,7 @@ class ListingSortingComponent(BaseComponent):
     ROOT_SELECTOR = "[data-role='barFilters']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Listing Sorting Component")
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Listing Sorting Component")
 
         self.__sort_dropdown = self.find("[data-role='selectInputArea']").first
         self.__sort_options_container = self.__sort_dropdown.locator("xpath=following-sibling::*[1]").first
@@ -144,27 +138,20 @@ class ListingProductTileComponent(BaseComponent):
         self.safe_click(self.__see_more_button)
 
     def get_product_title(self) -> str:
-        return _get_visible_text(self.__product_title)
+        return get_visible_text(self.__product_title)
 
     def get_system_code(self) -> str:
-        raw = _get_visible_text(self.__system_code)
-        return raw.replace("Kod systemowy:", "").strip()
+        return strip_prefix(get_visible_text(self.__system_code), "Kod systemowy:")
 
     def get_final_price(self) -> str:
-        import re
-
-        raw = _get_visible_text(self.__final_price)
-        match = re.search(r"([\d\s]+(?:[\.,]\d{2})?)", raw)
-        if match:
-            return match.group(1).replace(" ", "")
-        return raw
+        return normalize_price(get_visible_text(self.__final_price))
 
     def get_promotion_message(self) -> bool:
         promotion = self.__promotion_message.first
         return promotion.count() > 0 and promotion.is_visible()
 
     def get_shipping_status(self) -> AvailabilityStatus | None:
-        status_text = _get_visible_text(self.__shipping_status)
+        status_text = get_visible_text(self.__shipping_status)
         if not status_text:
             return None
         try:
@@ -186,7 +173,7 @@ class ListingContentComponent(BaseComponent):
     ROOT_SELECTOR = "[data-name='listingContent']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Sekcja zawartości listingów")
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Sekcja zawartości listingów")
 
         self.__tiles = self.find("[data-name='listingTile']")
 

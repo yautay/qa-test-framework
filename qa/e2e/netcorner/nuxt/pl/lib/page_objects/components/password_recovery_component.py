@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from playwright.sync_api import Locator, Page, expect
 
-from framework.base.page_objects import BaseComponent
-from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
+from qa.e2e.netcorner.lib.step_api import step
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 
 
 class PasswordRecoveryComponent(BaseComponent):
     ROOT_SELECTOR = "[data-name='passwordResetPage']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Password Recovery Component")
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Password Recovery Component")
 
         self.__input_new_password = self.find("#newPassword")
         self.__input_new_password_repeated = self.find("#newPasswordRepeated")
@@ -47,7 +47,7 @@ class PasswordRecoveryComponent(BaseComponent):
         frame = self.root.page.frame_locator('#recaptcha-password-recovery iframe[title="reCAPTCHA"]')
         checkbox = frame.locator("#recaptcha-anchor")
         expect(checkbox).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
-        checkbox.click(timeout=self.DEFAULT_TIMEOUT)
+        self.safe_click(checkbox)
         return self
 
     @step("Klikam przycisk 'Zapisz zmiany'")

@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from playwright.sync_api import Locator, Page, expect
 
-from framework.base.page_objects import BaseComponent
-from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
+from qa.e2e.netcorner.lib.step_api import step
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 
 
 class SearchBarComponent(BaseComponent):
     ROOT_SELECTOR = '[data-role="searchComponent"]'
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(scope.locator(self.ROOT_SELECTOR), name="SearchBar")
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="SearchBar")
         self.__input = self.find('[placeholder="Wpisz czego szukasz"]')
         self.__submit = self.find('[title="search-button"]')
 

@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from playwright.sync_api import Locator, Page
 
-from framework.base.page_objects import BaseComponent
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 
 
 class HeaderComponent(BaseComponent):
     ROOT_SELECTOR = '[data-name="headerBar"]'
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Header Component")
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Header Component")

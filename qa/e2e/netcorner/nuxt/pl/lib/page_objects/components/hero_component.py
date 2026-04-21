@@ -1,18 +1,16 @@
 from __future__ import annotations
 
-import re
-
 from playwright.sync_api import Locator, Page, expect
 
-from framework.base.page_objects import BaseComponent
-from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
+from qa.e2e.netcorner.lib.step_api import step
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 
 
 class HeroComponent(BaseComponent):
     ROOT_SELECTOR = "#pageContent"
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Hero Page Root Component")
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Hero Page Root Component")
 
         # locators (private)
         self.__button_configure_pc = self.find("[data-name='subsidiaryBannerBtn']")

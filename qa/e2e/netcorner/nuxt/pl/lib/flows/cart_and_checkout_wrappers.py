@@ -7,7 +7,12 @@ from playwright.sync_api import BrowserContext, Page
 
 from framework.env import RuntimeEnv
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.cart_components import CartProductData
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.checkout_components import DeliveryTypeData, PaymentMethodData
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.checkout_components import (
+    CheckoutSummaryData,
+    DeliveryTypeData,
+    PaymentMethodData,
+    TypSummaryData,
+)
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.overlays import Overlays
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.cart_page import CartPage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.checkout_page import CheckoutPage
@@ -28,6 +33,8 @@ class CheckoutProcessData:
     delivery_types_aviable: DeliveryTypeData
     available_payment_methods: list[PaymentMethodData]
     payment_surcharge: Decimal
+    summary_data: CheckoutSummaryData
+    typ_summary_data: TypSummaryData
 
 
 class CartAndCheckoutWrappers:
@@ -68,7 +75,7 @@ class CartAndCheckoutWrappers:
                     raise TypeError(
                         "Dla COURIER_SERVICE argument delivery_objects musi być typu DeliveryCourierReceiverData."
                     )
-                Overlays(self.__page).checkout_courier_reciever.wait_visible().fill_receiver_data(delivery_objects)
+                Overlays(self.__page).checkout_courier_receiver.wait_visible().fill_receiver_data(delivery_objects)
                 checkout.content.delivery_methods.wait_visible().get_methods_layout()
                 checkout.content.delivery_methods.choose_random_available_method()
                 checkout.content.purchaser.wait_visible().set_electronic_invoice(True)
@@ -104,8 +111,12 @@ class CartAndCheckoutWrappers:
             if payment_objects.required_consent:
                 payment_methods_component.set_required_consent(PaymentRequiredConsent.REGULATION)
 
+        summary_data = checkout.content.summary.wait_visible().click_place_order()
+        typ_summary_data = checkout.content.typ_summary.wait_visible().get_summary_data()
         return CheckoutProcessData(
             delivery_types_aviable=delivery_types_aviable,
             available_payment_methods=available_payment_methods,
             payment_surcharge=payment_surcharge,
+            summary_data=summary_data,
+            typ_summary_data=typ_summary_data,
         )

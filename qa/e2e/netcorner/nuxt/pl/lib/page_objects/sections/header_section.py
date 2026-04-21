@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from playwright.sync_api import Page
 
-from framework.base.page_objects import BaseComponent
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.header_component import HeaderComponent
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.header_actions_component import HeaderActionsComponent
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.search_bar_component import SearchBarComponent

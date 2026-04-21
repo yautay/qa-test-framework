@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from playwright.sync_api import Locator, Page
 
-from framework.base.page_objects import BaseComponent
-from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
+from qa.e2e.netcorner.lib.step_api import step
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 
 
 class ConfiguratorActionsComponent(BaseComponent):
     ROOT_SELECTOR = "[data-name='configuratorActions']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Configuration Actions Component")
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Configuration Actions Component")
 
         # locators (private)
         self.__container = self.root
@@ -43,7 +43,7 @@ class ConfiguratorComponentsComponent(BaseComponent):
     ROOT_SELECTOR = "[data-name='configuratorGrid']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Sekcja komponentów konfiguratora")
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Sekcja komponentów konfiguratora")
 
         # locators (private)
         self.__container = self.root
@@ -97,11 +97,11 @@ class ConfiguratorAuxComponentsComponent(BaseComponent):
     ROOT_SELECTOR = "[data-name='configuratorGridOptionalElements']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Configurator Aux Components")
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Configurator Aux Components")
 
 
 class ConfiguratorSummaryComponent(BaseComponent):
     ROOT_SELECTOR = "[data-name='configuratorFooter']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Configurator Summary Component")
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Configurator Summary Component")

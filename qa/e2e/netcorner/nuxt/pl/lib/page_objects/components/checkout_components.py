@@ -9,19 +9,13 @@ from typing import Self
 
 from playwright.sync_api import Locator, Page
 
-from framework.base.page_objects import BaseComponent
-from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
+from qa.e2e.netcorner.lib.step_api import step
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.utils import get_visible_text
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkout_data_models import (
     PaymentMethods,
     PaymentRequiredConsent,
 )
-
-
-def _get_visible_text(locator: Locator) -> str:
-    element = locator.first
-    if element.count() == 0 or not element.is_visible():
-        return ""
-    return (element.text_content() or "").strip()
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,13 +30,7 @@ class CheckoutDeliveryTypeComponent(BaseComponent):
     ROOT_SELECTOR = "[data-picker='shippingMethod']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        if isinstance(scope, Page):
-            root = scope.locator(self.ROOT_SELECTOR)
-        else:
-            product_in_scope = scope.locator(self.ROOT_SELECTOR)
-            root = product_in_scope.first if product_in_scope.count() > 0 else scope
-
-        super().__init__(root, name="Checkout Delivery Type Component")
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Checkout Delivery Type Component")
 
         self.__storehouse_tile = self.find('[data-name="orderPickerTile"][data-provider="storehouse"]')
         self.__dhl_tile = self.find('[data-name="orderPickerTile"][data-provider="dhl"]')
@@ -78,13 +66,7 @@ class CheckoutDeliveryObjectComponent(BaseComponent):
     ROOT_SELECTOR = "[data-picker='receiver']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        if isinstance(scope, Page):
-            root = scope.locator(self.ROOT_SELECTOR)
-        else:
-            product_in_scope = scope.locator(self.ROOT_SELECTOR)
-            root = product_in_scope.first if product_in_scope.count() > 0 else scope
-
-        super().__init__(root, name="Checkout Delivery Object Component")
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Checkout Delivery Object Component")
 
         self.__delivery_object_tile = self.find('[data-name="orderPickerTile"]')
 
@@ -97,13 +79,7 @@ class CheckoutPurchaserComponent(BaseComponent):
     ROOT_SELECTOR = "[data-picker='purchaser']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        if isinstance(scope, Page):
-            root = scope.locator(self.ROOT_SELECTOR)
-        else:
-            product_in_scope = scope.locator(self.ROOT_SELECTOR)
-            root = product_in_scope.first if product_in_scope.count() > 0 else scope
-
-        super().__init__(root, name="Checkout Purchaser Component")
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Checkout Purchaser Component")
 
         self.__add_data_tile = self.find('[data-name="orderPickerTile"]:has-text("Dodaj dane")')
         self.__fallback_tile = self.find('[data-name="orderPickerTile"]')
@@ -142,13 +118,7 @@ class CheckoutDeliveryMethodsComponent(BaseComponent):
     ROOT_SELECTOR = "[data-picker='delivery']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        if isinstance(scope, Page):
-            root = scope.locator(self.ROOT_SELECTOR)
-        else:
-            product_in_scope = scope.locator(self.ROOT_SELECTOR)
-            root = product_in_scope.first if product_in_scope.count() > 0 else scope
-
-        super().__init__(root, name="Checkout Delivery Methods Component")
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Checkout Delivery Methods Component")
 
         self.__list_container = self.find('[data-name="OrderDeliveryList"]')
         self.__matrix_container = self.find('[data-name="OrderDeliveryMatrix"]')
@@ -163,7 +133,7 @@ class CheckoutDeliveryMethodsComponent(BaseComponent):
 
     @staticmethod
     def __normalize_tile_text(tile: Locator) -> str:
-        return " ".join(_get_visible_text(tile).split())
+        return " ".join(get_visible_text(tile).split())
 
     def __tile_sort_key(self, tile: Locator) -> tuple[float, float]:
         box = tile.bounding_box() or {"x": 0.0, "y": 0.0}
@@ -255,13 +225,7 @@ class CheckoutPaymentMethodsComponent(BaseComponent):
     }
 
     def __init__(self, scope: Page | Locator) -> None:
-        if isinstance(scope, Page):
-            root = scope.locator(self.ROOT_SELECTOR)
-        else:
-            product_in_scope = scope.locator(self.ROOT_SELECTOR)
-            root = product_in_scope.first if product_in_scope.count() > 0 else scope
-
-        super().__init__(root, name="Checkout Payment Methods Component")
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Checkout Payment Methods Component")
 
         self.__payment_picker = self.find('[data-name="orderPaymentPicker"]')
         self.__payment_tiles = self.__payment_picker.locator('[data-name="orderPickerTile"]')
@@ -282,14 +246,14 @@ class CheckoutPaymentMethodsComponent(BaseComponent):
 
     @staticmethod
     def __normalize_tile_text(tile: Locator) -> str:
-        return " ".join(_get_visible_text(tile).split())
+        return " ".join(get_visible_text(tile).split())
 
     @staticmethod
     def __normalize_label(text: str) -> str:
         return " ".join(text.split()).casefold()
 
     def __method_name_from_tile(self, tile: Locator) -> str:
-        title = _get_visible_text(tile.locator("p").first)
+        title = get_visible_text(tile.locator("p").first)
         if title:
             return " ".join(title.split())
         return self.__normalize_tile_text(tile)
@@ -401,3 +365,99 @@ class CheckoutPaymentMethodsComponent(BaseComponent):
         for consent in consents:
             self.set_required_consent(consent, enabled)
         return self
+
+
+@dataclass(frozen=True, slots=True)
+class CheckoutSummaryData:
+    delivery_price: str
+    delivery_surcharge: Decimal
+    total_to_pay: str
+
+
+class CheckoutSummaryComponent(BaseComponent):
+    ROOT_SELECTOR = "[data-picker='paymentMethod']"
+
+    def __init__(self, scope: Page | Locator) -> None:
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Checkout Summary Component")
+
+        self.__delivery_price = self.find("css=div:has(> span:text-is('Dostawa')) >> span.font-semibold")
+        self.__payment_fee = self.find("css=p:text-is('Płatność') + div >> span.block.text-right")
+        self.__total_to_pay = self.find("css=p.font-semibold:text-is('Do zapłaty') + span >> span.block.text-right")
+        self.__place_order_button = self.root.get_by_role("button", name="Zamawiam z obowiązkiem zapłaty")
+
+    @step("Klikam przycisk złożenia zamówienia")
+    def click_place_order(self) -> CheckoutSummaryData:
+        summary_data =  CheckoutSummaryData(
+            delivery_price=self.__get_delivery_price(),
+            delivery_surcharge=Decimal(self.__get_payment_fee().replace(" zł", "").replace(",", ".")),
+            total_to_pay=self.__get_total_to_pay(),
+        )
+        self.safe_click(self.__place_order_button)
+        return summary_data
+
+    def __get_delivery_price(self) -> str:
+        return (self.__delivery_price.text_content() or "").strip()
+
+    def __get_payment_fee(self) -> str:
+        return (self.__payment_fee.text_content() or "").strip()
+
+    def __get_total_to_pay(self) -> str:
+        return (self.__total_to_pay.text_content() or "").strip()
+
+
+@dataclass(frozen=True, slots=True)
+class TypSummaryData:
+    order_number: str
+    planned_delivery: str
+    delivery_address: str
+    delivery_cost: str
+    sms_status_cost: str
+    payment_cost: str
+    total_to_pay: str
+
+
+class TypSummaryComponent(BaseComponent):
+    def __init__(self, root: Locator) -> None:
+        super().__init__(root, name="TypSummaryComponent")
+
+        # locators (private)
+        self.__order_number = self.find("p.text-lg.font-medium")
+        self.__planned_delivery = self.find("p:has-text('Planowana dostawa twojego zamówienia:') + div span")
+        self.__delivery_address = self.find("p:has-text('Adres dostawy:') + div span")
+        self.__delivery_cost = self.find("span:text-is('Dostawa') + span.font-semibold")
+        self.__sms_status_cost = self.find("span:text-is('SMS Status zamówienia') + span.font-semibold")
+        self.__payment_cost = self.find("p:text-is('Płatność') + div span.block.text-right")
+        self.__total_to_pay = self.find("p:text-is('Do zapłaty') + span span.block.text-right")
+
+    # getters
+    def __get_order_number(self) -> str:
+        return (self.__order_number.text_content() or "").strip()
+
+    def __get_planned_delivery(self) -> str:
+        return (self.__planned_delivery.text_content() or "").strip()
+
+    def __get_delivery_address(self) -> str:
+        return (self.__delivery_address.text_content() or "").strip()
+
+    def __get_delivery_cost(self) -> str:
+        return (self.__delivery_cost.text_content() or "").strip()
+
+    def __get_sms_status_cost(self) -> str:
+        return (self.__sms_status_cost.text_content() or "").strip()
+
+    def __get_payment_cost(self) -> str:
+        return (self.__payment_cost.text_content() or "").strip()
+
+    def __get_total_to_pay(self) -> str:
+        return (self.__total_to_pay.text_content() or "").strip()
+
+    def get_summary_data(self) -> TypSummaryData:
+        return TypSummaryData(
+            order_number=self.__get_order_number(),
+            planned_delivery=self.__get_planned_delivery(),
+            delivery_address=self.__get_delivery_address(),
+            delivery_cost=self.__get_delivery_cost(),
+            sms_status_cost=self.__get_sms_status_cost(),
+            payment_cost=self.__get_payment_cost(),
+            total_to_pay=self.__get_total_to_pay(),
+        )

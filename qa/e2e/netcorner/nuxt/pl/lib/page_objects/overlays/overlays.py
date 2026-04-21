@@ -4,7 +4,7 @@ from playwright.sync_api import Page
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.checkout_overlays import (
     CheckoutPurchaserOverlay,
-    DeliveryCourierRecieverOverlay,
+    DeliveryCourierReceiverOverlay,
 )
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.login_overlay import LoginOverlay
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.password_recovery_overlay import (
@@ -25,7 +25,7 @@ class Overlays:
         self.__toast: ToastOverlay | None = None
         self.__go_to_cart: ProductPageGoToCartOverlay | None = None
         self.__promotions: ProductPagePromotionsOverlay | None = None
-        self.__checkout_courier_reciever: DeliveryCourierRecieverOverlay | None = None
+        self.__checkout_courier_receiver: DeliveryCourierReceiverOverlay | None = None
         self.__checkout_purchaser: CheckoutPurchaserOverlay | None = None
 
     @property
@@ -59,10 +59,10 @@ class Overlays:
         return self.__promotions
 
     @property
-    def checkout_courier_reciever(self) -> DeliveryCourierRecieverOverlay:
-        if self.__checkout_courier_reciever is None:
-            self.__checkout_courier_reciever = DeliveryCourierRecieverOverlay(self.page)
-        return self.__checkout_courier_reciever
+    def checkout_courier_receiver(self) -> DeliveryCourierReceiverOverlay:
+        if self.__checkout_courier_receiver is None:
+            self.__checkout_courier_receiver = DeliveryCourierReceiverOverlay(self.page)
+        return self.__checkout_courier_receiver
 
     @property
     def checkout_purchaser(self) -> CheckoutPurchaserOverlay:

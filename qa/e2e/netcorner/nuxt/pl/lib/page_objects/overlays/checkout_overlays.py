@@ -5,8 +5,8 @@ from typing import Self
 
 from playwright.sync_api import Locator, Page, expect
 
-from framework.base.page_objects.base_component import BaseComponent
 from qa.e2e.netcorner.lib.step_api import step
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkout_data_models import (
     CheckoutPurchaserData,
     DeliveryCourierReceiverData,
@@ -18,7 +18,7 @@ def _is_visible(locator: Locator) -> bool:
     return target.count() > 0 and target.is_visible()
 
 
-class DeliveryCourierRecieverOverlay(BaseComponent):
+class DeliveryCourierReceiverOverlay(BaseComponent):
     def __init__(self, page: Page):
         super().__init__(
             page.locator('[data-name="OrderAddressDialog"]:visible').filter(

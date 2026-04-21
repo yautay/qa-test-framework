@@ -4,15 +4,9 @@ from dataclasses import dataclass
 
 from playwright.sync_api import Locator, Page
 
-from framework.base.page_objects import BaseComponent
-from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
-
-
-def _get_visible_text(locator: Locator) -> str:
-    element = locator.first
-    if element.count() == 0 or not element.is_visible():
-        return ""
-    return (element.text_content() or "").strip()
+from qa.e2e.netcorner.lib.step_api import step
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.utils import get_visible_text
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,13 +30,7 @@ class CartProductComponent(BaseComponent):
     ROOT_SELECTOR = "[data-name='cartProduct']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        if isinstance(scope, Page):
-            root = scope.locator(self.ROOT_SELECTOR)
-        else:
-            product_in_scope = scope.locator(self.ROOT_SELECTOR)
-            root = product_in_scope.first if product_in_scope.count() > 0 else scope
-
-        super().__init__(root, name="Cart Product Component")
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Cart Product Component")
 
         self.__increase_quantity_button = self.find("button[aria-label='Zwiększ ilość o 1']")
         self.__decrease_quantity_button = self.find("button[aria-label='Zmniejsz ilość o 1']")
@@ -94,16 +82,16 @@ class CartProductComponent(BaseComponent):
         return (self.root.get_attribute("data-product-id") or "").strip()
 
     def get_total_price_gross(self) -> str:
-        return _get_visible_text(self.__total_price_gross)
+        return get_visible_text(self.__total_price_gross)
 
     def get_unit_price_gross(self) -> str:
-        return _get_visible_text(self.__unit_price_gross)
+        return get_visible_text(self.__unit_price_gross)
 
     def get_product_name(self) -> str:
-        return _get_visible_text(self.__product_name_link)
+        return get_visible_text(self.__product_name_link)
 
     def get_availability_status(self) -> str:
-        return _get_visible_text(self.__availability_status_text)
+        return get_visible_text(self.__availability_status_text)
 
     def get_quantity(self) -> int:
         raw = (self.__quantity_input.input_value() or "").strip()
@@ -127,7 +115,7 @@ class CartComponent(BaseComponent):
     ROOT_SELECTOR = "[data-name='cartProducts']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Cart Products Component")
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Cart Products Component")
         self.__product_groups = self.find("[data-name='cartProductGroup']")
 
     def count(self) -> int:
@@ -165,7 +153,7 @@ class CartSummaryComponent(BaseComponent):
     ROOT_SELECTOR = "[data-role='cartSummary']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Cart Summary Component")
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Cart Summary Component")
 
         self.__coupon_code_input = self.find("#couponCode")
         self.__add_coupon_code_button = self.find("button:has-text('Dodaj kod')")
@@ -192,13 +180,13 @@ class CartSummaryComponent(BaseComponent):
         self.safe_click(self.__calculate_installment_button)
 
     def get_products_value(self) -> str:
-        return _get_visible_text(self.__products_value_gross)
+        return get_visible_text(self.__products_value_gross)
 
     def get_products_value_net(self) -> str:
-        return _get_visible_text(self.__products_value_net)
+        return get_visible_text(self.__products_value_net)
 
     def get_installment_info(self) -> str:
-        return _get_visible_text(self.__installment_info_text)
+        return get_visible_text(self.__installment_info_text)
 
     def get_data(self) -> CartSummaryData:
         return CartSummaryData(
@@ -206,39 +194,3 @@ class CartSummaryComponent(BaseComponent):
             products_value_net=self.get_products_value_net(),
             installment_info=self.get_installment_info(),
         )
-
-
-class CartOpsComponent(BaseComponent):
-    ROOT_SELECTOR = "[data-name='stickyBar']"
-
-    def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Cart Ops Component")
-
-        self.__continue_shopping_button = self.find("button:has-text('Wróć do zakupów')")
-        self.__clear_cart_button = self.find("button:has-text('Wyczyść koszyk')")
-        self.__proceed_next_button = self.find("button:has-text('Przejdź dalej')")
-        self.__copy_link = self.find("[data-name='shareLinks'] .inline-flex:has-text('Skopiuj link')")
-
-    @staticmethod
-    def _assert_visible(locator: Locator, label: str) -> None:
-        target = locator.first
-        if target.count() == 0 or not target.is_visible():
-            raise AssertionError(f"'{label}' is not visible in the current viewport")
-
-    @step("Klikam 'Wróć do zakupów'")
-    def click_continue_shopping(self) -> None:
-        self.safe_click(self.__continue_shopping_button)
-
-    @step("Klikam 'Wyczyść koszyk'")
-    def click_clear_cart(self) -> None:
-        self._assert_visible(self.__clear_cart_button, "Wyczyść koszyk")
-        self.safe_click(self.__clear_cart_button)
-
-    @step("Klikam 'Przejdź dalej'")
-    def click_proceed_next(self) -> None:
-        self.safe_click(self.__proceed_next_button)
-
-    @step("Klikam 'Skopiuj link'")
-    def click_copy_link(self) -> None:
-        self._assert_visible(self.__copy_link, "Skopiuj link")
-        self.safe_click(self.__copy_link)
