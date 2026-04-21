@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Self
+
 from playwright.sync_api import Locator, Page, expect
 
 from qa.e2e.netcorner.lib.step_api import step
@@ -15,7 +17,7 @@ class SearchBarComponent(BaseComponent):
         self.__submit = self.find('[title="search-button"]')
 
     @step("Wpisuję frazę wyszukiwania: {phrase}")
-    def fill_phrase(self, phrase: str) -> SearchBarComponent:
+    def fill_phrase(self, phrase: str) -> Self:
         self.safe_type(self.__input, phrase)
         return self
 

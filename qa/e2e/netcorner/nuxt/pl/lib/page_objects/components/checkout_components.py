@@ -38,20 +38,24 @@ class CheckoutDeliveryTypeComponent(BaseComponent):
         self.__courier_tile = self.find('[data-name="orderPickerTile"][data-provider="courier"]')
 
     @step("Klikam kafelek dostawy: Salony")
-    def click_storehouse_tile(self) -> None:
+    def click_storehouse_tile(self) -> Self:
         self.safe_click(self.__storehouse_tile)
+        return self
 
     @step("Klikam kafelek dostawy: DHL Automaty BOX i punkty POP")
-    def click_dhl_tile(self) -> None:
+    def click_dhl_tile(self) -> Self:
         self.safe_click(self.__dhl_tile)
+        return self
 
     @step("Klikam kafelek dostawy: InPost Paczkomat 24/7")
-    def click_inpost_tile(self) -> None:
+    def click_inpost_tile(self) -> Self:
         self.safe_click(self.__inpost_tile)
+        return self
 
     @step("Klikam kafelek dostawy: Wysyłka kurierem")
-    def click_courier_tile(self) -> None:
+    def click_courier_tile(self) -> Self:
         self.safe_click(self.__courier_tile)
+        return self
 
     def get_delivery_type_availability(self) -> DeliveryTypeData:
         return DeliveryTypeData(

@@ -49,39 +49,47 @@ class DeliveryCourierReceiverOverlay(BaseComponent):
         self.__add_details_button = self.find("role=button[name='Dodaj dane']")
 
     @step("Klikam 'Osoba prywatna'")
-    def click_private_person(self) -> None:
+    def click_private_person(self) -> Self:
         self.safe_click(self.__private_person_button)
+        return self
 
     @step("Klikam 'Firma'")
-    def click_company(self) -> None:
+    def click_company(self) -> Self:
         self.safe_click(self.__company_button)
+        return self
 
     @step("Wpisuję imię {value}")
-    def enter_first_name(self, value: str) -> None:
+    def enter_first_name(self, value: str) -> Self:
         self.safe_type(self.__first_name_input, value)
+        return self
 
     @step("Wpisuję nazwisko {value}")
-    def enter_surname(self, value: str) -> None:
+    def enter_surname(self, value: str) -> Self:
         self.safe_type(self.__surname_input, value)
+        return self
 
     @step("Wpisuję nazwę firmy {value}")
-    def enter_company_name(self, value: str) -> None:
+    def enter_company_name(self, value: str) -> Self:
         self.safe_type(self.__company_name_input, value)
+        return self
 
     @step("Wpisuję ulicę {value}")
-    def enter_street_name(self, value: str) -> None:
+    def enter_street_name(self, value: str) -> Self:
         self.safe_type(self.__street_name_input, value)
+        return self
 
     @step("Wpisuję numer domu/lokalu {value}")
-    def enter_street_number(self, value: str) -> None:
+    def enter_street_number(self, value: str) -> Self:
         self.safe_type(self.__street_number_input, value)
+        return self
 
     @step("Wpisuję kod pocztowy {value}")
-    def enter_postal_code(self, value: str) -> None:
+    def enter_postal_code(self, value: str) -> Self:
         self.safe_type(self.__postal_code_input, value)
+        return self
 
     @step("Wybieram miejscowość {value}")
-    def enter_city(self, value: str) -> None:
+    def enter_city(self, value: str) -> Self:
         self.safe_click(self.__city_select_input_area)
         self.root.page.keyboard.type(value)
         self.root.page.keyboard.press("Enter")
@@ -90,14 +98,17 @@ class DeliveryCourierReceiverOverlay(BaseComponent):
         except Exception:
             self.safe_click(self.root.get_by_text(value, exact=False).first)
             expect(self.__city_select_label).to_contain_text(value, timeout=self.DEFAULT_TIMEOUT)
+        return self
 
     @step("Wpisuję numer telefonu {value}")
-    def enter_phone_number(self, value: str) -> None:
+    def enter_phone_number(self, value: str) -> Self:
         self.safe_type(self.__phone_number_input, value)
+        return self
 
     @step("Wpisuję e-mail {value}")
-    def enter_email(self, value: str) -> None:
+    def enter_email(self, value: str) -> Self:
         self.safe_type(self.__email_input, value)
+        return self
 
     @step("Klikam 'Anuluj'")
     def click_cancel(self) -> None:
@@ -108,7 +119,7 @@ class DeliveryCourierReceiverOverlay(BaseComponent):
         self.safe_click(self.__add_details_button)
 
     @step("Wypełniam dane odbiorcy kuriera")
-    def fill_receiver_data(self, data: DeliveryCourierReceiverData) -> None:
+    def fill_receiver_data(self, data: DeliveryCourierReceiverData) -> Self:
         if data.is_company:
             self.click_company()
             company_name = data.company_name or f"{data.first_name} {data.surname}"
@@ -124,6 +135,7 @@ class DeliveryCourierReceiverOverlay(BaseComponent):
         self.enter_city(data.city)
         self.enter_phone_number(data.phone_number)
         self.enter_email(data.email)
+        return self
 
 
 class CheckoutPurchaserOverlay(BaseComponent):
@@ -158,53 +170,63 @@ class CheckoutPurchaserOverlay(BaseComponent):
         self.__add_details_button = self.find("role=button[name='Dodaj dane']")
 
     @step("Klikam 'Osoba prywatna' (kupujacy)")
-    def click_private_person(self) -> None:
+    def click_private_person(self) -> Self:
         self.safe_click(self.__private_person_button)
+        return self
 
     @step("Klikam 'Firma' (kupujacy)")
-    def click_company(self) -> None:
+    def click_company(self) -> Self:
         self.safe_click(self.__company_button)
+        return self
 
     @step("Ustawiam 'Skopiuj dane odbiorcy' na {enabled}")
-    def set_copy_data_from_receiver(self, enabled: bool) -> None:
+    def set_copy_data_from_receiver(self, enabled: bool) -> Self:
         if not _is_visible(self.__copy_data_from_receiver_checkbox):
-            return
+            return self
 
         checkbox = self.__copy_data_from_receiver_checkbox.first
         if checkbox.is_checked() != enabled:
             self.safe_click(checkbox)
+        return self
 
     @step("Wpisuje imie kupujacego {value}")
-    def enter_first_name(self, value: str) -> None:
+    def enter_first_name(self, value: str) -> Self:
         self.safe_type(self.__first_name_input, value)
+        return self
 
     @step("Wpisuje nazwisko kupujacego {value}")
-    def enter_surname(self, value: str) -> None:
+    def enter_surname(self, value: str) -> Self:
         self.safe_type(self.__surname_input, value)
+        return self
 
     @step("Wpisuje nazwe firmy kupujacego {value}")
-    def enter_company_name(self, value: str) -> None:
+    def enter_company_name(self, value: str) -> Self:
         self.safe_type(self.__company_name_input, value)
+        return self
 
     @step("Wpisuje NIP kupujacego {value}")
-    def enter_tax_identification_number(self, value: str) -> None:
+    def enter_tax_identification_number(self, value: str) -> Self:
         if _is_visible(self.__tax_identification_number_input):
             self.safe_type(self.__tax_identification_number_input, value)
+        return self
 
     @step("Wpisuje ulice kupujacego {value}")
-    def enter_street_name(self, value: str) -> None:
+    def enter_street_name(self, value: str) -> Self:
         self.safe_type(self.__street_name_input, value)
+        return self
 
     @step("Wpisuje numer domu/lokalu kupujacego {value}")
-    def enter_street_number(self, value: str) -> None:
+    def enter_street_number(self, value: str) -> Self:
         self.safe_type(self.__street_number_input, value)
+        return self
 
     @step("Wpisuje kod pocztowy kupujacego {value}")
-    def enter_postal_code(self, value: str) -> None:
+    def enter_postal_code(self, value: str) -> Self:
         self.safe_type(self.__postal_code_input, value)
+        return self
 
     @step("Wybieram miejscowosc kupujacego {value}")
-    def enter_city(self, value: str) -> None:
+    def enter_city(self, value: str) -> Self:
         self.safe_click(self.__city_select_input_area)
         self.root.page.keyboard.type(value)
         self.root.page.keyboard.press("Enter")
@@ -213,14 +235,17 @@ class CheckoutPurchaserOverlay(BaseComponent):
         except Exception:
             self.safe_click(self.root.get_by_text(value, exact=False).first)
             expect(self.__city_select_label).to_contain_text(value, timeout=self.DEFAULT_TIMEOUT)
+        return self
 
     @step("Wpisuje numer telefonu kupujacego {value}")
-    def enter_phone_number(self, value: str) -> None:
+    def enter_phone_number(self, value: str) -> Self:
         self.safe_type(self.__phone_number_input, value)
+        return self
 
     @step("Wpisuje e-mail kupujacego {value}")
-    def enter_email(self, value: str) -> None:
+    def enter_email(self, value: str) -> Self:
         self.safe_type(self.__email_input, value)
+        return self
 
     @step("Klikam 'Anuluj' (kupujacy)")
     def click_cancel(self) -> None:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import Self
 
 from playwright.sync_api import Locator, Page, expect
 
@@ -96,15 +97,15 @@ class MyAccountPasswordChangeComponent(BaseComponent):
         self.__input_new_password_repeated = self.find("#newPasswordRepeated")
         self.__button_save = self.find('button:has-text("Zapisz zmiany")')
 
-    def __fill_old_password(self, password: str) -> MyAccountPasswordChangeComponent:
+    def __fill_old_password(self, password: str) -> Self:
         self.safe_type(self.__input_old_password, password)
         return self
 
-    def __fill_new_password(self, password: str) -> MyAccountPasswordChangeComponent:
+    def __fill_new_password(self, password: str) -> Self:
         self.safe_type(self.__input_new_password, password)
         return self
 
-    def __fill_new_password_repeated(self, password: str) -> MyAccountPasswordChangeComponent:
+    def __fill_new_password_repeated(self, password: str) -> Self:
         self.safe_type(self.__input_new_password_repeated, password)
         return self
 

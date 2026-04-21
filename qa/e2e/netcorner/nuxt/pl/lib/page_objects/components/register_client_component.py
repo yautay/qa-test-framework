@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Self
+
 from playwright.sync_api import Locator, Page, expect
 
 from qa.e2e.netcorner.lib.step_api import step
@@ -48,33 +50,33 @@ class RegisterClientComponent(BaseComponent):
     # ============================================================
 
     @step("Wpisuję login klienta: {email}")
-    def fill_login(self, email: str) -> RegisterClientComponent:
+    def fill_login(self, email: str) -> Self:
         self.safe_type(self.__input_login, email)
         return self
 
     @step("Ustawiam hasło klienta: {password}")
-    def fill_password(self, password: str) -> RegisterClientComponent:
+    def fill_password(self, password: str) -> Self:
         self.safe_type(self.__input_password, password)
         return self
 
     @step("Powtarzam hasło: {password}")
-    def fill_repeated_password(self, password: str) -> RegisterClientComponent:
+    def fill_repeated_password(self, password: str) -> Self:
         self.safe_type(self.__input_password_repeated, password)
         return self
 
     @step("Aktywuję ofertę biznesową i sprawdzam pola NIP")
-    def check_business_offer(self) -> RegisterClientComponent:
+    def check_business_offer(self) -> Self:
         self.safe_click(self.__checkbox_business_offer)
         expect(self.__input_tax_id).to_be_visible()
         return self
 
     @step("Akceptuję obowiązkowe regulaminy")
-    def accept_required_terms(self) -> RegisterClientComponent:
+    def accept_required_terms(self) -> Self:
         self.safe_click(self.__checkbox_terms)
         return self
 
     @step("Akceptuję zgody marketingowe")
-    def accept_marketing_terms(self) -> RegisterClientComponent:
+    def accept_marketing_terms(self) -> Self:
         self.safe_click(self.__checkbox_marketing)
         return self
 
@@ -87,14 +89,14 @@ class RegisterClientComponent(BaseComponent):
         self.safe_click(self.__button_login_redirect)
 
     @step("Wpisuję dane firmowe NIP={nip}, tel={phone}, email={email}")
-    def fill_business_personal_data(self, nip: str, phone: str, email: str) -> RegisterClientComponent:
+    def fill_business_personal_data(self, nip: str, phone: str, email: str) -> Self:
         self.safe_type(self.__input_tax_id, nip)
         self.safe_type(self.__input_phone, phone)
         self.safe_type(self.__input_business_email, email)
         return self
 
     @step("Klikam reCAPTCHA, by potwierdzić, że nie jestem botem")
-    def solve_captcha(self) -> RegisterClientComponent:
+    def solve_captcha(self) -> Self:
         frame = self.root.page.frame_locator('#recaptcha-register iframe[title="reCAPTCHA"]')
         checkbox = frame.locator("#recaptcha-anchor")
         expect(checkbox).to_be_visible(timeout=self.DEFAULT_TIMEOUT)

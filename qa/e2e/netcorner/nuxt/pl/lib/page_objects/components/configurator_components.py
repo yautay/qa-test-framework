@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Self
+
 from playwright.sync_api import Locator, Page
 
 from qa.e2e.netcorner.lib.step_api import step
@@ -21,15 +23,17 @@ class ConfiguratorActionsComponent(BaseComponent):
 
     # actions
     @step("Czyszczę konfigurację")
-    def clear_configuration(self) -> None:
+    def clear_configuration(self) -> Self:
         self.safe_click(self.__button_clear)
+        return self
 
     @step("Tworzę kopię konfiguracji")
-    def create_copy(self) -> None:
+    def create_copy(self) -> Self:
         self.safe_click(self.__button_create_copy)
+        return self
 
     @step("Udostępniam konfigurację")
-    def share_configuration(self) -> ConfiguratorActionsComponent:
+    def share_configuration(self) -> Self:
         self.safe_click(self.__button_share)
         return self
 
@@ -58,37 +62,37 @@ class ConfiguratorComponentsComponent(BaseComponent):
 
     # actions
     @step("Wybieram kafelek komponentu: Procesor")
-    def open_cpu(self) -> ConfiguratorComponentsComponent:
+    def open_cpu(self) -> Self:
         self.safe_click(self.__tile_cpu)
         return self
 
     @step("Wybieram kafelek komponentu: Karta graficzna")
-    def open_gpu(self) -> ConfiguratorComponentsComponent:
+    def open_gpu(self) -> Self:
         self.safe_click(self.__tile_gpu)
         return self
 
     @step("Wybieram kafelek komponentu: Płyta główna")
-    def open_motherboard(self) -> ConfiguratorComponentsComponent:
+    def open_motherboard(self) -> Self:
         self.safe_click(self.__tile_motherboard)
         return self
 
     @step("Wybieram kafelek komponentu: Pamięć RAM")
-    def open_ram(self) -> ConfiguratorComponentsComponent:
+    def open_ram(self) -> Self:
         self.safe_click(self.__tile_ram)
         return self
 
     @step("Wybieram kafelek komponentu: Dysk")
-    def open_drive(self) -> ConfiguratorComponentsComponent:
+    def open_drive(self) -> Self:
         self.safe_click(self.__tile_drive)
         return self
 
     @step("Wybieram kafelek komponentu: Zasilacz")
-    def open_psu(self) -> ConfiguratorComponentsComponent:
+    def open_psu(self) -> Self:
         self.safe_click(self.__tile_psu)
         return self
 
     @step("Wybieram kafelek komponentu: Obudowa")
-    def open_case(self) -> ConfiguratorComponentsComponent:
+    def open_case(self) -> Self:
         self.safe_click(self.__tile_case)
         return self
 

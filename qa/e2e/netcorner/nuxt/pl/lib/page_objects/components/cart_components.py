@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Self
 
 from playwright.sync_api import Locator, Page
 
@@ -44,39 +45,45 @@ class CartProductComponent(BaseComponent):
         self.__show_addons_button = self.find("button:has-text('Sprawdź dodatki')")
 
     @step("Klikam plus (zwiększam ilość)")
-    def click_increase_quantity(self) -> None:
+    def click_increase_quantity(self) -> Self:
         self.safe_click(self.__increase_quantity_button)
+        return self
 
     @step("Klikam minus (zmniejszam ilość)")
-    def click_decrease_quantity(self) -> None:
+    def click_decrease_quantity(self) -> Self:
         self.safe_click(self.__decrease_quantity_button)
+        return self
 
     @step("Ustawiam ilość produktu na: {value}")
-    def enter_quantity(self, value: int | str) -> None:
+    def enter_quantity(self, value: int | str) -> Self:
         self.safe_fill(self.__quantity_input, str(value))
+        return self
 
     @step("Klikam usuń produkt")
     def click_remove_product(self) -> None:
         self.safe_click(self.__remove_product)
 
     @step("Klikam 'Ukryj dodatki'")
-    def click_hide_addons(self) -> None:
+    def click_hide_addons(self) -> Self:
         self.safe_click(self.__hide_addons_button)
+        return self
 
     @step("Klikam 'Sprawdź dodatki'")
-    def click_show_addons(self) -> None:
+    def click_show_addons(self) -> Self:
         self.safe_click(self.__show_addons_button)
+        return self
 
     @step("Przełączam dodatki produktu")
-    def click_toggle_addons(self) -> None:
+    def click_toggle_addons(self) -> Self:
         hide_button = self.__hide_addons_button.first
         if hide_button.count() > 0 and hide_button.is_visible():
             self.safe_click(hide_button)
-            return
+            return self
 
         show_button = self.__show_addons_button.first
         if show_button.count() > 0 and show_button.is_visible():
             self.safe_click(show_button)
+        return self
 
     def get_product_id(self) -> str:
         return (self.root.get_attribute("data-product-id") or "").strip()
@@ -168,16 +175,19 @@ class CartSummaryComponent(BaseComponent):
         self.__installment_info_text = self.find("p:has-text('Rata już od')")
 
     @step("Wpisuję kod promocyjny: {value}")
-    def enter_coupon_code(self, value: str) -> None:
+    def enter_coupon_code(self, value: str) -> Self:
         self.safe_fill(self.__coupon_code_input, value)
+        return self
 
     @step("Klikam 'Dodaj kod'")
-    def click_add_coupon_code(self) -> None:
+    def click_add_coupon_code(self) -> Self:
         self.safe_click(self.__add_coupon_code_button)
+        return self
 
     @step("Klikam 'Oblicz ratę'")
-    def click_calculate_installment(self) -> None:
+    def click_calculate_installment(self) -> Self:
         self.safe_click(self.__calculate_installment_button)
+        return self
 
     def get_products_value(self) -> str:
         return get_visible_text(self.__products_value_gross)

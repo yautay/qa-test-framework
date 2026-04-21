@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Self
+
 from playwright.sync_api import Locator, Page, expect
 
 from qa.e2e.netcorner.lib.step_api import step
@@ -50,26 +52,26 @@ class HeroComponent(BaseComponent):
 
     # assertions
     @step("Sprawdzam widoczność sekcji 'Skontaktuj się z nami'")
-    def expect_contact_us_section_visible(self, timeout_ms: int = 10_000) -> "HeroComponent":
+    def expect_contact_us_section_visible(self, timeout_ms: int = 10_000) -> Self:
         expect(self.__section_contact_us).to_be_visible(timeout=timeout_ms)
         return self
 
     @step("Sprawdzam widoczność sekcji 'Odwiedź nas'")
-    def expect_visit_us_section_visible(self, timeout_ms: int = 10_000) -> "HeroComponent":
+    def expect_visit_us_section_visible(self, timeout_ms: int = 10_000) -> Self:
         expect(self.__section_visit_us).to_be_visible(timeout=timeout_ms)
         return self
 
     @step("Sprawdzam widoczność logo marki Samsung")
-    def expect_brand_samsung_visible(self, timeout_ms: int = 10_000) -> "HeroComponent":
+    def expect_brand_samsung_visible(self, timeout_ms: int = 10_000) -> Self:
         expect(self.__image_brand_samsung).to_be_visible(timeout=timeout_ms)
         return self
 
     @step("Sprawdzam widoczność logo marki Microsoft")
-    def expect_brand_microsoft_visible(self, timeout_ms: int = 10_000) -> "HeroComponent":
+    def expect_brand_microsoft_visible(self, timeout_ms: int = 10_000) -> Self:
         expect(self.__image_brand_microsoft).to_be_visible(timeout=timeout_ms)
         return self
 
     @step("Sprawdzam widoczność logo marki Asus")
-    def expect_brand_asus_visible(self, timeout_ms: int = 10_000) -> "HeroComponent":
+    def expect_brand_asus_visible(self, timeout_ms: int = 10_000) -> Self:
         expect(self.__image_brand_asus).to_be_visible(timeout=timeout_ms)
         return self

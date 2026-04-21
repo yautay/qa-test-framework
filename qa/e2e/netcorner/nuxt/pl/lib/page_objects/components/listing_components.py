@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
+from typing import Self
 
 from playwright.sync_api import Locator, Page, expect
 
@@ -46,9 +47,10 @@ class ListingFiltersComponent(BaseComponent):
                 self.safe_click(button)
 
     @step("Rozwijam wszystkie dostępne filtry")
-    def expand_all_filters(self) -> None:
+    def expand_all_filters(self) -> Self:
         self.__expand_all_show_more_sections()
         self.__click_all_show_all_features_buttons()
+        return self
 
 
 class ListingSortingComponent(BaseComponent):
@@ -92,21 +94,24 @@ class ListingSortingComponent(BaseComponent):
 
     # actions
     @step("Wybieram opcję z listy sortowania: {option}")
-    def select_sort_option(self, option: ListingSortingComponent.SortOption) -> None:
+    def select_sort_option(self, option: ListingSortingComponent.SortOption) -> Self:
         option_label = option.value
         self.__select_from_custom_dropdown(self.__sort_dropdown, self.__sort_options_container, option_label)
         expect(self.__sort_dropdown).to_contain_text(option_label, timeout=15_000)
+        return self
 
     @step("Wybieram opcję z listy dostępności: {option}")
-    def select_availability_option(self, option: ListingSortingComponent.AvailabilityOption) -> None:
+    def select_availability_option(self, option: ListingSortingComponent.AvailabilityOption) -> Self:
         option_label = option.value
         self.__select_from_custom_dropdown(self.__availability_input, self.__availability_results, option_label)
         expect(self.__availability_input).to_have_value(option_label, timeout=15_000)
+        return self
 
     @step("Ustawiam checkbox 'Pokaż produkty niedostępne' na: {checked}")
-    def set_show_unavailable(self, checked: bool) -> None:
+    def set_show_unavailable(self, checked: bool) -> Self:
         if self.__show_unavailable_checkbox.is_checked() != checked:
             self.safe_click(self.__show_unavailable_checkbox)
+        return self
 
 
 @dataclass(frozen=True)
