@@ -38,19 +38,36 @@ function Refresh-SessionPath {
     }
 }
 
-function Resolve-UvExe {
-    $cmd = Get-Command uv -ErrorAction SilentlyContinue
-    if ($cmd -and $cmd.Source -and (Test-Path $cmd.Source)) {
-        return $cmd.Source
+function Test-UvExe {
+    param([string]$Path)
+
+    if ([string]::IsNullOrWhiteSpace($Path) -or -not (Test-Path $Path)) {
+        return $false
     }
 
+    try {
+        & $Path --version *> $null
+        return $LASTEXITCODE -eq 0
+    } catch {
+        return $false
+    }
+}
+
+function Resolve-UvExe {
     $candidates = @(
         (Join-Path $env:USERPROFILE ".local\bin\uv.exe"),
         (Join-Path $env:USERPROFILE ".cargo\bin\uv.exe")
     )
 
-    foreach ($candidate in $candidates) {
-        if ($candidate -and (Test-Path $candidate)) {
+    $commands = @(Get-Command uv -All -ErrorAction SilentlyContinue)
+    foreach ($cmd in $commands) {
+        if ($cmd -and $cmd.Source) {
+            $candidates += $cmd.Source
+        }
+    }
+
+    foreach ($candidate in ($candidates | Select-Object -Unique)) {
+        if (Test-UvExe $candidate) {
             return $candidate
         }
     }
