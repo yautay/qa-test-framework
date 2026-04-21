@@ -1,7 +1,5 @@
 {
-  "version": "0.1.4-227-g5f7139b2",
+  "version": "1.1.2",
   "codename": "Łódź Bałuty",
-  "ui_src_version": "1.1.2",
-  "commit": "5f7139b",
-  "built_at": "2026-04-21T21:57:38.893Z"
+  "ui_src_version": "1.1.2"
 }
