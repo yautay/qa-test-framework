@@ -7,12 +7,12 @@ from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 
 
-def __wait_until_visible(self, timeout: int) -> bool:
-        try:
-            self.wait_visible(timeout=timeout)
-            return True
-        except (AssertionError, PlaywrightTimeoutError):
-            return False
+def _wait_until_visible(component: BaseComponent, timeout: int) -> bool:
+    try:
+        component.wait_visible(timeout=timeout)
+        return True
+    except (AssertionError, PlaywrightTimeoutError):
+        return False
 
 
 class ProductPageGoToCartOverlay(BaseComponent):
@@ -33,9 +33,10 @@ class ProductPageGoToCartOverlay(BaseComponent):
 
     @step("Klikam 'Przejdź do koszyka' na warstwie dodawanie produktu do koszyka")
     def click_go_to_cart(self, overlay_timeout: int = 7_500) -> None:
-        if not __wait_until_visible(self, overlay_timeout):
+        if not _wait_until_visible(self, overlay_timeout):
             return
         self.safe_click(self.__btn_go_to_cart)
+
 
 class ProductPagePromotionsOverlay(BaseComponent):
     def __init__(self, page: Page):
@@ -52,7 +53,7 @@ class ProductPagePromotionsOverlay(BaseComponent):
         )
 
     def get_proposed_promotions(self, overlay_timeout: int = 7_500) -> list[str]:
-        if not __wait_until_visible(self, overlay_timeout):
+        if not _wait_until_visible(self, overlay_timeout):
             return []
 
         promotions: list[str] = []
@@ -66,7 +67,7 @@ class ProductPagePromotionsOverlay(BaseComponent):
     @step("Klikam 'Nie, dziękuję - chcę kupić tylko produkt' na warstwie promocji i zwracam listę promocji")
     def click_buy_only_product(self, overlay_timeout: int = 7_500) -> list[str]:
         promotions = self.get_proposed_promotions(overlay_timeout=overlay_timeout)
-        if not promotions and not __wait_until_visible(self, timeout=0):
+        if not promotions and not _wait_until_visible(self, timeout=0):
             return promotions
         self.safe_click(self.__button_buy_only_product)
         return promotions

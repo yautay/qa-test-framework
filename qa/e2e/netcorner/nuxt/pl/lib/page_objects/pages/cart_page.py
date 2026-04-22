@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from playwright.sync_api import Page
+from playwright.sync_api import Page, expect
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_page import BasePage, LoadState
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.checkout_page import CheckoutPage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import CartContentSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.footer_section import CartFooterSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.navigation_section import CheckoutNavigationSection
@@ -42,7 +43,11 @@ class CartPage(BasePage):
         return self.__footer
 
     def proceed_to_checkout(self) -> CheckoutPage:
-        from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.checkout_page import CheckoutPage
-
         self.footer.click_continue()
-        return CheckoutPage(self.page, self.base_url).wait_loaded()
+        checkout_page = CheckoutPage(self.page, self.base_url)
+        shipping_method_picker = self.page.locator("[data-picker='shippingMethod']").first
+        try:
+            expect(shipping_method_picker).to_be_visible(timeout=10_000)
+            return checkout_page.wait_loaded()
+        except AssertionError:
+            return checkout_page.open().wait_loaded()

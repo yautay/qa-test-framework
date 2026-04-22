@@ -66,6 +66,8 @@ class SelectProductWrappers:
         if add_to_cart:
             with step_context("Dodaję wybrany produkt do koszyka"):
                 product_page_data = product_page.add_to_cart()
+                product_page.overlays.promotions.click_buy_only_product()
+                product_page.overlays.go_to_cart.click_go_to_cart()
 
         return SelectProductData(
             listing_data=selected_product_data,
