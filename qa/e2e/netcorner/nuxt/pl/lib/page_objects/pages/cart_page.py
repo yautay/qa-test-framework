@@ -3,6 +3,7 @@ from __future__ import annotations
 from playwright.sync_api import Page, expect
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_page import BasePage, LoadState
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.overlays import Overlays
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.checkout_page import CheckoutPage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import CartContentSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.footer_section import CartFooterSection
@@ -44,6 +45,8 @@ class CartPage(BasePage):
 
     def proceed_to_checkout(self) -> CheckoutPage:
         self.footer.click_continue()
+        Overlays(self.page).login.continue_without_login_if_visible()
+
         checkout_page = CheckoutPage(self.page, self.base_url)
         shipping_method_picker = self.page.locator("[data-picker='shippingMethod']").first
         try:

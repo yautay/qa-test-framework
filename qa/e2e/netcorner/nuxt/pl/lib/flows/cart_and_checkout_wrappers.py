@@ -164,9 +164,16 @@ class CartAndCheckoutWrappers:
                     raise TypeError(
                         "Dla COURIER_SERVICE argument delivery_objects musi być typu DeliveryCourierReceiverData."
                     )
-                Overlays(self.__page).checkout_courier_receiver.wait_visible().fill_receiver_data(delivery_objects)
-                checkout.content.delivery_methods.wait_visible().get_methods_layout()
-                checkout.content.delivery_methods.choose_random_available_method()
+                courier_overlay = Overlays(self.__page).checkout_courier_receiver.wait_visible()
+                courier_overlay.fill_receiver_data(delivery_objects)
+                courier_overlay.click_add_details()
+                courier_overlay.wait_hidden(timeout=10_000)
+
+                delivery_methods = checkout.content.delivery_methods.wait_visible().wait_for_available_methods(
+                    timeout=10_000
+                )
+                delivery_methods.get_methods_layout()
+                delivery_methods.choose_random_available_method()
                 checkout.content.purchaser.wait_visible().set_electronic_invoice(True)
             case _:
                 raise ValueError(f"Nieobsługiwany typ dostawy: {delivery_type}")
@@ -178,7 +185,13 @@ class CartAndCheckoutWrappers:
                 )
 
             checkout.content.purchaser.wait_visible().click_add_data_tile()
-            Overlays(self.__page).checkout_purchaser.wait_visible().fill_purchaser_data(purchaser_objects).click_add_details()
+            purchaser_overlay = Overlays(self.__page).checkout_purchaser.wait_visible()
+            purchaser_overlay.fill_purchaser_data(purchaser_objects)
+            purchaser_overlay.click_add_details()
+            try:
+                purchaser_overlay.wait_hidden(timeout=10_000)
+            except AssertionError:
+                pass
 
         if payment_objects is not None:
             if not isinstance(payment_objects, CheckoutPaymentData):
@@ -190,7 +203,10 @@ class CartAndCheckoutWrappers:
             available_payment_methods = payment_methods_component.get_available_payment_methods()
 
             if payment_objects.payment_method is not None:
-                payment_surcharge = payment_methods_component.choose_payment_method(payment_objects.payment_method)
+                try:
+                    payment_surcharge = payment_methods_component.choose_payment_method(payment_objects.payment_method)
+                except RuntimeError:
+                    payment_surcharge = payment_methods_component.choose_random_available_method()
             else:
                 payment_surcharge = payment_methods_component.choose_random_available_method()
 

@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import random
 import re
+import time
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 from typing import Self
 
-from playwright.sync_api import Locator, Page
+from playwright.sync_api import Locator, Page, TimeoutError as PlaywrightTimeoutError
 
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
@@ -132,8 +133,46 @@ class CheckoutDeliveryMethodsComponent(BaseComponent):
         )
         self.__fallback_tiles = self.find('[data-name="orderPickerTile"]')
 
+    @step("Czekam na dostępne metody transportu")
+    def wait_for_available_methods(self, timeout: int | None = None) -> Self:
+        deadline = time.monotonic() + ((timeout or self.DEFAULT_TIMEOUT) / 1000)
+        while time.monotonic() < deadline:
+            if self.__list_container.first.is_visible() and self.__visible_tiles(self.__list_tiles):
+                return self
+            if self.__matrix_container.first.is_visible() and self.__visible_tiles(self.__matrix_tiles):
+                return self
+            if self.__visible_tiles(self.__fallback_tiles):
+                return self
+            self.root.page.wait_for_timeout(250)
+
+        raise RuntimeError("Brak dostępnych metod transportu po uzupełnieniu danych odbiorcy.")
+
+    @staticmethod
+    def __is_tile_selectable(tile: Locator) -> bool:
+        if not tile.is_visible():
+            return False
+
+        disabled = (tile.get_attribute("disabled") or "").strip().lower()
+        if disabled in {"true", "disabled"}:
+            return False
+
+        aria_disabled = (tile.get_attribute("aria-disabled") or "").strip().lower()
+        if aria_disabled == "true":
+            return False
+
+        classes = (tile.get_attribute("class") or "").strip().lower()
+        if "pointer-events-none" in classes:
+            return False
+
+        return True
+
     def __visible_tiles(self, tiles: Locator) -> list[Locator]:
-        return [tiles.nth(index) for index in range(tiles.count()) if tiles.nth(index).is_visible()]
+        visible_tiles: list[Locator] = []
+        for index in range(tiles.count()):
+            tile = tiles.nth(index)
+            if self.__is_tile_selectable(tile):
+                visible_tiles.append(tile)
+        return visible_tiles
 
     @staticmethod
     def __normalize_tile_text(tile: Locator) -> str:
@@ -183,10 +222,14 @@ class CheckoutDeliveryMethodsComponent(BaseComponent):
         return matrix
 
     def get_methods_layout(self) -> tuple[DeliveryMethodsLayout, list[str] | list[list[str]]]:
+        self.wait_for_available_methods()
         if self.__list_container.first.is_visible():
             return DeliveryMethodsLayout.LIST, self.__get_available_methods_list()
         if self.__matrix_container.first.is_visible():
             return DeliveryMethodsLayout.MATRIX, self.__get_available_methods_matrix()
+        fallback_methods = [self.__normalize_tile_text(tile) for tile in self.__visible_tiles(self.__fallback_tiles)]
+        if fallback_methods:
+            return DeliveryMethodsLayout.LIST, [method for method in fallback_methods if method]
         raise RuntimeError("Nie udało się rozpoznać układu metod transportu.")
 
     @step("Wybieram losową dostępną metodę transportu i przechodzę dalej")
@@ -204,7 +247,17 @@ class CheckoutDeliveryMethodsComponent(BaseComponent):
         if not available_tiles:
             raise RuntimeError("Brak dostępnych metod transportu do wyboru.")
 
-        self.safe_click(random.choice(available_tiles))
+        candidates = available_tiles[:]
+        random.shuffle(candidates)
+        for tile in candidates:
+            try:
+                tile.click(timeout=3_000, trial=True)
+                self.safe_click(tile)
+                return layout
+            except PlaywrightTimeoutError:
+                continue
+
+        raise RuntimeError("Nie udało się kliknąć żadnej dostępnej metody transportu.")
         return layout
 
 
@@ -384,29 +437,49 @@ class CheckoutSummaryComponent(BaseComponent):
     def __init__(self, scope: Page | Locator) -> None:
         super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Checkout Summary Component")
 
+        self.__summary_panel = self.root.page.locator("section,div,aside").filter(
+            has=self.root.page.get_by_role("heading", name="Podsumowanie koszyka")
+        ).first
         self.__delivery_price = self.find("css=div:has(> span:text-is('Dostawa')) >> span.font-semibold")
         self.__payment_fee = self.find("css=p:text-is('Płatność') + div >> span.block.text-right")
         self.__total_to_pay = self.find("css=p.font-semibold:text-is('Do zapłaty') + span >> span.block.text-right")
-        self.__place_order_button = self.root.get_by_role("button", name="Zamawiam z obowiązkiem zapłaty")
+        self.__place_order_button = self.root.page.get_by_role("button", name="Zamawiam z obowiązkiem zapłaty").first
+
+    @staticmethod
+    def __read_text(locator: Locator, timeout: int = 1_000) -> str:
+        try:
+            return (locator.first.text_content(timeout=timeout) or "").strip()
+        except Exception:
+            return ""
+
+    @staticmethod
+    def __parse_money(value: str) -> Decimal:
+        match = re.search(r"([+-]?\d+(?:[\.,]\d{1,2})?)", value)
+        if not match:
+            return Decimal("0.00")
+        try:
+            return Decimal(match.group(1).replace(",", ".")).quantize(Decimal("0.01"))
+        except InvalidOperation:
+            return Decimal("0.00")
 
     @step("Klikam przycisk złożenia zamówienia")
     def click_place_order(self) -> CheckoutSummaryData:
-        summary_data =  CheckoutSummaryData(
+        summary_data = CheckoutSummaryData(
             delivery_price=self.__get_delivery_price(),
-            delivery_surcharge=Decimal(self.__get_payment_fee().replace(" zł", "").replace(",", ".")),
+            delivery_surcharge=self.__parse_money(self.__get_payment_fee()),
             total_to_pay=self.__get_total_to_pay(),
         )
         self.safe_click(self.__place_order_button)
         return summary_data
 
     def __get_delivery_price(self) -> str:
-        return (self.__delivery_price.text_content() or "").strip()
+        return self.__read_text(self.__delivery_price) or self.__read_text(self.__summary_panel)
 
     def __get_payment_fee(self) -> str:
-        return (self.__payment_fee.text_content() or "").strip()
+        return self.__read_text(self.__payment_fee) or self.__read_text(self.__summary_panel)
 
     def __get_total_to_pay(self) -> str:
-        return (self.__total_to_pay.text_content() or "").strip()
+        return self.__read_text(self.__total_to_pay) or self.__read_text(self.__summary_panel)
 
 
 @dataclass(frozen=True, slots=True)

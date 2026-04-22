@@ -15,6 +15,10 @@ class LoginOverlay(BaseComponent):
         self.__input_login = self.root.locator("#loginEmail")
         self.__input_password = self.root.locator("#loginPassword")
         self.__button_login = self.root.get_by_role(role="button", name="Zaloguj się")
+        self.__button_continue_without_login = self.root.get_by_role(
+            role="button",
+            name="Kontynuuj bez logowania",
+        )
         self.__reset_password = self.root.get_by_text("Odzyskaj hasło", exact=True)
         self.__register_account = self.root.locator('[href="/register"]')
 
@@ -28,6 +32,17 @@ class LoginOverlay(BaseComponent):
         self.safe_type(self.__input_login, client_login)
         self.safe_type(self.__input_password, client_pwd)
         self.safe_click(self.__button_login)
+
+    @step("Kontynuuję bez logowania, jeśli pojawił się modal logowania")
+    def continue_without_login_if_visible(self, timeout: int = 3_000) -> bool:
+        try:
+            self.wait_visible(timeout=timeout)
+        except AssertionError:
+            return False
+
+        self.safe_click(self.__button_continue_without_login)
+        self.wait_hidden()
+        return True
 
     @step("Odzyskuję hasło")
     def password_recovery(self, client_login: str) -> None:

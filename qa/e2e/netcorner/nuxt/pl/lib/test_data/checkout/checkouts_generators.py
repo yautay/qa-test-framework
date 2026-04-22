@@ -221,8 +221,8 @@ class CheckoutPurchaserDataBuilder:
         self._tax_identification_number = "7770020640"
         self._street_name = "Dluga"
         self._street_number = "10A/12"
-        self._postal_code = "00-001"
-        self._city = "Warszawa"
+        self._postal_code = "60-001"
+        self._city = "Poznań"
         self._phone_number = "791233545"
         self._email = f"purchaser_{unique}@test.pl"
         self._copy_data_from_receiver = False

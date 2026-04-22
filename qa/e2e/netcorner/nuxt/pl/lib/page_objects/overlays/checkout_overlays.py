@@ -86,22 +86,83 @@ class _AddressFormMixin:
         return self
 
     def _enter_city(self, value: str) -> Self:
+        normalized_value = value.strip()
+        if not normalized_value:
+            return self
+
+        city_input = self._city_select_input_area.locator("input").first
+
+        def city_selected() -> bool:
+            expected = normalized_value.casefold()
+            try:
+                if city_input.count() > 0:
+                    current_value = " ".join((city_input.input_value() or "").split()).casefold()
+                    if expected in current_value:
+                        return True
+            except Exception:
+                pass
+
+            for candidate in (self._city_select_label, self._city_select_input_area):
+                text = " ".join((candidate.first.text_content() or "").split()).casefold()
+                if expected in text:
+                    return True
+            return False
+
+        def wait_selected(iterations: int = 20, delay_ms: int = 250) -> bool:
+            for _ in range(iterations):
+                if city_selected():
+                    return True
+                self.root.page.wait_for_timeout(delay_ms)
+            return False
+
         self.safe_click(self._city_select_input_area)
-        self.root.page.keyboard.type(value)
+
+        if city_input.count() > 0 and city_input.is_visible() and city_input.is_editable():
+            self.safe_type(city_input, normalized_value)
+            city_input.press("Enter")
+        else:
+            self.root.page.keyboard.type(normalized_value)
+            self.root.page.keyboard.press("Enter")
+
+        if wait_selected():
+            return self
+
+        self.safe_click(self._city_select_input_area)
+        self.root.page.keyboard.press("ArrowDown")
         self.root.page.keyboard.press("Enter")
-        try:
-            expect(self._city_select_label).to_contain_text(value, timeout=3_000)
-        except Exception:
-            self.safe_click(self.root.get_by_text(value, exact=False).first)
-            expect(self._city_select_label).to_contain_text(value, timeout=self.DEFAULT_TIMEOUT)
+        if wait_selected():
+            return self
+
+        option = self.root.page.get_by_text(normalized_value, exact=False).first
+        if option.count() > 0 and option.is_visible():
+            self.safe_click(option, timeout=1_000)
+            if wait_selected():
+                return self
+
+        raise RuntimeError(f"Nie udało się wybrać miejscowości: {normalized_value}")
+
         return self
 
     def _enter_phone_number(self, value: str) -> Self:
-        self.safe_type(self._phone_number_input, value)
+        expected_digits = "".join(char for char in value if char.isdigit())
+        for _ in range(3):
+            self.safe_fill(self._phone_number_input, "")
+            self.safe_type(self._phone_number_input, value)
+            current_digits = "".join(char for char in self._phone_number_input.first.input_value() if char.isdigit())
+            if expected_digits and expected_digits in current_digits:
+                return self
+            self.root.page.wait_for_timeout(200)
         return self
 
     def _enter_email(self, value: str) -> Self:
-        self.safe_type(self._email_input, value)
+        normalized_value = value.strip().casefold()
+        for _ in range(3):
+            self.safe_fill(self._email_input, "")
+            self.safe_type(self._email_input, value)
+            current_value = self._email_input.first.input_value().strip().casefold()
+            if normalized_value and current_value == normalized_value:
+                return self
+            self.root.page.wait_for_timeout(200)
         return self
 
     def _click_cancel(self) -> None:
