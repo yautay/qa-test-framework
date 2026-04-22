@@ -9,4 +9,4 @@ cp "$REPO_ROOT/tools/hooks/pre-commit-aso.sh" "$HOOKS_DIR/pre-commit"
 chmod +x "$HOOKS_DIR/pre-commit"
 
 echo "Installed local pre-commit hook: $HOOKS_DIR/pre-commit"
-echo "It runs: make test-aso"
+echo "It runs: python -m pytest -m aso -q"

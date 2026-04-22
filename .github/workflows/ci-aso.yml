@@ -27,22 +27,22 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
-          cache: pip
+          python-version: "3.13.2"
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e ".[dev]"
+          python -m pip install --upgrade uv
+          uv lock --check --python 3.13.2 --no-managed-python
+          uv sync --frozen --python 3.13.2 --no-managed-python --extra dev
 
       - name: Verify pytest discovery
-        run: make verify-discovery
+        run: .venv/bin/python framework/pytest_discovery_guard.py
 
       - name: Verify scenarios
-        run: make verify-scenarios
+        run: .venv/bin/python tools/scenarios/verify_scenarios.py
 
       - name: Run ASO tests
-        run: make test-aso
+        run: .venv/bin/python -m pytest -m aso -q
 
       - name: Upload artifacts on failure
         if: failure()

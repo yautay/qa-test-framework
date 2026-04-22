@@ -72,11 +72,12 @@ def _build_app_info_payload(context: ReportServerContext) -> dict[str, Any]:
         "commit": _runtime_commit(context.repo_root),
     }
     build_info = _read_ui_build_info(context.ui_dist_dir)
+    ui_build_version = build_info.get("version") or build_info.get("ui_src_version") or runtime["version"]
     ui_build = {
-        "version": build_info.get("version", "unknown"),
+        "version": ui_build_version,
         "codename": build_info.get("codename", codename),
         "ui_src_version": build_info.get("ui_src_version", "unknown"),
-        "commit": build_info.get("commit", "unknown"),
+        "commit": build_info.get("commit", runtime["commit"]),
         "built_at": build_info.get("built_at", "unknown"),
     }
     ticket = str(getattr(settings_cli, "nn_ticket", "") or "").strip()

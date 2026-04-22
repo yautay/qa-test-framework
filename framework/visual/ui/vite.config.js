@@ -1,6 +1,5 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
-import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -29,34 +28,15 @@ function readUiSrcVersion() {
   }
 }
 
-function runGit(args) {
-  try {
-    return execSync(`git ${args.join(" ")}`, {
-      cwd: repoRootDir,
-      stdio: ["ignore", "pipe", "ignore"],
-      encoding: "utf-8",
-    }).trim();
-  } catch (_error) {
-    return "";
-  }
-}
-
-function resolveVersionFromGit() {
-  const raw = runGit(["describe", "--tags", "--always", "--dirty"]);
-  if (!raw) return "unknown";
-  return raw.startsWith("v") ? raw.slice(1) : raw;
-}
-
 function buildInfoPlugin() {
   return {
     name: "netqawner-build-info",
     closeBundle() {
+      const uiSrcVersion = readUiSrcVersion();
       const payload = {
-        version: resolveVersionFromGit(),
+        version: uiSrcVersion,
         codename: readCodenameFromPyproject(),
-        ui_src_version: readUiSrcVersion(),
-        commit: runGit(["rev-parse", "--short", "HEAD"]) || "unknown",
-        built_at: new Date().toISOString(),
+        ui_src_version: uiSrcVersion,
       };
       const outputPath = resolve(uiRootDir, "dist", "build-info.json");
       writeFileSync(outputPath, `${JSON.stringify(payload, null, 2)}\n`, "utf-8");

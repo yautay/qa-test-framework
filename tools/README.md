@@ -5,8 +5,8 @@ This directory contains helper scripts used by local developers, testers, and CI
 ## Structure
 
 - `tools/windows/`
-  - Windows setup and cleanup launchers/scripts.
-  - `Setup_Windows.cmd`, `setup_windows.ps1`
+  - Windows setup and runtime launchers/scripts.
+  - `Setup_Windows.cmd`, `bootstrap.ps1`, `run.ps1`, `doctor.ps1`
   - `Cleanup_Windows.cmd`, `cleanup_windows.ps1`
 - `tools/scenarios/`
   - Scenario catalog tooling.
@@ -36,7 +36,6 @@ This directory contains helper scripts used by local developers, testers, and CI
 make verify-scenarios
 make report-serve
 make clean-artifacts
-make clean-visual-baselines
 make clean
 make clean-artifacts-older DAYS=14
 make test-api
@@ -53,4 +52,4 @@ make debug-minio-down
 - Visual baseline promotion/versioning runbook: `tools/visual/README.md`.
 - Baseline operations in `tools/visual/baseline_ops/` are split by responsibility (copy, lifecycle, listing, scan, models) with `versioning.py` as compatibility re-export.
 - Visual report server: `python -m framework.reporting.report_server` (hero page + run listing).
-- Windows launchers/scripts live in `tools/windows/`.
+- Windows launchers/scripts live in `tools/windows/`; testers should use `bootstrap.ps1`, `run.ps1`, and `doctor.ps1`.
