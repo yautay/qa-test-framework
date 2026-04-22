@@ -49,6 +49,36 @@ class DeliveryCourierReceiverData(DeliveryObjects):
     is_company: bool = False
     delivery_type: DeliveryTypes = DeliveryTypes.COURIER_SERVICE
 
+@dataclass
+class DeliveryStorehouseReceiverData(DeliveryObjects):
+    postal_code: str | None = None
+    city: str | None = None
+    storehouse_name: str | None = None
+    storehouse_data_id: str | None = None
+    choose_random_storehouse: bool = True
+    delivery_type: DeliveryTypes = DeliveryTypes.STORE_PICKUP
+
+
+@dataclass
+class DeliveryDhlPopReceiverData(DeliveryObjects):
+    postal_code: str | None = None
+    city: str | None = None
+    pop_name: str | None = None
+    pop_data_id: str | None = None
+    choose_random_pop_point: bool = True
+    delivery_type: DeliveryTypes = DeliveryTypes.DHL_POP
+
+
+@dataclass
+class DeliveryInpostReceiverData(DeliveryObjects):
+    postal_code: str | None = None
+    city: str | None = None
+    locker_code: str | None = None
+    inpost_point_name: str | None = None
+    inpost_point_data_id: str | None = None
+    choose_random_inpost_point: bool = True
+    delivery_type: DeliveryTypes = DeliveryTypes.INPOST
+
 
 class PurchaserObjects:
     pass

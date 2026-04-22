@@ -20,7 +20,10 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkout_data_models import
     CheckoutPaymentData,
     CheckoutPurchaserData,
     DeliveryCourierReceiverData,
+    DeliveryDhlPopReceiverData,
+    DeliveryInpostReceiverData,
     DeliveryObjects,
+    DeliveryStorehouseReceiverData,
     DeliveryTypes,
     PaymentObjects,
     PaymentRequiredConsent,
@@ -64,10 +67,96 @@ class CartAndCheckoutWrappers:
         match delivery_type:
             case DeliveryTypes.STORE_PICKUP:
                 checkout.content.delivery_type.click_storehouse_tile()
+                checkout.content.delivery_object.wait_visible().click_delivery_object_tile()
+                if not isinstance(delivery_objects, DeliveryStorehouseReceiverData):
+                    raise TypeError(
+                        "Dla STORE_PICKUP argument delivery_objects musi być typu DeliveryStorehouseReceiverData."
+                    )
+
+                search_value = next(
+                    (
+                        value.strip()
+                        for value in (delivery_objects.postal_code, delivery_objects.city)
+                        if value and value.strip()
+                    ),
+                    "",
+                )
+                if not search_value:
+                    raise ValueError("Dla STORE_PICKUP wymagany jest kod pocztowy lub miasto do wyszukiwania salonu.")
+
+                storehouse_overlay = Overlays(self.__page).checkout_storehouse_receiver.wait_visible()
+                storehouse_overlay.search_storehouses(search_value)
+                if delivery_objects.storehouse_data_id:
+                    storehouse_overlay.choose_storehouse_by_data_id(delivery_objects.storehouse_data_id)
+                elif delivery_objects.storehouse_name:
+                    storehouse_overlay.choose_storehouse_by_name(delivery_objects.storehouse_name)
+                elif delivery_objects.choose_random_storehouse:
+                    storehouse_overlay.choose_random_storehouse()
+                else:
+                    raise ValueError(
+                        "Dla STORE_PICKUP należy wskazać storehouse_data_id, storehouse_name lub wybór losowy salonu."
+                    )
+
             case DeliveryTypes.DHL_POP:
                 checkout.content.delivery_type.click_dhl_tile()
+                checkout.content.delivery_object.wait_visible().click_delivery_object_tile()
+                if not isinstance(delivery_objects, DeliveryDhlPopReceiverData):
+                    raise TypeError("Dla DHL_POP argument delivery_objects musi być typu DeliveryDhlPopReceiverData.")
+
+                search_value = next(
+                    (
+                        value.strip()
+                        for value in (delivery_objects.postal_code, delivery_objects.city)
+                        if value and value.strip()
+                    ),
+                    "",
+                )
+                if not search_value:
+                    raise ValueError("Dla DHL_POP wymagany jest kod pocztowy lub miasto do wyszukiwania punktu.")
+
+                dhl_pop_overlay = Overlays(self.__page).checkout_dhl_pop_receiver.wait_visible()
+                dhl_pop_overlay.search_pop_points(search_value)
+                if delivery_objects.pop_data_id:
+                    dhl_pop_overlay.choose_pop_point_by_data_id(delivery_objects.pop_data_id)
+                elif delivery_objects.pop_name:
+                    dhl_pop_overlay.choose_pop_point_by_name(delivery_objects.pop_name)
+                elif delivery_objects.choose_random_pop_point:
+                    dhl_pop_overlay.choose_random_pop_point()
+                else:
+                    raise ValueError(
+                        "Dla DHL_POP należy wskazać pop_data_id, pop_name lub wybór losowy punktu."
+                    )
+
             case DeliveryTypes.INPOST:
                 checkout.content.delivery_type.click_inpost_tile()
+                checkout.content.delivery_object.wait_visible().click_delivery_object_tile()
+                if not isinstance(delivery_objects, DeliveryInpostReceiverData):
+                    raise TypeError("Dla INPOST argument delivery_objects musi być typu DeliveryInpostReceiverData.")
+
+                search_value = next(
+                    (
+                        value.strip()
+                        for value in (delivery_objects.locker_code, delivery_objects.postal_code, delivery_objects.city)
+                        if value and value.strip()
+                    ),
+                    "",
+                )
+                if not search_value:
+                    raise ValueError("Dla INPOST wymagany jest kod paczkomatu, kod pocztowy lub miasto.")
+
+                inpost_overlay = Overlays(self.__page).checkout_inpost_receiver.wait_visible()
+                inpost_overlay.search_inpost_points(search_value)
+                if delivery_objects.inpost_point_data_id:
+                    inpost_overlay.choose_inpost_point_by_data_id(delivery_objects.inpost_point_data_id)
+                elif delivery_objects.inpost_point_name:
+                    inpost_overlay.choose_inpost_point_by_name(delivery_objects.inpost_point_name)
+                elif delivery_objects.choose_random_inpost_point:
+                    inpost_overlay.choose_random_inpost_point()
+                else:
+                    raise ValueError(
+                        "Dla INPOST należy wskazać inpost_point_data_id, inpost_point_name lub wybór losowy punktu."
+                    )
+
             case DeliveryTypes.COURIER_SERVICE:
                 checkout.content.delivery_type.click_courier_tile()
                 checkout.content.delivery_object.wait_visible().click_delivery_object_tile()

@@ -7,6 +7,9 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkout_data_models import
     CheckoutPaymentData,
     CheckoutPurchaserData,
     DeliveryCourierReceiverData,
+    DeliveryDhlPopReceiverData,
+    DeliveryInpostReceiverData,
+    DeliveryStorehouseReceiverData,
     DeliveryTypes,
     PaymentMethods,
 )
@@ -57,6 +60,156 @@ def private_person_delivery_courier_receiver() -> DeliveryCourierReceiverData:
 
 def company_delivery_courier_receiver() -> DeliveryCourierReceiverData:
     return DeliveryCourierReceiverDataBuilder().with_company().build()
+
+
+class DeliveryStorehouseReceiverDataBuilder:
+    def __init__(self) -> None:
+        self._postal_code = "62-090"
+        self._city = "Poznań"
+        self._storehouse_name: str | None = None
+        self._storehouse_data_id: str | None = None
+        self._choose_random_storehouse = True
+        self._delivery_type = DeliveryTypes.STORE_PICKUP
+
+    def with_postal_code(self, postal_code: str) -> DeliveryStorehouseReceiverDataBuilder:
+        self._postal_code = postal_code
+        return self
+
+    def with_city(self, city: str) -> DeliveryStorehouseReceiverDataBuilder:
+        self._city = city
+        return self
+
+    def with_storehouse_name(self, storehouse_name: str) -> DeliveryStorehouseReceiverDataBuilder:
+        self._storehouse_name = storehouse_name
+        self._storehouse_data_id = None
+        self._choose_random_storehouse = False
+        return self
+
+    def with_storehouse_data_id(self, storehouse_data_id: str) -> DeliveryStorehouseReceiverDataBuilder:
+        self._storehouse_data_id = storehouse_data_id
+        self._storehouse_name = None
+        self._choose_random_storehouse = False
+        return self
+
+    def with_random_storehouse(self, enabled: bool = True) -> DeliveryStorehouseReceiverDataBuilder:
+        self._choose_random_storehouse = enabled
+        return self
+
+    def build(self) -> DeliveryStorehouseReceiverData:
+        return DeliveryStorehouseReceiverData(
+            postal_code=self._postal_code,
+            city=self._city,
+            storehouse_name=self._storehouse_name,
+            storehouse_data_id=self._storehouse_data_id,
+            choose_random_storehouse=self._choose_random_storehouse,
+            delivery_type=self._delivery_type,
+        )
+
+
+def private_person_delivery_storehouse_receiver() -> DeliveryStorehouseReceiverData:
+    return DeliveryStorehouseReceiverDataBuilder().build()
+
+
+class DeliveryDhlPopReceiverDataBuilder:
+    def __init__(self) -> None:
+        self._postal_code = "62-090"
+        self._city = "Poznań"
+        self._pop_name: str | None = None
+        self._pop_data_id: str | None = None
+        self._choose_random_pop_point = True
+        self._delivery_type = DeliveryTypes.DHL_POP
+
+    def with_postal_code(self, postal_code: str) -> DeliveryDhlPopReceiverDataBuilder:
+        self._postal_code = postal_code
+        return self
+
+    def with_city(self, city: str) -> DeliveryDhlPopReceiverDataBuilder:
+        self._city = city
+        return self
+
+    def with_pop_name(self, pop_name: str) -> DeliveryDhlPopReceiverDataBuilder:
+        self._pop_name = pop_name
+        self._pop_data_id = None
+        self._choose_random_pop_point = False
+        return self
+
+    def with_pop_data_id(self, pop_data_id: str) -> DeliveryDhlPopReceiverDataBuilder:
+        self._pop_data_id = pop_data_id
+        self._pop_name = None
+        self._choose_random_pop_point = False
+        return self
+
+    def with_random_pop_point(self, enabled: bool = True) -> DeliveryDhlPopReceiverDataBuilder:
+        self._choose_random_pop_point = enabled
+        return self
+
+    def build(self) -> DeliveryDhlPopReceiverData:
+        return DeliveryDhlPopReceiverData(
+            postal_code=self._postal_code,
+            city=self._city,
+            pop_name=self._pop_name,
+            pop_data_id=self._pop_data_id,
+            choose_random_pop_point=self._choose_random_pop_point,
+            delivery_type=self._delivery_type,
+        )
+
+
+def private_person_delivery_dhl_pop_receiver() -> DeliveryDhlPopReceiverData:
+    return DeliveryDhlPopReceiverDataBuilder().build()
+
+
+class DeliveryInpostReceiverDataBuilder:
+    def __init__(self) -> None:
+        self._postal_code = "62-090"
+        self._city = "Poznań"
+        self._locker_code: str | None = None
+        self._inpost_point_name: str | None = None
+        self._inpost_point_data_id: str | None = None
+        self._choose_random_inpost_point = True
+        self._delivery_type = DeliveryTypes.INPOST
+
+    def with_postal_code(self, postal_code: str) -> DeliveryInpostReceiverDataBuilder:
+        self._postal_code = postal_code
+        return self
+
+    def with_city(self, city: str) -> DeliveryInpostReceiverDataBuilder:
+        self._city = city
+        return self
+
+    def with_locker_code(self, locker_code: str) -> DeliveryInpostReceiverDataBuilder:
+        self._locker_code = locker_code
+        return self
+
+    def with_point_name(self, point_name: str) -> DeliveryInpostReceiverDataBuilder:
+        self._inpost_point_name = point_name
+        self._inpost_point_data_id = None
+        self._choose_random_inpost_point = False
+        return self
+
+    def with_point_data_id(self, point_data_id: str) -> DeliveryInpostReceiverDataBuilder:
+        self._inpost_point_data_id = point_data_id
+        self._inpost_point_name = None
+        self._choose_random_inpost_point = False
+        return self
+
+    def with_random_inpost_point(self, enabled: bool = True) -> DeliveryInpostReceiverDataBuilder:
+        self._choose_random_inpost_point = enabled
+        return self
+
+    def build(self) -> DeliveryInpostReceiverData:
+        return DeliveryInpostReceiverData(
+            postal_code=self._postal_code,
+            city=self._city,
+            locker_code=self._locker_code,
+            inpost_point_name=self._inpost_point_name,
+            inpost_point_data_id=self._inpost_point_data_id,
+            choose_random_inpost_point=self._choose_random_inpost_point,
+            delivery_type=self._delivery_type,
+        )
+
+
+def private_person_delivery_inpost_receiver() -> DeliveryInpostReceiverData:
+    return DeliveryInpostReceiverDataBuilder().build()
 
 
 class CheckoutPurchaserDataBuilder:
@@ -229,16 +382,47 @@ def checkout_delivery_cases() -> list[CheckoutDeliveryCase]:
         CheckoutDeliveryCase(
             case_id="dhl_pop",
             delivery_type=DeliveryTypes.DHL_POP,
+            delivery_objects=private_person_delivery_dhl_pop_receiver(),
             payment_objects=checkout_payment_blik_required_terms(),
         ),
         CheckoutDeliveryCase(
             case_id="inpost",
             delivery_type=DeliveryTypes.INPOST,
+            delivery_objects=private_person_delivery_inpost_receiver(),
             payment_objects=checkout_payment_blik_required_terms(),
         ),
         CheckoutDeliveryCase(
             case_id="store_pickup",
             delivery_type=DeliveryTypes.STORE_PICKUP,
+            delivery_objects=private_person_delivery_storehouse_receiver(),
+            payment_objects=checkout_payment_blik_required_terms(),
+        ),
+        CheckoutDeliveryCase(
+            case_id="courier_service_company",
+            delivery_type=DeliveryTypes.COURIER_SERVICE,
+            delivery_objects=company_delivery_courier_receiver(),
+            purchaser_objects=company_checkout_purchaser(),
+            payment_objects=checkout_payment_blik_required_terms(),
+        ),
+        CheckoutDeliveryCase(
+            case_id="dhl_pop_company",
+            delivery_type=DeliveryTypes.DHL_POP,
+            delivery_objects=private_person_delivery_dhl_pop_receiver(),
+            purchaser_objects=company_checkout_purchaser(),
+            payment_objects=checkout_payment_blik_required_terms(),
+        ),
+        CheckoutDeliveryCase(
+            case_id="inpost_company",
+            delivery_type=DeliveryTypes.INPOST,
+            delivery_objects=private_person_delivery_inpost_receiver(),
+            purchaser_objects=company_checkout_purchaser(),
+            payment_objects=checkout_payment_blik_required_terms(),
+        ),
+        CheckoutDeliveryCase(
+            case_id="store_pickup_company",
+            delivery_type=DeliveryTypes.STORE_PICKUP,
+            delivery_objects=private_person_delivery_storehouse_receiver(),
+            purchaser_objects=company_checkout_purchaser(),
             payment_objects=checkout_payment_blik_required_terms(),
         ),
     ]

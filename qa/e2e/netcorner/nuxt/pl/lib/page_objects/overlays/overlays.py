@@ -5,6 +5,9 @@ from playwright.sync_api import Page
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.checkout_overlays import (
     CheckoutPurchaserOverlay,
     DeliveryCourierReceiverOverlay,
+    DeliveryDhlPopReceiverOverlay,
+    DeliveryInpostReceiverOverlay,
+    DeliveryStorehouseReceiverOverlay,
 )
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.login_overlay import LoginOverlay
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.password_recovery_overlay import (
@@ -26,6 +29,9 @@ class Overlays:
         self.__go_to_cart: ProductPageGoToCartOverlay | None = None
         self.__promotions: ProductPagePromotionsOverlay | None = None
         self.__checkout_courier_receiver: DeliveryCourierReceiverOverlay | None = None
+        self.__checkout_dhl_pop_receiver: DeliveryDhlPopReceiverOverlay | None = None
+        self.__checkout_inpost_receiver: DeliveryInpostReceiverOverlay | None = None
+        self.__checkout_storehouse_receiver: DeliveryStorehouseReceiverOverlay | None = None
         self.__checkout_purchaser: CheckoutPurchaserOverlay | None = None
 
     @property
@@ -69,3 +75,21 @@ class Overlays:
         if self.__checkout_purchaser is None:
             self.__checkout_purchaser = CheckoutPurchaserOverlay(self.page)
         return self.__checkout_purchaser
+
+    @property
+    def checkout_dhl_pop_receiver(self) -> DeliveryDhlPopReceiverOverlay:
+        if self.__checkout_dhl_pop_receiver is None:
+            self.__checkout_dhl_pop_receiver = DeliveryDhlPopReceiverOverlay(self.page)
+        return self.__checkout_dhl_pop_receiver
+
+    @property
+    def checkout_inpost_receiver(self) -> DeliveryInpostReceiverOverlay:
+        if self.__checkout_inpost_receiver is None:
+            self.__checkout_inpost_receiver = DeliveryInpostReceiverOverlay(self.page)
+        return self.__checkout_inpost_receiver
+
+    @property
+    def checkout_storehouse_receiver(self) -> DeliveryStorehouseReceiverOverlay:
+        if self.__checkout_storehouse_receiver is None:
+            self.__checkout_storehouse_receiver = DeliveryStorehouseReceiverOverlay(self.page)
+        return self.__checkout_storehouse_receiver
