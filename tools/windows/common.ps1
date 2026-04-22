@@ -88,12 +88,16 @@ function Resolve-UvExe {
 
 function Install-Uv {
     $winget = Get-Command winget -ErrorAction SilentlyContinue
-    if ($winget) {
-        & $winget.Source install --id astral-sh.uv -e --accept-package-agreements --accept-source-agreements
-        Refresh-SessionPath
-        $uvExe = Resolve-UvExe
-        if ($uvExe) {
-            return $uvExe
+    if ($winget -and $winget.Source) {
+        $wingetResult = & $winget.Source install --id astral-sh.uv -e --accept-package-agreements --accept-source-agreements 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "winget install failed (exit $LASTEXITCODE), falling back to web installer" -ForegroundColor Yellow
+        } else {
+            Refresh-SessionPath
+            $uvExe = Resolve-UvExe
+            if ($uvExe) {
+                return $uvExe
+            }
         }
     }
 
