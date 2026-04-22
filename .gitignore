@@ -22,6 +22,7 @@ logs/*
 /tools/InsertsGenerator/komercja/nexterio/data/provision*
 /tools/InsertsGenerator/komputronik/data/
 /.venv/
+/*.egg-info/
 /framework/visual/ui/node_modules/
 /framework/visual/ui/coverage/
 /qa/visual/baselines/

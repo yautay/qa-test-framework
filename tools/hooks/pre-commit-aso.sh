@@ -6,13 +6,20 @@ cd "$REPO_ROOT"
 
 if [[ -x ".venv/bin/python" ]]; then
   PYTHON_BIN=".venv/bin/python"
+elif [[ -x ".venv/Scripts/python.exe" ]]; then
+  PYTHON_BIN=".venv/Scripts/python.exe"
+elif command -v python3 >/dev/null 2>&1; then
+  PYTHON_BIN="$(command -v python3)"
+elif command -v python >/dev/null 2>&1; then
+  PYTHON_BIN="$(command -v python)"
 else
-  PYTHON_BIN="python3"
+  echo "[pre-commit] Python not found. Run tools/windows/bootstrap.ps1 or install project dependencies first."
+  exit 1
 fi
 
-echo "[pre-commit] Running ASO checks..."
+echo "[pre-commit] Running ASO checks with $PYTHON_BIN..."
 set +e
-OUTPUT=$(make test-aso 2>&1)
+OUTPUT=$("$PYTHON_BIN" -m pytest -m aso -q 2>&1)
 STATUS=$?
 set -e
 

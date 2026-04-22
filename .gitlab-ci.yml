@@ -12,28 +12,30 @@ workflow:
   - if: '$CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "netquarner"'
 
 .python_job:
-  image: python:3.13-slim
+  image: python:3.13.2-slim
   stage: test
   cache:
     key: "pip-${CI_COMMIT_REF_SLUG}"
     paths:
       - .cache/pip/
   before_script:
-    - python -m pip install --upgrade pip
-    - python -m pip install -e ".[dev]"
+    - python -m pip install --upgrade uv
+    - uv lock --check --python 3.13.2 --no-managed-python
+    - uv sync --frozen --python 3.13.2 --no-managed-python --extra dev
   rules: *ci_rules
 
 lint_format_typecheck:
   extends: .python_job
   script:
-    - python -m ruff check framework tools qa/aso
-    - python -m black --check framework tools qa/aso
-    - python -m mypy framework
+    - .venv/bin/python -m ruff check framework tools qa/aso
+    - .venv/bin/python -m black --check framework tools qa/aso
+    - .venv/bin/python -m mypy framework
 
 security:
   extends: .python_job
   script:
-    - make security
+    - .venv/bin/python -m bandit -r -x qa --skip B101,B105,B106,B110,B112,B404,B603,B607,B311 framework tools
+    - .venv/bin/python -m pip_audit
 
 aso_tests:
   extends: .python_job
@@ -45,9 +47,9 @@ aso_tests:
     PYTEST_HTML_ENABLED: "0"
     RECORD_VIDEO: "0"
   script:
-    - make verify-discovery
-    - make verify-scenarios
-    - make test-aso
+    - .venv/bin/python framework/pytest_discovery_guard.py
+    - .venv/bin/python tools/scenarios/verify_scenarios.py
+    - .venv/bin/python -m pytest -m aso -q
   artifacts:
     when: on_failure
     expire_in: 7 days
@@ -67,3 +69,4 @@ frontend_ui:
     - npm ci
     - npm run test:unit
     - npm run build:fast
+    - git diff --exit-code -- dist

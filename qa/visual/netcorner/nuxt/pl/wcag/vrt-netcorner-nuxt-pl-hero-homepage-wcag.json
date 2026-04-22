@@ -1,0 +1,34 @@
+[
+  {
+    "id": "vrt-netcorner-nuxt-pl-hero-homepage-wcag",
+    "name": "Visual home",
+    "target_url": "/",
+    "suite_id": "netcorner/nuxt/pl/wcag",
+    "compare_mode": "hybrid",
+    "capture": {
+      "type": "page",
+      "full_page": true
+    },
+    "mask": {
+      "selectors": [
+        "div[data-name='heroSlider']",
+        "div[data-name='cardProduct']",
+        "a[data-name='articleItem']",
+        "div[data-name='cardPhoto']",
+        "div[id='offer-slider']",
+        "a[data-name='DailyDealWidget']"
+      ]
+    },
+    "thresholds": {
+      "pixel_max": 0.001,
+      "lpips_max": 0.001,
+      "dists_max": 0.001
+    },
+    "cookies": [
+      {
+        "name": "kt-color-mode",
+        "value": "yellow-black"
+      }
+    ]
+  }
+]
