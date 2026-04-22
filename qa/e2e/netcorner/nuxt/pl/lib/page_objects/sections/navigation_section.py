@@ -12,6 +12,7 @@ class NavigationSection(NavigationComponent):
     def __init__(self, page: Page):
         super().__init__(page)
 
+
 class CheckoutNavigationSection(CheckoutNavigationComponent):
     def __init__(self, page: Page):
         super().__init__(page)

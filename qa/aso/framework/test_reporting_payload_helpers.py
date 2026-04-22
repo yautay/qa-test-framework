@@ -4,6 +4,7 @@ import json
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any, cast
 
 import pytest
 
@@ -170,7 +171,7 @@ def test_capture_target_git_info_accepts_commit_hash_camel_case(monkeypatch: pyt
     class _Response:
         status_code = 200
         url = "https://example.test/git-info"
-        headers = {}
+        headers: dict[str, str] = {}
         text = "{}"
 
         @staticmethod
@@ -200,7 +201,7 @@ def test_refresh_environment_probe_updates_target_git_info_from_resolved_base_ur
     class _Response:
         status_code = 200
         url = "https://komputronik-kokoko.gamma.netcorner.pl/git-info"
-        headers = {}
+        headers: dict[str, str] = {}
         text = "{}"
 
         @staticmethod
@@ -247,11 +248,12 @@ def test_refresh_environment_probe_updates_target_git_info_from_resolved_base_ur
     )
     item = SimpleNamespace(nodeid="qa/e2e/netcorner/nuxt/pl/tests/test_dummy.py::test_case")
 
-    _refresh_environment_probe_metadata(config, [item])
+    _refresh_environment_probe_metadata(config, [cast(pytest.Item, item)])
 
-    assert config._run_metadata["target_git_info"]["frontend"]["status"] == "ok"
-    assert config._run_metadata["target_git_info"]["frontend"]["branch"] == "feature/demo"
-    assert config._run_metadata["target_git_info"]["frontend"]["commit"] == "abc1234"
+    refreshed_metadata = cast(dict[str, Any], config._run_metadata)
+    assert refreshed_metadata["target_git_info"]["frontend"]["status"] == "ok"
+    assert refreshed_metadata["target_git_info"]["frontend"]["branch"] == "feature/demo"
+    assert refreshed_metadata["target_git_info"]["frontend"]["commit"] == "abc1234"
 
 
 def test_publish_report_metadata_writes_allure_environment_properties(tmp_path: Path) -> None:

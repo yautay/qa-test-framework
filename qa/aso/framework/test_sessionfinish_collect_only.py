@@ -4,6 +4,7 @@ import json
 import time
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any, cast
 
 import pytest
 
@@ -37,18 +38,29 @@ def test_pytest_sessionfinish_collect_only_skips_timing_snapshots_and_regression
     client = _Client()
 
     called: dict[str, int] = {"save": 0, "load": 0, "detect": 0}
+
+    def _mark_load(*_args, **_kwargs) -> dict[str, float]:
+        called["load"] += 1
+        return {}
+
+    def _mark_detect(*_args, **_kwargs) -> list[object]:
+        called["detect"] += 1
+        return []
+
     monkeypatch.setattr(
-        runtime_conftest, "save_run_timings", lambda *_args, **_kwargs: called.__setitem__("save", called["save"] + 1)
+        runtime_conftest,
+        "save_run_timings",
+        lambda *_args, **_kwargs: called.__setitem__("save", called["save"] + 1),
     )
     monkeypatch.setattr(
         runtime_conftest,
         "load_previous_timings",
-        lambda *_args, **_kwargs: called.__setitem__("load", called["load"] + 1) or {},
+        _mark_load,
     )
     monkeypatch.setattr(
         runtime_conftest,
         "detect_slow_regressions",
-        lambda *_args, **_kwargs: called.__setitem__("detect", called["detect"] + 1) or [],
+        _mark_detect,
     )
 
     config = SimpleNamespace(
@@ -78,7 +90,7 @@ def test_pytest_sessionfinish_collect_only_skips_timing_snapshots_and_regression
     assert called == {"save": 0, "load": 0, "detect": 0}
     assert not (run_artifacts.logs / "test_durations.json").exists()
     assert client.run_finish_calls
-    metadata = client.run_finish_calls[0]["metadata"]
+    metadata = cast(dict[str, Any], client.run_finish_calls[0]["metadata"])
     assert metadata["target_git_info"]["frontend"]["status"] == "not_configured"
     assert metadata["target_git_info"]["backend"]["status"] == "not_configured"
     assert client.flush_calls
@@ -209,7 +221,7 @@ def test_pytest_sessionfinish_run_finish_prefers_target_git_info_from_run_metada
     runtime_conftest.pytest_sessionfinish(session, 0)
 
     assert client.run_finish_calls
-    metadata = client.run_finish_calls[0]["metadata"]
+    metadata = cast(dict[str, Any], client.run_finish_calls[0]["metadata"])
     assert metadata["target_git_info"]["frontend"]["branch"] == "feature/demo-ui"
     assert metadata["target_git_info"]["frontend"]["commit"] == "abc1234"
     assert metadata["target_git_info"]["backend"]["branch"] == "feature/demo-api"

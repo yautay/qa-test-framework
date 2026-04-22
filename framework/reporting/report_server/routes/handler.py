@@ -8,13 +8,15 @@ from http.server import BaseHTTPRequestHandler
 from typing import Any, cast
 from urllib.parse import parse_qs, urlparse
 
-from framework.integrations.jira import JiraClientError
 from loguru import logger
+
+from framework.integrations.jira import JiraClientError
 
 from ..constants import CHALLENGE_TTL_SECONDS
 from ..context import ChallengeEntry, ReportServerContext
 from ..paths import _build_dir, _resolve_actual_png, _safe_run_id_or_error
 from ..reports import _list_reports_payload, _read_build_metadata, _read_results_rows, _read_run_metadata
+from ..services.jira import send_jira_comment
 from ..services.pdf import _generate_bug_pdf
 from ..services.sync import (
     _apply_event_to_state,
@@ -23,7 +25,6 @@ from ..services.sync import (
     _row_tag_key,
     _schedule_outbox_event,
 )
-from ..services.jira import send_jira_comment
 from ..state import (
     TEXT_MAX_LENGTH,
     _acquire_lock,
@@ -651,7 +652,7 @@ def _build_handler(context: ReportServerContext):
                         logger.warning("jira_request_failed", run_id=run_id, error=str(exc))
                         self._send_json(HTTPStatus.BAD_GATEWAY, {"error": str(exc)})
                         return
-                    except Exception as exc:
+                    except Exception:
                         logger.opt(exception=True).warning("jira_request_exception", run_id=run_id)
                         self._send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": "internal server error"})
                         return

@@ -32,6 +32,7 @@ class ProductComponentsData:
     recap: ProductRecapData
     price: ProductPriceData
 
+
 class ProductRecapComponent(BaseComponent):
     ROOT_SELECTOR = "[data-name='productRecapInfo']"
 

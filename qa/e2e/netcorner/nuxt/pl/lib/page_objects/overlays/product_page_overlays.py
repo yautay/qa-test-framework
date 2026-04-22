@@ -48,9 +48,7 @@ class ProductPagePromotionsOverlay(BaseComponent):
         )
 
         self.__promotion_names = self.find(".swiper-slide-visible .pagination-text")
-        self.__button_buy_only_product = self.find(
-            "role=button[name='Nie, dziękuję - chcę kupić tylko produkt']"
-        )
+        self.__button_buy_only_product = self.find("role=button[name='Nie, dziękuję - chcę kupić tylko produkt']")
 
     def get_proposed_promotions(self, overlay_timeout: int = 7_500) -> list[str]:
         if not _wait_until_visible(self, overlay_timeout):

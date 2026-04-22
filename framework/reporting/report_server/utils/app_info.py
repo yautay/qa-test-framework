@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import json
-import settings
-import settings_cli
 import subprocess
 import tomllib
 from pathlib import Path
 from typing import Any
+
+import settings
+import settings_cli
 
 from ..context import ReportServerContext
 

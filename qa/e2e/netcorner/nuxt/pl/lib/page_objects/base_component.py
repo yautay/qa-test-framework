@@ -17,4 +17,5 @@ class BaseComponent(FrameworkBaseComponent):
         except Exception:
             return root.first
 
+
 __all__ = ["BaseComponent"]

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import cast
+
 from playwright.sync_api import Page, expect
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_page import BasePage, LoadState
@@ -53,4 +55,4 @@ class CartPage(BasePage):
             expect(shipping_method_picker).to_be_visible(timeout=10_000)
             return checkout_page.wait_loaded()
         except AssertionError:
-            return checkout_page.open().wait_loaded()
+            return cast(CheckoutPage, checkout_page.open()).wait_loaded()

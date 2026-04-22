@@ -23,7 +23,7 @@ class SelectProductWrappers:
         self.__page = page
         self.__context = context
         self.__runtime_env = runtime_env
-        self.__data = []
+        self.__data: list[SelectProductData] = []
 
     def select_test_product(
         self,
@@ -56,9 +56,7 @@ class SelectProductWrappers:
         with step_context(f"Szukam produktu o statusie: {expected_status.status}"):
             result = listing_page.open_first_product_by_shipping_status(expected_status)
             if result is None:
-                raise AssertionError(
-                    f"Nie znaleziono produktu o statusie dostępności: '{expected_status.status}'."
-                )
+                raise AssertionError(f"Nie znaleziono produktu o statusie dostępności: '{expected_status.status}'.")
 
             selected_product_data, product_page = result
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 from playwright.sync_api import Page
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_page import BasePage, LoadState
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages import my_account_page
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import RegisterContentSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.footer_section import FooterSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.header_section import HeaderSection
@@ -55,8 +56,6 @@ class RegisterPage(BasePage):
         self.content.register_form.go_to_login()
         return self.overlays.login.wait_visible()
 
-    def open_account_page(self) -> MyAccountPage:
-        from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.my_account_page import MyAccountPage
-
+    def open_account_page(self) -> my_account_page.MyAccountPage:
         self.header.actions.open_account()
-        return MyAccountPage(self.page, self.base_url).wait_loaded()
+        return my_account_page.MyAccountPage(self.page, self.base_url).wait_loaded()

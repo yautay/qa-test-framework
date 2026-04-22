@@ -123,9 +123,7 @@ class CartAndCheckoutWrappers:
                 elif delivery_objects.choose_random_pop_point:
                     dhl_pop_overlay.choose_random_pop_point()
                 else:
-                    raise ValueError(
-                        "Dla DHL_POP należy wskazać pop_data_id, pop_name lub wybór losowy punktu."
-                    )
+                    raise ValueError("Dla DHL_POP należy wskazać pop_data_id, pop_name lub wybór losowy punktu.")
 
             case DeliveryTypes.INPOST:
                 checkout.content.delivery_type.click_inpost_tile()
@@ -180,9 +178,7 @@ class CartAndCheckoutWrappers:
 
         if purchaser_objects is not None:
             if not isinstance(purchaser_objects, CheckoutPurchaserData):
-                raise TypeError(
-                    "Argument purchaser_objects musi być typu CheckoutPurchaserData."
-                )
+                raise TypeError("Argument purchaser_objects musi być typu CheckoutPurchaserData.")
 
             checkout.content.purchaser.wait_visible().click_add_data_tile()
             purchaser_overlay = Overlays(self.__page).checkout_purchaser.wait_visible()
@@ -195,9 +191,7 @@ class CartAndCheckoutWrappers:
 
         if payment_objects is not None:
             if not isinstance(payment_objects, CheckoutPaymentData):
-                raise TypeError(
-                    "Argument payment_objects musi być typu CheckoutPaymentData."
-                )
+                raise TypeError("Argument payment_objects musi być typu CheckoutPaymentData.")
 
             payment_methods_component = checkout.content.payment_methods.wait_visible()
             available_payment_methods = payment_methods_component.get_available_payment_methods()

@@ -772,8 +772,11 @@ def _refresh_environment_probe_metadata(config: pytest.Config, items: list[pytes
 
     if metadata_path is not None:
         persisted_metadata = _read_run_metadata_file(metadata_path)
-        persisted_probe = persisted_metadata.get("environment_probe") if isinstance(persisted_metadata, dict) else None
-        if _probe_is_resolved(persisted_probe):
+        if isinstance(persisted_metadata, dict):
+            persisted_probe = persisted_metadata.get("environment_probe")
+        else:
+            persisted_probe = None
+        if isinstance(persisted_metadata, dict) and _probe_is_resolved(persisted_probe):
             config._run_metadata = persisted_metadata
             config._environment_probe_resolved = True
             metadata = persisted_metadata

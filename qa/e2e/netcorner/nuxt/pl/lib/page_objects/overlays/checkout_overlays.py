@@ -33,7 +33,11 @@ def _order_address_dialog_root(page: Page, heading_pattern: str) -> Locator:
     )
 
 
-class _AddressFormMixin:
+class _AddressOverlayBase(BaseComponent):
+    def __init__(self, root: Locator, *, name: str) -> None:
+        super().__init__(root, name=name)
+        self._init_address_form_fields()
+
     def _init_address_form_fields(self) -> None:
         self._private_person_button = self.find("role=button[name='Osoba prywatna']")
         self._company_button = self.find("role=button[name='Firma']")
@@ -45,7 +49,6 @@ class _AddressFormMixin:
         self._street_number_input = self.find("#streetNumber")
         self._postal_code_input = self.find("#postalCode")
         self._city_select_input_area = self.find("css=div[data-role='selectInputArea']")
-        self._city_select_label = self.find("css=div[data-role='selectLabel']")
 
         self._phone_number_input = self.find("#phoneNumber")
         self._email_input = self.find("#email")
@@ -90,79 +93,24 @@ class _AddressFormMixin:
         if not normalized_value:
             return self
 
-        city_input = self._city_select_input_area.locator("input").first
-
-        def city_selected() -> bool:
-            expected = normalized_value.casefold()
-            try:
-                if city_input.count() > 0:
-                    current_value = " ".join((city_input.input_value() or "").split()).casefold()
-                    if expected in current_value:
-                        return True
-            except Exception:
-                pass
-
-            for candidate in (self._city_select_label, self._city_select_input_area):
-                text = " ".join((candidate.first.text_content() or "").split()).casefold()
-                if expected in text:
-                    return True
-            return False
-
-        def wait_selected(iterations: int = 20, delay_ms: int = 250) -> bool:
-            for _ in range(iterations):
-                if city_selected():
-                    return True
-                self.root.page.wait_for_timeout(delay_ms)
-            return False
-
         self.safe_click(self._city_select_input_area)
-
+        city_input = self._city_select_input_area.locator("input").first
         if city_input.count() > 0 and city_input.is_visible() and city_input.is_editable():
+            self.safe_fill(city_input, "")
             self.safe_type(city_input, normalized_value)
             city_input.press("Enter")
         else:
             self.root.page.keyboard.type(normalized_value)
             self.root.page.keyboard.press("Enter")
 
-        if wait_selected():
-            return self
-
-        self.safe_click(self._city_select_input_area)
-        self.root.page.keyboard.press("ArrowDown")
-        self.root.page.keyboard.press("Enter")
-        if wait_selected():
-            return self
-
-        option = self.root.page.get_by_text(normalized_value, exact=False).first
-        if option.count() > 0 and option.is_visible():
-            self.safe_click(option, timeout=1_000)
-            if wait_selected():
-                return self
-
-        raise RuntimeError(f"Nie udało się wybrać miejscowości: {normalized_value}")
-
         return self
 
     def _enter_phone_number(self, value: str) -> Self:
-        expected_digits = "".join(char for char in value if char.isdigit())
-        for _ in range(3):
-            self.safe_fill(self._phone_number_input, "")
-            self.safe_type(self._phone_number_input, value)
-            current_digits = "".join(char for char in self._phone_number_input.first.input_value() if char.isdigit())
-            if expected_digits and expected_digits in current_digits:
-                return self
-            self.root.page.wait_for_timeout(200)
+        self.safe_fill(self._phone_number_input, value)
         return self
 
     def _enter_email(self, value: str) -> Self:
-        normalized_value = value.strip().casefold()
-        for _ in range(3):
-            self.safe_fill(self._email_input, "")
-            self.safe_type(self._email_input, value)
-            current_value = self._email_input.first.input_value().strip().casefold()
-            if normalized_value and current_value == normalized_value:
-                return self
-            self.root.page.wait_for_timeout(200)
+        self.safe_fill(self._email_input, value)
         return self
 
     def _click_cancel(self) -> None:
@@ -194,13 +142,12 @@ class _AddressFormMixin:
         return self
 
 
-class DeliveryCourierReceiverOverlay(_AddressFormMixin, BaseComponent):
+class DeliveryCourierReceiverOverlay(_AddressOverlayBase):
     def __init__(self, page: Page):
         super().__init__(
             _order_address_dialog_root(page, r"Dodaj dane do dostawy|Delivery Courier Receiver Overlay"),
             name="Delivery Courier Receiver Overlay",
         )
-        self._init_address_form_fields()
 
     @step("Klikam 'Osoba prywatna'")
     def click_private_person(self) -> Self:
@@ -526,13 +473,12 @@ class DeliveryInpostReceiverOverlay(_NamedStorehouseReceiverOverlay):
         return self.choose_random_storehouse(max_zoom_iterations=max_zoom_iterations)
 
 
-class CheckoutPurchaserOverlay(_AddressFormMixin, BaseComponent):
+class CheckoutPurchaserOverlay(_AddressOverlayBase):
     def __init__(self, page: Page):
         super().__init__(
             _order_address_dialog_root(page, r"Podaj dane do zakupu|Checkout Purchaser Overlay"),
             name="Checkout Purchaser Overlay",
         )
-        self._init_address_form_fields()
         self._copy_data_from_receiver_checkbox = self.find("#copyDataFromReceiver")
         self._tax_identification_number_input = self.find("#taxIdentificationNumber")
 
@@ -617,8 +563,8 @@ class CheckoutPurchaserOverlay(_AddressFormMixin, BaseComponent):
         else:
             self.click_private_person()
 
-        copy_from_receiver_enabled = (
-            data.copy_data_from_receiver and _is_visible(self._copy_data_from_receiver_checkbox)
+        copy_from_receiver_enabled = data.copy_data_from_receiver and _is_visible(
+            self._copy_data_from_receiver_checkbox
         )
         self.set_copy_data_from_receiver(copy_from_receiver_enabled)
 

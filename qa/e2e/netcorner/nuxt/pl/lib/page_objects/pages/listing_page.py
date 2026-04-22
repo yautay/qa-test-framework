@@ -4,6 +4,7 @@ from playwright.sync_api import Page
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_page import BasePage, LoadState
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.listing_components import ListingProductData
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages import my_account_page, product_page
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import ListingContentSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.footer_section import FooterSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.header_section import HeaderSection
@@ -55,24 +56,20 @@ class ListingPage(BasePage):
         self.header.actions.open_login()
         return self.overlays.login.wait_visible()
 
-    def open_account_page(self) -> MyAccountPage:
-        from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.my_account_page import MyAccountPage
-
+    def open_account_page(self) -> my_account_page.MyAccountPage:
         self.header.actions.open_account()
-        return MyAccountPage(self.page, self.base_url).wait_loaded()
+        return my_account_page.MyAccountPage(self.page, self.base_url).wait_loaded()
 
     def open_first_product_by_shipping_status(
         self,
         shipping_status: AvailabilityStatus,
-    ) -> tuple[ListingProductData, ProductPage] | None:
-        from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.product_page import ProductPage
-
+    ) -> tuple[ListingProductData, product_page.ProductPage] | None:
         while True:
             product_tile = self.content.content.find_first_product_by_shipping_status(shipping_status)
             if product_tile is not None:
                 product_data = product_tile.get_data()
                 product_tile.click_see_more()
-                return product_data, ProductPage(self.page, self.base_url).wait_loaded()
+                return product_data, product_page.ProductPage(self.page, self.base_url).wait_loaded()
 
             if not self.content.content.go_to_next_page():
                 return None

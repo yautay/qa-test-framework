@@ -22,4 +22,3 @@ class Filter:
 @dataclass(frozen=True)
 class FilterTypes:
     PRODUCER = "producer"
-

@@ -16,7 +16,6 @@ from qa.aso.framework.visual.report_server_http_test_helpers import (
     _stop_server,
 )
 
-
 pytestmark = [pytest.mark.aso]
 
 
@@ -68,7 +67,8 @@ class _FakeJiraClient:
             raise self._create_issue_errors.pop(0)
         payload = dict(fields or {})
         self.created_issues.append(payload)
-        parent = payload.get("parent") if isinstance(payload.get("parent"), dict) else {}
+        parent_payload = payload.get("parent")
+        parent = parent_payload if isinstance(parent_payload, dict) else {}
         parent_issue_key = str(parent.get("key", "ABC-1") or "ABC-1")
         summary = str(payload.get("summary", "") or "")
         description = str(payload.get("description", "") or "")

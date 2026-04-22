@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-import tempfile
-import time
 import re
 import shutil
+import tempfile
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
 from urllib.parse import urljoin
+from zoneinfo import ZoneInfo
 
 from loguru import logger
-from zoneinfo import ZoneInfo
 
 from framework.integrations.jira import JiraAuth, JiraClient, JiraClientError
 
@@ -61,11 +61,15 @@ def _value_by_path(source: dict[str, Any], path: str) -> str:
     return str(current or "")
 
 
+def _as_dict(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
 def _build_metadata_source(row: dict[str, Any], case_state: dict[str, Any]) -> dict[str, dict[str, Any]]:
-    metadata = row.get("test_metadata") if isinstance(row.get("test_metadata"), dict) else {}
-    run_meta = metadata.get("run") if isinstance(metadata.get("run"), dict) else {}
-    scenario_meta = metadata.get("scenario") if isinstance(metadata.get("scenario"), dict) else {}
-    execution_meta = metadata.get("execution") if isinstance(metadata.get("execution"), dict) else {}
+    metadata = _as_dict(row.get("test_metadata"))
+    run_meta = _as_dict(metadata.get("run"))
+    scenario_meta = _as_dict(metadata.get("scenario"))
+    execution_meta = _as_dict(metadata.get("execution"))
     target_url = str(scenario_meta.get("target_url", row.get("target_url", "")) or "")
     target_base_url = str(execution_meta.get("target_base_url", "") or "")
     target_full_url = _build_target_full_url(target_base_url, target_url)
@@ -199,11 +203,11 @@ def _extract_run_git_info(rows: list[dict[str, Any]]) -> dict[str, dict[str, str
     for row in rows:
         if not isinstance(row, dict):
             continue
-        metadata = row.get("test_metadata") if isinstance(row.get("test_metadata"), dict) else {}
-        run_meta = metadata.get("run") if isinstance(metadata.get("run"), dict) else {}
-        target_git_info = run_meta.get("target_git_info") if isinstance(run_meta.get("target_git_info"), dict) else {}
+        metadata = _as_dict(row.get("test_metadata"))
+        run_meta = _as_dict(metadata.get("run"))
+        target_git_info = _as_dict(run_meta.get("target_git_info"))
         for target in ("frontend", "backend"):
-            info = target_git_info.get(target) if isinstance(target_git_info.get(target), dict) else {}
+            info = _as_dict(target_git_info.get(target))
             branch = str(info.get("branch", "") or "").strip()
             commit = str(info.get("commit", "") or "").strip()
             if branch:
@@ -214,8 +218,8 @@ def _extract_run_git_info(rows: list[dict[str, Any]]) -> dict[str, dict[str, str
 
 
 def _resolve_browser_details(row: dict[str, Any], source: dict[str, dict[str, Any]]) -> str:
-    metadata = row.get("test_metadata") if isinstance(row.get("test_metadata"), dict) else {}
-    execution_meta = metadata.get("execution") if isinstance(metadata.get("execution"), dict) else {}
+    metadata = _as_dict(row.get("test_metadata"))
+    execution_meta = _as_dict(metadata.get("execution"))
     browser = _jira_safe_text(str(source.get("scenario", {}).get("browser", "") or row.get("browser", "")))
     version = ""
     for key in ("browser_version", "browserVersion", "playwright_browser_version", "playwrightBrowserVersion"):
@@ -335,15 +339,13 @@ def _build_subtask_fields(
     required_field_keys: list[str],
     parent_by_id: bool,
 ) -> dict[str, Any]:
-    parent_fields = (
-        parent_issue.get("fields")
-        if isinstance(parent_issue, dict) and isinstance(parent_issue.get("fields"), dict)
-        else {}
-    )
+    parent_fields_payload = parent_issue.get("fields") if isinstance(parent_issue, dict) else None
+    parent_fields = _as_dict(parent_fields_payload)
     inherited = _pick_required_fields_from_parent(parent_fields, required_field_keys)
     project_key = ""
-    if isinstance(parent_fields.get("project"), dict):
-        project_key = str(parent_fields.get("project", {}).get("key", "") or "").strip()
+    project_payload = _as_dict(parent_fields.get("project"))
+    if project_payload:
+        project_key = str(project_payload.get("key", "") or "").strip()
     if not project_key:
         project_key = _extract_project_key(parent_issue_key)
     project = {"key": project_key} if project_key else {}
@@ -597,8 +599,12 @@ def _build_comment_body(
                 diff_cell = f"{attachment_thumb} [^{_escape_table_cell(attachment_file)}]"
             else:
                 diff_cell = _format_jira_link("diff", diff_url) if diff_url else _escape_table_cell(missing_note)
+            bug_row_tpl = (
+                "| {idx} | {scenario} | {suite} | {target} | {full} | {viewport} | {browser} | "
+                "{note} | {report} | {diff} |"
+            )
             lines.append(
-                "| {idx} | {scenario} | {suite} | {target} | {full} | {viewport} | {browser} | {note} | {report} | {diff} |".format(
+                bug_row_tpl.format(
                     idx=int(item.get("idx", 0) or 0),
                     scenario=_escape_table_cell(str(item.get("scenario", "") or "")),
                     suite=_escape_table_cell(str(item.get("suite_id", "") or "")),

@@ -49,6 +49,7 @@ class DeliveryCourierReceiverData(DeliveryObjects):
     is_company: bool = False
     delivery_type: DeliveryTypes = DeliveryTypes.COURIER_SERVICE
 
+
 @dataclass
 class DeliveryStorehouseReceiverData(DeliveryObjects):
     postal_code: str | None = None

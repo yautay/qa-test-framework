@@ -8,7 +8,8 @@ from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 from typing import Self
 
-from playwright.sync_api import Locator, Page, TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import Locator, Page
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
@@ -437,9 +438,11 @@ class CheckoutSummaryComponent(BaseComponent):
     def __init__(self, scope: Page | Locator) -> None:
         super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Checkout Summary Component")
 
-        self.__summary_panel = self.root.page.locator("section,div,aside").filter(
-            has=self.root.page.get_by_role("heading", name="Podsumowanie koszyka")
-        ).first
+        self.__summary_panel = (
+            self.root.page.locator("section,div,aside")
+            .filter(has=self.root.page.get_by_role("heading", name="Podsumowanie koszyka"))
+            .first
+        )
         self.__delivery_price = self.find("css=div:has(> span:text-is('Dostawa')) >> span.font-semibold")
         self.__payment_fee = self.find("css=p:text-is('Płatność') + div >> span.block.text-right")
         self.__total_to_pay = self.find("css=p.font-semibold:text-is('Do zapłaty') + span >> span.block.text-right")
