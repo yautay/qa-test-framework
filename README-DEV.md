@@ -10,6 +10,14 @@ For day-to-day test execution, use `README.md`.
 - `framework/` - runtime utilities (env, artifacts, logger, reporting, visual runner)
 - `tools/` - helper scripts grouped by domain
 
+## Development environment (WSL2)
+
+- Recommended model on Windows: VSCode on host + WSL2 terminal/runtime.
+- First-time setup in WSL: `bash tools/wsl/Setup_WSL.sh`
+- Health check: `bash tools/wsl/run.sh doctor`
+- After `git pull`: `bash tools/wsl/run.sh sync`
+- `make` targets now prefer `.venv/bin/python` when available, which prevents Python version drift.
+
 ## Docs index
 
 - `docs/ARTIFACTS.md`

@@ -13,7 +13,7 @@ elif command -v python3 >/dev/null 2>&1; then
 elif command -v python >/dev/null 2>&1; then
   PYTHON_BIN="$(command -v python)"
 else
-  echo "[pre-commit] Python not found. Run tools/windows/bootstrap.ps1 or install project dependencies first."
+  echo "[pre-commit] Python not found. Run tools/wsl/bootstrap.sh (WSL) or tools/windows/bootstrap.ps1 (Windows) first."
   exit 1
 fi
 

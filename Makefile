@@ -1,7 +1,11 @@
 ifeq ($(OS),Windows_NT)
 PYTHON ?= python
 else
+ifneq ($(wildcard .venv/bin/python),)
+PYTHON ?= .venv/bin/python
+else
 PYTHON ?= python3
+endif
 endif
 
 PYTEST ?= $(PYTHON) -m pytest
