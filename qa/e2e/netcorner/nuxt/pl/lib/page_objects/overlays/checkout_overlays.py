@@ -33,12 +33,14 @@ def _order_address_dialog_root(page: Page, heading_pattern: str) -> Locator:
     )
 
 
-class _AddressOverlayBase(BaseComponent):
-    def __init__(self, root: Locator, *, name: str) -> None:
-        super().__init__(root, name=name)
-        self._init_address_form_fields()
+class DeliveryCourierReceiverOverlay(BaseComponent):
+    def __init__(self, page: Page):
+        root = _order_address_dialog_root(page, r"Dodaj dane do dostawy|Delivery Courier Receiver Overlay")
+        super().__init__(
+            root,
+            name="Delivery Courier Receiver Overlay",
+        )
 
-    def _init_address_form_fields(self) -> None:
         self._private_person_button = self.find("role=button[name='Osoba prywatna']")
         self._company_button = self.find("role=button[name='Firma']")
 
@@ -140,14 +142,6 @@ class _AddressOverlayBase(BaseComponent):
         self._enter_phone_number(phone_number)
         self._enter_email(email)
         return self
-
-
-class DeliveryCourierReceiverOverlay(_AddressOverlayBase):
-    def __init__(self, page: Page):
-        super().__init__(
-            _order_address_dialog_root(page, r"Dodaj dane do dostawy|Delivery Courier Receiver Overlay"),
-            name="Delivery Courier Receiver Overlay",
-        )
 
     @step("Klikam 'Osoba prywatna'")
     def click_private_person(self) -> Self:
@@ -417,16 +411,12 @@ class DeliveryStorehouseReceiverOverlay(BaseComponent):
         )
 
 
-class _NamedStorehouseReceiverOverlay(DeliveryStorehouseReceiverOverlay):
-    OVERLAY_NAME = "Delivery Storehouse Receiver Overlay"
+class DeliveryDhlPopReceiverOverlay(DeliveryStorehouseReceiverOverlay):
+    OVERLAY_NAME = "Delivery DHL POP Receiver Overlay"
 
     def __init__(self, scope: Page | Locator) -> None:
         super().__init__(scope)
         self.name = self.OVERLAY_NAME
-
-
-class DeliveryDhlPopReceiverOverlay(_NamedStorehouseReceiverOverlay):
-    OVERLAY_NAME = "Delivery DHL POP Receiver Overlay"
 
     @step("Wyszukuję punkty DHL POP dla lokalizacji: {value}")
     def search_pop_points(self, value: str, max_zoom_iterations: int = 4) -> list[StorehouseData]:
@@ -449,8 +439,12 @@ class DeliveryDhlPopReceiverOverlay(_NamedStorehouseReceiverOverlay):
         return self.choose_random_storehouse(max_zoom_iterations=max_zoom_iterations)
 
 
-class DeliveryInpostReceiverOverlay(_NamedStorehouseReceiverOverlay):
+class DeliveryInpostReceiverOverlay(DeliveryStorehouseReceiverOverlay):
     OVERLAY_NAME = "Delivery InPost Receiver Overlay"
+
+    def __init__(self, scope: Page | Locator) -> None:
+        super().__init__(scope)
+        self.name = self.OVERLAY_NAME
 
     @step("Wyszukuję punkty InPost dla lokalizacji: {value}")
     def search_inpost_points(self, value: str, max_zoom_iterations: int = 4) -> list[StorehouseData]:
@@ -473,14 +467,118 @@ class DeliveryInpostReceiverOverlay(_NamedStorehouseReceiverOverlay):
         return self.choose_random_storehouse(max_zoom_iterations=max_zoom_iterations)
 
 
-class CheckoutPurchaserOverlay(_AddressOverlayBase):
+class CheckoutPurchaserOverlay(BaseComponent):
     def __init__(self, page: Page):
+        root = _order_address_dialog_root(page, r"Podaj dane do zakupu|Checkout Purchaser Overlay")
         super().__init__(
-            _order_address_dialog_root(page, r"Podaj dane do zakupu|Checkout Purchaser Overlay"),
+            root,
             name="Checkout Purchaser Overlay",
         )
+
+        self._private_person_button = self.find("role=button[name='Osoba prywatna']")
+        self._company_button = self.find("role=button[name='Firma']")
+
+        self._first_name_input = self.find("#firstName")
+        self._surname_input = self.find("#surname")
+        self._company_name_input = self.find("#companyName")
+        self._street_name_input = self.find("#streetName")
+        self._street_number_input = self.find("#streetNumber")
+        self._postal_code_input = self.find("#postalCode")
+        self._city_select_input_area = self.find("css=div[data-role='selectInputArea']")
+
+        self._phone_number_input = self.find("#phoneNumber")
+        self._email_input = self.find("#email")
+
+        self._cancel_button = self.find("role=button[name='Anuluj']")
+        self._add_details_button = self.find("role=button[name='Dodaj dane']")
+
         self._copy_data_from_receiver_checkbox = self.find("#copyDataFromReceiver")
         self._tax_identification_number_input = self.find("#taxIdentificationNumber")
+
+    def _click_private_person(self) -> Self:
+        self.safe_click(self._private_person_button)
+        return self
+
+    def _click_company(self) -> Self:
+        self.safe_click(self._company_button)
+        return self
+
+    def _enter_first_name(self, value: str) -> Self:
+        self.safe_type(self._first_name_input, value)
+        return self
+
+    def _enter_surname(self, value: str) -> Self:
+        self.safe_type(self._surname_input, value)
+        return self
+
+    def _enter_company_name(self, value: str) -> Self:
+        self.safe_type(self._company_name_input, value)
+        return self
+
+    def _enter_street_name(self, value: str) -> Self:
+        self.safe_type(self._street_name_input, value)
+        return self
+
+    def _enter_street_number(self, value: str) -> Self:
+        self.safe_type(self._street_number_input, value)
+        return self
+
+    def _enter_postal_code(self, value: str) -> Self:
+        self.safe_type(self._postal_code_input, value)
+        return self
+
+    def _enter_city(self, value: str) -> Self:
+        normalized_value = value.strip()
+        if not normalized_value:
+            return self
+
+        self.safe_click(self._city_select_input_area)
+        city_input = self._city_select_input_area.locator("input").first
+        if city_input.count() > 0 and city_input.is_visible() and city_input.is_editable():
+            self.safe_fill(city_input, "")
+            self.safe_type(city_input, normalized_value)
+            city_input.press("Enter")
+        else:
+            self.root.page.keyboard.type(normalized_value)
+            self.root.page.keyboard.press("Enter")
+
+        return self
+
+    def _enter_phone_number(self, value: str) -> Self:
+        self.safe_fill(self._phone_number_input, value)
+        return self
+
+    def _enter_email(self, value: str) -> Self:
+        self.safe_fill(self._email_input, value)
+        return self
+
+    def _click_cancel(self) -> None:
+        self.safe_click(self._cancel_button)
+
+    def _click_add_details(self) -> None:
+        self.safe_click(self._add_details_button)
+
+    def _fill_common_person_data(
+        self,
+        *,
+        first_name: str,
+        surname: str,
+        street_name: str,
+        street_number: str,
+        postal_code: str,
+        city: str,
+        phone_number: str,
+        email: str,
+    ) -> Self:
+        self._enter_first_name(first_name)
+        self._enter_surname(surname)
+        self._enter_street_name(street_name)
+        self._enter_street_number(street_number)
+        self._enter_postal_code(postal_code)
+        self._enter_city(city)
+        self._enter_phone_number(phone_number)
+        self._enter_email(email)
+        return self
 
     @step("Klikam 'Osoba prywatna' (kupujacy)")
     def click_private_person(self) -> Self:
