@@ -70,3 +70,9 @@ class BaseComponent:
 
     def find(self, selector: str) -> Locator:
         return self.root.locator(selector)
+
+    def sleep(self, ms: int) -> Self:
+        if ms < 0:
+            raise ValueError("ms must be >= 0")
+        self.root.page.wait_for_timeout(ms)
+        return self

@@ -45,3 +45,9 @@ class BasePage:
         out = Path(folder) / f"{safe_name}.png"
         self.page.screenshot(path=str(out), full_page=full_page)
         return out
+
+    def sleep(self, ms: int) -> BasePage:
+        if ms < 0:
+            raise ValueError("ms must be >= 0")
+        self.page.wait_for_timeout(ms)
+        return self
