@@ -50,7 +50,8 @@ class DeliveryCourierReceiverOverlay(BaseComponent):
         self._street_name_input = self.find("#streetName")
         self._street_number_input = self.find("#streetNumber")
         self._postal_code_input = self.find("#postalCode")
-        self._city_select_input_area = self.find("css=div[data-role='selectInputArea']")
+        self._city_select_input_area = self.find("[data-role='selectInputArea']")
+        self._city_select_options_container = self.find("[data-name='selectOptions']")
 
         self._phone_number_input = self.find("#phoneNumber")
         self._email_input = self.find("#email")
@@ -91,20 +92,17 @@ class DeliveryCourierReceiverOverlay(BaseComponent):
         return self
 
     def _enter_city(self, value: str) -> Self:
-        normalized_value = value.strip()
-        if not normalized_value:
-            return self
-
+        self.sleep(1_500)
         self.safe_click(self._city_select_input_area)
-        city_input = self._city_select_input_area.locator("input").first
-        if city_input.count() > 0 and city_input.is_visible() and city_input.is_editable():
-            self.safe_fill(city_input, "")
-            self.safe_type(city_input, normalized_value)
-            city_input.press("Enter")
-        else:
-            self.root.page.keyboard.type(normalized_value)
-            self.root.page.keyboard.press("Enter")
-
+        expect(self._city_select_options_container).to_be_visible(timeout=5_000)
+        option = self._city_select_options_container.get_by_text(value, exact=True).first
+        if option.count() == 0:
+            option = self._city_select_options_container.locator("div", has_text=value).first
+        if option.count() == 0:
+            raise AssertionError(f"Nie znaleziono opcji selekta o tekście: {value!r}")
+        expect(option).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+        option.scroll_into_view_if_needed()
+        option.click(timeout=self.DEFAULT_TIMEOUT)
         return self
 
     def _enter_phone_number(self, value: str) -> Self:
@@ -485,6 +483,7 @@ class CheckoutPurchaserOverlay(BaseComponent):
         self._street_number_input = self.find("#streetNumber")
         self._postal_code_input = self.find("#postalCode")
         self._city_select_input_area = self.find("css=div[data-role='selectInputArea']")
+        self._city_select_options_container = self.find("[data-name='selectOptions']")
 
         self._phone_number_input = self.find("#phoneNumber")
         self._email_input = self.find("#email")
@@ -528,20 +527,17 @@ class CheckoutPurchaserOverlay(BaseComponent):
         return self
 
     def _enter_city(self, value: str) -> Self:
-        normalized_value = value.strip()
-        if not normalized_value:
-            return self
-
+        self.sleep(1_500)
         self.safe_click(self._city_select_input_area)
-        city_input = self._city_select_input_area.locator("input").first
-        if city_input.count() > 0 and city_input.is_visible() and city_input.is_editable():
-            self.safe_fill(city_input, "")
-            self.safe_type(city_input, normalized_value)
-            city_input.press("Enter")
-        else:
-            self.root.page.keyboard.type(normalized_value)
-            self.root.page.keyboard.press("Enter")
-
+        expect(self._city_select_options_container).to_be_visible(timeout=5_000)
+        option = self._city_select_options_container.get_by_text(value, exact=True).first
+        if option.count() == 0:
+            option = self._city_select_options_container.locator("div", has_text=value).first
+        if option.count() == 0:
+            raise AssertionError(f"Nie znaleziono opcji selekta o tekście: {value!r}")
+        expect(option).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+        option.scroll_into_view_if_needed()
+        option.click(timeout=self.DEFAULT_TIMEOUT)
         return self
 
     def _enter_phone_number(self, value: str) -> Self:
