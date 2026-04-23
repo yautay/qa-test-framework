@@ -45,11 +45,11 @@ class CheckoutNavigationComponent(BaseComponent):
         if tag_name != "a":
             raise AssertionError(f"Step {step} is not clickable in current state")
 
-        self.safe_click(step_locator)
+        self.pointer_click(step_locator)
 
     @step("Klikam 'Wróć do zakupów'")
     def click_back_to_shopping(self) -> None:
-        self.safe_click(self.__back_to_shopping_link)
+        self.pointer_click(self.__back_to_shopping_link)
 
     @step("Klikam krok 1")
     def click_step_1(self) -> None:

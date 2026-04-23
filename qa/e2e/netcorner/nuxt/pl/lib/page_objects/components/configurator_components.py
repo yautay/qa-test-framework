@@ -24,17 +24,17 @@ class ConfiguratorActionsComponent(BaseComponent):
     # actions
     @step("Czyszczę konfigurację")
     def clear_configuration(self) -> Self:
-        self.safe_click(self.__button_clear)
+        self.pointer_click(self.__button_clear)
         return self
 
     @step("Tworzę kopię konfiguracji")
     def create_copy(self) -> Self:
-        self.safe_click(self.__button_create_copy)
+        self.pointer_click(self.__button_create_copy)
         return self
 
     @step("Udostępniam konfigurację")
     def share_configuration(self) -> Self:
-        self.safe_click(self.__button_share)
+        self.pointer_click(self.__button_share)
         return self
 
     # getters
@@ -63,37 +63,37 @@ class ConfiguratorComponentsComponent(BaseComponent):
     # actions
     @step("Wybieram kafelek komponentu: Procesor")
     def open_cpu(self) -> Self:
-        self.safe_click(self.__tile_cpu)
+        self.pointer_click(self.__tile_cpu)
         return self
 
     @step("Wybieram kafelek komponentu: Karta graficzna")
     def open_gpu(self) -> Self:
-        self.safe_click(self.__tile_gpu)
+        self.pointer_click(self.__tile_gpu)
         return self
 
     @step("Wybieram kafelek komponentu: Płyta główna")
     def open_motherboard(self) -> Self:
-        self.safe_click(self.__tile_motherboard)
+        self.pointer_click(self.__tile_motherboard)
         return self
 
     @step("Wybieram kafelek komponentu: Pamięć RAM")
     def open_ram(self) -> Self:
-        self.safe_click(self.__tile_ram)
+        self.pointer_click(self.__tile_ram)
         return self
 
     @step("Wybieram kafelek komponentu: Dysk")
     def open_drive(self) -> Self:
-        self.safe_click(self.__tile_drive)
+        self.pointer_click(self.__tile_drive)
         return self
 
     @step("Wybieram kafelek komponentu: Zasilacz")
     def open_psu(self) -> Self:
-        self.safe_click(self.__tile_psu)
+        self.pointer_click(self.__tile_psu)
         return self
 
     @step("Wybieram kafelek komponentu: Obudowa")
     def open_case(self) -> Self:
-        self.safe_click(self.__tile_case)
+        self.pointer_click(self.__tile_case)
         return self
 
 

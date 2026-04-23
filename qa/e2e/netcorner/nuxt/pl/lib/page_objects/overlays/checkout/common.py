@@ -14,3 +14,19 @@ def _order_address_dialog_root(page: Page, heading_pattern: str) -> Locator:
     return page.locator('[data-name="OrderAddressDialog"]:visible').filter(
         has=page.get_by_role("heading", name=re.compile(heading_pattern, re.IGNORECASE))
     )
+
+
+def _order_pickup_dialog_root(scope: Page | Locator, heading_pattern: str) -> Locator:
+    page = scope if isinstance(scope, Page) else scope.page
+    dialog_root = page.locator('[data-name="dialogContent"]:visible').filter(
+        has=page.get_by_role("heading", name=re.compile(heading_pattern, re.IGNORECASE))
+    )
+
+    if isinstance(scope, Page):
+        return dialog_root
+
+    scoped_dialog_root = scope.locator('xpath=ancestor-or-self::*[@data-name="dialogContent"]')
+    try:
+        return scoped_dialog_root.first if scoped_dialog_root.count() > 0 else dialog_root
+    except Exception:
+        return dialog_root

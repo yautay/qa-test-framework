@@ -32,23 +32,23 @@ class HeroComponent(BaseComponent):
     # actions
     @step("Klikam 'Konfiguruj PC'")
     def go_to_pc_configurator_from_banner(self) -> None:
-        self.safe_click(self.__button_configure_pc)
+        self.pointer_click(self.__button_configure_pc)
 
     @step("Przechodzę do kategorii 'Laptopy i komputery'")
     def go_to_laptops_and_computers(self) -> None:
-        self.safe_click(self.__link_laptops_and_computers)
+        self.pointer_click(self.__link_laptops_and_computers)
 
     @step("Przechodzę do 'Konfigurator PC'")
     def go_to_pc_configurator_from_swiper(self) -> None:
-        self.safe_click(self.__link_pc_configurator)
+        self.pointer_click(self.__link_pc_configurator)
 
     @step("Przechodzę do sekcji 'Skontaktuj się'")
     def go_to_contact_us(self) -> None:
-        self.safe_click(self.__link_contact_us)
+        self.pointer_click(self.__link_contact_us)
 
     @step("Przechodzę do 'Salony Komputronik'")
     def go_to_komputronik_stores(self) -> None:
-        self.safe_click(self.__link_komputronik_stores)
+        self.pointer_click(self.__link_komputronik_stores)
 
     # assertions
     @step("Sprawdzam widoczność sekcji 'Skontaktuj się z nami'")

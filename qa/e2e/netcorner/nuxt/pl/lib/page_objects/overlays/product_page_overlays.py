@@ -29,13 +29,13 @@ class ProductPageGoToCartOverlay(BaseComponent):
 
     @step("Klikam 'Wróć do zakupów' na warstwie dodawanie produktu do koszyka")
     def click_continue_shopping(self) -> None:
-        self.safe_click(self.__btn_continue_shopping)
+        self.pointer_click(self.__btn_continue_shopping)
 
     @step("Klikam 'Przejdź do koszyka' na warstwie dodawanie produktu do koszyka")
     def click_go_to_cart(self, overlay_timeout: int = 7_500) -> None:
         if not _wait_until_visible(self, overlay_timeout):
             return
-        self.safe_click(self.__btn_go_to_cart)
+        self.pointer_click(self.__btn_go_to_cart)
 
 
 class ProductPagePromotionsOverlay(BaseComponent):
@@ -67,5 +67,5 @@ class ProductPagePromotionsOverlay(BaseComponent):
         promotions = self.get_proposed_promotions(overlay_timeout=overlay_timeout)
         if not promotions and not _wait_until_visible(self, timeout=0):
             return promotions
-        self.safe_click(self.__button_buy_only_product)
+        self.pointer_click(self.__button_buy_only_product)
         return promotions

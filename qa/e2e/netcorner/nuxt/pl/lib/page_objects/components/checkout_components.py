@@ -30,6 +30,8 @@ class DeliveryTypeData:
 
 class CheckoutDeliveryTypeComponent(BaseComponent):
     ROOT_SELECTOR = "[data-picker='shippingMethod']"
+    PROVIDER_SELECTION_TIMEOUT_MS = 5_000
+    PROVIDER_SELECTION_POLL_MS = 100
 
     def __init__(self, scope: Page | Locator) -> None:
         super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Checkout Delivery Type Component")
@@ -41,22 +43,22 @@ class CheckoutDeliveryTypeComponent(BaseComponent):
 
     @step("Klikam kafelek dostawy: Salony")
     def click_storehouse_tile(self) -> Self:
-        self.safe_click(self.__storehouse_tile)
+        self.pointer_click(self.__storehouse_tile)
         return self
 
     @step("Klikam kafelek dostawy: DHL Automaty BOX i punkty POP")
     def click_dhl_tile(self) -> Self:
-        self.safe_click(self.__dhl_tile)
+        self.pointer_click(self.__dhl_tile)
         return self
 
     @step("Klikam kafelek dostawy: InPost Paczkomat 24/7")
     def click_inpost_tile(self) -> Self:
-        self.safe_click(self.__inpost_tile)
+        self.pointer_click(self.__inpost_tile)
         return self
 
     @step("Klikam kafelek dostawy: Wysyłka kurierem")
     def click_courier_tile(self) -> Self:
-        self.safe_click(self.__courier_tile)
+        self.pointer_click(self.__courier_tile)
         return self
 
     def get_delivery_type_availability(self) -> DeliveryTypeData:
@@ -67,18 +69,63 @@ class CheckoutDeliveryTypeComponent(BaseComponent):
             store_pickup=self.__storehouse_tile.is_visible(),
         )
 
+    def __delivery_tiles(self) -> list[Locator]:
+        return [self.__storehouse_tile, self.__dhl_tile, self.__inpost_tile, self.__courier_tile]
+
+    @staticmethod
+    def __tile_provider(tile: Locator) -> str:
+        return (tile.get_attribute("data-provider") or "").strip().lower()
+
+    @staticmethod
+    def __is_tile_selected(tile: Locator) -> bool:
+        indicator = tile.locator('[data-name="tileSelectIndicator"] i.i-verify').first
+        if indicator.count() == 0:
+            return False
+        return indicator.is_visible()
+
+    def __selected_provider_once(self) -> str:
+        for tile_locator in self.__delivery_tiles():
+            tile = tile_locator.first
+            if tile.count() == 0 or not tile.is_visible():
+                continue
+            provider = self.__tile_provider(tile)
+            if provider and self.__is_tile_selected(tile):
+                return provider
+        return ""
+
+    def get_selected_delivery_provider(self, timeout: int | None = None) -> str:
+        deadline = time.monotonic() + ((timeout or self.PROVIDER_SELECTION_TIMEOUT_MS) / 1000)
+        stable_provider = ""
+        stable_passes = 0
+
+        while time.monotonic() < deadline:
+            current_provider = self.__selected_provider_once()
+            if current_provider and current_provider == stable_provider:
+                stable_passes += 1
+                if stable_passes >= 1:
+                    return current_provider
+            elif current_provider:
+                stable_provider = current_provider
+                stable_passes = 0
+            else:
+                stable_provider = ""
+                stable_passes = 0
+            self.root.page.wait_for_timeout(self.PROVIDER_SELECTION_POLL_MS)
+
+        raise RuntimeError("Nie udało się rozpoznać aktywnego typu dostawy.")
+
 
 class CheckoutDeliveryObjectComponent(BaseComponent):
-    ROOT_SELECTOR = "[data-picker='receiver']"
+    ROOT_SELECTOR = "[data-name='orderParcelPicker'], [data-name='OrderReceiverPicker']"
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Checkout Delivery Object Component")
+        super().__init__(scope.locator(self.ROOT_SELECTOR), name="Checkout Delivery Object Component")
 
-        self.__delivery_object_tile = self.find('[data-name="orderPickerTile"]')
+        self.__delivery_object_tile = self.root.locator('[data-name="orderPickerTile"][data-role="dialogTrigger"]')
 
     @step("Klikam kafelek odbiorcy dla wybranej metody transportu")
     def click_delivery_object_tile(self) -> None:
-        self.safe_click(self.__delivery_object_tile)
+        self.pointer_click(self.__delivery_object_tile)
 
 
 class CheckoutPurchaserComponent(BaseComponent):
@@ -94,9 +141,9 @@ class CheckoutPurchaserComponent(BaseComponent):
     @step("Klikam kafelek kupującego: Dodaj dane")
     def click_add_data_tile(self) -> None:
         if self.__add_data_tile.count() > 0:
-            self.safe_click(self.__add_data_tile)
+            self.pointer_click(self.__add_data_tile)
             return
-        self.safe_click(self.__fallback_tile)
+        self.pointer_click(self.__fallback_tile)
 
     def is_electronic_invoice_checked(self) -> bool:
         checkbox = self.__electronic_invoice_checkbox.first
@@ -111,7 +158,7 @@ class CheckoutPurchaserComponent(BaseComponent):
             return self
 
         if checkbox.is_checked() != enabled:
-            self.safe_click(checkbox)
+            self.pointer_click(checkbox)
         return self
 
 
@@ -253,7 +300,7 @@ class CheckoutDeliveryMethodsComponent(BaseComponent):
         for tile in candidates:
             try:
                 tile.click(timeout=3_000, trial=True)
-                self.safe_click(tile)
+                self.pointer_click(tile)
                 return layout
             except PlaywrightTimeoutError:
                 continue
@@ -361,7 +408,7 @@ class CheckoutPaymentMethodsComponent(BaseComponent):
         if target.count() == 0 or not target.is_visible():
             return
         if target.is_checked() != enabled:
-            self.safe_click(target)
+            self.pointer_click(target)
 
     def get_available_payment_methods(self) -> list[PaymentMethodData]:
         methods: list[PaymentMethodData] = []
@@ -381,7 +428,7 @@ class CheckoutPaymentMethodsComponent(BaseComponent):
             tile_name = self.__method_name_from_tile(tile)
             if self.__matches_payment_method(tile_name, payment_method):
                 surcharge = self.__parse_surcharge(self.__normalize_tile_text(tile))
-                self.safe_click(tile)
+                self.pointer_click(tile)
                 return surcharge
 
         raise RuntimeError(f"Nie znaleziono dostępnej metody płatności: {payment_method.name}")
@@ -394,7 +441,7 @@ class CheckoutPaymentMethodsComponent(BaseComponent):
 
         tile = random.choice(available_tiles)
         surcharge = self.__parse_surcharge(self.__normalize_tile_text(tile))
-        self.safe_click(tile)
+        self.pointer_click(tile)
         return surcharge
 
     @step("Ustawiam checkbox komentarza do zamówienia na {enabled}")
@@ -472,7 +519,7 @@ class CheckoutSummaryComponent(BaseComponent):
             delivery_surcharge=self.__parse_money(self.__get_payment_fee()),
             total_to_pay=self.__get_total_to_pay(),
         )
-        self.safe_click(self.__place_order_button)
+        self.pointer_click(self.__place_order_button)
         return summary_data
 
     def __get_delivery_price(self) -> str:

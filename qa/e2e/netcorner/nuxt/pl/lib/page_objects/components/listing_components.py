@@ -33,7 +33,7 @@ class ListingFiltersComponent(BaseComponent):
             trigger = triggers.nth(index)
 
             if trigger.is_visible():
-                self.safe_click(trigger)
+                self.pointer_click(trigger)
 
     @step("Klikam przycisk 'Pokaż wszystkie cechy'")
     def __click_all_show_all_features_buttons(self) -> None:
@@ -44,7 +44,7 @@ class ListingFiltersComponent(BaseComponent):
             button = buttons.nth(index)
 
             if button.is_visible():
-                self.safe_click(button)
+                self.pointer_click(button)
 
     @step("Rozwijam wszystkie dostępne filtry")
     def expand_all_filters(self) -> Self:
@@ -53,27 +53,31 @@ class ListingFiltersComponent(BaseComponent):
         return self
 
 
-class ListingSortingComponent(BaseComponent):
-    class SortOption(StrEnum):
+class SortOptions(StrEnum):
         DEFAULT = "Domyślnie"
         PRICE_ASC = "Po cenie rosnąco"
         PRICE_DESC = "Po cenie malejąco"
         NAME_ASC = "Alfabetycznie A-Z"
         NAME_DESC = "Alfabetycznie Z-A"
 
-    class AvailabilityOption(StrEnum):
-        ANY = "Nieistotne"
-        MAIN_WAREHOUSE = "Poznań Komorniki - Magazyn Główny"
-        SHIPPING_WAREHOUSE = "Magazyn wysyłkowy"
-        EXTERNAL_WAREHOUSE = "Zewnętrzny magazyn"
-        ANY_STORE = "Dowolny salon"
-        GDYNIA = "Gdynia - salon firmowy"
-        GNIEZNO = "Gniezno - salon firmowy"
-        POZNAN_PLAZA = "Poznań CH Plaza - salon firmowy"
-        POZNAN_OUTLET_KOMORNIKI = "Poznań Outlet Komorniki - salon firmowy"
-        POZNAN_POSNANIA = "Poznań, CH Posnania - salon firmowy"
-        POZNAN_MARCELIN = "Poznań, King Cross Marcelin - salon  firmowy"
-        WARSAW_ARKADIA = "Warszawa CH Westfield Arkadia - salon firmowy"
+class AvailabilityOptions(StrEnum):
+    ANY = "Nieistotne"
+    MAIN_WAREHOUSE = "Poznań Komorniki - Magazyn Główny"
+    SHIPPING_WAREHOUSE = "Magazyn wysyłkowy"
+    EXTERNAL_WAREHOUSE = "Zewnętrzny magazyn"
+    ANY_STORE = "Dowolny salon"
+    GDYNIA = "Gdynia - salon firmowy"
+    GNIEZNO = "Gniezno - salon firmowy"
+    POZNAN_PLAZA = "Poznań CH Plaza - salon firmowy"
+    POZNAN_OUTLET_KOMORNIKI = "Poznań Outlet Komorniki - salon firmowy"
+    POZNAN_POSNANIA = "Poznań, CH Posnania - salon firmowy"
+    POZNAN_MARCELIN = "Poznań, King Cross Marcelin - salon  firmowy"
+    WARSAW_ARKADIA = "Warszawa CH Westfield Arkadia - salon firmowy"
+
+
+class ListingSortingComponent(BaseComponent):
+    SortOption = SortOptions
+    AvailabilityOption = AvailabilityOptions
 
     ROOT_SELECTOR = "[data-role='barFilters']"
 
@@ -89,8 +93,8 @@ class ListingSortingComponent(BaseComponent):
     def __select_from_custom_dropdown(
         self, trigger: Locator, options_container: Locator, option_label: str, timeout: int = 10_000
     ) -> None:
-        self.safe_click(trigger, timeout=timeout)
-        self.safe_click(options_container.get_by_text(option_label, exact=True).first, timeout=timeout)
+        self.pointer_click(trigger, timeout=timeout)
+        self.pointer_click(options_container.get_by_text(option_label, exact=True).first, timeout=timeout)
 
     # actions
     @step("Wybieram opcję z listy sortowania: {option}")
@@ -110,8 +114,12 @@ class ListingSortingComponent(BaseComponent):
     @step("Ustawiam checkbox 'Pokaż produkty niedostępne' na: {checked}")
     def set_show_unavailable(self, checked: bool) -> Self:
         if self.__show_unavailable_checkbox.is_checked() != checked:
-            self.safe_click(self.__show_unavailable_checkbox)
+            self.pointer_click(self.__show_unavailable_checkbox)
+            self.sleep(2_000)  # Czekamy na odświeżenie listingu po zmianie stanu checkboxa
         return self
+
+    def is_show_unavailable_checked(self) -> bool:
+        return self.__show_unavailable_checkbox.is_checked()
 
 
 @dataclass(frozen=True)
@@ -140,7 +148,7 @@ class ListingProductTileComponent(BaseComponent):
 
     @step("Klikam w przycisk 'Zobacz więcej' dla produktu")
     def click_see_more(self) -> None:
-        self.safe_click(self.__see_more_button)
+        self.pointer_click(self.__see_more_button)
 
     def get_product_title(self) -> str:
         return get_visible_text(self.__product_title)
@@ -203,6 +211,6 @@ class ListingContentComponent(BaseComponent):
             return False
 
         with self.root.page.expect_navigation(wait_until="domcontentloaded"):
-            self.safe_click(next_page_link)
+            self.pointer_click(next_page_link)
         self.wait_visible()
         return True

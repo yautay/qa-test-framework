@@ -34,18 +34,18 @@ class CartFooterComponent(BaseComponent):
     # actions
     @step("Klikam 'Przejdź dalej'")
     def click_continue(self) -> None:
-        self.safe_click(self.__btn_continue)
+        self.pointer_click(self.__btn_continue)
 
     @step("Klikam 'Wyczyść koszyk'")
     def click_clear_cart(self) -> None:
         self._assert_visible(self.__btn_clear_cart, "Wyczyść koszyk")
-        self.safe_click(self.__btn_clear_cart)
+        self.pointer_click(self.__btn_clear_cart)
 
     @step("Klikam 'Wróć do zakupów'")
     def click_back_to_shopping(self) -> None:
-        self.safe_click(self.__btn_back_to_shopping)
+        self.pointer_click(self.__btn_back_to_shopping)
 
     @step("Klikam 'Skopiuj link'")
     def click_copy_link(self) -> None:
         self._assert_visible(self.__btn_copy_link, "Skopiuj link")
-        self.safe_click(self.__btn_copy_link)
+        self.pointer_click(self.__btn_copy_link)

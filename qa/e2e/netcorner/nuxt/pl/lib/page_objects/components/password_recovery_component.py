@@ -49,12 +49,12 @@ class PasswordRecoveryComponent(BaseComponent):
         frame = self.root.page.frame_locator('#recaptcha-password-recovery iframe[title="reCAPTCHA"]')
         checkbox = frame.locator("#recaptcha-anchor")
         expect(checkbox).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
-        self.safe_click(checkbox)
+        self.pointer_click(checkbox)
         return self
 
     @step("Klikam przycisk 'Zapisz zmiany'")
     def submit_password_recovery(self) -> None:
-        self.safe_click(self.__button_save_changes)
+        self.pointer_click(self.__button_save_changes)
 
     # ============================================================
     # ASSERTIONS / HELPERS

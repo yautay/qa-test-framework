@@ -17,15 +17,15 @@ class HeaderActionsComponent(BaseComponent):
 
     @step("Otwieram modal logowania")
     def open_login(self) -> None:
-        self.safe_click(self.__login)
+        self.pointer_click(self.__login)
 
     @step("Przechodzę do panelu klienta")
     def open_account(self) -> None:
-        self.safe_click(self.__my_account)
+        self.pointer_click(self.__my_account)
 
     @step("Otwieram mini koszyk")
     def open_cart(self) -> None:
-        self.safe_click(self.__cart)
+        self.pointer_click(self.__cart)
 
     @step("Sprawdzam dostępność linku do sekcji 'Moje konto'")
     def is_my_account_available(self) -> bool:

@@ -24,9 +24,9 @@ class PasswordRecoveryOverlay(BaseComponent):
     def __solve_captcha(self) -> None:
         frame = self.root.page.frame_locator('iframe[title="reCAPTCHA"]')
         checkbox = frame.locator("#recaptcha-anchor")
-        self.safe_click(checkbox)
+        self.pointer_click(checkbox)
 
     @step("Wysyłam formularz odzyskiwania hasła")
     def __submit_form(self) -> None:
-        self.safe_click(self.__button_request_recovery)
-        self.safe_click(self.__button_confirm)
+        self.pointer_click(self.__button_request_recovery)
+        self.pointer_click(self.__button_confirm)

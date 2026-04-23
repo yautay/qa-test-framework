@@ -14,6 +14,7 @@ class _FakeLocatorItem:
         self._visible = visible
         self.name = name
         self.click_calls = 0
+        self.evaluate_calls = 0
         self.fill_calls: list[str] = []
         self.type_calls: list[str] = []
         self.scroll_calls = 0
@@ -37,6 +38,10 @@ class _FakeLocatorItem:
     def click(self, *, timeout: int) -> None:
         _ = timeout
         self.click_calls += 1
+
+    def evaluate(self, script: str) -> None:
+        _ = script
+        self.evaluate_calls += 1
 
     def fill(self, value: str, *, timeout: int) -> None:
         _ = timeout
@@ -93,7 +98,7 @@ def test_first_visible_falls_back_to_first_when_no_visible() -> None:
     assert selected is first
 
 
-def test_safe_click_uses_visible_match(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_pointer_click_uses_visible_match(monkeypatch: pytest.MonkeyPatch) -> None:
     hidden = _FakeLocatorItem(visible=False, name="hidden")
     visible = _FakeLocatorItem(visible=True, name="visible")
     locator = _FakeLocatorGroup([hidden, visible])
@@ -104,8 +109,27 @@ def test_safe_click_uses_visible_match(monkeypatch: pytest.MonkeyPatch) -> None:
         lambda target: _FakeExpectation(target),
     )
 
-    component.safe_click(cast(Any, locator))
+    component.pointer_click(cast(Any, locator))
 
     assert hidden.click_calls == 0
     assert visible.click_calls == 1
+    assert visible.scroll_calls == 1
+
+
+def test_non_pointer_click_uses_dom_click(monkeypatch: pytest.MonkeyPatch) -> None:
+    hidden = _FakeLocatorItem(visible=False, name="hidden")
+    visible = _FakeLocatorItem(visible=True, name="visible")
+    locator = _FakeLocatorGroup([hidden, visible])
+    component = BaseComponent(cast(Any, locator))
+
+    monkeypatch.setattr(
+        "framework.base.page_objects.base_component.expect",
+        lambda target: _FakeExpectation(target),
+    )
+
+    component.non_pointer_click(cast(Any, locator))
+
+    assert hidden.evaluate_calls == 0
+    assert visible.evaluate_calls == 1
+    assert visible.click_calls == 0
     assert visible.scroll_calls == 1

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 from decimal import Decimal
 
+from loguru import logger
 from playwright.sync_api import BrowserContext, Page
 
 from framework.env import RuntimeEnv
@@ -41,10 +43,91 @@ class CheckoutProcessData:
 
 
 class CartAndCheckoutWrappers:
+    DELIVERY_PROVIDER_STABILITY_WINDOW_MS = 2_500
+    DELIVERY_PROVIDER_STABILITY_POLL_MS = 100
+
     def __init__(self, page: Page, context: BrowserContext, runtime_env: RuntimeEnv) -> None:
         self.__page = page
         self.__context = context
         self.__runtime_env = runtime_env
+
+    @staticmethod
+    def __expected_delivery_provider(delivery_type: DeliveryTypes) -> str:
+        mapping = {
+            DeliveryTypes.STORE_PICKUP: "storehouse",
+            DeliveryTypes.DHL_POP: "dhl",
+            DeliveryTypes.INPOST: "inpost",
+        }
+        return mapping.get(delivery_type, "")
+
+    def __assert_selected_delivery_provider(self, checkout: CheckoutPage, delivery_type: DeliveryTypes) -> None:
+        expected_provider = self.__expected_delivery_provider(delivery_type)
+        if not expected_provider:
+            return
+
+        delivery_type_component = checkout.content.delivery_type.wait_visible()
+
+        actual_provider = ""
+        provider_error = ""
+        try:
+            actual_provider = delivery_type_component.get_selected_delivery_provider(timeout=8_000)
+        except Exception as exc:
+            provider_error = str(exc)
+
+        actual_provider_token = actual_provider or "<unknown>"
+        if actual_provider_token != expected_provider:
+            logger.error(
+                "TEST_ERROR code=DELIVERY_TYPE_CHANGED_AFTER_PICKUP expected_provider={} actual_provider={} "
+                "delivery_type={} page_url={} error={}",
+                expected_provider,
+                actual_provider_token,
+                delivery_type.value,
+                self.__page.url,
+                provider_error,
+            )
+            raise AssertionError(
+                "Wybrany typ dostawy zmienił się po zamknięciu modala punktu odbioru: "
+                f"oczekiwano '{expected_provider}', a wykryto '{actual_provider_token}'."
+            )
+
+        stability_start = time.monotonic()
+        stability_deadline = stability_start + (self.DELIVERY_PROVIDER_STABILITY_WINDOW_MS / 1000)
+        while time.monotonic() < stability_deadline:
+            try:
+                stable_provider = delivery_type_component.get_selected_delivery_provider(timeout=1_000)
+            except Exception as exc:
+                elapsed_ms = int(max(0.0, time.monotonic() - stability_start) * 1000)
+                logger.error(
+                    "TEST_ERROR code=DELIVERY_PROVIDER_UNREADABLE_AFTER_PICKUP expected_provider={} actual_provider={} "
+                    "delivery_type={} page_url={} elapsed_ms={} error={}",
+                    expected_provider,
+                    "<unknown>",
+                    delivery_type.value,
+                    self.__page.url,
+                    elapsed_ms,
+                    str(exc),
+                )
+                raise AssertionError(
+                    "Nie udało się odczytać aktywnego typu dostawy po zamknięciu modala punktu odbioru."
+                ) from exc
+
+            if stable_provider != expected_provider:
+                elapsed_ms = int(max(0.0, time.monotonic() - stability_start) * 1000)
+                logger.error(
+                    "TEST_ERROR code=DELIVERY_PROVIDER_DRIFT_AFTER_PICKUP expected_provider={} actual_provider={} "
+                    "delivery_type={} page_url={} elapsed_ms={}",
+                    expected_provider,
+                    stable_provider or "<unknown>",
+                    delivery_type.value,
+                    self.__page.url,
+                    elapsed_ms,
+                )
+                raise AssertionError(
+                    "Typ dostawy zmienił się po krótkim czasie od zamknięcia modala punktu odbioru: "
+                    f"oczekiwano '{expected_provider}', a wykryto '{stable_provider or '<unknown>'}'."
+                )
+
+            self.__page.wait_for_timeout(self.DELIVERY_PROVIDER_STABILITY_POLL_MS)
 
     def process_cart(self) -> dict[str, CartProductData]:
         cart = CartPage(self.__page, self.__runtime_env.base_url).wait_loaded()
@@ -59,7 +142,7 @@ class CartAndCheckoutWrappers:
         purchaser_objects: PurchaserObjects | None = None,
         payment_objects: PaymentObjects | None = None,
     ) -> CheckoutProcessData:
-        checkout = CheckoutPage(self.__page, self.__runtime_env.base_url).wait_loaded()
+        checkout = CheckoutPage(self.__page, self.__runtime_env.base_url).wait_loaded().sleep(3_500) # Czekamy na wybór opcji transportu przez NUXT
         delivery_types_aviable = checkout.content.delivery_type.get_delivery_type_availability()
         available_payment_methods: list[PaymentMethodData] = []
         payment_surcharge = Decimal("0.00")
@@ -96,6 +179,7 @@ class CartAndCheckoutWrappers:
                     raise ValueError(
                         "Dla STORE_PICKUP należy wskazać storehouse_data_id, storehouse_name lub wybór losowy salonu."
                     )
+                self.__assert_selected_delivery_provider(checkout, DeliveryTypes.STORE_PICKUP)
 
             case DeliveryTypes.DHL_POP:
                 checkout.content.delivery_type.click_dhl_tile()
@@ -124,6 +208,7 @@ class CartAndCheckoutWrappers:
                     dhl_pop_overlay.choose_random_pop_point()
                 else:
                     raise ValueError("Dla DHL_POP należy wskazać pop_data_id, pop_name lub wybór losowy punktu.")
+                self.__assert_selected_delivery_provider(checkout, DeliveryTypes.DHL_POP)
 
             case DeliveryTypes.INPOST:
                 checkout.content.delivery_type.click_inpost_tile()
@@ -154,6 +239,7 @@ class CartAndCheckoutWrappers:
                     raise ValueError(
                         "Dla INPOST należy wskazać inpost_point_data_id, inpost_point_name lub wybór losowy punktu."
                     )
+                self.__assert_selected_delivery_provider(checkout, DeliveryTypes.INPOST)
 
             case DeliveryTypes.COURIER_SERVICE:
                 checkout.content.delivery_type.click_courier_tile()

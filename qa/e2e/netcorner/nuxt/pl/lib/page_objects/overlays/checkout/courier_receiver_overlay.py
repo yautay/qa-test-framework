@@ -40,11 +40,11 @@ class DeliveryCourierReceiverOverlay(BaseComponent):
         self._add_details_button = self.find("role=button[name='Dodaj dane']")
 
     def _click_private_person(self) -> Self:
-        self.safe_click(self._private_person_button)
+        self.pointer_click(self._private_person_button)
         return self
 
     def _click_company(self) -> Self:
-        self.safe_click(self._company_button)
+        self.pointer_click(self._company_button)
         return self
 
     def _enter_first_name(self, value: str) -> Self:
@@ -73,7 +73,7 @@ class DeliveryCourierReceiverOverlay(BaseComponent):
 
     def _enter_city(self, value: str) -> Self:
         self.sleep(1_500)
-        self.safe_click(self._city_select_input_area)
+        self.pointer_click(self._city_select_input_area)
         expect(self._city_select_options_container).to_be_visible(timeout=5_000)
         option = self._city_select_options_container.get_by_text(value, exact=True).first
         if option.count() == 0:
@@ -94,10 +94,10 @@ class DeliveryCourierReceiverOverlay(BaseComponent):
         return self
 
     def _click_cancel(self) -> None:
-        self.safe_click(self._cancel_button)
+        self.pointer_click(self._cancel_button)
 
     def _click_add_details(self) -> None:
-        self.safe_click(self._add_details_button)
+        self.pointer_click(self._add_details_button)
 
     def _fill_common_person_data(
         self,

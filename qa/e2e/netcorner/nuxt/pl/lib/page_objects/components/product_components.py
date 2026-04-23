@@ -65,7 +65,7 @@ class ProductPriceComponent(BaseComponent):
     def add_to_cart(self) -> ProductPriceData:
         data = self.get_data()
         add_to_cart_button = self.__resolved_root().locator("[data-name='addToCartButton']:visible").first
-        self.safe_click(add_to_cart_button)
+        self.pointer_click(add_to_cart_button)
         return data
 
     def get_data(self) -> ProductPriceData:

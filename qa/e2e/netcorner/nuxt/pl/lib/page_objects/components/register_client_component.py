@@ -66,27 +66,27 @@ class RegisterClientComponent(BaseComponent):
 
     @step("Aktywuję ofertę biznesową i sprawdzam pola NIP")
     def check_business_offer(self) -> Self:
-        self.safe_click(self.__checkbox_business_offer)
+        self.pointer_click(self.__checkbox_business_offer)
         expect(self.__input_tax_id).to_be_visible()
         return self
 
     @step("Akceptuję obowiązkowe regulaminy")
     def accept_required_terms(self) -> Self:
-        self.safe_click(self.__checkbox_terms)
+        self.pointer_click(self.__checkbox_terms)
         return self
 
     @step("Akceptuję zgody marketingowe")
     def accept_marketing_terms(self) -> Self:
-        self.safe_click(self.__checkbox_marketing)
+        self.pointer_click(self.__checkbox_marketing)
         return self
 
     @step("Klikam przycisk 'Załóż konto'")
     def submit_registration(self) -> None:
-        self.safe_click(self.__button_register)
+        self.pointer_click(self.__button_register)
 
     @step("Przechodzę do ekranu logowania")
     def go_to_login(self) -> None:
-        self.safe_click(self.__button_login_redirect)
+        self.pointer_click(self.__button_login_redirect)
 
     @step("Wpisuję dane firmowe NIP={nip}, tel={phone}, email={email}")
     def fill_business_personal_data(self, nip: str, phone: str, email: str) -> Self:
@@ -100,5 +100,5 @@ class RegisterClientComponent(BaseComponent):
         frame = self.root.page.frame_locator('#recaptcha-register iframe[title="reCAPTCHA"]')
         checkbox = frame.locator("#recaptcha-anchor")
         expect(checkbox).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
-        self.safe_click(checkbox)
+        self.pointer_click(checkbox)
         return self

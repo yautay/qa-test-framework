@@ -23,7 +23,7 @@ class SearchBarComponent(BaseComponent):
 
     @step("Przesyłam zapytanie wyszukiwania")
     def submit(self) -> None:
-        self.safe_click(self.__submit)
+        self.pointer_click(self.__submit)
 
     @step("Sprawdzam, czy w polu wyszukiwania jest: {expected}")
     def assert_value(self, expected: str) -> None:

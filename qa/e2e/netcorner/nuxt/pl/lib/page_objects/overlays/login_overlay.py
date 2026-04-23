@@ -25,13 +25,13 @@ class LoginOverlay(BaseComponent):
     @step("Wchodzę w formularz rejestracji klienta.")
     def enter_register_form(self) -> None:
         self.wait_visible()
-        self.safe_click(self.__register_account)
+        self.pointer_click(self.__register_account)
 
     @step("Loguję klienta loginem: {client_login} hasłem: {client_pwd}")
     def log_client(self, client_login: str, client_pwd: str) -> None:
         self.safe_type(self.__input_login, client_login)
         self.safe_type(self.__input_password, client_pwd)
-        self.safe_click(self.__button_login)
+        self.pointer_click(self.__button_login)
 
     @step("Kontynuuję bez logowania, jeśli pojawił się modal logowania")
     def continue_without_login_if_visible(self, timeout: int = 3_000) -> bool:
@@ -40,11 +40,11 @@ class LoginOverlay(BaseComponent):
         except AssertionError:
             return False
 
-        self.safe_click(self.__button_continue_without_login)
+        self.pointer_click(self.__button_continue_without_login)
         self.wait_hidden()
         return True
 
     @step("Odzyskuję hasło")
     def password_recovery(self, client_login: str) -> None:
-        self.safe_click(self.__reset_password)
+        self.pointer_click(self.__reset_password)
         PasswordRecoveryOverlay(self.root.page).password_recovery(client_login)

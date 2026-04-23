@@ -6,7 +6,11 @@ from playwright.sync_api import BrowserContext, Page
 
 from framework.env import RuntimeEnv
 from qa.e2e.netcorner.lib.step_api import step_context
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.listing_components import ListingProductData
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.listing_components import (
+    AvailabilityOptions,
+    ListingProductData,
+    SortOptions,
+)
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.product_components import ProductPriceData
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.listing_page import ListingPage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listings_data_models import ListingsData
@@ -19,10 +23,15 @@ class SelectProductData:
 
 
 class SelectProductWrappers:
-    def __init__(self, page: Page, context: BrowserContext, runtime_env: RuntimeEnv) -> None:
+    def __init__(self, page: Page, context: BrowserContext, runtime_env: RuntimeEnv,
+                 sorting: SortOptions | None = None, availability: AvailabilityOptions | None = None,
+                 show_unavailable: bool = False) -> None:
         self.__page = page
         self.__context = context
         self.__runtime_env = runtime_env
+        self.__sorting = sorting
+        self.__availability = availability
+        self.__show_unavailable = show_unavailable
         self.__data: list[SelectProductData] = []
 
     def select_test_product(
@@ -45,12 +54,19 @@ class SelectProductWrappers:
             with step_context("Rozwijam wszystkie filtry"):
                 listing_page.content.filters.expand_all_filters()
 
-        with step_context("Ustawiam parametry sortowania i dostępności"):
-            content_section.sorting.select_sort_option(content_section.sorting.SortOption.PRICE_ASC)
-            content_section.sorting.select_availability_option(
-                content_section.sorting.AvailabilityOption.MAIN_WAREHOUSE
-            )
-            content_section.sorting.set_show_unavailable(False)
+        if self.__sorting:
+            with step_context(f"Ustawiam parametry sortowania: {self.__sorting.name}"):
+                content_section.sorting.select_sort_option(
+                    content_section.sorting.SortOption[self.__sorting.name]
+                )
+        if self.__availability:
+            with step_context(f"Ustawiam opcję dostępności: {self.__availability.name}"):
+                content_section.sorting.select_availability_option(
+                    content_section.sorting.AvailabilityOption[self.__availability.name]
+                )
+        unavailable_checked = content_section.sorting.is_show_unavailable_checked()
+        if unavailable_checked != self.__show_unavailable:
+            content_section.sorting.set_show_unavailable(self.__show_unavailable)
 
         expected_status = listings_data.product_availability_status
         with step_context(f"Szukam produktu o statusie: {expected_status.status}"):

@@ -40,16 +40,5 @@ class CheckoutPage(BasePage):
 
     def submit_order(self) -> tuple[CheckoutSummaryData, TypSummaryData]:
         summary_data = self.content.summary.wait_visible().click_place_order()
-        try:
-            typ_summary_data = self.content.typ_summary.wait_visible(timeout=20_000).get_summary_data()
-        except Exception:
-            typ_summary_data = TypSummaryData(
-                order_number="",
-                planned_delivery="",
-                delivery_address="",
-                delivery_cost="",
-                sms_status_cost="",
-                payment_cost="",
-                total_to_pay="",
-            )
+        typ_summary_data = self.content.typ_summary.wait_visible(timeout=20_000).get_summary_data()
         return summary_data, typ_summary_data

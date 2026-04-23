@@ -43,13 +43,21 @@ class BaseComponent:
     def assert_hidden(self) -> None:
         expect(self.root).to_be_hidden(timeout=self.DEFAULT_TIMEOUT)
 
-    def safe_click(self, locator: Locator, *, timeout: int | None = None) -> None:
+    def pointer_click(self, locator: Locator, *, timeout: int | None = None) -> None:
         t = timeout or self.DEFAULT_TIMEOUT
         target = self.first_visible(locator)
         expect(target).to_be_visible(timeout=t)
         expect(target).to_be_enabled(timeout=t)
         target.scroll_into_view_if_needed()
         target.click(timeout=t)
+
+    def non_pointer_click(self, locator: Locator, *, timeout: int | None = None) -> None:
+        t = timeout or self.DEFAULT_TIMEOUT
+        target = self.first_visible(locator)
+        expect(target).to_be_visible(timeout=t)
+        expect(target).to_be_enabled(timeout=t)
+        target.scroll_into_view_if_needed()
+        target.evaluate("node => node.click()")
 
     def safe_fill(self, locator: Locator, value: str, *, timeout: int | None = None) -> None:
         t = timeout or self.DEFAULT_TIMEOUT

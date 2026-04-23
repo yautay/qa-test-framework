@@ -42,11 +42,14 @@ def test_basic_orders(page, context, runtime_env, auth_case: AuthSessionCase, de
     )
     checkout_wrappers = CartAndCheckoutWrappers(page, context, runtime_env)
     checkout_wrappers.process_cart()
-    checkout_wrappers.process_checkout(
+    checkout_process_data = checkout_wrappers.process_checkout(
         delivery_case.delivery_type,
         delivery_case.delivery_objects,
         delivery_case.purchaser_objects,
         delivery_case.payment_objects,
+    )
+    assert checkout_process_data.typ_summary_data.order_number.strip(), (
+        "Nie udało się potwierdzić złożenia zamówienia: brak numeru zamówienia w podsumowaniu."
     )
 
 
