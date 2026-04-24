@@ -37,44 +37,51 @@ class BaseComponent:
         expect(self.root).to_be_hidden(timeout=timeout or self.DEFAULT_TIMEOUT)
         return self
 
-    def assert_visible(self) -> None:
+    def assert_visible(self) -> Self:
         expect(self.root).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+        return self
 
-    def assert_hidden(self) -> None:
+    def assert_hidden(self) -> Self:
         expect(self.root).to_be_hidden(timeout=self.DEFAULT_TIMEOUT)
+        return self
 
-    def pointer_click(self, locator: Locator, *, timeout: int | None = None) -> None:
+    def pointer_click(self, locator: Locator, *, timeout: int | None = None) -> Self:
         t = timeout or self.DEFAULT_TIMEOUT
         target = self.first_visible(locator)
         expect(target).to_be_visible(timeout=t)
         expect(target).to_be_enabled(timeout=t)
         target.scroll_into_view_if_needed()
         target.click(timeout=t)
+        return self
 
-    def non_pointer_click(self, locator: Locator, *, timeout: int | None = None) -> None:
+    def non_pointer_click(self, locator: Locator, *, timeout: int | None = None) -> Self:
         t = timeout or self.DEFAULT_TIMEOUT
         target = self.first_visible(locator)
         expect(target).to_be_visible(timeout=t)
         expect(target).to_be_enabled(timeout=t)
         target.scroll_into_view_if_needed()
         target.evaluate("node => node.click()")
+        return self
 
-    def safe_fill(self, locator: Locator, value: str, *, timeout: int | None = None) -> None:
+    def safe_fill(self, locator: Locator, value: str, *, timeout: int | None = None) -> Self:
         t = timeout or self.DEFAULT_TIMEOUT
         target = self.first_visible(locator)
         expect(target).to_be_visible(timeout=t)
         target.scroll_into_view_if_needed()
         target.fill(value, timeout=t)
+        return self
 
-    def safe_type(self, locator: Locator, value: str, *, timeout: int | None = None) -> None:
+    def safe_type(self, locator: Locator, value: str, *, timeout: int | None = None) -> Self:
         t = timeout or self.DEFAULT_TIMEOUT
         target = self.first_visible(locator)
         expect(target).to_be_visible(timeout=t)
         target.scroll_into_view_if_needed()
         target.type(value, timeout=t)
+        return self
 
-    def should_have_text(self, locator: Locator, text: str) -> None:
+    def should_have_text(self, locator: Locator, text: str) -> Self:
         expect(locator).to_have_text(text, timeout=self.DEFAULT_TIMEOUT)
+        return self
 
     def find(self, selector: str) -> Locator:
         return self.root.locator(selector)
