@@ -16,21 +16,21 @@ class DeliveryDhlPopReceiverOverlay(DeliveryStorehouseReceiverOverlay):
         self.name = self.OVERLAY_NAME
 
     @step("Wyszukuję punkty DHL POP dla lokalizacji: {value}")
-    def search_pop_points(self, value: str, max_zoom_iterations: int = 4) -> list[StorehouseData]:
+    def search_pop_points(self, value: str, max_zoom_iterations: int = 40) -> list[StorehouseData]:
         return self.search_storehouses(value, max_zoom_iterations=max_zoom_iterations)
 
     @step("Pobieram listę dostępnych punktów DHL POP")
-    def get_available_pop_points(self, max_zoom_iterations: int = 4) -> list[StorehouseData]:
+    def get_available_pop_points(self, max_zoom_iterations: int = 40) -> list[StorehouseData]:
         return self.get_available_storehouses(max_zoom_iterations=max_zoom_iterations)
 
     @step("Wybieram punkt DHL POP o nazwie: {point_name}")
-    def choose_pop_point_by_name(self, point_name: str, max_zoom_iterations: int = 4) -> StorehouseData:
+    def choose_pop_point_by_name(self, point_name: str, max_zoom_iterations: int = 40) -> StorehouseData:
         return self.choose_storehouse_by_name(point_name, max_zoom_iterations=max_zoom_iterations)
 
     @step("Wybieram punkt DHL POP o data-id: {point_data_id}")
-    def choose_pop_point_by_data_id(self, point_data_id: str, max_zoom_iterations: int = 4) -> StorehouseData:
+    def choose_pop_point_by_data_id(self, point_data_id: str, max_zoom_iterations: int = 40) -> StorehouseData:
         return self.choose_storehouse_by_data_id(point_data_id, max_zoom_iterations=max_zoom_iterations)
 
     @step("Wybieram losowy punkt DHL POP")
-    def choose_random_pop_point(self, max_zoom_iterations: int = 4) -> StorehouseData:
+    def choose_random_pop_point(self, max_zoom_iterations: int = 40) -> StorehouseData:
         return self.choose_random_storehouse(max_zoom_iterations=max_zoom_iterations)

@@ -21,8 +21,6 @@ class DeliveryStorehouseReceiverOverlay(BaseComponent):
     MAP_STABILITY_POLL_MS = 250
     MAP_STABILITY_REQUIRED_PASSES = 1
     MAX_ALERT_GUIDED_ZOOM_STEPS = 40
-    FALLBACK_ZOOM_OUT_ATTEMPTS = 3
-    FALLBACK_ZOOM_IN_ATTEMPTS = 3
 
     def __init__(self, scope: Page | Locator) -> None:
         root = _order_pickup_dialog_root(scope, self.DIALOG_HEADING_PATTERN)
@@ -89,19 +87,11 @@ class DeliveryStorehouseReceiverOverlay(BaseComponent):
         if not data_id:
             return None
 
-        name_locator = tile.locator("div.flex.items-start p[title]").first
+        name_locator = tile.locator("p[title]").first
         if name_locator.count() == 0:
-            name_locator = tile.locator("p[title]").first
+            return None
 
-        name = ""
-        if name_locator.count() > 0:
-            name = self.__normalize_text((name_locator.text_content() or "").strip())
-
-        if not name:
-            fallback_text = self.__normalize_text((tile.text_content() or "").strip())
-            if fallback_text:
-                name = fallback_text.split("Otwarte:", 1)[0].strip()
-
+        name = self.__normalize_text((name_locator.text_content() or "").strip())
         if not name:
             return None
 
@@ -128,7 +118,7 @@ class DeliveryStorehouseReceiverOverlay(BaseComponent):
         if target.count() == 0 or not target.is_visible():
             raise RuntimeError("Nie znaleziono przycisku zamknięcia okna wyboru punktu odbioru.")
 
-        self.non_pointer_click(self.__close_button)
+        self.pointer_click(self.__close_button)
         self.wait_hidden(timeout=10_000)
 
     def __select_storehouse_tile(self, tile: Locator) -> None:
@@ -155,9 +145,10 @@ class DeliveryStorehouseReceiverOverlay(BaseComponent):
             tiles_by_id[storehouse_data.data_id] = tile
         return [(tiles_by_id[data_id], storehouse_data) for data_id, storehouse_data in unique_by_id.items()]
 
-    @staticmethod
-    def __fallback_zoom_limit(max_zoom_iterations: int, fallback_limit: int) -> int:
-        return min(fallback_limit, max(0, max_zoom_iterations))
+    def __guided_zoom_steps(self, max_zoom_iterations: int) -> int:
+        if max_zoom_iterations <= 0:
+            return self.MAX_ALERT_GUIDED_ZOOM_STEPS
+        return min(max_zoom_iterations, self.MAX_ALERT_GUIDED_ZOOM_STEPS)
 
     def __map_alert_zoom_direction(self) -> str | None:
         alert_text = self.__get_map_alert_text().casefold()
@@ -197,57 +188,18 @@ class DeliveryStorehouseReceiverOverlay(BaseComponent):
         self.__select_storehouse_tile(tile)
         return storehouse_data
 
-    def __choose_with_alert_guidance(self, matcher: Callable[[StorehouseData], bool]) -> StorehouseData | None:
-        for _ in range(self.MAX_ALERT_GUIDED_ZOOM_STEPS):
-            direction = self.__map_alert_zoom_direction()
-            if direction is None:
-                return None
-
-            if not self.__zoom_by_direction(direction):
-                return None
-
-            selected_storehouse = self.__try_choose_matching_storehouse(matcher)
-            if selected_storehouse is not None:
-                return selected_storehouse
-
-        return None
-
-    def __collect_with_alert_guidance(self) -> list[StorehouseData]:
-        for _ in range(self.MAX_ALERT_GUIDED_ZOOM_STEPS):
-            direction = self.__map_alert_zoom_direction()
-            if direction is None:
-                return []
-
-            if not self.__zoom_by_direction(direction):
-                return []
-
-            available_storehouses = self.__collect_visible_storehouses()
-            if available_storehouses:
-                return available_storehouses
-
-        return []
-
-    def __choose_with_fallback_zoom_path(
+    def __choose_with_alert_guidance(
         self,
         matcher: Callable[[StorehouseData], bool],
         max_zoom_iterations: int,
     ) -> StorehouseData | None:
-        out_attempts = self.__fallback_zoom_limit(max_zoom_iterations, self.FALLBACK_ZOOM_OUT_ATTEMPTS)
-        in_attempts = self.__fallback_zoom_limit(max_zoom_iterations, self.FALLBACK_ZOOM_IN_ATTEMPTS)
+        for _ in range(self.__guided_zoom_steps(max_zoom_iterations)):
+            direction = self.__map_alert_zoom_direction()
+            if direction is None:
+                return None
 
-        zoomed_out_count = 0
-        for _ in range(out_attempts):
-            if not self.__zoom_out():
-                break
-
-            zoomed_out_count += 1
-            selected_storehouse = self.__try_choose_matching_storehouse(matcher)
-            if selected_storehouse is not None:
-                return selected_storehouse
-
-        for _ in range(zoomed_out_count + in_attempts):
-            if not self.__zoom_in():
-                break
+            if not self.__zoom_by_direction(direction):
+                return None
 
             selected_storehouse = self.__try_choose_matching_storehouse(matcher)
             if selected_storehouse is not None:
@@ -255,23 +207,14 @@ class DeliveryStorehouseReceiverOverlay(BaseComponent):
 
         return None
 
-    def __collect_with_fallback_zoom_path(self, max_zoom_iterations: int) -> list[StorehouseData]:
-        out_attempts = self.__fallback_zoom_limit(max_zoom_iterations, self.FALLBACK_ZOOM_OUT_ATTEMPTS)
-        in_attempts = self.__fallback_zoom_limit(max_zoom_iterations, self.FALLBACK_ZOOM_IN_ATTEMPTS)
+    def __collect_with_alert_guidance(self, max_zoom_iterations: int) -> list[StorehouseData]:
+        for _ in range(self.__guided_zoom_steps(max_zoom_iterations)):
+            direction = self.__map_alert_zoom_direction()
+            if direction is None:
+                return []
 
-        zoomed_out_count = 0
-        for _ in range(out_attempts):
-            if not self.__zoom_out():
-                break
-
-            zoomed_out_count += 1
-            available_storehouses = self.__collect_visible_storehouses()
-            if available_storehouses:
-                return available_storehouses
-
-        for _ in range(zoomed_out_count + in_attempts):
-            if not self.__zoom_in():
-                break
+            if not self.__zoom_by_direction(direction):
+                return []
 
             available_storehouses = self.__collect_visible_storehouses()
             if available_storehouses:
@@ -279,23 +222,23 @@ class DeliveryStorehouseReceiverOverlay(BaseComponent):
 
         return []
 
-    def __collect_storehouses_with_zoom(self, max_zoom_iterations: int = 4) -> list[StorehouseData]:
+    def __collect_storehouses_with_zoom(self, max_zoom_iterations: int = 40) -> list[StorehouseData]:
         self.__wait_for_storehouses()
 
         available_storehouses = self.__collect_visible_storehouses()
         if available_storehouses:
             return available_storehouses
 
-        available_storehouses = self.__collect_with_alert_guidance()
+        available_storehouses = self.__collect_with_alert_guidance(max_zoom_iterations=max_zoom_iterations)
         if available_storehouses:
             return available_storehouses
 
-        return self.__collect_with_fallback_zoom_path(max_zoom_iterations=max_zoom_iterations)
+        return []
 
     def __choose_storehouse(
         self,
         matcher: Callable[[StorehouseData], bool],
-        max_zoom_iterations: int = 4,
+        max_zoom_iterations: int = 40,
     ) -> StorehouseData:
         self.__wait_for_storehouses()
 
@@ -303,11 +246,7 @@ class DeliveryStorehouseReceiverOverlay(BaseComponent):
         if selected_storehouse is not None:
             return selected_storehouse
 
-        selected_storehouse = self.__choose_with_alert_guidance(matcher)
-        if selected_storehouse is not None:
-            return selected_storehouse
-
-        selected_storehouse = self.__choose_with_fallback_zoom_path(matcher, max_zoom_iterations=max_zoom_iterations)
+        selected_storehouse = self.__choose_with_alert_guidance(matcher, max_zoom_iterations=max_zoom_iterations)
         if selected_storehouse is not None:
             return selected_storehouse
 
@@ -324,17 +263,17 @@ class DeliveryStorehouseReceiverOverlay(BaseComponent):
         return self
 
     @step("Wyszukuję salony dla lokalizacji: {value}")
-    def search_storehouses(self, value: str, max_zoom_iterations: int = 4) -> list[StorehouseData]:
+    def search_storehouses(self, value: str, max_zoom_iterations: int = 40) -> list[StorehouseData]:
         self.fill_visit_us(value)
         self.click_search_icon()
         return self.get_available_storehouses(max_zoom_iterations=max_zoom_iterations)
 
     @step("Pobieram listę dostępnych salonów")
-    def get_available_storehouses(self, max_zoom_iterations: int = 4) -> list[StorehouseData]:
+    def get_available_storehouses(self, max_zoom_iterations: int = 40) -> list[StorehouseData]:
         return self.__collect_storehouses_with_zoom(max_zoom_iterations=max_zoom_iterations)
 
     @step("Wybieram salon o nazwie: {storehouse_name}")
-    def choose_storehouse_by_name(self, storehouse_name: str, max_zoom_iterations: int = 4) -> StorehouseData:
+    def choose_storehouse_by_name(self, storehouse_name: str, max_zoom_iterations: int = 40) -> StorehouseData:
         normalized_target = self.__normalize_text(storehouse_name).casefold()
         if not normalized_target:
             raise ValueError("Nazwa salonu nie może być pusta.")
@@ -346,7 +285,7 @@ class DeliveryStorehouseReceiverOverlay(BaseComponent):
         return self.__choose_storehouse(matcher, max_zoom_iterations=max_zoom_iterations)
 
     @step("Wybieram salon o data-id: {storehouse_data_id}")
-    def choose_storehouse_by_data_id(self, storehouse_data_id: str, max_zoom_iterations: int = 4) -> StorehouseData:
+    def choose_storehouse_by_data_id(self, storehouse_data_id: str, max_zoom_iterations: int = 40) -> StorehouseData:
         normalized_target = storehouse_data_id.strip()
         if not normalized_target:
             raise ValueError("data-id salonu nie może być puste.")
@@ -357,16 +296,12 @@ class DeliveryStorehouseReceiverOverlay(BaseComponent):
         )
 
     @step("Wybieram losowy salon")
-    def choose_random_storehouse(self, max_zoom_iterations: int = 4) -> StorehouseData:
+    def choose_random_storehouse(self, max_zoom_iterations: int = 40) -> StorehouseData:
         self.__wait_for_storehouses()
 
         available_options = self.__collect_visible_storehouse_options()
         if not available_options:
-            self.__collect_with_alert_guidance()
-            available_options = self.__collect_visible_storehouse_options()
-
-        if not available_options:
-            self.__collect_with_fallback_zoom_path(max_zoom_iterations=max_zoom_iterations)
+            self.__collect_with_alert_guidance(max_zoom_iterations=max_zoom_iterations)
             available_options = self.__collect_visible_storehouse_options()
 
         if not available_options:

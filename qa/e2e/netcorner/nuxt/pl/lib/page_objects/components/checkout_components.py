@@ -8,8 +8,7 @@ from decimal import Decimal, InvalidOperation
 from enum import StrEnum
 from typing import Self
 
-from playwright.sync_api import Locator, Page
-from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+from playwright.sync_api import Locator, Page, expect
 
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
@@ -134,29 +133,19 @@ class CheckoutPurchaserComponent(BaseComponent):
     def __init__(self, scope: Page | Locator) -> None:
         super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Checkout Purchaser Component")
 
-        self.__add_data_tile = self.find('[data-name="orderPickerTile"]:has-text("Dodaj dane")')
-        self.__fallback_tile = self.find('[data-name="orderPickerTile"]')
+        self.__add_data_tile = self.find('[data-name="orderPickerTile"][data-role="dialogTrigger"]')
         self.__electronic_invoice_checkbox = self.find("#electronicInvoice")
 
     @step("Klikam kafelek kupującego: Dodaj dane")
     def click_add_data_tile(self) -> None:
-        if self.__add_data_tile.count() > 0:
-            self.pointer_click(self.__add_data_tile)
-            return
-        self.pointer_click(self.__fallback_tile)
+        self.pointer_click(self.__add_data_tile)
 
     def is_electronic_invoice_checked(self) -> bool:
-        checkbox = self.__electronic_invoice_checkbox.first
-        if checkbox.count() == 0 or not checkbox.is_visible():
-            return False
-        return checkbox.is_checked()
+        return self.__electronic_invoice_checkbox.first.is_checked()
 
     @step("Ustawiam checkbox 'Faktura elektroniczna' na {enabled}")
     def set_electronic_invoice(self, enabled: bool = True) -> Self:
         checkbox = self.__electronic_invoice_checkbox.first
-        if checkbox.count() == 0 or not checkbox.is_visible():
-            return self
-
         if checkbox.is_checked() != enabled:
             self.pointer_click(checkbox)
         return self
@@ -179,7 +168,6 @@ class CheckoutDeliveryMethodsComponent(BaseComponent):
         self.__matrix_tiles = self.__matrix_container.locator(
             '[data-name="orderPickerTile"], [data-name="orderMatrixTile"], [data-name*="PickerTile"]'
         )
-        self.__fallback_tiles = self.find('[data-name="orderPickerTile"]')
 
     @step("Czekam na dostępne metody transportu")
     def wait_for_available_methods(self, timeout: int | None = None) -> Self:
@@ -188,8 +176,6 @@ class CheckoutDeliveryMethodsComponent(BaseComponent):
             if self.__list_container.first.is_visible() and self.__visible_tiles(self.__list_tiles):
                 return self
             if self.__matrix_container.first.is_visible() and self.__visible_tiles(self.__matrix_tiles):
-                return self
-            if self.__visible_tiles(self.__fallback_tiles):
                 return self
             self.root.page.wait_for_timeout(250)
 
@@ -238,9 +224,6 @@ class CheckoutDeliveryMethodsComponent(BaseComponent):
         tiles = self.__visible_tiles(self.__matrix_tiles)
 
         if not tiles:
-            tiles = self.__visible_tiles(self.__matrix_container.locator('[data-name="orderPickerTile"]'))
-
-        if not tiles:
             return []
 
         sorted_tiles = sorted(tiles, key=self.__tile_sort_key)
@@ -275,37 +258,22 @@ class CheckoutDeliveryMethodsComponent(BaseComponent):
             return DeliveryMethodsLayout.LIST, self.__get_available_methods_list()
         if self.__matrix_container.first.is_visible():
             return DeliveryMethodsLayout.MATRIX, self.__get_available_methods_matrix()
-        fallback_methods = [self.__normalize_tile_text(tile) for tile in self.__visible_tiles(self.__fallback_tiles)]
-        if fallback_methods:
-            return DeliveryMethodsLayout.LIST, [method for method in fallback_methods if method]
         raise RuntimeError("Nie udało się rozpoznać układu metod transportu.")
+
+    def __available_tiles_for_layout(self, layout: DeliveryMethodsLayout) -> list[Locator]:
+        if layout == DeliveryMethodsLayout.LIST:
+            return self.__visible_tiles(self.__list_tiles)
+        return self.__visible_tiles(self.__matrix_tiles)
 
     @step("Wybieram losową dostępną metodę transportu i przechodzę dalej")
     def choose_random_available_method(self) -> DeliveryMethodsLayout:
         layout, _ = self.get_methods_layout()
-
-        if layout == DeliveryMethodsLayout.LIST:
-            available_tiles = self.__visible_tiles(self.__list_tiles)
-        else:
-            available_tiles = self.__visible_tiles(self.__matrix_tiles)
-
-        if not available_tiles:
-            available_tiles = self.__visible_tiles(self.__fallback_tiles)
+        available_tiles = self.__available_tiles_for_layout(layout)
 
         if not available_tiles:
             raise RuntimeError("Brak dostępnych metod transportu do wyboru.")
 
-        candidates = available_tiles[:]
-        random.shuffle(candidates)
-        for tile in candidates:
-            try:
-                tile.click(timeout=3_000, trial=True)
-                self.pointer_click(tile)
-                return layout
-            except PlaywrightTimeoutError:
-                continue
-
-        raise RuntimeError("Nie udało się kliknąć żadnej dostępnej metody transportu.")
+        self.pointer_click(random.choice(available_tiles))
         return layout
 
 
@@ -334,17 +302,12 @@ class CheckoutPaymentMethodsComponent(BaseComponent):
 
         self.__payment_picker = self.find('[data-name="orderPaymentPicker"]')
         self.__payment_tiles = self.__payment_picker.locator('[data-name="orderPickerTile"]')
-        self.__fallback_tiles = self.find('[data-name="orderPickerTile"]')
         self.__comment_checkbox = self.find("#orderUserCommentCheckbox")
 
     def __visible_tiles(self) -> list[Locator]:
-        source_tiles = self.__payment_tiles
-        if source_tiles.count() == 0:
-            source_tiles = self.__fallback_tiles
-
         visible_tiles: list[Locator] = []
-        for index in range(source_tiles.count()):
-            tile = source_tiles.nth(index)
+        for index in range(self.__payment_tiles.count()):
+            tile = self.__payment_tiles.nth(index)
             if tile.is_visible():
                 visible_tiles.append(tile)
         return visible_tiles
@@ -386,27 +349,12 @@ class CheckoutPaymentMethodsComponent(BaseComponent):
         return any(cls.__normalize_label(label) in normalized_tile_name for label in cls._METHOD_LABELS[payment_method])
 
     def __resolve_comment_field(self) -> Locator:
-        selectors = [
-            "textarea",
-            "[data-name*='comment'] textarea",
-            "[name*='comment']:not([type='checkbox'])",
-            "[id*='comment']:not([type='checkbox'])",
-        ]
-
-        for selector in selectors:
-            candidate = self.find(selector).first
-            try:
-                candidate.wait_for(state="visible", timeout=2_000)
-                return candidate
-            except Exception:
-                continue
-
-        raise RuntimeError("Nie znaleziono pola komentarza do zamówienia po zaznaczeniu checkboxa.")
+        field = self.find("textarea").first
+        expect(field).to_be_visible(timeout=2_000)
+        return field
 
     def __set_checkbox(self, checkbox: Locator, enabled: bool) -> None:
         target = checkbox.first
-        if target.count() == 0 or not target.is_visible():
-            return
         if target.is_checked() != enabled:
             self.pointer_click(target)
 
@@ -480,27 +428,23 @@ class CheckoutSummaryData:
 
 
 class CheckoutSummaryComponent(BaseComponent):
-    ROOT_SELECTOR = "[data-picker='paymentMethod']"
+    SUMMARY_HEADING = "Podsumowanie koszyka"
 
     def __init__(self, scope: Page | Locator) -> None:
-        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Checkout Summary Component")
-
-        self.__summary_panel = (
-            self.root.page.locator("section,div,aside")
-            .filter(has=self.root.page.get_by_role("heading", name="Podsumowanie koszyka"))
-            .first
+        page = scope if isinstance(scope, Page) else scope.page
+        summary_panel = scope.locator("section,div,aside").filter(
+            has=page.get_by_role("heading", name=self.SUMMARY_HEADING)
         )
+        super().__init__(summary_panel, name="Checkout Summary Component")
+
         self.__delivery_price = self.find("css=div:has(> span:text-is('Dostawa')) >> span.font-semibold")
         self.__payment_fee = self.find("css=p:text-is('Płatność') + div >> span.block.text-right")
         self.__total_to_pay = self.find("css=p.font-semibold:text-is('Do zapłaty') + span >> span.block.text-right")
-        self.__place_order_button = self.root.page.get_by_role("button", name="Zamawiam z obowiązkiem zapłaty").first
+        self.__place_order_button = self.root.get_by_role("button", name="Zamawiam z obowiązkiem zapłaty").first
 
     @staticmethod
-    def __read_text(locator: Locator, timeout: int = 1_000) -> str:
-        try:
-            return (locator.first.text_content(timeout=timeout) or "").strip()
-        except Exception:
-            return ""
+    def __read_text(locator: Locator) -> str:
+        return get_visible_text(locator)
 
     @staticmethod
     def __parse_money(value: str) -> Decimal:
@@ -523,13 +467,13 @@ class CheckoutSummaryComponent(BaseComponent):
         return summary_data
 
     def __get_delivery_price(self) -> str:
-        return self.__read_text(self.__delivery_price) or self.__read_text(self.__summary_panel)
+        return self.__read_text(self.__delivery_price)
 
     def __get_payment_fee(self) -> str:
-        return self.__read_text(self.__payment_fee) or self.__read_text(self.__summary_panel)
+        return self.__read_text(self.__payment_fee)
 
     def __get_total_to_pay(self) -> str:
-        return self.__read_text(self.__total_to_pay) or self.__read_text(self.__summary_panel)
+        return self.__read_text(self.__total_to_pay)
 
 
 @dataclass(frozen=True, slots=True)

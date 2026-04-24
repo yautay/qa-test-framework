@@ -71,7 +71,7 @@ class CartAndCheckoutWrappers:
         provider_error = ""
         try:
             actual_provider = delivery_type_component.get_selected_delivery_provider(timeout=8_000)
-        except Exception as exc:
+        except RuntimeError as exc:
             provider_error = str(exc)
 
         actual_provider_token = actual_provider or "<unknown>"
@@ -95,7 +95,7 @@ class CartAndCheckoutWrappers:
         while time.monotonic() < stability_deadline:
             try:
                 stable_provider = delivery_type_component.get_selected_delivery_provider(timeout=1_000)
-            except Exception as exc:
+            except RuntimeError as exc:
                 elapsed_ms = int(max(0.0, time.monotonic() - stability_start) * 1000)
                 logger.error(
                     "TEST_ERROR code=DELIVERY_PROVIDER_UNREADABLE_AFTER_PICKUP expected_provider={} actual_provider={} "
@@ -270,10 +270,7 @@ class CartAndCheckoutWrappers:
             purchaser_overlay = Overlays(self.__page).checkout_purchaser.wait_visible()
             purchaser_overlay.fill_purchaser_data(purchaser_objects)
             purchaser_overlay.click_add_details()
-            try:
-                purchaser_overlay.wait_hidden(timeout=10_000)
-            except AssertionError:
-                pass
+            purchaser_overlay.wait_hidden(timeout=10_000)
 
         if payment_objects is not None:
             if not isinstance(payment_objects, CheckoutPaymentData):
@@ -283,10 +280,7 @@ class CartAndCheckoutWrappers:
             available_payment_methods = payment_methods_component.get_available_payment_methods()
 
             if payment_objects.payment_method is not None:
-                try:
-                    payment_surcharge = payment_methods_component.choose_payment_method(payment_objects.payment_method)
-                except RuntimeError:
-                    payment_surcharge = payment_methods_component.choose_random_available_method()
+                payment_surcharge = payment_methods_component.choose_payment_method(payment_objects.payment_method)
             else:
                 payment_surcharge = payment_methods_component.choose_random_available_method()
 

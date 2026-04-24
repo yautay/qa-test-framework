@@ -76,13 +76,8 @@ class DeliveryCourierReceiverOverlay(BaseComponent):
         self.pointer_click(self._city_select_input_area)
         expect(self._city_select_options_container).to_be_visible(timeout=5_000)
         option = self._city_select_options_container.get_by_text(value, exact=True).first
-        if option.count() == 0:
-            option = self._city_select_options_container.locator("div", has_text=value).first
-        if option.count() == 0:
-            raise AssertionError(f"Nie znaleziono opcji selekta o tekście: {value!r}")
         expect(option).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
-        option.scroll_into_view_if_needed()
-        option.click(timeout=self.DEFAULT_TIMEOUT)
+        self.pointer_click(option)
         return self
 
     def _enter_phone_number(self, value: str) -> Self:

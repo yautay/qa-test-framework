@@ -19,17 +19,10 @@ class CartFooterComponent(BaseComponent):
     def __init__(self, scope: Page | Locator) -> None:
         super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Cart Footer Component")
 
-        page = self.root.page
-        self.__btn_continue = page.get_by_role("button", name="Przejdź dalej").first
-        self.__btn_clear_cart = page.get_by_role("button", name="Wyczyść koszyk").first
-        self.__btn_back_to_shopping = page.get_by_role("button", name="Wróć do zakupów").first
-        self.__btn_copy_link = page.get_by_text("Skopiuj link").first
-
-    @staticmethod
-    def _assert_visible(locator: Locator, label: str) -> None:
-        target = locator.first
-        if target.count() == 0 or not target.is_visible():
-            raise AssertionError(f"'{label}' is not visible in the current viewport")
+        self.__btn_continue = self.root.get_by_role("button", name="Przejdź dalej").first
+        self.__btn_clear_cart = self.root.get_by_role("button", name="Wyczyść koszyk").first
+        self.__btn_back_to_shopping = self.root.get_by_role("button", name="Wróć do zakupów").first
+        self.__btn_copy_link = self.root.get_by_text("Skopiuj link").first
 
     # actions
     @step("Klikam 'Przejdź dalej'")
@@ -38,7 +31,6 @@ class CartFooterComponent(BaseComponent):
 
     @step("Klikam 'Wyczyść koszyk'")
     def click_clear_cart(self) -> None:
-        self._assert_visible(self.__btn_clear_cart, "Wyczyść koszyk")
         self.pointer_click(self.__btn_clear_cart)
 
     @step("Klikam 'Wróć do zakupów'")
@@ -47,5 +39,4 @@ class CartFooterComponent(BaseComponent):
 
     @step("Klikam 'Skopiuj link'")
     def click_copy_link(self) -> None:
-        self._assert_visible(self.__btn_copy_link, "Skopiuj link")
         self.pointer_click(self.__btn_copy_link)

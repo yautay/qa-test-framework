@@ -21,14 +21,12 @@ For day-to-day test execution, use `README.md`.
 ## Docs index
 
 - `docs/ARTIFACTS.md`
-- `docs/ai-agents/README.md`
+- `docs/E2E_PAGE_OBJECT_CONTRACT.md`
 - `docs/FIXTURES.md`
-- `docs/SCENARIO_MODEL.md`
+- `docs/PAGE_OBJECTS_EN.md`
+- `docs/PAGE_OBJECTS_PL.md`
 - `docs/REPORTING_HTTP_INTEGRATION.md`
-- `docs/visual-timeout-postmortem.md`
-- `tools/README.md`
-- `tools/opencode/README.md`
-- `work/e2e-jobs/README.md`
+- `docs/VISUAL_BASELINE_APPROVAL_FLOW.md`
 
 ## Core commands
 

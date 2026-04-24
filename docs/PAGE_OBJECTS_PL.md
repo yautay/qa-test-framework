@@ -4,6 +4,9 @@ Ten dokument jest dla osób, które dobrze znają testy manualne, ale dopiero za
 
 W tym repo page objecty są intensywnie używane w `qa/e2e/netcorner/nuxt/pl/lib/page_objects/`.
 
+Normatywny kontrakt dla contributorów i agentów jest w `docs/E2E_PAGE_OBJECT_CONTRACT.md`.
+Ten dokument pozostaje przewodnikiem edukacyjnym. Jeśli przykłady kiedyś rozjadą się z kontraktem, pierwszeństwo ma kontrakt.
+
 ## Po co nam page objecty
 
 Bez page objectów test bardzo szybko zamienia się w listę selektorów i kliknięć:
@@ -147,7 +150,7 @@ class RegisterClientComponent(BaseComponent):
 
     @step("Klikam przycisk 'Załóż konto'")
     def submit_registration(self) -> None:
-        self.safe_click(self.__button_register)
+        self.pointer_click(self.__button_register)
 ```
 
 To jest styl, którego chcemy:
@@ -180,14 +183,14 @@ Przykład:
 class LoginOverlay(BaseComponent):
     def __init__(self, page: Page):
         super().__init__(page.locator('[data-name="loginForm"]:visible').first, name="Login Overlay")
-        self.__input_login = self.root.locator("#loginEmail")
+        self.__input_login = self.find("#loginEmail")
         self.__button_login = self.root.get_by_role(role="button", name="Zaloguj się")
 
     @step("Loguję klienta loginem: {client_login} hasłem: {client_pwd}")
     def log_client(self, client_login: str, client_pwd: str) -> None:
         self.safe_type(self.__input_login, client_login)
         self.safe_type(self.__input_password, client_pwd)
-        self.safe_click(self.__button_login)
+        self.pointer_click(self.__button_login)
 ```
 
 ## 5. Flow / Wrapper
@@ -286,13 +289,11 @@ Lokalny `BaseComponent` dodaje helper `resolve_root(...)`.
 class BaseComponent(FrameworkBaseComponent):
     @staticmethod
     def resolve_root(scope: Page | Locator, root_selector: str) -> Locator:
-        root = scope.locator(root_selector)
         if isinstance(scope, Page):
-            return root
-        try:
-            return root.first if root.count() > 0 else scope
-        except Exception:
-            return root.first
+            return scope.locator(root_selector)
+        if scope.evaluate("(node, selector) => node instanceof Element && node.matches(selector)", root_selector):
+            return scope
+        return scope.locator(root_selector)
 ```
 
 W praktyce daje to bardzo wygodny wzorzec konstruktora:
@@ -306,6 +307,13 @@ class SomeComponent(BaseComponent):
 ```
 
 Dzięki temu komponent działa zarówno wtedy, gdy dostanie `Page`, jak i wtedy, gdy dostanie root sekcji lub innego komponentu.
+
+Nowa zasada dla locatorów w konstruktorze:
+
+- `self.find(...)` dla pierwszego poziomu w obrębie `self.root`,
+- `self.root.get_by_*` dla semantycznych locatorów Playwrighta,
+- `parent.locator(...)` lub `parent.get_by_*` tylko dla świadomie zagnieżdżonych struktur,
+- bez cichego fallbacku `A -> B -> C`, jeśli UI nie ma jawnie wspieranego wariantu.
 
 ## Najważniejsze zasady pisania metod
 
@@ -362,7 +370,7 @@ Przykład:
 ```python
 @step("Akceptuję obowiązkowe regulaminy")
 def accept_required_terms(self) -> Self:
-    self.safe_click(self.__checkbox_terms)
+    self.pointer_click(self.__checkbox_terms)
     return self
 ```
 
@@ -570,7 +578,7 @@ class ExampleComponent(BaseComponent):
 
     @step("Zapisuję formularz")
     def save(self) -> None:
-        self.safe_click(self.__button_save)
+        self.pointer_click(self.__button_save)
 ```
 
 ### Krok 4. Podłącz komponent do sekcji
@@ -690,7 +698,7 @@ Najpierw spróbuj:
 - `wait_loaded()`
 - `wait_visible()`
 - `expect(...)`
-- helperów typu `safe_click`, `safe_type`
+- helperów typu `pointer_click`, `safe_fill`, `safe_type`
 
 ## Kiedy dodać asercję do page objectu
 

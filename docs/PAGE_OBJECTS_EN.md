@@ -4,6 +4,9 @@ This document is for people who know manual testing well but are just starting w
 
 In this repository, page objects are used heavily in `qa/e2e/netcorner/nuxt/pl/lib/page_objects/`.
 
+The normative contributor and agent contract lives in `docs/E2E_PAGE_OBJECT_CONTRACT.md`.
+This document remains a teaching guide. If an example ever drifts from the contract, the contract wins.
+
 ## Why we use page objects
 
 Without page objects, a test quickly turns into a list of selectors and clicks:
@@ -146,7 +149,7 @@ class RegisterClientComponent(BaseComponent):
 
     @step("I click the 'Create account' button")
     def submit_registration(self) -> None:
-        self.safe_click(self.__button_register)
+        self.pointer_click(self.__button_register)
 ```
 
 This is the style we want:
@@ -179,14 +182,14 @@ Example:
 class LoginOverlay(BaseComponent):
     def __init__(self, page: Page):
         super().__init__(page.locator('[data-name="loginForm"]:visible').first, name="Login Overlay")
-        self.__input_login = self.root.locator("#loginEmail")
+        self.__input_login = self.find("#loginEmail")
         self.__button_login = self.root.get_by_role(role="button", name="Log in")
 
     @step("I log in with login: {client_login} and password: {client_pwd}")
     def log_client(self, client_login: str, client_pwd: str) -> None:
         self.safe_type(self.__input_login, client_login)
         self.safe_type(self.__input_password, client_pwd)
-        self.safe_click(self.__button_login)
+        self.pointer_click(self.__button_login)
 ```
 
 ## 5. Flow / Wrapper
@@ -285,13 +288,11 @@ The local `BaseComponent` adds the helper `resolve_root(...)`.
 class BaseComponent(FrameworkBaseComponent):
     @staticmethod
     def resolve_root(scope: Page | Locator, root_selector: str) -> Locator:
-        root = scope.locator(root_selector)
         if isinstance(scope, Page):
-            return root
-        try:
-            return root.first if root.count() > 0 else scope
-        except Exception:
-            return root.first
+            return scope.locator(root_selector)
+        if scope.evaluate("(node, selector) => node instanceof Element && node.matches(selector)", root_selector):
+            return scope
+        return scope.locator(root_selector)
 ```
 
 In practice, this gives us a very convenient constructor pattern:
@@ -305,6 +306,13 @@ class SomeComponent(BaseComponent):
 ```
 
 Because of this, the component works both when it receives `Page` and when it receives the root of a section or another component.
+
+New constructor locator rule:
+
+- `self.find(...)` for first-level descendants of `self.root`
+- `self.root.get_by_*` for semantic Playwright locators
+- `parent.locator(...)` or `parent.get_by_*` only for intentional nested structures
+- no silent `A -> B -> C` fallback chains unless the UI exposes an explicit supported variant
 
 ## The most important rules for method design
 
@@ -361,7 +369,7 @@ Example:
 ```python
 @step("I accept required terms")
 def accept_required_terms(self) -> Self:
-    self.safe_click(self.__checkbox_terms)
+    self.pointer_click(self.__checkbox_terms)
     return self
 ```
 
@@ -569,7 +577,7 @@ class ExampleComponent(BaseComponent):
 
     @step("I save the form")
     def save(self) -> None:
-        self.safe_click(self.__button_save)
+        self.pointer_click(self.__button_save)
 ```
 
 ### Step 4. Connect the component to a section
@@ -689,7 +697,7 @@ Try these first:
 - `wait_loaded()`
 - `wait_visible()`
 - `expect(...)`
-- helpers like `safe_click` and `safe_type`
+- helpers like `pointer_click`, `safe_fill`, and `safe_type`
 
 ## When to add assertions inside a page object
 

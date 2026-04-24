@@ -41,11 +41,11 @@ class CheckoutPurchaserOverlay(BaseComponent):
         self._tax_identification_number_input = self.find("#taxIdentificationNumber")
 
     def _click_private_person(self) -> Self:
-        self.pointer_click(self._private_person_button)
+        self.pointer_click(self._private_person_button).sleep(1_000)
         return self
 
     def _click_company(self) -> Self:
-        self.pointer_click(self._company_button)
+        self.pointer_click(self._company_button).sleep(1_000)
         return self
 
     def _enter_first_name(self, value: str) -> Self:
@@ -69,7 +69,7 @@ class CheckoutPurchaserOverlay(BaseComponent):
         return self
 
     def _enter_postal_code(self, value: str) -> Self:
-        self.safe_type(self._postal_code_input, value)
+        self.safe_type(self._postal_code_input, value).sleep(1_500)
         return self
 
     def _enter_city(self, value: str) -> Self:
@@ -77,13 +77,8 @@ class CheckoutPurchaserOverlay(BaseComponent):
         self.pointer_click(self._city_select_input_area)
         expect(self._city_select_options_container).to_be_visible(timeout=5_000)
         option = self._city_select_options_container.get_by_text(value, exact=True).first
-        if option.count() == 0:
-            option = self._city_select_options_container.locator("div", has_text=value).first
-        if option.count() == 0:
-            raise AssertionError(f"Nie znaleziono opcji selekta o tekście: {value!r}")
         expect(option).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
-        option.scroll_into_view_if_needed()
-        option.click(timeout=self.DEFAULT_TIMEOUT)
+        self.pointer_click(option, timeout=1_500)
         return self
 
     def _enter_phone_number(self, value: str) -> Self:

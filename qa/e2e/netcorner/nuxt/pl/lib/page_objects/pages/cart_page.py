@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import cast
-
-from playwright.sync_api import Page, expect
+from playwright.sync_api import Page
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_page import BasePage, LoadState
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.overlays import Overlays
@@ -50,9 +48,4 @@ class CartPage(BasePage):
         Overlays(self.page).login.continue_without_login_if_visible()
 
         checkout_page = CheckoutPage(self.page, self.base_url)
-        shipping_method_picker = self.page.locator("[data-picker='shippingMethod']").first
-        try:
-            expect(shipping_method_picker).to_be_visible(timeout=10_000)
-            return checkout_page.wait_loaded()
-        except AssertionError:
-            return cast(CheckoutPage, checkout_page.open()).wait_loaded()
+        return checkout_page.wait_loaded()

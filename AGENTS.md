@@ -28,3 +28,9 @@
 - If a local commit is blocked unexpectedly, check `.git/hooks/pre-commit`: the repo provides `tools/hooks/pre-commit-aso.sh`, which runs `make test-aso`.
 - Exclude `.opencode/node_modules/` from searches; it is local OpenCode plugin noise, not product code.
 - README files mention targets such as `debug-minio-up`, `debug-remote-grid-up`, and `clean-visual-baselines`, but those targets are not defined in the checked-in root `Makefile`.
+
+## E2E Page Object Contract
+- For `qa/e2e/**`, follow `docs/E2E_PAGE_OBJECT_CONTRACT.md`.
+- Do not introduce new silent fallback chains in page objects or wrappers.
+- Prefer root-scoped locators and semantic Playwright locators over global page lookups.
+- When touching legacy E2E page objects, migrate the touched area toward the contract instead of preserving ambiguous fallback behavior.

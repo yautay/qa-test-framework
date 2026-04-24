@@ -57,22 +57,21 @@ class ProductPriceComponent(BaseComponent):
         super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Product Price Component")
 
     def __resolved_root(self) -> Locator:
-        resolved_root = self.root.page.locator(f"{self.ROOT_SELECTOR}:visible").first
-        expect(resolved_root).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
-        return resolved_root
+        expect(self.root).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+        return self.root
 
     @step("Dodaję produkt do koszyka")
     def add_to_cart(self) -> ProductPriceData:
         data = self.get_data()
-        add_to_cart_button = self.__resolved_root().locator("[data-name='addToCartButton']:visible").first
+        add_to_cart_button = self.find("[data-name='addToCartButton']:visible").first
         self.pointer_click(add_to_cart_button)
         return data
 
     def get_data(self) -> ProductPriceData:
-        root = self.__resolved_root()
-        final_price = root.locator("[data-price-type='final']").first
-        availability_status_locator = root.locator("[data-name='statusAvailable'] .font-semibold").first
-        free_shipping = root.locator("[data-name='freeShipping']").first
+        self.__resolved_root()
+        final_price = self.find("[data-price-type='final']").first
+        availability_status_locator = self.find("[data-name='statusAvailable'] .font-semibold").first
+        free_shipping = self.find("[data-name='freeShipping']").first
 
         status_text = get_visible_text(availability_status_locator)
         availability_status: AvailabilityStatus | None = None
