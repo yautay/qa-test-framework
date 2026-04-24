@@ -6,7 +6,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.cart_components import
     CartComponent,
     CartSummaryComponent,
 )
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.checkout_components import (
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.checkout import (
     CheckoutDeliveryMethodsComponent,
     CheckoutDeliveryObjectComponent,
     CheckoutDeliveryTypeComponent,

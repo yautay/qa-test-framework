@@ -9,7 +9,7 @@ from playwright.sync_api import BrowserContext, Page
 
 from framework.env import RuntimeEnv
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.cart_components import CartProductData
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.checkout_components import (
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.checkout import (
     CheckoutSummaryData,
     DeliveryTypeData,
     PaymentMethodData,
