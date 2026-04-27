@@ -383,18 +383,21 @@ def checkout_delivery_cases() -> list[CheckoutDeliveryCase]:
             case_id="dhl_pop",
             delivery_type=DeliveryTypes.DHL_POP,
             delivery_objects=private_person_delivery_dhl_pop_receiver(),
+            purchaser_objects=private_person_checkout_purchaser(),
             payment_objects=checkout_payment_blik_required_terms(),
         ),
         CheckoutDeliveryCase(
             case_id="inpost",
             delivery_type=DeliveryTypes.INPOST,
             delivery_objects=private_person_delivery_inpost_receiver(),
+            purchaser_objects=private_person_checkout_purchaser(),
             payment_objects=checkout_payment_blik_required_terms(),
         ),
         CheckoutDeliveryCase(
             case_id="store_pickup",
             delivery_type=DeliveryTypes.STORE_PICKUP,
             delivery_objects=private_person_delivery_storehouse_receiver(),
+            purchaser_objects=private_person_checkout_purchaser(),
             payment_objects=checkout_payment_blik_required_terms(),
         ),
         CheckoutDeliveryCase(

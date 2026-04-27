@@ -14,7 +14,7 @@ class FooterComponent(BaseComponent):
 
 
 class CartFooterComponent(BaseComponent):
-    ROOT_SELECTOR = '[data-name="cartFooter"]'
+    ROOT_SELECTOR = '[data-name="cartFooter"], [data-name="stickyBar"]'
 
     def __init__(self, scope: Page | Locator) -> None:
         super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Cart Footer Component")

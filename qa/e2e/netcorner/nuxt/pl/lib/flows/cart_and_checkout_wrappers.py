@@ -258,37 +258,37 @@ class CartAndCheckoutWrappers:
                 )
                 delivery_methods.get_methods_layout()
                 delivery_methods.choose_random_available_method()
-                checkout.content.purchaser.wait_visible().set_electronic_invoice(True)
             case _:
                 raise ValueError(f"Nieobsługiwany typ dostawy: {delivery_type}")
 
-        if purchaser_objects is not None:
-            if not isinstance(purchaser_objects, CheckoutPurchaserData):
-                raise TypeError("Argument purchaser_objects musi być typu CheckoutPurchaserData.")
+        checkout.content.purchaser.wait_visible().set_electronic_invoice(True)
 
-            checkout.content.purchaser.wait_visible().click_add_data_tile()
-            purchaser_overlay = Overlays(self.__page).checkout_purchaser.wait_visible()
-            purchaser_overlay.fill_purchaser_data(purchaser_objects)
-            purchaser_overlay.click_add_details()
-            purchaser_overlay.wait_hidden(timeout=10_000)
+        if not isinstance(purchaser_objects, CheckoutPurchaserData):
+            raise TypeError("Argument purchaser_objects musi być typu CheckoutPurchaserData.")
 
-        if payment_objects is not None:
-            if not isinstance(payment_objects, CheckoutPaymentData):
-                raise TypeError("Argument payment_objects musi być typu CheckoutPaymentData.")
+        checkout.content.purchaser.wait_visible().click_add_data_tile()
+        purchaser_overlay = Overlays(self.__page).checkout_purchaser.wait_visible()
+        purchaser_overlay.fill_purchaser_data(purchaser_objects)
+        purchaser_overlay.click_add_details()
+        purchaser_overlay.wait_hidden(timeout=10_000)
 
-            payment_methods_component = checkout.content.payment_methods.wait_visible()
-            available_payment_methods = payment_methods_component.get_available_payment_methods()
 
-            if payment_objects.payment_method is not None:
-                payment_surcharge = payment_methods_component.choose_payment_method(payment_objects.payment_method)
-            else:
-                payment_surcharge = payment_methods_component.choose_random_available_method()
+        if not isinstance(payment_objects, CheckoutPaymentData):
+            raise TypeError("Argument payment_objects musi być typu CheckoutPaymentData.")
 
-            if payment_objects.comment:
-                payment_methods_component.set_order_comment(payment_objects.comment)
+        payment_methods_component = checkout.content.payment_methods.wait_visible()
+        available_payment_methods = payment_methods_component.get_available_payment_methods()
 
-            if payment_objects.required_consent:
-                payment_methods_component.set_required_consent(PaymentRequiredConsent.REGULATION)
+        if payment_objects.payment_method is not None:
+            payment_surcharge = payment_methods_component.choose_payment_method(payment_objects.payment_method)
+        else:
+            payment_surcharge = payment_methods_component.choose_random_available_method()
+
+        if payment_objects.comment:
+            payment_methods_component.set_order_comment(payment_objects.comment)
+
+        if payment_objects.required_consent:
+            payment_methods_component.set_required_consent(PaymentRequiredConsent.REGULATION)
 
         summary_data, typ_summary_data = checkout.submit_order()
         return CheckoutProcessData(
