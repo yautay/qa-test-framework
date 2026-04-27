@@ -435,3 +435,108 @@ def test_send_test_result_updates_marks_missing_heatmap_as_unavailable(
     assert heatmap["available"] is False
     assert heatmap["size_bytes"] == 0
     assert heatmap["sha256"] == ""
+
+
+def test_send_test_result_updates_preserves_failed_dom_from_worker_payload(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Verify that failed_dom artifacts from worker payload survive update merge."""
+    run_root = tmp_path / "artifacts" / "run-failed"
+    workers = run_root / "workers" / "gw0"
+    workers.mkdir(parents=True)
+    report_dir = run_root / "visual"
+    report_dir.mkdir(parents=True)
+    heatmap_rel = "heatmap/case-failed.png"
+    heatmap_file = report_dir / heatmap_rel
+    heatmap_file.parent.mkdir(parents=True, exist_ok=True)
+    heatmap_file.write_bytes(b"heat")
+    
+    nodeid = "qa/visual/test_failed.py::test_case[failed_with_dom]"
+    (workers / "test_result_payloads.json").write_text(
+        json.dumps(
+            {
+                nodeid: {
+                    "event_type": "test_result",
+                    "run_uid": "run-uid-failed",
+                    "attempt": 1,
+                    "nodeid": nodeid,
+                    "test_id": nodeid,
+                    "status": "failed",
+                    "visual": {
+                        "verdict": "analysis",
+                        "execution": {"pms_usage_state": "deferred"},
+                    },
+                    "artifacts": [
+                        {"kind": "trace", "path": "trace.zip", "available": True},
+                        {"kind": "failed_dom", "path": "failed-dom/test_case.html", "available": True, "size_bytes": 245},
+                        {"kind": "screenshot_raw", "path": "screenshots/test_raw.png", "available": True},
+                    ],
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    class _Client:
+        enabled = True
+
+        def __init__(self) -> None:
+            self.calls: list[dict[str, object]] = []
+
+        def test_result(self, payload: dict[str, object]) -> None:
+            self.calls.append(payload)
+
+    client = _Client()
+    config = _config(root=tmp_path)
+    config._run_uid = "run-uid-failed"
+    config._run_artifacts = SimpleNamespace(run_id="run-failed")
+    config._reporting_client = client
+
+    monkeypatch.setattr(
+        plugin,
+        "load_env",
+        lambda: SimpleNamespace(
+            reporting_source_project="proj",
+            framework_version="0.1.0",
+            reporting_source_producer_id="",
+            reporting_source_origin="local",
+        ),
+    )
+
+    result = plugin.VisualResult(
+        scenario_id="s-failed",
+        status="failed",
+        message="visual comparison failed",
+        compare_mode="hybrid",
+        baseline_path="b.png",
+        actual_path="a.png",
+        diff_path="d.png",
+        heatmap_path=heatmap_rel,
+        nodeid=nodeid,
+    )
+    result.pixel_changed_ratio = 0.05
+    result.lpips = 0.2
+    result.dists = 0.15
+    plugin._send_test_result_updates(config, run_root, [result])
+
+    assert len(client.calls) == 1
+    payload = cast(dict[str, Any], client.calls[0])
+    assert payload["attempt"] == 2
+    artifacts = cast(list[dict[str, Any]], payload["artifacts"])
+    
+    # Verify that failed_dom artifact from worker payload is preserved
+    failed_dom_artifacts = [item for item in artifacts if item.get("kind") == "failed_dom"]
+    assert len(failed_dom_artifacts) == 1
+    failed_dom = failed_dom_artifacts[0]
+    assert failed_dom["path"] == "failed-dom/test_case.html"
+    assert failed_dom["available"] is True
+    assert failed_dom["size_bytes"] == 245
+    
+    # Verify that other worker artifacts are also preserved
+    assert any(item.get("kind") == "trace" for item in artifacts)
+    assert any(item.get("kind") == "screenshot_raw" for item in artifacts)
+    
+    # Verify that visual heatmap is added
+    heatmap_artifacts = [item for item in artifacts if item.get("kind") == "visual_heatmap"]
+    assert len(heatmap_artifacts) == 1
+    assert heatmap_artifacts[0]["path"] == heatmap_rel

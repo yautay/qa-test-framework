@@ -131,3 +131,78 @@ def test_send_test_result_updates_marks_missing_heatmap_as_unavailable(tmp_path)
     assert heatmap["available"] is False
     assert heatmap["size_bytes"] == 0
     assert heatmap["sha256"] == ""
+
+
+def test_send_test_result_updates_preserves_failed_dom_artifacts_from_base_payload(tmp_path) -> None:
+    """Ensure attempt-2 visual updates preserve unrelated artifacts including failed_dom from base payload."""
+    nodeid = "qa/visual/test_demo.py::test_case[failed_with_dom]"
+    run_root = tmp_path / "artifacts" / "run-3"
+    report_dir = run_root / "visual"
+    report_dir.mkdir(parents=True)
+    heatmap_rel = "heatmap/case-failed.png"
+    heatmap_file = report_dir / heatmap_rel
+    heatmap_file.parent.mkdir(parents=True, exist_ok=True)
+    heatmap_file.write_bytes(b"heat")
+    
+    base_payload = {
+        "event_type": "test_result",
+        "run_uid": "run-uid-3",
+        "attempt": 1,
+        "test_id": nodeid,
+        "nodeid": nodeid,
+        "status": "failed",
+        "visual": {
+            "verdict": "analysis",
+            "execution": {"pms_usage_state": "deferred"},
+        },
+        "artifacts": [
+            {"kind": "trace", "path": "trace.zip", "available": True},
+            {"kind": "failed_dom", "path": "failed-dom/case-failed.html", "available": True, "size_bytes": 156},
+            {"kind": "screenshot_raw", "path": "screenshots/case-raw.png", "available": True},
+        ],
+    }
+    client = _ReportingClient()
+    config = SimpleNamespace(
+        _reporting_client=client,
+        _test_result_payloads={nodeid: base_payload},
+        _run_uid="run-uid-3",
+    )
+    run_artifacts = SimpleNamespace(run_id="run-3", root=run_root)
+
+    result = VisualResult(
+        scenario_id="scenario-3",
+        status="failed",
+        message="visual comparison failed",
+        compare_mode="hybrid",
+        baseline_path="baseline.png",
+        actual_path="actual.png",
+        diff_path="diff.png",
+        heatmap_path=heatmap_rel,
+        nodeid=nodeid,
+    )
+    result.pixel_changed_ratio = 0.05
+    result.lpips = 0.2
+    result.dists = 0.15
+
+    visual_conftest._send_test_result_updates(config, run_artifacts, [result])
+
+    assert len(client.calls) == 1
+    payload = cast(dict[str, Any], client.calls[0])
+    assert payload["attempt"] == 2
+    assert payload["visual"]["verdict"] == "failed"
+    artifacts = cast(list[dict[str, Any]], payload["artifacts"])
+    
+    # Verify that failed_dom artifact from base payload is preserved
+    failed_dom_artifacts = [item for item in artifacts if item.get("kind") == "failed_dom"]
+    assert len(failed_dom_artifacts) == 1
+    failed_dom = failed_dom_artifacts[0]
+    assert failed_dom["path"] == "failed-dom/case-failed.html"
+    assert failed_dom["available"] is True
+    assert failed_dom["size_bytes"] == 156
+    
+    # Verify that other base artifacts are also preserved
+    assert any(item.get("kind") == "trace" for item in artifacts)
+    assert any(item.get("kind") == "screenshot_raw" for item in artifacts)
+    
+    # Verify that visual heatmap is added
+    assert any(item.get("kind") == "visual_heatmap" for item in artifacts)

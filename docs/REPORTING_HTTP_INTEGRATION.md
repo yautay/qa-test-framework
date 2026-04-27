@@ -146,7 +146,7 @@ Test result payload includes:
 - `timing` (`started_at`, `finished_at`, `duration_ms`)
 - `scenario`
 - `markers`
-- `artifacts` (trace/video/screenshot metadata list)
+- `artifacts` (trace/video/screenshot/failed_dom metadata list)
   - each artifact includes `size_bytes` and `size_mib`
 - optional `visual`
 
@@ -159,6 +159,11 @@ On failed tests with screenshot artifacts:
 - client sends `multipart/form-data` to test-result endpoint,
 - field `payload` contains full JSON payload,
 - files are attached as repeated `screenshots` parts (`raw` and `annotated` when available).
+
+Failed DOM snapshots are included in the `artifacts` array with kind `failed_dom`:
+- captured automatically for browser test failures (E2E and Visual suites),
+- contains the page DOM content as HTML at time of failure,
+- enables post-mortem debugging of element state and content issues.
 
 If multipart upload fails, client falls back to plain JSON request.
 

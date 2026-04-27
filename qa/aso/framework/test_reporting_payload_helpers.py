@@ -50,6 +50,34 @@ def test_artifact_entry_marks_missing_as_unavailable() -> None:
     assert payload["sha256"] == ""
 
 
+def test_artifact_entry_failed_dom_with_real_html_file(tmp_path: Path) -> None:
+    html_content = """<!DOCTYPE html>
+<html>
+<head><title>Test Page</title></head>
+<body><h1>Failed Test DOM</h1><p>Content snapshot</p></body>
+</html>"""
+    html_file = tmp_path / "test_failed.html"
+    html_file.write_text(html_content, encoding="utf-8")
+
+    payload = _artifact_entry("failed_dom", str(html_file))
+
+    assert payload["available"] is True
+    assert payload["size_bytes"] == len(html_content.encode("utf-8"))
+    assert payload["size_mib"] >= 0.0  # Small files can have 0.0 MiB
+    assert payload["kind"] == "failed_dom"
+    assert "sha256" in payload
+
+
+def test_artifact_entry_failed_dom_missing_path() -> None:
+    payload = _artifact_entry("failed_dom", "")
+
+    assert payload["available"] is False
+    assert payload["size_bytes"] == 0
+    assert payload["size_mib"] == 0.0
+    assert payload["sha256"] == ""
+    assert payload["kind"] == "failed_dom"
+
+
 def test_write_test_steps_artifact_creates_json_file(tmp_path: Path) -> None:
     run_artifacts = build_run_artifacts(str(tmp_path / "artifacts"), run_id="run-steps")
     config = SimpleNamespace(_run_artifacts=run_artifacts)

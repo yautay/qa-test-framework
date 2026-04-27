@@ -1654,6 +1654,7 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
         "visual_heatmap": "visual_heatmap",
         "visual_reference_actual": "visual_reference_actual",
         "visual_reference_baseline": "visual_reference_baseline",
+        "failed_dom": "failed_dom",
     }
     for key, path in artifacts_payload.items():
         if not isinstance(path, str):
