@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from typing import Self
 
 from playwright.sync_api import Locator, expect
@@ -9,7 +10,8 @@ class BaseComponent:
     DEFAULT_TIMEOUT = 10_000
 
     def __init__(self, root: Locator, name: str = "Component"):
-        self.root = self.first_visible(root)
+        self._root_candidates = root
+        self.root = self.first_visible(self._root_candidates)
         self.name = name
 
     @staticmethod
@@ -30,7 +32,9 @@ class BaseComponent:
         return locator.first
 
     def wait_visible(self, timeout: int | None = None) -> Self:
-        expect(self.root).to_be_visible(timeout=timeout or self.DEFAULT_TIMEOUT)
+        t = timeout or self.DEFAULT_TIMEOUT
+        target = self._resolve_visible_root(timeout=t)
+        expect(target).to_be_visible(timeout=t)
         return self
 
     def wait_hidden(self, timeout: int | None = None) -> Self:
@@ -38,7 +42,8 @@ class BaseComponent:
         return self
 
     def assert_visible(self) -> Self:
-        expect(self.root).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+        target = self._resolve_visible_root(timeout=self.DEFAULT_TIMEOUT)
+        expect(target).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
         return self
 
     def assert_hidden(self) -> Self:
@@ -84,7 +89,28 @@ class BaseComponent:
         return self
 
     def find(self, selector: str) -> Locator:
+        self.root = self.first_visible(self._root_candidates)
         return self.root.locator(selector)
+
+    def _resolve_visible_root(self, *, timeout: int) -> Locator:
+        self.root = self.first_visible(self._root_candidates)
+        try:
+            if self.root.is_visible():
+                return self.root
+        except Exception:
+            pass
+
+        deadline = time.monotonic() + (timeout / 1000)
+        while time.monotonic() < deadline:
+            self.root = self.first_visible(self._root_candidates)
+            try:
+                if self.root.is_visible():
+                    return self.root
+            except Exception:
+                pass
+            time.sleep(0.1)
+
+        return self.root
 
     def sleep(self, ms: int) -> Self:
         if ms < 0:

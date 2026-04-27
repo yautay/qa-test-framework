@@ -2,7 +2,7 @@
 type: feature
 priority: high
 created: 2026-04-27T00:00:00Z
-status: created
+status: researched
 tags: [pytest, xdist, e2e, visual, artifacts, dom]
 keywords: [failed-dom, page.content, pytest_runtest_makereport, rep_call, RunArtifacts, settings.py, xdist worker_id, retry final failure]
 patterns: [failure-artifact capture, xdist-safe file naming, retry final-outcome handling, browser-fixture teardown hooks, placeholder-html fallback]

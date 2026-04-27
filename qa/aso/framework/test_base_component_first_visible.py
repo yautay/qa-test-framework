@@ -78,6 +78,17 @@ class _FakeExpectation:
         _ = timeout
 
 
+class _FlippingLocatorItem(_FakeLocatorItem):
+    def __init__(self, *, visible_after: int, name: str) -> None:
+        super().__init__(visible=False, name=name)
+        self._visible_after = visible_after
+        self._checks = 0
+
+    def is_visible(self) -> bool:
+        self._checks += 1
+        return self._checks >= self._visible_after
+
+
 def test_first_visible_prefers_first_visible_match() -> None:
     hidden = _FakeLocatorItem(visible=False, name="hidden")
     visible = _FakeLocatorItem(visible=True, name="visible")
@@ -133,3 +144,19 @@ def test_non_pointer_click_uses_dom_click(monkeypatch: pytest.MonkeyPatch) -> No
     assert visible.evaluate_calls == 1
     assert visible.click_calls == 0
     assert visible.scroll_calls == 1
+
+
+def test_wait_visible_reselects_newly_visible_root(monkeypatch: pytest.MonkeyPatch) -> None:
+    hidden = _FakeLocatorItem(visible=False, name="hidden")
+    delayed_visible = _FlippingLocatorItem(visible_after=2, name="delayed_visible")
+    locator = _FakeLocatorGroup([hidden, delayed_visible])
+    component = BaseComponent(cast(Any, locator))
+
+    monkeypatch.setattr(
+        "framework.base.page_objects.base_component.expect",
+        lambda target: _FakeExpectation(target),
+    )
+
+    component.wait_visible(timeout=300)
+
+    assert component.root is delayed_visible
