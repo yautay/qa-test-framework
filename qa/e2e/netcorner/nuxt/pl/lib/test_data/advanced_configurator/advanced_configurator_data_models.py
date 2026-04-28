@@ -19,4 +19,4 @@ class AdvancedConfiguratorData:
 @dataclass(frozen=True)
 class AdvancedConfiguratorCase:
     case_id: str
-    factory: Callable[[], "AdvancedConfiguratorData"]
+    factory: Callable[[], AdvancedConfiguratorData]

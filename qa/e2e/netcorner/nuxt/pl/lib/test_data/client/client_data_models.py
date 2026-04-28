@@ -19,7 +19,7 @@ class ClientData:
 @dataclass(frozen=True)
 class ClientCase:
     case_id: str
-    factory: Callable[[], "ClientData"]
+    factory: Callable[[], ClientData]
 
 
 @dataclass(frozen=True)

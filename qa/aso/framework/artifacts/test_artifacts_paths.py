@@ -66,6 +66,7 @@ def test_build_run_artifacts_creates_expected_layout_under_resolved_base(tmp_pat
     assert run.screenshots.is_dir()
     assert run.videos.is_dir()
     assert run.logs.is_dir()
+    assert run.failed_dom.is_dir()
 
 
 def test_build_run_artifacts_writes_files_into_each_artifact_subdirectory(tmp_path: Path) -> None:
@@ -80,6 +81,7 @@ def test_build_run_artifacts_writes_files_into_each_artifact_subdirectory(tmp_pa
         run.screenshots / "screen.png": "screen-data",
         run.videos / "video.webm": "video-data",
         run.logs / "run.log": "log-data",
+        run.failed_dom / "test.failed-dom.html": "failed-dom-data",
     }
 
     for path, payload in targets.items():

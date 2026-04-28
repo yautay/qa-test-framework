@@ -13,6 +13,15 @@
   },
   "always_include_connections": [
     {
+      "name": "DEMO-SO",
+      "engine": "mariadb",
+      "host": "mariadb-ha.demo.kt",
+      "port": 3306,
+      "database": "kryzys_suppliers",
+      "username": "suppliers_rw",
+      "password": "********"
+    },
+    {
       "name": "DEMO-PROMOTION",
       "engine": "mariadb",
       "host": "mariadb-rw.demo.kt",

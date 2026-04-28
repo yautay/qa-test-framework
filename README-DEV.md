@@ -10,14 +10,23 @@ For day-to-day test execution, use `README.md`.
 - `framework/` - runtime utilities (env, artifacts, logger, reporting, visual runner)
 - `tools/` - helper scripts grouped by domain
 
+## Development environment (WSL2)
+
+- Recommended model on Windows: VSCode on host + WSL2 terminal/runtime.
+- First-time setup in WSL: `bash tools/wsl/Setup_WSL.sh`
+- Health check: `bash tools/wsl/run.sh doctor`
+- After `git pull`: `bash tools/wsl/run.sh sync`
+- `make` targets now prefer `.venv/bin/python` when available, which prevents Python version drift.
+
 ## Docs index
 
 - `docs/ARTIFACTS.md`
+- `docs/E2E_PAGE_OBJECT_CONTRACT.md`
 - `docs/FIXTURES.md`
-- `docs/SCENARIO_MODEL.md`
+- `docs/PAGE_OBJECTS_EN.md`
+- `docs/PAGE_OBJECTS_PL.md`
 - `docs/REPORTING_HTTP_INTEGRATION.md`
-- `docs/visual-timeout-postmortem.md`
-- `tools/README.md`
+- `docs/VISUAL_BASELINE_APPROVAL_FLOW.md`
 
 ## Core commands
 
@@ -44,6 +53,29 @@ make check
 
 - `make verify-scenarios` runs `python tools/scenarios/verify_scenarios.py`
 - `make verify-discovery` runs `python framework/pytest_discovery_guard.py`
+
+## VSCode test debugging
+
+Repository-tracked debug profiles live in `.vscode/launch.json`.
+
+- `Pytest: Debug Test (breakpoint-friendly)` is the default for Test Explorer (`purpose: ["debug-test"]`).
+- `Pytest: Debug Test (framework step-in)` is for manual launch when stepping through framework/fixture internals.
+
+Both profiles keep local debugging responsive by disabling heavy extras:
+
+- `REPORTING_ENABLED=0`
+- `ALLURE_ENABLED=0`
+- `PYTEST_HTML_ENABLED=0`
+- `RECORD_VIDEO=0`
+- `VISUAL_ENABLED=0`
+- `PMS_ENABLED=0`
+
+Notes:
+
+- Target routing still comes from runtime defaults (`settings_cli.py`) unless you pass `--server-name` manually.
+- A short `about:blank` tab is expected: Playwright page is created before first test navigation.
+- For stable breakpoints, stop after first `open()/goto()` call, not before it.
+- After pulling launch config changes, run `Developer: Reload Window` in VSCode.
 
 ## Visual regression development
 

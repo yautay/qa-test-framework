@@ -1,5 +1,5 @@
 # Logging
-console_log_level = "WARNING"
+console_log_level = "ERROR"
 console_suppress_reporting_api_logs = True
 tools_file_log_level = "WARNING"
 tools_logs_dir = "tools/logs"
@@ -11,16 +11,17 @@ log_compression = "zip"
 artifacts_dir = "artifacts"
 framework_mode = "local"  # local | server
 ignore_https_errors = True
-allure_enabled = False
+allure_enabled = True
 pytest_html_enabled = True
 record_video = True
-video_min_seconds = 30
+video_min_seconds = 15
 highlight_on_fail = False
 min_expected_tests = 1
+failed_dom_enabled = True
 
 # Target git-info probe
 run_git_info_frontend_endpoint = "/git-info"
-run_git_info_backend_endpoint = "/git-info"
+run_git_info_backend_endpoint = "private-api/git-info"
 run_git_info_timeout_seconds = 3
 
 # Grid

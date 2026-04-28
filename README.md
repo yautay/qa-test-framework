@@ -56,7 +56,21 @@ powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 report
 Node is not required for testers on Windows. The report app uses committed `framework/visual/ui/dist/`.
 Node `22` is only needed when maintaining the report UI itself.
 
-### Linux/macOS
+### Linux/macOS (WSL2 recommended on Windows)
+
+Option A (WSL helper script):
+
+```bash
+bash tools/wsl/Setup_WSL.sh
+```
+
+Recommended post-check:
+
+```bash
+bash tools/wsl/run.sh doctor
+```
+
+Option B (manual):
 
 ```bash
 uv python install 3.13.2
@@ -83,6 +97,15 @@ make test-e2e
 make test-visual
 make test-aso
 make clean-artifacts-older DAYS=14
+```
+
+WSL wrapper commands (optional):
+
+```bash
+bash tools/wsl/run.sh aso
+bash tools/wsl/run.sh e2e
+bash tools/wsl/run.sh visual
+bash tools/wsl/run.sh report
 ```
 
 Useful selectors:

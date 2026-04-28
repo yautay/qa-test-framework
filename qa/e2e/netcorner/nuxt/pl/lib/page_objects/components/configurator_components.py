@@ -1,17 +1,21 @@
 from __future__ import annotations
 
-from playwright.sync_api import Locator
+from typing import Self
 
-from framework.base.page_objects import BaseComponent
-from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
+from playwright.sync_api import Locator, Page
+
+from qa.e2e.netcorner.lib.step_api import step
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 
 
 class ConfiguratorActionsComponent(BaseComponent):
-    def __init__(self, root: Locator) -> None:
-        super().__init__(root, name="Configuration Actions Component")
+    ROOT_SELECTOR = "[data-name='configuratorActions']"
+
+    def __init__(self, scope: Page | Locator) -> None:
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Configuration Actions Component")
 
         # locators (private)
-        self.__container = root
+        self.__container = self.root
         self.__text_configuration_name = self.__container.get_by_text("Nazwa konfiguracji", exact=True)
         self.__button_clear = self.__container.get_by_role("button", name="Wyczyść", exact=True)
         self.__button_create_copy = self.__container.get_by_role("button", name="Stwórz kopię", exact=True)
@@ -19,16 +23,18 @@ class ConfiguratorActionsComponent(BaseComponent):
 
     # actions
     @step("Czyszczę konfigurację")
-    def clear_configuration(self) -> None:
-        self.safe_click(self.__button_clear)
+    def clear_configuration(self) -> Self:
+        self.pointer_click(self.__button_clear)
+        return self
 
     @step("Tworzę kopię konfiguracji")
-    def create_copy(self) -> None:
-        self.safe_click(self.__button_create_copy)
+    def create_copy(self) -> Self:
+        self.pointer_click(self.__button_create_copy)
+        return self
 
     @step("Udostępniam konfigurację")
-    def share_configuration(self) -> ConfiguratorActionsComponent:
-        self.safe_click(self.__button_share)
+    def share_configuration(self) -> Self:
+        self.pointer_click(self.__button_share)
         return self
 
     # getters
@@ -38,11 +44,13 @@ class ConfiguratorActionsComponent(BaseComponent):
 
 
 class ConfiguratorComponentsComponent(BaseComponent):
-    def __init__(self, root: Locator) -> None:
-        super().__init__(root, name="Sekcja komponentów konfiguratora")
+    ROOT_SELECTOR = "[data-name='configuratorGrid']"
+
+    def __init__(self, scope: Page | Locator) -> None:
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Sekcja komponentów konfiguratora")
 
         # locators (private)
-        self.__container = root
+        self.__container = self.root
 
         self.__tile_cpu = self.__container.locator("[data-name=procesor]").locator("button")
         self.__tile_gpu = self.__container.locator("[data-name=karta-graficzna]").locator("button")
@@ -54,46 +62,50 @@ class ConfiguratorComponentsComponent(BaseComponent):
 
     # actions
     @step("Wybieram kafelek komponentu: Procesor")
-    def open_cpu(self) -> ConfiguratorComponentsComponent:
-        self.safe_click(self.__tile_cpu)
+    def open_cpu(self) -> Self:
+        self.pointer_click(self.__tile_cpu)
         return self
 
     @step("Wybieram kafelek komponentu: Karta graficzna")
-    def open_gpu(self) -> ConfiguratorComponentsComponent:
-        self.safe_click(self.__tile_gpu)
+    def open_gpu(self) -> Self:
+        self.pointer_click(self.__tile_gpu)
         return self
 
     @step("Wybieram kafelek komponentu: Płyta główna")
-    def open_motherboard(self) -> ConfiguratorComponentsComponent:
-        self.safe_click(self.__tile_motherboard)
+    def open_motherboard(self) -> Self:
+        self.pointer_click(self.__tile_motherboard)
         return self
 
     @step("Wybieram kafelek komponentu: Pamięć RAM")
-    def open_ram(self) -> ConfiguratorComponentsComponent:
-        self.safe_click(self.__tile_ram)
+    def open_ram(self) -> Self:
+        self.pointer_click(self.__tile_ram)
         return self
 
     @step("Wybieram kafelek komponentu: Dysk")
-    def open_drive(self) -> ConfiguratorComponentsComponent:
-        self.safe_click(self.__tile_drive)
+    def open_drive(self) -> Self:
+        self.pointer_click(self.__tile_drive)
         return self
 
     @step("Wybieram kafelek komponentu: Zasilacz")
-    def open_psu(self) -> ConfiguratorComponentsComponent:
-        self.safe_click(self.__tile_psu)
+    def open_psu(self) -> Self:
+        self.pointer_click(self.__tile_psu)
         return self
 
     @step("Wybieram kafelek komponentu: Obudowa")
-    def open_case(self) -> ConfiguratorComponentsComponent:
-        self.safe_click(self.__tile_case)
+    def open_case(self) -> Self:
+        self.pointer_click(self.__tile_case)
         return self
 
 
 class ConfiguratorAuxComponentsComponent(BaseComponent):
-    def __init__(self, root: Locator) -> None:
-        super().__init__(root, name="Configurator Aux Components")
+    ROOT_SELECTOR = "[data-name='configuratorGridOptionalElements']"
+
+    def __init__(self, scope: Page | Locator) -> None:
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Configurator Aux Components")
 
 
 class ConfiguratorSummaryComponent(BaseComponent):
-    def __init__(self, root: Locator) -> None:
-        super().__init__(root, name="Configurator Summary Component")
+    ROOT_SELECTOR = "[data-name='configuratorFooter']"
+
+    def __init__(self, scope: Page | Locator) -> None:
+        super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Configurator Summary Component")

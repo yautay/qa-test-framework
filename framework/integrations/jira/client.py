@@ -214,7 +214,8 @@ class JiraClient:
             if not isinstance(item, dict):
                 continue
             key = str(item.get("key", "") or "").strip()
-            details = item.get("fields") if isinstance(item.get("fields"), dict) else {}
+            details_payload = item.get("fields")
+            details = details_payload if isinstance(details_payload, dict) else {}
             summary = str(details.get("summary", "") or "")
             out.append({"key": key, "summary": summary})
         return out

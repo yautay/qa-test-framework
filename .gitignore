@@ -1,6 +1,8 @@
 .pytest_cache
 .idea
-/.vscode/
+/.vscode/*
+!/.vscode/settings.json
+!/.vscode/launch.json
 __pycache__
 Screenshots
 *.png
@@ -24,5 +26,6 @@ logs/*
 /framework/visual/ui/node_modules/
 /framework/visual/ui/coverage/
 /qa/visual/baselines/
+/.opencode/
 /tmp/
 /tools/dbeaver/db_dump_config.json

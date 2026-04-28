@@ -92,7 +92,8 @@ def _load_json_file_any_encoding(path: Path) -> dict[str, Any] | None:
 
 
 def _test_vm_config(config: dict[str, Any]) -> dict[str, Any]:
-    return config.get("test_vm") if isinstance(config.get("test_vm"), dict) else {}
+    test_vm = config.get("test_vm")
+    return test_vm if isinstance(test_vm, dict) else {}
 
 
 def _wizard_settings(config: dict[str, Any]) -> tuple[str, str, bool, int]:
@@ -149,9 +150,12 @@ def _parse_csv_tokens(raw_values: list[str]) -> list[str]:
 
 
 def _host_filter_tokens(config: dict[str, Any], args: argparse.Namespace) -> tuple[list[str], list[str]]:
-    filters = config.get("filters") if isinstance(config.get("filters"), dict) else {}
-    cfg_include = filters.get("include_host_tokens") if isinstance(filters.get("include_host_tokens"), list) else []
-    cfg_exclude = filters.get("exclude_host_tokens") if isinstance(filters.get("exclude_host_tokens"), list) else []
+    filters_payload = config.get("filters")
+    filters = filters_payload if isinstance(filters_payload, dict) else {}
+    include_raw = filters.get("include_host_tokens")
+    exclude_raw = filters.get("exclude_host_tokens")
+    cfg_include = include_raw if isinstance(include_raw, list) else []
+    cfg_exclude = exclude_raw if isinstance(exclude_raw, list) else []
 
     cli_include = _parse_csv_tokens(args.include_host or [])
     cli_exclude = _parse_csv_tokens(args.exclude_host or [])
@@ -380,11 +384,14 @@ def _extract_engine_endpoint(fields: list[dict[str, Any]], engine: str, default_
 
 def _merge_with_config(vm_id: str, endpoint: DbEndpoint, config: dict[str, Any]) -> DbEndpoint:
     test_vm = _test_vm_config(config)
-    defaults = config.get("defaults") if isinstance(config.get("defaults"), dict) else {}
-    vm_cfg = (test_vm or {}).get(vm_id) if isinstance((test_vm or {}).get(vm_id), dict) else {}
-    defaults_for_engine = (defaults or {}).get(endpoint.engine)
+    defaults_payload = config.get("defaults")
+    defaults = defaults_payload if isinstance(defaults_payload, dict) else {}
+    vm_entry = test_vm.get(vm_id)
+    vm_cfg = vm_entry if isinstance(vm_entry, dict) else {}
+    defaults_for_engine = defaults.get(endpoint.engine)
     engine_defaults = defaults_for_engine if isinstance(defaults_for_engine, dict) else {}
-    engine_vm = (vm_cfg or {}).get(endpoint.engine) if isinstance((vm_cfg or {}).get(endpoint.engine), dict) else {}
+    engine_vm_payload = vm_cfg.get(endpoint.engine)
+    engine_vm = engine_vm_payload if isinstance(engine_vm_payload, dict) else {}
 
     username = _safe_str(engine_vm.get("username")) or _safe_str(engine_defaults.get("username")) or endpoint.username
     password = _safe_str(engine_vm.get("password")) or _safe_str(engine_defaults.get("password")) or endpoint.password
@@ -427,9 +434,12 @@ def _mariadb_default_profiles(config: dict[str, Any]) -> list[tuple[str, dict[st
 
 def _mariadb_schema_entries(vm_id: str, endpoint: DbEndpoint, config: dict[str, Any]) -> list[DbEndpoint]:
     test_vm = _test_vm_config(config)
-    vm_cfg = (test_vm or {}).get(vm_id) if isinstance((test_vm or {}).get(vm_id), dict) else {}
-    mariadb_cfg = (vm_cfg or {}).get("mariadb") if isinstance((vm_cfg or {}).get("mariadb"), dict) else {}
-    schemas_cfg = mariadb_cfg.get("schemas") if isinstance(mariadb_cfg.get("schemas"), list) else []
+    vm_entry = test_vm.get(vm_id)
+    vm_cfg = vm_entry if isinstance(vm_entry, dict) else {}
+    mariadb_payload = vm_cfg.get("mariadb")
+    mariadb_cfg = mariadb_payload if isinstance(mariadb_payload, dict) else {}
+    schemas_payload = mariadb_cfg.get("schemas")
+    schemas_cfg = schemas_payload if isinstance(schemas_payload, list) else []
 
     out: list[DbEndpoint] = []
     for item in schemas_cfg:
@@ -502,9 +512,8 @@ def _row_connection_name(row: dict[str, Any]) -> str:
 
 
 def _always_include_rows(config: dict[str, Any]) -> list[dict[str, Any]]:
-    raw_connections = (
-        config.get("always_include_connections") if isinstance(config.get("always_include_connections"), list) else []
-    )
+    raw_connections_payload = config.get("always_include_connections")
+    raw_connections = raw_connections_payload if isinstance(raw_connections_payload, list) else []
 
     out: list[dict[str, Any]] = []
     for item in raw_connections:

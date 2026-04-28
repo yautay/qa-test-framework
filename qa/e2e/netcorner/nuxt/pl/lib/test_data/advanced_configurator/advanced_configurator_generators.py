@@ -20,17 +20,17 @@ class AdvancedConfiguratorDataBuilder:
         self._nip = ""
         self._phone = ""
 
-    def with_business_offer(self) -> "AdvancedConfiguratorDataBuilder":
+    def with_business_offer(self) -> AdvancedConfiguratorDataBuilder:
         self._business_offer = True
         self._nip = "7770020640"
         self._phone = "791233545"
         return self
 
-    def with_required_terms(self) -> "AdvancedConfiguratorDataBuilder":
+    def with_required_terms(self) -> AdvancedConfiguratorDataBuilder:
         self._accept_required_terms = True
         return self
 
-    def with_marketing(self) -> "AdvancedConfiguratorDataBuilder":
+    def with_marketing(self) -> AdvancedConfiguratorDataBuilder:
         self._accept_marketing = True
         return self
 
