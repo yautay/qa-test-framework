@@ -11,10 +11,10 @@ log_compression = "zip"
 artifacts_dir = "artifacts"
 framework_mode = "local"  # local | server
 ignore_https_errors = True
-allure_enabled = False
+allure_enabled = True
 pytest_html_enabled = True
 record_video = True
-video_min_seconds = 30
+video_min_seconds = 15
 highlight_on_fail = False
 min_expected_tests = 1
 
