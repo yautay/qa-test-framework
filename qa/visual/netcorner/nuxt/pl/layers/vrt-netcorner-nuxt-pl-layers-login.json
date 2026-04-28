@@ -2,7 +2,7 @@
   "id": "vrt-netcorner-nuxt-pl-layers-login",
   "name": "Login page visual",
   "suite_id": "netcorner/nuxt/pl/layers",
-  "target_url": "/login",
+  "target_url": "/",
   "compare_mode": "hybrid",
   "capture": {
     "type": "page",

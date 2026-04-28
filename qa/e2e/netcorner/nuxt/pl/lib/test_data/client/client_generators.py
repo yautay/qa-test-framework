@@ -43,6 +43,13 @@ class ClientDataBuilder:
             phone=self._phone,
         )
 
+def valid_client_case() -> list[ClientCase]:
+    return [
+        ClientCase(
+            case_id="pl_terms_marketing_business",
+            factory=lambda: ClientDataBuilder().with_business_offer().with_required_terms().with_marketing().build(),
+        )]
+
 
 def valid_client_cases() -> list[ClientCase]:
     return [
