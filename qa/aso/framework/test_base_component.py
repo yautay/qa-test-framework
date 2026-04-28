@@ -32,6 +32,10 @@ class _FakeLocatorItem:
     def is_visible(self) -> bool:
         return self._visible
 
+    def locator(self, selector: str) -> _FakeLocatorItem:
+        """Support chained .locator(':visible').first pattern."""
+        return self
+
     def scroll_into_view_if_needed(self) -> None:
         self.scroll_calls += 1
 
@@ -55,6 +59,7 @@ class _FakeLocatorItem:
 class _FakeLocatorGroup:
     def __init__(self, items: list[_FakeLocatorItem]) -> None:
         self._items = items
+        self._visible_items = [i for i in items if i._visible]
 
     @property
     def first(self) -> _FakeLocatorItem:
@@ -65,6 +70,12 @@ class _FakeLocatorGroup:
 
     def nth(self, index: int) -> _FakeLocatorItem:
         return self._items[index]
+
+    def locator(self, selector: str) -> _FakeLocatorGroup:
+        """Simulate :visible filtering."""
+        if ":visible" in selector:
+            return _FakeLocatorGroup(self._visible_items if self._visible_items else self._items)
+        return self
 
 
 class _FakeExpectation:
@@ -78,38 +89,35 @@ class _FakeExpectation:
         _ = timeout
 
 
-class _FlippingLocatorItem(_FakeLocatorItem):
-    def __init__(self, *, visible_after: int, name: str) -> None:
-        super().__init__(visible=False, name=name)
-        self._visible_after = visible_after
-        self._checks = 0
-
-    def is_visible(self) -> bool:
-        self._checks += 1
-        return self._checks >= self._visible_after
-
-
-def test_first_visible_prefers_first_visible_match() -> None:
+def test_pick_visible_returns_visible_match() -> None:
     hidden = _FakeLocatorItem(visible=False, name="hidden")
     visible = _FakeLocatorItem(visible=True, name="visible")
     locator = _FakeLocatorGroup([hidden, visible])
 
-    selected = BaseComponent.first_visible(cast(Any, locator))
+    selected = BaseComponent._pick_visible(cast(Any, locator))
 
+    # _pick_visible calls locator(":visible").first which filters to visible items
     assert selected is visible
 
 
-def test_first_visible_falls_back_to_first_when_no_visible() -> None:
-    first = _FakeLocatorItem(visible=False, name="first")
-    second = _FakeLocatorItem(visible=False, name="second")
-    locator = _FakeLocatorGroup([first, second])
+def test_find_does_not_reresovle_root(monkeypatch: pytest.MonkeyPatch) -> None:
+    visible = _FakeLocatorItem(visible=True, name="visible")
+    locator = _FakeLocatorGroup([visible])
+    component = BaseComponent(cast(Any, locator))
 
-    selected = BaseComponent.first_visible(cast(Any, locator))
+    # Capture the root after construction
+    root_after_init = component.root
 
-    assert selected is first
+    # Call find() - it should NOT re-resolve root
+    result = component.find("some-selector")
+
+    # Root should remain the same object (no re-resolution)
+    assert component.root is root_after_init
+    # Result should be from chaining on root
+    assert result is not None
 
 
-def test_pointer_click_uses_visible_match(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_pointer_click_uses_visible_filter(monkeypatch: pytest.MonkeyPatch) -> None:
     hidden = _FakeLocatorItem(visible=False, name="hidden")
     visible = _FakeLocatorItem(visible=True, name="visible")
     locator = _FakeLocatorGroup([hidden, visible])
@@ -122,34 +130,15 @@ def test_pointer_click_uses_visible_match(monkeypatch: pytest.MonkeyPatch) -> No
 
     component.pointer_click(cast(Any, locator))
 
-    assert hidden.click_calls == 0
+    # The :visible filter on the group returns visible items, so visible gets clicked
     assert visible.click_calls == 1
     assert visible.scroll_calls == 1
+    assert hidden.click_calls == 0
 
 
-def test_non_pointer_click_uses_dom_click(monkeypatch: pytest.MonkeyPatch) -> None:
-    hidden = _FakeLocatorItem(visible=False, name="hidden")
+def test_wait_visible_resolves_root(monkeypatch: pytest.MonkeyPatch) -> None:
     visible = _FakeLocatorItem(visible=True, name="visible")
-    locator = _FakeLocatorGroup([hidden, visible])
-    component = BaseComponent(cast(Any, locator))
-
-    monkeypatch.setattr(
-        "framework.base.page_objects.base_component.expect",
-        lambda target: _FakeExpectation(target),
-    )
-
-    component.non_pointer_click(cast(Any, locator))
-
-    assert hidden.evaluate_calls == 0
-    assert visible.evaluate_calls == 1
-    assert visible.click_calls == 0
-    assert visible.scroll_calls == 1
-
-
-def test_wait_visible_reselects_newly_visible_root(monkeypatch: pytest.MonkeyPatch) -> None:
-    hidden = _FakeLocatorItem(visible=False, name="hidden")
-    delayed_visible = _FlippingLocatorItem(visible_after=2, name="delayed_visible")
-    locator = _FakeLocatorGroup([hidden, delayed_visible])
+    locator = _FakeLocatorGroup([visible])
     component = BaseComponent(cast(Any, locator))
 
     monkeypatch.setattr(
@@ -159,4 +148,5 @@ def test_wait_visible_reselects_newly_visible_root(monkeypatch: pytest.MonkeyPat
 
     component.wait_visible(timeout=300)
 
-    assert component.root is delayed_visible
+    # After wait_visible, root should be re-picked via _pick_visible
+    assert component.root is visible

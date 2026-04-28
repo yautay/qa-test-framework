@@ -54,11 +54,12 @@ class ListingFiltersComponent(BaseComponent):
 
 
 class SortOptions(StrEnum):
-        DEFAULT = "Domyślnie"
-        PRICE_ASC = "Po cenie rosnąco"
-        PRICE_DESC = "Po cenie malejąco"
-        NAME_ASC = "Alfabetycznie A-Z"
-        NAME_DESC = "Alfabetycznie Z-A"
+    DEFAULT = "Domyślnie"
+    PRICE_ASC = "Po cenie rosnąco"
+    PRICE_DESC = "Po cenie malejąco"
+    NAME_ASC = "Alfabetycznie A-Z"
+    NAME_DESC = "Alfabetycznie Z-A"
+
 
 class AvailabilityOptions(StrEnum):
     ANY = "Nieistotne"
@@ -115,7 +116,7 @@ class ListingSortingComponent(BaseComponent):
     def set_show_unavailable(self, checked: bool) -> Self:
         if self.__show_unavailable_checkbox.is_checked() != checked:
             self.pointer_click(self.__show_unavailable_checkbox)
-            self.sleep(2_000)  # Czekamy na odświeżenie listingu po zmianie stanu checkboxa
+            expect(self.root.page.locator("[data-name='listingContent']")).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
         return self
 
     def is_show_unavailable_checked(self) -> bool:

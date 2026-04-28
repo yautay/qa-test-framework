@@ -142,7 +142,8 @@ class CartAndCheckoutWrappers:
         purchaser_objects: PurchaserObjects | None = None,
         payment_objects: PaymentObjects | None = None,
     ) -> CheckoutProcessData:
-        checkout = CheckoutPage(self.__page, self.__runtime_env.base_url).wait_loaded().sleep(3_500) # Czekamy na wybór opcji transportu przez NUXT
+        checkout = CheckoutPage(self.__page, self.__runtime_env.base_url).wait_loaded()
+        checkout.content.delivery_type.wait_visible()
         delivery_types_aviable = checkout.content.delivery_type.get_delivery_type_availability()
         available_payment_methods: list[PaymentMethodData] = []
         payment_surcharge = Decimal("0.00")
@@ -271,7 +272,6 @@ class CartAndCheckoutWrappers:
         purchaser_overlay.fill_purchaser_data(purchaser_objects)
         purchaser_overlay.click_add_details()
         purchaser_overlay.wait_hidden(timeout=10_000)
-
 
         if not isinstance(payment_objects, CheckoutPaymentData):
             raise TypeError("Argument payment_objects musi być typu CheckoutPaymentData.")
