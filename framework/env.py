@@ -102,6 +102,7 @@ class RuntimeEnv:
     pytest_html_enabled: bool
     highlight_on_fail: bool
     failed_dom_enabled: bool
+    trace_enabled: bool
     min_expected_tests: int
     run_git_info_frontend_endpoint: str
     run_git_info_backend_endpoint: str
@@ -318,6 +319,7 @@ def load_env() -> RuntimeEnv:
         pytest_html_enabled=env_bool("PYTEST_HTML_ENABLED", bool(settings.pytest_html_enabled)),
         highlight_on_fail=env_bool("HIGHLIGHT_ON_FAIL", settings.highlight_on_fail),
         failed_dom_enabled=env_bool("FAILED_DOM_ENABLED", settings.failed_dom_enabled),
+        trace_enabled=env_bool("TRACE_ENABLED", settings.trace_enabled),
         min_expected_tests=env_int("MIN_EXPECTED_TESTS", settings.min_expected_tests),
         run_git_info_frontend_endpoint=env_str(
             "RUN_GIT_INFO_FRONTEND_ENDPOINT",

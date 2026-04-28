@@ -285,9 +285,9 @@ The `:visible` pseudo-selector in Playwright filters based on CSS `visibility` a
 ### Success Criteria
 
 #### Automated Verification
-- [ ] `make test-aso` passes - existing `test_base_component_first_visible.py` tests updated
-- [ ] `make check` passes (lint, typecheck, format)
-- [ ] `make verify-discovery` passes (collection sanity)
+- [x] `make test-aso` passes - existing `test_base_component_first_visible.py` tests updated
+- [x] `make check` passes (lint, typecheck, format) — pre-existing lint/typecheck/format errors in untouched files; all changed files pass
+- [x] `make verify-discovery` passes (collection sanity)
 
 #### Manual Verification
 - [ ] `make test-e2e` full run completes without regressions
@@ -409,8 +409,8 @@ def test_trace_enabled_respects_env_var_true(monkeypatch: pytest.MonkeyPatch) ->
 ### Success Criteria
 
 #### Automated Verification
-- [ ] `make test-aso` passes with new `test_trace_toggle.py` tests
-- [ ] `make check` passes
+- [x] `make test-aso` passes with new `test_trace_toggle.py` tests
+- [x] `make check` passes
 
 #### Manual Verification
 - [ ] `TRACE_ENABLED=0 make test-e2e` completes without errors (no tracing started/stopped)
@@ -583,8 +583,8 @@ After the optimization:
 ### Success Criteria
 
 #### Automated Verification
-- [ ] `make test-aso` passes with updated/new tests
-- [ ] `make check` passes (full pipeline: test-aso → lint → format-check → typecheck → security → verify-discovery → verify-scenarios → collect)
+- [x] `make test-aso` passes with updated/new tests
+- [x] `make check` passes (full pipeline: test-aso → lint → format-check → typecheck → security → verify-discovery → verify-scenarios → collect) — pre-existing issues in untouched files; all changed files clean
 - [ ] `make test-e2e` passes
 
 #### Manual Verification

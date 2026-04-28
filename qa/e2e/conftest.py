@@ -186,7 +186,9 @@ def context(
         ignore_https_errors=runtime_env.ignore_https_errors,
         record_video_dir=str(run_artifacts.videos) if runtime_env.record_video else None,
     )
-    context.tracing.start(screenshots=True, snapshots=True, sources=True)
+    trace_enabled = runtime_env.trace_enabled
+    if trace_enabled:
+        context.tracing.start(screenshots=True, snapshots=True, sources=True)
     yield context
 
     failed = bool(getattr(request.node, "rep_call", None) and request.node.rep_call.failed)
@@ -201,19 +203,20 @@ def context(
         except Exception:
             raw_video_path = None
 
-    if failed:
-        trace_path = run_artifacts.traces / f"{nodeid_safe}.zip"
-        context.tracing.stop(path=str(trace_path))
-        artifacts_payload["trace"] = str(trace_path)
-        _allure_attach_file(
-            pytestconfig,
-            trace_path,
-            name="trace",
-            attachment_type="application/zip",
-            extension="zip",
-        )
-    else:
-        context.tracing.stop()
+    if trace_enabled:
+        if failed:
+            trace_path = run_artifacts.traces / f"{nodeid_safe}.zip"
+            context.tracing.stop(path=str(trace_path))
+            artifacts_payload["trace"] = str(trace_path)
+            _allure_attach_file(
+                pytestconfig,
+                trace_path,
+                name="trace",
+                attachment_type="application/zip",
+                extension="zip",
+            )
+        else:
+            context.tracing.stop()
 
     context.close()
 
