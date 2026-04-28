@@ -10,6 +10,7 @@ Typical structure for one run:
 - `artifacts/<run_id>/screenshots/`
 - `artifacts/<run_id>/videos/`
 - `artifacts/<run_id>/traces/`
+- `artifacts/<run_id>/failed-dom/`
 - `artifacts/<run_id>/visual/`
 - `artifacts/<run_id>/workers/` (xdist only)
 - `artifacts/<run_id>/workers/<worker_id>/steps/` (per-test executed steps)
@@ -35,10 +36,12 @@ Core run directories are created by `framework/artifacts.py`:
 - `screenshots/`
 - `videos/`
 - `traces/`
+- `failed-dom/`
 
 Per-test writing:
 
 - screenshots, traces, videos are written by test/runtime helpers during test execution,
+- failed DOM snapshots (`failed-dom/<nodeid>.html`) are captured automatically for browser test failures,
 - executed `@step(...)` and `with step_context(...)` traces are written as
   `workers/<worker_id>/steps/<nodeid>.steps.json` (one file per test),
 - filenames are already worker-safe (unique test/node id based naming).
@@ -85,6 +88,22 @@ Config knobs (`settings.py` / env):
 - `run_git_info_frontend_endpoint` / `RUN_GIT_INFO_FRONTEND_ENDPOINT`
 - `run_git_info_backend_endpoint` / `RUN_GIT_INFO_BACKEND_ENDPOINT`
 - `run_git_info_timeout_seconds` / `RUN_GIT_INFO_TIMEOUT_SECONDS`
+
+## Failed DOM snapshots
+
+Automatic DOM capture for browser test failures:
+
+- E2E and Visual test fixtures capture DOM content (`page.content()`) on test failure,
+- DOM snapshots are written as `failed-dom/<nodeid>.html` (deterministic overwrite naming),
+- Feature is enabled by default via `failed_dom_enabled = True` in settings.py,
+- Can be disabled with environment variable `FAILED_DOM_ENABLED=0`,
+- On DOM capture failure (page unavailable, etc.), placeholder HTML is written with error details,
+- DOM artifacts are included in test result payloads as kind `failed_dom`.
+
+Config knobs:
+
+- `failed_dom_enabled` in `settings.py` (default: `True`)
+- `FAILED_DOM_ENABLED` environment variable override
 
 ## Visual flow (single process)
 

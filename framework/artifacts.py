@@ -18,6 +18,7 @@ class RunArtifacts:
     screenshots: Path
     videos: Path
     logs: Path
+    failed_dom: Path
 
 
 def resolve_artifacts_base_dir(base_dir: str, repo_root: Path) -> Path:
@@ -57,8 +58,9 @@ def build_run_artifacts(base_dir: str, run_id: str | None = None) -> RunArtifact
     screenshots = root / "screenshots"
     videos = root / "videos"
     logs = root / "logs"
+    failed_dom = root / "failed-dom"
 
-    for path in (root, traces, screenshots, videos, logs):
+    for path in (root, traces, screenshots, videos, logs, failed_dom):
         path.mkdir(parents=True, exist_ok=True)
 
     return RunArtifacts(
@@ -68,4 +70,5 @@ def build_run_artifacts(base_dir: str, run_id: str | None = None) -> RunArtifact
         screenshots=screenshots,
         videos=videos,
         logs=logs,
+        failed_dom=failed_dom,
     )
