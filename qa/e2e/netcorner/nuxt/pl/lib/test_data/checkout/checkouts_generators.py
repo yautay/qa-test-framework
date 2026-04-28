@@ -322,6 +322,10 @@ class CheckoutPaymentDataBuilder:
         self._payment_method = PaymentMethods.CASH_ON_DELIVERY_CASH
         return self
 
+    def with_cash_on_pick_up(self) -> CheckoutPaymentDataBuilder:
+        self._payment_method = PaymentMethods.CASH_ON_PICK_UP
+        return self
+
     def with_cash_on_delivery_card(self) -> CheckoutPaymentDataBuilder:
         self._payment_method = PaymentMethods.CASH_ON_DELIVERY_CARD
         return self
@@ -347,6 +351,9 @@ class CheckoutPaymentDataBuilder:
 
 def checkout_payment_blik_required_terms() -> CheckoutPaymentData:
     return CheckoutPaymentDataBuilder().with_blik().with_required_terms().build()
+
+def checkout_payment_cash_on_pickup_required_terms() -> CheckoutPaymentData:
+    return CheckoutPaymentDataBuilder().with_cash_on_pick_up().with_required_terms().build()
 
 
 def checkout_payment_prepaid_transfer_required_terms() -> CheckoutPaymentData:
@@ -398,7 +405,7 @@ def checkout_delivery_cases() -> list[CheckoutDeliveryCase]:
             delivery_type=DeliveryTypes.STORE_PICKUP,
             delivery_objects=private_person_delivery_storehouse_receiver(),
             purchaser_objects=private_person_checkout_purchaser(),
-            payment_objects=checkout_payment_blik_required_terms(),
+            payment_objects=checkout_payment_cash_on_pickup_required_terms(),
         ),
         CheckoutDeliveryCase(
             case_id="courier_service_company",
@@ -426,6 +433,6 @@ def checkout_delivery_cases() -> list[CheckoutDeliveryCase]:
             delivery_type=DeliveryTypes.STORE_PICKUP,
             delivery_objects=private_person_delivery_storehouse_receiver(),
             purchaser_objects=company_checkout_purchaser(),
-            payment_objects=checkout_payment_blik_required_terms(),
+            payment_objects=checkout_payment_cash_on_pickup_required_terms(),
         ),
     ]

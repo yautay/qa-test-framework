@@ -30,6 +30,7 @@ class CheckoutPaymentMethodsComponent(BaseComponent):
     _METHOD_LABELS: dict[PaymentMethods, tuple[str, ...]] = {
         PaymentMethods.BLIK: ("BLIK",),
         PaymentMethods.PREPAID_TRANSFER: ("Przelew - przedpłata",),
+        PaymentMethods.CASH_ON_PICK_UP: ("Gotówka",),
         PaymentMethods.CASH_ON_DELIVERY_CASH: ("Za pobraniem - płatność gotówką",),
         PaymentMethods.CASH_ON_DELIVERY_CARD: ("Za pobraniem - płatność kartą",),
     }

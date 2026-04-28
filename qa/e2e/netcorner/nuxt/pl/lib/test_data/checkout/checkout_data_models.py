@@ -13,6 +13,7 @@ class DeliveryTypes(Enum):
 
 class PaymentMethods(Enum):
     BLIK = "blik"
+    CASH_ON_PICK_UP = "cash_on_pick_up"
     PREPAID_TRANSFER = "prepaid_transfer"
     CASH_ON_DELIVERY_CASH = "cash_on_delivery_cash"
     CASH_ON_DELIVERY_CARD = "cash_on_delivery_card"
