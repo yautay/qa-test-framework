@@ -15,13 +15,12 @@ class BaseComponent:
 
     @staticmethod
     def _pick_visible(locator: Locator) -> Locator:
-        """First visible match via :visible pseudo-selector (single protocol op)."""
-        return locator.locator(":visible").first
+        """Return first match — visibility is deferred to expect assertions."""
+        return locator.first
 
     def wait_visible(self, timeout: int | None = None) -> Self:
         t = timeout or self.DEFAULT_TIMEOUT
-        target = self._resolve_visible_root(timeout=t)
-        expect(target).to_be_visible(timeout=t)
+        expect(self._root_candidates.first).to_be_visible(timeout=t)
         return self
 
     def wait_hidden(self, timeout: int | None = None) -> Self:
@@ -39,7 +38,7 @@ class BaseComponent:
 
     def pointer_click(self, locator: Locator, *, timeout: int | None = None) -> Self:
         t = timeout or self.DEFAULT_TIMEOUT
-        target = locator.locator(":visible").first
+        target = locator.first
         expect(target).to_be_visible(timeout=t)
         expect(target).to_be_enabled(timeout=t)
         target.scroll_into_view_if_needed()
@@ -48,7 +47,7 @@ class BaseComponent:
 
     def non_pointer_click(self, locator: Locator, *, timeout: int | None = None) -> Self:
         t = timeout or self.DEFAULT_TIMEOUT
-        target = locator.locator(":visible").first
+        target = locator.first
         expect(target).to_be_visible(timeout=t)
         expect(target).to_be_enabled(timeout=t)
         target.scroll_into_view_if_needed()
@@ -57,7 +56,7 @@ class BaseComponent:
 
     def safe_fill(self, locator: Locator, value: str, *, timeout: int | None = None) -> Self:
         t = timeout or self.DEFAULT_TIMEOUT
-        target = locator.locator(":visible").first
+        target = locator.first
         expect(target).to_be_visible(timeout=t)
         target.scroll_into_view_if_needed()
         target.fill(value, timeout=t)
@@ -65,7 +64,7 @@ class BaseComponent:
 
     def safe_type(self, locator: Locator, value: str, *, timeout: int | None = None) -> Self:
         t = timeout or self.DEFAULT_TIMEOUT
-        target = locator.locator(":visible").first
+        target = locator.first
         expect(target).to_be_visible(timeout=t)
         target.scroll_into_view_if_needed()
         target.type(value, timeout=t)
@@ -79,8 +78,7 @@ class BaseComponent:
         return self.root.locator(selector)
 
     def _resolve_visible_root(self, *, timeout: int) -> Locator:
-        self.root = self._pick_visible(self._root_candidates)
-        return self.root
+        return self._pick_visible(self._root_candidates)
 
     def sleep(self, ms: int) -> Self:
         if ms < 0:

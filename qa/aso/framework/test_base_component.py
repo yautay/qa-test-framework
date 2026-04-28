@@ -89,15 +89,25 @@ class _FakeExpectation:
         _ = timeout
 
 
-def test_pick_visible_returns_visible_match() -> None:
+def test_pick_visible_returns_first_match() -> None:
     hidden = _FakeLocatorItem(visible=False, name="hidden")
     visible = _FakeLocatorItem(visible=True, name="visible")
     locator = _FakeLocatorGroup([hidden, visible])
 
     selected = BaseComponent._pick_visible(cast(Any, locator))
 
-    # _pick_visible calls locator(":visible").first which filters to visible items
-    assert selected is visible
+    # _pick_visible returns locator.first — visibility is deferred to expect assertions
+    assert selected is hidden
+
+
+def test_pick_visible_returns_first_for_single_match() -> None:
+    item = _FakeLocatorItem(visible=True, name="only")
+    locator = _FakeLocatorGroup([item])
+
+    selected = BaseComponent._pick_visible(cast(Any, locator))
+
+    # Single match: returns .first
+    assert selected is item
 
 
 def test_find_does_not_reresovle_root(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -117,26 +127,7 @@ def test_find_does_not_reresovle_root(monkeypatch: pytest.MonkeyPatch) -> None:
     assert result is not None
 
 
-def test_pointer_click_uses_visible_filter(monkeypatch: pytest.MonkeyPatch) -> None:
-    hidden = _FakeLocatorItem(visible=False, name="hidden")
-    visible = _FakeLocatorItem(visible=True, name="visible")
-    locator = _FakeLocatorGroup([hidden, visible])
-    component = BaseComponent(cast(Any, locator))
-
-    monkeypatch.setattr(
-        "framework.base.page_objects.base_component.expect",
-        lambda target: _FakeExpectation(target),
-    )
-
-    component.pointer_click(cast(Any, locator))
-
-    # The :visible filter on the group returns visible items, so visible gets clicked
-    assert visible.click_calls == 1
-    assert visible.scroll_calls == 1
-    assert hidden.click_calls == 0
-
-
-def test_wait_visible_resolves_root(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_pointer_click_uses_first(monkeypatch: pytest.MonkeyPatch) -> None:
     visible = _FakeLocatorItem(visible=True, name="visible")
     locator = _FakeLocatorGroup([visible])
     component = BaseComponent(cast(Any, locator))
@@ -146,7 +137,26 @@ def test_wait_visible_resolves_root(monkeypatch: pytest.MonkeyPatch) -> None:
         lambda target: _FakeExpectation(target),
     )
 
+    component.pointer_click(cast(Any, locator))
+
+    # pointer_click uses .first — the first item gets clicked
+    assert visible.click_calls == 1
+    assert visible.scroll_calls == 1
+
+
+def test_wait_visible_does_not_mutate_root(monkeypatch: pytest.MonkeyPatch) -> None:
+    visible = _FakeLocatorItem(visible=True, name="visible")
+    locator = _FakeLocatorGroup([visible])
+    component = BaseComponent(cast(Any, locator))
+
+    root_before = component.root
+
+    monkeypatch.setattr(
+        "framework.base.page_objects.base_component.expect",
+        lambda target: _FakeExpectation(target),
+    )
+
     component.wait_visible(timeout=300)
 
-    # After wait_visible, root should be re-picked via _pick_visible
-    assert component.root is visible
+    # wait_visible must NOT mutate root — prevents :visible stacking in child components
+    assert component.root is root_before
