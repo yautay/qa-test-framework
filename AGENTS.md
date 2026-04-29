@@ -25,7 +25,6 @@
 - `npm run build` in `framework/visual/ui` runs Vitest with coverage before bundling. `npm run build:fast` skips tests and just creates the `dist/` bundle used by CI and `make report-serve`.
 
 ## Workflow Traps
-- If a local commit is blocked unexpectedly, check `.git/hooks/pre-commit`: the repo provides `tools/hooks/pre-commit-aso.sh`, which runs `make test-aso`.
 - Exclude `.opencode/node_modules/` from searches; it is local OpenCode plugin noise, not product code.
 - README files mention targets such as `debug-minio-up`, `debug-remote-grid-up`, and `clean-visual-baselines`, but those targets are not defined in the checked-in root `Makefile`.
 

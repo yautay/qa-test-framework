@@ -169,13 +169,6 @@ make debug-remote-grid-up
 make debug-remote-grid-down
 ```
 
-## Local git hooks
-
-- Hook source: `tools/hooks/pre-commit-aso.sh`
-- Install (Linux/macOS): `./tools/hooks/install-local-hooks.sh`
-- Install (Windows): `powershell -ExecutionPolicy Bypass -File .\tools\hooks\install-local-hooks.ps1`
-- Hook behavior: runs `python -m pytest -m aso -q` using the repo virtualenv when available
-
 ## Environment matrix (developer view)
 
 Main defaults:
