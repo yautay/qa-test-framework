@@ -329,7 +329,12 @@ generate_framework_summary() {
         done
     done
 
-    if [[ ${#FLAKEY_COUNT[@]} -eq 0 ]]; then
+    local flakey_size=0
+    if [[ -n ${FLAKEY_COUNT+x} ]]; then
+        flakey_size=${#FLAKEY_COUNT[@]}
+    fi
+
+    if [[ "$flakey_size" -eq 0 ]]; then
         echo "Brak failed testów - wszystkie przeszły!" >> "$f"
     else
         echo "| Test | Liczba padnięć (z $(( ${#MODES[@]} * RUNS_PER_MODE )) runów) |" >> "$f"
