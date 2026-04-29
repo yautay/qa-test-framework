@@ -83,10 +83,32 @@ run_test() {
     start_ts=$(date +%s%N)
 
     local output
-    output=$(cd "$repo_root" && "$python_bin" -m pytest "$test_target" -v --tb=line --reruns "$PYTEST_RERUNS" --junitxml "$junit_file" $extra_args 2>&1) || true
-    local exit_code=$?
+    local run_output_file="$BENCH_TMP_DIR/output_${framework}_${mode_label}_run${run_num}.log"
+    : > "$run_output_file"
 
-    echo "$output" | tee -a "$raw_file"
+    (
+        while true; do
+            sleep 30
+            now_ts=""
+            elapsed_s=""
+            now_ts=$(date +%s)
+            elapsed_s=$(( now_ts - (start_ts / 1000000000) ))
+            log "$raw_file" "[heartbeat] FRAMEWORK=$framework MODE=$mode_label RUN=$run_num still running... elapsed=${elapsed_s}s"
+        done
+    ) &
+    local heartbeat_pid=$!
+
+    set +e
+    (
+        cd "$repo_root" && "$python_bin" -m pytest "$test_target" -v --tb=line --reruns "$PYTEST_RERUNS" --junitxml "$junit_file" $extra_args
+    ) 2>&1 | tee "$run_output_file" | tee -a "$raw_file"
+    local exit_code=${PIPESTATUS[0]}
+    set -e
+
+    kill "$heartbeat_pid" 2>/dev/null || true
+    wait "$heartbeat_pid" 2>/dev/null || true
+
+    output=$(<"$run_output_file")
 
     local end_ts
     end_ts=$(date +%s%N)
