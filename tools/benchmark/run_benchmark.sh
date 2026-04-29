@@ -19,15 +19,18 @@ SELENIUM_REPO="$(cd "$REPO_ROOT/.." && pwd)/nc-functional-tests-py"
 TIMESTAMP=$(date '+%Y%m%d_%H%M%S')
 RAW_FILE_PLAYWRIGHT="bench_raw_playwright_${TIMESTAMP}.txt"
 RAW_FILE_SELENIUM="bench_raw_selenium_${TIMESTAMP}.txt"
+ERROR_FILE_PLAYWRIGHT="bench_errors_playwright_${TIMESTAMP}.txt"
+ERROR_FILE_SELENIUM="bench_errors_selenium_${TIMESTAMP}.txt"
 SUMMARY_FILE="bench_summary_${TIMESTAMP}.md"
 RUNS_PER_MODE=2
+PYTEST_RERUNS=1
 COMPARE_SELENIUM=0
 BENCH_TMP_DIR="$REPO_ROOT/tools/benchmark/.bench_tmp_${TIMESTAMP}"
 MANIFEST_FILE="$BENCH_TMP_DIR/junit_manifest.txt"
 
 # --- konfiguracja trybów ---------------------------------------------------
 # Format: "label|extra_pytest_args"
-MODES=(
+ALL_MODES=(
     "headless-seq|"
     "headless-xdist-n2|-n 2"
     "headless-xdist-n3|-n 3"
@@ -35,6 +38,8 @@ MODES=(
     "headless-xdist-n5|-n 5"
     "headless-xdist-n6|-n 6"
 )
+
+MODES=("${ALL_MODES[@]}")
 
 # --- env vars wspólne -------------------------------------------------------
 export HEADLESS=1
@@ -67,6 +72,7 @@ run_test() {
     local run_num=$6
     local mode_label=$7
     local extra_args=$8
+    local error_file=$9
     local junit_file="$BENCH_TMP_DIR/junit_${framework}_${mode_label}_run${run_num}.xml"
 
     log "$raw_file" ""
@@ -77,7 +83,7 @@ run_test() {
     start_ts=$(date +%s%N)
 
     local output
-    output=$(cd "$repo_root" && "$python_bin" -m pytest "$test_target" -v --tb=line --junitxml "$junit_file" $extra_args 2>&1) || true
+    output=$(cd "$repo_root" && "$python_bin" -m pytest "$test_target" -v --tb=line --reruns "$PYTEST_RERUNS" --junitxml "$junit_file" $extra_args 2>&1) || true
     local exit_code=$?
 
     echo "$output" | tee -a "$raw_file"
@@ -124,6 +130,21 @@ run_test() {
     FAILED["$key"]="$failed_count"
     EXITCODES["$key"]="$exit_code"
     FAILURES["$key"]="$failed_tests"
+
+    if [[ "$exit_code" -ne 0 || "$failed_count" -gt 0 ]]; then
+        {
+            echo "============================================================"
+            echo "FRAMEWORK=$framework MODE=$mode_label RUN=$run_num"
+            echo "START_TIME=$(date '+%Y-%m-%d %H:%M:%S')"
+            echo "EXIT_CODE=$exit_code"
+            echo "FAILED=$failed_count"
+            echo "FAILED_TESTS=$failed_tests"
+            echo "--- PYTEST OUTPUT (FAILURE DUMP) ---"
+            echo "$output"
+            echo "============================================================"
+            echo ""
+        } >> "$error_file"
+    fi
 
     echo "${framework}|${mode_label}|${run_num}|${junit_file}" >> "$MANIFEST_FILE"
 }
@@ -240,20 +261,27 @@ generate_framework_summary() {
     done
     headless_seq_avg=$(echo "scale=2; $headless_seq_sum / $RUNS_PER_MODE" | bc)
 
-    for n in 2 3 4 5 6; do
-        local xdist_sum=0
-        for i in $(seq 1 $RUNS_PER_MODE); do
-            local d="${DURATIONS[${framework}|headless-xdist-n${n}|$i]:-0}"
-            xdist_sum=$(echo "$xdist_sum + $d" | bc)
+    if [[ "$headless_seq_avg" == "0" || "$headless_seq_avg" == ".00" ]]; then
+        echo "Brak trybu headless-seq w bieżącej konfiguracji --modes." >> "$f"
+    else
+        for mode_spec in "${MODES[@]}"; do
+            IFS='|' read -r mode_label extra_args <<< "$mode_spec"
+            if [[ "$mode_label" =~ ^headless-xdist-n[0-9]+$ ]]; then
+                local xdist_sum=0
+                for i in $(seq 1 $RUNS_PER_MODE); do
+                    local d="${DURATIONS[${framework}|${mode_label}|$i]:-0}"
+                    xdist_sum=$(echo "$xdist_sum + $d" | bc)
+                done
+                local xdist_avg
+                xdist_avg=$(echo "scale=2; $xdist_sum / $RUNS_PER_MODE" | bc)
+                local speedup="N/A"
+                if [[ "$xdist_avg" != "0" && "$xdist_avg" != ".00" ]]; then
+                    speedup=$(echo "scale=2; $headless_seq_avg / $xdist_avg" | bc)
+                fi
+                echo "| headless-seq vs ${mode_label} | $headless_seq_avg | $xdist_avg | ${speedup}x |" >> "$f"
+            fi
         done
-        local xdist_avg
-        xdist_avg=$(echo "scale=2; $xdist_sum / $RUNS_PER_MODE" | bc)
-        local speedup="N/A"
-        if [[ "$xdist_avg" != "0" && "$xdist_avg" != ".00" ]]; then
-            speedup=$(echo "scale=2; $headless_seq_avg / $xdist_avg" | bc)
-        fi
-        echo "| headless-seq vs headless-xdist-n$n | $headless_seq_avg | $xdist_avg | ${speedup}x |" >> "$f"
-    done
+    fi
 
     echo "" >> "$f"
 
@@ -409,8 +437,50 @@ Options:
   --selenium-repo <path>          Ścieżka do repo nc-functional-tests-py.
   --selenium-target <path>        Ścieżka testów Selenium względem repo.
   --runs <N>                      Liczba runów na tryb (domyślnie: 2).
+  --modes <lista>                 Lista trybów po przecinku, np. headless-seq,headless-xdist-n2.
+  --reruns <N>                    Liczba rerunów na fail (pytest --reruns), domyślnie: 1.
   --help                          Pokaż pomoc.
 EOF
+}
+
+set_modes() {
+    local input="$1"
+    local requested=()
+    local selected=()
+    local found=0
+
+    IFS=',' read -r -a requested <<< "$input"
+    MODES=()
+
+    for req in "${requested[@]}"; do
+        req="$(echo "$req" | xargs)"
+        [[ -z "$req" ]] && continue
+        found=0
+        for mode_spec in "${ALL_MODES[@]}"; do
+            IFS='|' read -r mode_label extra_args <<< "$mode_spec"
+            if [[ "$mode_label" == "$req" ]]; then
+                selected+=("$mode_spec")
+                found=1
+                break
+            fi
+        done
+        if [[ "$found" -eq 0 ]]; then
+            echo "Nieznany tryb: $req"
+            echo "Dozwolone tryby:"
+            for mode_spec in "${ALL_MODES[@]}"; do
+                IFS='|' read -r mode_label extra_args <<< "$mode_spec"
+                echo "  - $mode_label"
+            done
+            exit 1
+        fi
+    done
+
+    if [[ ${#selected[@]} -eq 0 ]]; then
+        echo "Pusta lista trybów w --modes"
+        exit 1
+    fi
+
+    MODES=("${selected[@]}")
 }
 
 parse_args() {
@@ -432,6 +502,14 @@ parse_args() {
                 RUNS_PER_MODE="$2"
                 shift 2
                 ;;
+            --modes)
+                set_modes "$2"
+                shift 2
+                ;;
+            --reruns)
+                PYTEST_RERUNS="$2"
+                shift 2
+                ;;
             --help)
                 usage
                 exit 0
@@ -451,6 +529,10 @@ parse_args "$@"
 
 mkdir -p "$BENCH_TMP_DIR"
 touch "$MANIFEST_FILE"
+touch "$ERROR_FILE_PLAYWRIGHT"
+if [[ "$COMPARE_SELENIUM" -eq 1 ]]; then
+    touch "$ERROR_FILE_SELENIUM"
+fi
 
 log "$RAW_FILE_PLAYWRIGHT" "============================================================"
 log "$RAW_FILE_PLAYWRIGHT" "BENCHMARK E2E - Headless only"
@@ -458,6 +540,7 @@ log "$RAW_FILE_PLAYWRIGHT" "Framework: playwright"
 log "$RAW_FILE_PLAYWRIGHT" "Plik: $TEST_FILE"
 log "$RAW_FILE_PLAYWRIGHT" "Tryby: ${MODES[*]}"
 log "$RAW_FILE_PLAYWRIGHT" "Runów per tryb: $RUNS_PER_MODE"
+log "$RAW_FILE_PLAYWRIGHT" "Reruns na fail: $PYTEST_RERUNS"
 log "$RAW_FILE_PLAYWRIGHT" "Start: $(date '+%Y-%m-%d %H:%M:%S')"
 log "$RAW_FILE_PLAYWRIGHT" "Env: REPORTING_ENABLED=$REPORTING_ENABLED"
 log "$RAW_FILE_PLAYWRIGHT" "     ALLURE_ENABLED=$ALLURE_ENABLED PYTEST_HTML_ENABLED=$PYTEST_HTML_ENABLED"
@@ -465,6 +548,7 @@ log "$RAW_FILE_PLAYWRIGHT" "     RECORD_VIDEO=$RECORD_VIDEO"
 log "$RAW_FILE_PLAYWRIGHT" "Platform: $(uname -srm)"
 log "$RAW_FILE_PLAYWRIGHT" "Python: $(.venv/bin/python --version 2>&1)"
 log "$RAW_FILE_PLAYWRIGHT" "Pytest: $(.venv/bin/python -m pytest --version 2>&1 | head -1)"
+log "$RAW_FILE_PLAYWRIGHT" "Error dump file: $ERROR_FILE_PLAYWRIGHT"
 log "$RAW_FILE_PLAYWRIGHT" "============================================================"
 log "$RAW_FILE_PLAYWRIGHT" ""
 
@@ -474,7 +558,7 @@ for mode_spec in "${MODES[@]}"; do
     log "$RAW_FILE_PLAYWRIGHT" "# PHASE: $mode_label (HEADLESS=$HEADLESS)"
     log "$RAW_FILE_PLAYWRIGHT" "########################################"
     for i in $(seq 1 $RUNS_PER_MODE); do
-        run_test "playwright" "$REPO_ROOT" ".venv/bin/python" "$TEST_FILE" "$RAW_FILE_PLAYWRIGHT" "$i" "$mode_label" "$extra_args"
+        run_test "playwright" "$REPO_ROOT" ".venv/bin/python" "$TEST_FILE" "$RAW_FILE_PLAYWRIGHT" "$i" "$mode_label" "$extra_args" "$ERROR_FILE_PLAYWRIGHT"
     done
 done
 
@@ -492,9 +576,11 @@ if [[ "$COMPARE_SELENIUM" -eq 1 ]]; then
     log "$RAW_FILE_SELENIUM" "Repo: $SELENIUM_REPO"
     log "$RAW_FILE_SELENIUM" "Tryby: ${MODES[*]}"
     log "$RAW_FILE_SELENIUM" "Runów per tryb: $RUNS_PER_MODE"
+    log "$RAW_FILE_SELENIUM" "Reruns na fail: $PYTEST_RERUNS"
     log "$RAW_FILE_SELENIUM" "Start: $(date '+%Y-%m-%d %H:%M:%S')"
     log "$RAW_FILE_SELENIUM" "Python: $($SELENIUM_REPO/.venv/bin/python --version 2>&1)"
     log "$RAW_FILE_SELENIUM" "Pytest: $($SELENIUM_REPO/.venv/bin/python -m pytest --version 2>&1 | head -1)"
+    log "$RAW_FILE_SELENIUM" "Error dump file: $ERROR_FILE_SELENIUM"
     log "$RAW_FILE_SELENIUM" "============================================================"
     log "$RAW_FILE_SELENIUM" ""
 
@@ -504,7 +590,7 @@ if [[ "$COMPARE_SELENIUM" -eq 1 ]]; then
         log "$RAW_FILE_SELENIUM" "# PHASE: $mode_label (HEADLESS=$HEADLESS)"
         log "$RAW_FILE_SELENIUM" "########################################"
         for i in $(seq 1 $RUNS_PER_MODE); do
-            run_test "selenium" "$SELENIUM_REPO" ".venv/bin/python" "$SELENIUM_TEST_TARGET" "$RAW_FILE_SELENIUM" "$i" "$mode_label" "$extra_args"
+            run_test "selenium" "$SELENIUM_REPO" ".venv/bin/python" "$SELENIUM_TEST_TARGET" "$RAW_FILE_SELENIUM" "$i" "$mode_label" "$extra_args" "$ERROR_FILE_SELENIUM"
         done
     done
 
@@ -543,6 +629,8 @@ done
 echo ""
 echo "Full summary: $SUMMARY_FILE"
 echo "Raw log (playwright): $RAW_FILE_PLAYWRIGHT"
+echo "Error dump (playwright): $ERROR_FILE_PLAYWRIGHT"
 if [[ "$COMPARE_SELENIUM" -eq 1 ]]; then
     echo "Raw log (selenium): $RAW_FILE_SELENIUM"
+    echo "Error dump (selenium): $ERROR_FILE_SELENIUM"
 fi
