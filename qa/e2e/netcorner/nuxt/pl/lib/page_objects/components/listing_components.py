@@ -54,11 +54,12 @@ class ListingFiltersComponent(BaseComponent):
 
 
 class SortOptions(StrEnum):
-        DEFAULT = "Domyślnie"
-        PRICE_ASC = "Po cenie rosnąco"
-        PRICE_DESC = "Po cenie malejąco"
-        NAME_ASC = "Alfabetycznie A-Z"
-        NAME_DESC = "Alfabetycznie Z-A"
+    DEFAULT = "Domyślnie"
+    PRICE_ASC = "Po cenie rosnąco"
+    PRICE_DESC = "Po cenie malejąco"
+    NAME_ASC = "Alfabetycznie A-Z"
+    NAME_DESC = "Alfabetycznie Z-A"
+
 
 class AvailabilityOptions(StrEnum):
     ANY = "Nieistotne"
@@ -114,8 +115,11 @@ class ListingSortingComponent(BaseComponent):
     @step("Ustawiam checkbox 'Pokaż produkty niedostępne' na: {checked}")
     def set_show_unavailable(self, checked: bool) -> Self:
         if self.__show_unavailable_checkbox.is_checked() != checked:
-            self.pointer_click(self.__show_unavailable_checkbox)
-            self.sleep(2_000)  # Czekamy na odświeżenie listingu po zmianie stanu checkboxa
+            with self.root.page.expect_navigation(wait_until="domcontentloaded", timeout=self.DEFAULT_TIMEOUT):
+                self.pointer_click(self.__show_unavailable_checkbox)
+            listing_content = self.root.page.locator("[data-name='listingContent']")
+            expect(listing_content).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+            expect(listing_content.locator("[data-name='listingTile']").first).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
         return self
 
     def is_show_unavailable_checked(self) -> bool:
