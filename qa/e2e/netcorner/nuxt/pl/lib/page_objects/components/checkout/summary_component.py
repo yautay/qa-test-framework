@@ -31,7 +31,9 @@ class CheckoutSummaryComponent(BaseComponent):
         self.__delivery_price = self.find("css=div:has(> span:text-is('Dostawa')) >> span.font-semibold")
         self.__payment_fee = self.find("css=p:text-is('Płatność') + div >> span.block.text-right")
         self.__total_to_pay = self.find("css=p.font-semibold:text-is('Do zapłaty') + span >> span.block.text-right")
-        self.__place_order_button = self.root.get_by_role("button", name="Zamawiam z obowiązkiem zapłaty").first
+        self.__place_order_button = self.root.get_by_role(
+            "button", name=re.compile(r"^(Zamawiam z obowiązkiem zapłaty|Rezerwacja)$", flags=re.IGNORECASE)
+        ).first
 
     @staticmethod
     def __read_text(locator: Locator) -> str:
