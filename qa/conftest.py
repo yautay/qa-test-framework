@@ -35,6 +35,12 @@ from framework.timing_monitor import (
     load_previous_timings,
     save_run_timings,
 )
+from qa.e2e.netcorner.lib.data_dump_to_logs import (
+    format_dump_for_log,
+    pop_test_data_dump,
+    start_test_data_dump,
+    stop_test_data_dump,
+)
 from qa.e2e.netcorner.lib.step_api import pop_test_step_trace, start_test_step_trace, stop_test_step_trace
 
 
@@ -114,6 +120,37 @@ def _load_worker_timing_files(logs_dir: Path) -> dict[str, float]:
             except (TypeError, ValueError):
                 continue
     return merged
+
+
+def _load_worker_test_data_files(logs_dir: Path) -> dict[str, dict[str, Any]]:
+    merged: dict[str, dict[str, Any]] = {}
+    for path in sorted(logs_dir.glob("test_data_*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            continue
+        cases = payload.get("cases", {}) if isinstance(payload, dict) else {}
+        if not isinstance(cases, dict):
+            continue
+        for nodeid, case_payload in cases.items():
+            if not isinstance(nodeid, str) or not isinstance(case_payload, dict):
+                continue
+            merged[nodeid] = case_payload
+    return merged
+
+
+def _write_test_data_snapshot(file_path: Path, cases: dict[str, dict[str, Any]]) -> None:
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "cases": dict(
+            sorted(
+                (nodeid, case_payload)
+                for nodeid, case_payload in cases.items()
+                if isinstance(nodeid, str) and isinstance(case_payload, dict)
+            )
+        )
+    }
+    file_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def _normalize_run_note(raw: object, source: str) -> str:
@@ -1445,6 +1482,7 @@ def pytest_configure(config: pytest.Config) -> None:
     config._test_case_started_at = {}
     config._test_case_started_perf = {}
     config._test_case_emitted = set()
+    config._test_case_data_logs = {}
     config._test_result_payloads = {}
     config._result_counters = {
         "total": 0,
@@ -1534,21 +1572,33 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     _publish_report_metadata(session.config, run_finish_metadata)
     run_uid = str(getattr(session.config, "_run_uid", "") or "")
     timings: dict[str, float] = session.config._test_case_timings
+    test_data_logs = getattr(session.config, "_test_case_data_logs", {})
+    if not isinstance(test_data_logs, dict):
+        test_data_logs = {}
     collect_only = bool(getattr(session.config.option, "collectonly", False))
     if not collect_only:
         worker_id = _current_worker_id()
         if _is_xdist_worker(session.config):
             durations_path = artifacts.logs / f"test_durations_{worker_id}.json"
             save_run_timings(durations_path, timings)
+            test_data_path = artifacts.logs / f"test_data_{worker_id}.json"
+            _write_test_data_snapshot(test_data_path, test_data_logs)
         elif _is_xdist_controller(session.config):
             merged_timings = _load_worker_timing_files(artifacts.logs)
             effective_timings = merged_timings or timings
             durations_path = artifacts.logs / "test_durations.json"
             save_run_timings(durations_path, effective_timings)
             timings = effective_timings
+
+            merged_test_data = _load_worker_test_data_files(artifacts.logs)
+            effective_test_data = merged_test_data or test_data_logs
+            test_data_path = artifacts.logs / "test_data.json"
+            _write_test_data_snapshot(test_data_path, effective_test_data)
         else:
             durations_path = artifacts.logs / "test_durations.json"
             save_run_timings(durations_path, timings)
+            test_data_path = artifacts.logs / "test_data.json"
+            _write_test_data_snapshot(test_data_path, test_data_logs)
 
         previous = load_previous_timings(artifacts.root)
         for regression in detect_slow_regressions(timings, previous):
@@ -1590,6 +1640,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_protocol(item: pytest.Item, nextitem: pytest.Item | None):
     step_trace_token = start_test_step_trace(item.nodeid)
+    test_data_token = start_test_data_dump(item.nodeid)
     started = time.perf_counter()
     started_at = _utc_now()
     item.config._test_case_started_at[item.nodeid] = started_at
@@ -1614,12 +1665,14 @@ def pytest_runtest_protocol(item: pytest.Item, nextitem: pytest.Item | None):
         )
         item.config._test_case_timings[item.nodeid] = duration_seconds
     finally:
+        stop_test_data_dump(test_data_token)
         stop_test_step_trace(step_trace_token)
 
 
 @pytest.hookimpl(trylast=True)
 def pytest_runtest_teardown(item: pytest.Item) -> None:
     if item.nodeid in item.config._test_case_emitted:
+        pop_test_data_dump(item.nodeid)
         pop_test_step_trace(item.nodeid)
         return
 
@@ -1629,6 +1682,7 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
     run_artifacts: RunArtifacts = item.config._run_artifacts
     run_uid = str(getattr(item.config, "_run_uid", "") or "")
     status = _derive_test_status(item)
+    dumped_test_data = pop_test_data_dump(item.nodeid)
     steps_payload = pop_test_step_trace(item.nodeid)
     started_at = item.config._test_case_started_at.get(item.nodeid)
     finished_at = _utc_now()
@@ -1671,6 +1725,9 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
     if steps_artifact_path:
         artifact_list.append(_artifact_entry("steps", steps_artifact_path))
     _emit_steps_to_console(item.config, nodeid=item.nodeid, status=status, steps=steps_payload)
+    if dumped_test_data:
+        item.config._test_case_data_logs[item.nodeid] = dumped_test_data
+        bind_test_context(item.nodeid).info("test_case_data_dump {}", format_dump_for_log(dumped_test_data))
 
     payload = {
         **_build_event_envelope(

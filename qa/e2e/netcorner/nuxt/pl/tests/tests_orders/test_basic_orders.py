@@ -3,6 +3,7 @@ from __future__ import annotations
 import allure
 import pytest
 
+from qa.e2e.netcorner.lib.data_dump_to_logs import dump_data
 from qa.e2e.netcorner.nuxt.pl.lib.flows.cart_and_checkout_wrappers import CartAndCheckoutWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.flows.select_product_wrappers import SelectProductWrappers
@@ -22,12 +23,19 @@ pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.orders]
 @pytest.mark.parametrize("delivery_case", checkout_delivery_cases(), ids=lambda case: case.case_id)
 @pytest.mark.scenario("Podstawowy proces zakupowy - typy dostawy")
 def test_basic_orders(page, context, runtime_env, auth_case: AuthSessionCase, delivery_case: CheckoutDeliveryCase):
-    _prepare_client_session(page, context, runtime_env, auth_case)
-    selected_product_data = SelectProductWrappers(page, context, runtime_env).select_test_product(
-        first_aviable_laptop_case()
-    )
+    user_data = _prepare_client_session(page, context, runtime_env, auth_case)
+    listings_data = first_aviable_laptop_case()
+    selected_product_data = SelectProductWrappers(page, context, runtime_env).select_test_product(listings_data)
     assert selected_product_data is not None, "Nie udało się wybrać produktu testowego."
     assert selected_product_data.product_page_data is not None, "Produkt nie został dodany do koszyka."
+
+    dump_data(
+        auth_case=auth_case,
+        delivery_case=delivery_case,
+        listings_data=listings_data,
+        user_data=user_data,
+        product=selected_product_data.product,
+    )
 
     listing_data = selected_product_data.listing_data
     product_page_data = selected_product_data.product_page_data
@@ -53,12 +61,12 @@ def test_basic_orders(page, context, runtime_env, auth_case: AuthSessionCase, de
     )
 
 
-def _prepare_client_session(page, context, runtime_env, auth_case: AuthSessionCase) -> bool:
+def _prepare_client_session(page, context, runtime_env, auth_case: AuthSessionCase):
     if not auth_case.authenticated:
-        return False
+        return None
 
     user_data = ClientDataBuilder().with_required_terms().build()
     assert ClientWrappers(page, context, runtime_env).register_new_client(
         user_data
     ), "Użytkownik nie został poprawnie zarejestrowany."
-    return True
+    return user_data

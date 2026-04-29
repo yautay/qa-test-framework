@@ -148,6 +148,68 @@ def test_pytest_sessionfinish_controller_falls_back_to_local_timings_when_no_wor
     assert "qa/test.py::test_case" in payload
 
 
+def test_pytest_sessionfinish_writes_test_data_snapshot_for_local_run(
+    tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run_artifacts = build_run_artifacts(str(tmp_path / "artifacts"), run_id="run-test-data")
+
+    class _Client:
+        def run_finish(self, _payload: dict[str, object]) -> None:
+            return
+
+        def flush(self, timeout_seconds: int) -> None:
+            _ = timeout_seconds
+
+        def shutdown(self, timeout_seconds: int) -> None:
+            _ = timeout_seconds
+
+    class _PluginManager:
+        @staticmethod
+        def hasplugin(name: str) -> bool:
+            return False
+
+    monkeypatch.delenv("PYTEST_XDIST_WORKER", raising=False)
+
+    config = SimpleNamespace(
+        _run_artifacts=run_artifacts,
+        _run_uid="uid-data",
+        _test_case_timings={},
+        _test_case_data_logs={
+            "qa/test.py::test_case": {
+                "auth_case": {"case_id": "logged_in", "authenticated": True},
+                "product": {"product_name": "Laptop"},
+            }
+        },
+        option=SimpleNamespace(collectonly=False),
+        pluginmanager=_PluginManager(),
+        _runtime_env=load_env(),
+        _run_metadata={"tester": "", "run_note": ""},
+        _result_counters={
+            "total": 1,
+            "passed": 1,
+            "failed": 0,
+            "skipped": 0,
+            "xfailed": 0,
+            "xpassed": 0,
+            "error": 0,
+        },
+        _session_started=time.time() - 0.2,
+        _reporting_suspended=False,
+        _reporting_client=_Client(),
+    )
+    session = SimpleNamespace(config=config)
+
+    runtime_conftest.pytest_sessionfinish(session, 0)
+
+    payload = json.loads((run_artifacts.logs / "test_data.json").read_text(encoding="utf-8"))
+    assert payload["cases"] == {
+        "qa/test.py::test_case": {
+            "auth_case": {"case_id": "logged_in", "authenticated": True},
+            "product": {"product_name": "Laptop"},
+        }
+    }
+
+
 def test_pytest_sessionfinish_run_finish_prefers_target_git_info_from_run_metadata_file(tmp_path: Path) -> None:
     run_artifacts = build_run_artifacts(str(tmp_path / "artifacts"), run_id="run-finish-metadata")
     metadata_path = run_artifacts.root / "run-metadata.json"
