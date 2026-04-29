@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# Benchmark E2E: headless vs non-headless, seq vs xdist -n 2/3/4
+# Benchmark E2E: headless only, seq vs xdist -n 2/3/4
 # Uruchomienie: bash tools/benchmark/run_benchmark.sh
 # Wyniki: bench_raw_<timestamp>.txt  +  bench_summary_<timestamp>.md
 # =============================================================================
@@ -17,20 +17,16 @@ SUMMARY_FILE="bench_summary_${TIMESTAMP}.md"
 RUNS_PER_MODE=2
 
 # --- konfiguracja trybów ---------------------------------------------------
-# Format: "label|headless_flag|extra_pytest_args"
-#   headless_flag: 1 = headless, 0 = headed (non-headless)
+# Format: "label|extra_pytest_args"
 MODES=(
-    "headless-seq|1|"
-    "headless-xdist-n2|1|-n 2"
-    "headless-xdist-n3|1|-n 3"
-    "headless-xdist-n4|1|-n 4"
-    "headed-seq|0|"
-    "headed-xdist-n2|0|-n 2"
-    "headed-xdist-n3|0|-n 3"
-    "headed-xdist-n4|0|-n 4"
+    "headless-seq|"
+    "headless-xdist-n2|-n 2"
+    "headless-xdist-n3|-n 3"
+    "headless-xdist-n4|-n 4"
 )
 
-# --- env vars wspólne (HEADLESS ustawiany per-run) --------------------------
+# --- env vars wspólne -------------------------------------------------------
+export HEADLESS=1
 export REPORTING_ENABLED=0
 export ALLURE_ENABLED=0
 export PYTEST_HTML_ENABLED=0
@@ -52,13 +48,10 @@ log() {
 run_test() {
     local run_num=$1
     local mode_label=$2
-    local headless_flag=$3
-    local extra_args=$4
-
-    export HEADLESS="$headless_flag"
+    local extra_args=$3
 
     log ""
-    log "=== Run $run_num ($mode_label) HEADLESS=$headless_flag ==="
+    log "=== Run $run_num ($mode_label) HEADLESS=$HEADLESS ==="
     log "START_TIME=$(date '+%Y-%m-%d %H:%M:%S')"
 
     local start_ts
@@ -132,7 +125,7 @@ generate_summary() {
     echo "|------|-----------|-----------|---------|---------|---------|------------|------------|-----------|" >> "$f"
 
     for mode_spec in "${MODES[@]}"; do
-        IFS='|' read -r mode_label headless_flag extra_args <<< "$mode_spec"
+        IFS='|' read -r mode_label extra_args <<< "$mode_spec"
 
         local sum_dur=0 min_dur=999999 max_dur=0
         local sum_passed=0 sum_failed=0
@@ -178,7 +171,7 @@ generate_summary() {
     echo "" >> "$f"
 
     for mode_spec in "${MODES[@]}"; do
-        IFS='|' read -r mode_label headless_flag extra_args <<< "$mode_spec"
+        IFS='|' read -r mode_label extra_args <<< "$mode_spec"
         echo "### $mode_label" >> "$f"
         echo "" >> "$f"
         echo "| Run | Czas (s) | Passed | Failed | Exit Code | Failures |" >> "$f"
@@ -227,67 +220,15 @@ generate_summary() {
         echo "| headless-seq vs headless-xdist-n$n | $headless_seq_avg | $xdist_avg | ${speedup}x |" >> "$f"
     done
 
-    # Headed baseline
-    local headed_seq_avg=0
-    local headed_seq_sum=0
-    for i in $(seq 1 $RUNS_PER_MODE); do
-        local d="${DURATIONS[headed-seq|$i]:-0}"
-        headed_seq_sum=$(echo "$headed_seq_sum + $d" | bc)
-    done
-    headed_seq_avg=$(echo "scale=2; $headed_seq_sum / $RUNS_PER_MODE" | bc)
-
-    for n in 2 3 4; do
-        local xdist_sum=0
-        for i in $(seq 1 $RUNS_PER_MODE); do
-            local d="${DURATIONS[headed-xdist-n${n}|$i]:-0}"
-            xdist_sum=$(echo "$xdist_sum + $d" | bc)
-        done
-        local xdist_avg
-        xdist_avg=$(echo "scale=2; $xdist_sum / $RUNS_PER_MODE" | bc)
-        local speedup="N/A"
-        if [[ "$xdist_avg" != "0" && "$xdist_avg" != ".00" ]]; then
-            speedup=$(echo "scale=2; $headed_seq_avg / $xdist_avg" | bc)
-        fi
-        echo "| headed-seq vs headed-xdist-n$n | $headed_seq_avg | $xdist_avg | ${speedup}x |" >> "$f"
-    done
-
     echo "" >> "$f"
 
-    # ---- 4. Headless vs Headed porównanie ----
-    echo "## 4. Headless vs Headed (ten sam tryb)" >> "$f"
-    echo "" >> "$f"
-    echo "| Tryb | Headless Avg (s) | Headed Avg (s) | Różnica (s) | Headed / Headless |" >> "$f"
-    echo "|------|------------------|----------------|-------------|-------------------|" >> "$f"
-
-    for suffix in "seq" "xdist-n2" "xdist-n3" "xdist-n4"; do
-        local hl_sum=0 hd_sum=0
-        for i in $(seq 1 $RUNS_PER_MODE); do
-            local d_hl="${DURATIONS[headless-${suffix}|$i]:-0}"
-            local d_hd="${DURATIONS[headed-${suffix}|$i]:-0}"
-            hl_sum=$(echo "$hl_sum + $d_hl" | bc)
-            hd_sum=$(echo "$hd_sum + $d_hd" | bc)
-        done
-        local hl_avg hd_avg diff ratio
-        hl_avg=$(echo "scale=2; $hl_sum / $RUNS_PER_MODE" | bc)
-        hd_avg=$(echo "scale=2; $hd_sum / $RUNS_PER_MODE" | bc)
-        diff=$(echo "scale=2; $hd_avg - $hl_avg" | bc)
-        if [[ "$hl_avg" != "0" && "$hl_avg" != ".00" ]]; then
-            ratio=$(echo "scale=2; $hd_avg / $hl_avg" | bc)
-        else
-            ratio="N/A"
-        fi
-        echo "| $suffix | $hl_avg | $hd_avg | $diff | ${ratio}x |" >> "$f"
-    done
-
-    echo "" >> "$f"
-
-    # ---- 5. Flakey analysis ----
-    echo "## 5. Flakey testy (padające w >0 runach)" >> "$f"
+    # ---- 4. Flakey analysis ----
+    echo "## 4. Flakey testy (padające w >0 runach)" >> "$f"
     echo "" >> "$f"
 
     declare -A FLAKEY_COUNT
     for mode_spec in "${MODES[@]}"; do
-        IFS='|' read -r mode_label headless_flag extra_args <<< "$mode_spec"
+        IFS='|' read -r mode_label extra_args <<< "$mode_spec"
         for i in $(seq 1 $RUNS_PER_MODE); do
             local key="${mode_label}|${i}"
             local fails="${FAILURES[$key]:-}"
@@ -324,7 +265,7 @@ generate_summary() {
 # --- main -------------------------------------------------------------------
 
 log "============================================================"
-log "BENCHMARK E2E - Headless + Headed"
+log "BENCHMARK E2E - Headless only"
 log "Plik: $TEST_FILE"
 log "Tryby: ${MODES[*]}"
 log "Runów per tryb: $RUNS_PER_MODE"
@@ -339,12 +280,12 @@ log "============================================================"
 log ""
 
 for mode_spec in "${MODES[@]}"; do
-    IFS='|' read -r mode_label headless_flag extra_args <<< "$mode_spec"
+    IFS='|' read -r mode_label extra_args <<< "$mode_spec"
     log "########################################"
-    log "# PHASE: $mode_label (HEADLESS=$headless_flag)"
+    log "# PHASE: $mode_label (HEADLESS=$HEADLESS)"
     log "########################################"
     for i in $(seq 1 $RUNS_PER_MODE); do
-        run_test "$i" "$mode_label" "$headless_flag" "$extra_args"
+        run_test "$i" "$mode_label" "$extra_args"
     done
 done
 
@@ -362,8 +303,8 @@ echo ""
 echo "=== QUICK SUMMARY ==="
 echo ""
 for mode_spec in "${MODES[@]}"; do
-    IFS='|' read -r mode_label headless_flag extra_args <<< "$mode_spec"
-    echo "--- $mode_label (HEADLESS=$headless_flag) ---"
+    IFS='|' read -r mode_label extra_args <<< "$mode_spec"
+    echo "--- $mode_label (HEADLESS=$HEADLESS) ---"
     grep -A5 "=== Run.*($mode_label)" "$RAW_FILE" | grep -E "DURATION_S|EXIT_CODE|PASSED=|FAILED=" || true
     echo ""
 done
