@@ -18,7 +18,7 @@ import requests
 from loguru import logger
 
 try:
-    from pytest_metadata.plugin import metadata_key as _PYTEST_METADATA_KEY
+    from pytest_metadata.plugin import metadata_key as _PYTEST_METADATA_KEY  # noqa: N812
 except Exception:  # pragma: no cover - optional dependency
     _PYTEST_METADATA_KEY = None
 
@@ -35,6 +35,13 @@ from framework.timing_monitor import (
     load_previous_timings,
     save_run_timings,
 )
+from qa.e2e.netcorner.lib.data_dump_to_logs import (
+    format_dump_for_log,
+    pop_test_data_dump,
+    start_test_data_dump,
+    stop_test_data_dump,
+)
+from qa.e2e.netcorner.lib.step_api import pop_test_step_trace, start_test_step_trace, stop_test_step_trace
 
 
 def _get_scenario_description(item: pytest.Item) -> str | None:
@@ -113,6 +120,37 @@ def _load_worker_timing_files(logs_dir: Path) -> dict[str, float]:
             except (TypeError, ValueError):
                 continue
     return merged
+
+
+def _load_worker_test_data_files(logs_dir: Path) -> dict[str, dict[str, Any]]:
+    merged: dict[str, dict[str, Any]] = {}
+    for path in sorted(logs_dir.glob("test_data_*.json")):
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            continue
+        cases = payload.get("cases", {}) if isinstance(payload, dict) else {}
+        if not isinstance(cases, dict):
+            continue
+        for nodeid, case_payload in cases.items():
+            if not isinstance(nodeid, str) or not isinstance(case_payload, dict):
+                continue
+            merged[nodeid] = case_payload
+    return merged
+
+
+def _write_test_data_snapshot(file_path: Path, cases: dict[str, dict[str, Any]]) -> None:
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "cases": dict(
+            sorted(
+                (nodeid, case_payload)
+                for nodeid, case_payload in cases.items()
+                if isinstance(nodeid, str) and isinstance(case_payload, dict)
+            )
+        )
+    }
+    file_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def _normalize_run_note(raw: object, source: str) -> str:
@@ -771,8 +809,11 @@ def _refresh_environment_probe_metadata(config: pytest.Config, items: list[pytes
 
     if metadata_path is not None:
         persisted_metadata = _read_run_metadata_file(metadata_path)
-        persisted_probe = persisted_metadata.get("environment_probe") if isinstance(persisted_metadata, dict) else None
-        if _probe_is_resolved(persisted_probe):
+        if isinstance(persisted_metadata, dict):
+            persisted_probe = persisted_metadata.get("environment_probe")
+        else:
+            persisted_probe = None
+        if isinstance(persisted_metadata, dict) and _probe_is_resolved(persisted_probe):
             config._run_metadata = persisted_metadata
             config._environment_probe_resolved = True
             metadata = persisted_metadata
@@ -920,6 +961,8 @@ def _resolve_run_profile(config: pytest.Config) -> str:
     markexpr = str(getattr(config.option, "markexpr", "") or "").strip()
     if markexpr == "aso":
         return "aso"
+    if markexpr == "orders":
+        return "orders"
     if markexpr == "smoke":
         return "smoke"
     if markexpr == "visual":
@@ -1129,6 +1172,78 @@ def _artifact_entry(kind: str, path: str) -> dict[str, object]:
 
 def _test_result_payloads_path(run_artifacts: RunArtifacts, worker_id: str) -> Path:
     return run_artifacts.root / "workers" / worker_id / "test_result_payloads.json"
+
+
+def _sanitize_nodeid_for_filename(nodeid: str) -> str:
+    token = str(nodeid or "").strip().replace("::", "__").replace("/", "_").replace("\\", "_")
+    safe = "".join(ch if ch.isalnum() or ch in {"-", "_", ".", "[", "]", "(", ")"} else "_" for ch in token)
+    return safe or "unknown_test"
+
+
+def _test_steps_artifact_path(run_artifacts: RunArtifacts, worker_id: str, nodeid: str) -> Path:
+    safe_nodeid = _sanitize_nodeid_for_filename(nodeid)
+    return run_artifacts.root / "workers" / worker_id / "steps" / f"{safe_nodeid}.steps.json"
+
+
+def _write_test_steps_artifact(
+    config: pytest.Config,
+    *,
+    nodeid: str,
+    status: str,
+    finished_at: str,
+    steps: list[dict[str, object]],
+) -> str:
+    run_artifacts = getattr(config, "_run_artifacts", None)
+    if not isinstance(run_artifacts, RunArtifacts):
+        return ""
+
+    worker_id = _current_worker_id()
+    target = _test_steps_artifact_path(run_artifacts, worker_id, nodeid)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "nodeid": nodeid,
+        "status": status,
+        "finished_at": finished_at,
+        "step_count": int(len(steps)),
+        "steps": list(steps),
+    }
+    temp = target.with_suffix(".json.tmp")
+    temp.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    _replace_with_retry(temp, target)
+    return str(target)
+
+
+def _emit_steps_to_console(
+    config: pytest.Config,
+    *,
+    nodeid: str,
+    status: str,
+    steps: list[dict[str, object]],
+) -> None:
+    reporter = config.pluginmanager.getplugin("terminalreporter")
+    if reporter is None:
+        return
+
+    try:
+        reporter.write_line(f"[steps:{status}] {nodeid}")
+        if not steps:
+            reporter.write_line("  00. [none] No recorded steps")
+            return
+
+        for index, step_row in enumerate(steps, start=1):
+            title = str(step_row.get("title", "") or "").strip() or "(untitled step)"
+            step_status = str(step_row.get("status", "") or "").strip().lower() or "unknown"
+            duration_raw = step_row.get("duration_ms", 0)
+            try:
+                duration_ms = max(0, int(cast(Any, duration_raw)))
+            except (TypeError, ValueError):
+                duration_ms = 0
+            reporter.write_line(f"  {index:02d}. [{step_status}] {title} ({duration_ms} ms)")
+            error = str(step_row.get("error", "") or "").strip()
+            if error:
+                reporter.write_line(f"      error: {error[:300]}")
+    except Exception:
+        return
 
 
 def _persist_test_result_payload(config: pytest.Config, nodeid: str, payload: dict[str, object]) -> None:
@@ -1367,6 +1482,7 @@ def pytest_configure(config: pytest.Config) -> None:
     config._test_case_started_at = {}
     config._test_case_started_perf = {}
     config._test_case_emitted = set()
+    config._test_case_data_logs = {}
     config._test_result_payloads = {}
     config._result_counters = {
         "total": 0,
@@ -1456,21 +1572,33 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     _publish_report_metadata(session.config, run_finish_metadata)
     run_uid = str(getattr(session.config, "_run_uid", "") or "")
     timings: dict[str, float] = session.config._test_case_timings
+    test_data_logs = getattr(session.config, "_test_case_data_logs", {})
+    if not isinstance(test_data_logs, dict):
+        test_data_logs = {}
     collect_only = bool(getattr(session.config.option, "collectonly", False))
     if not collect_only:
         worker_id = _current_worker_id()
         if _is_xdist_worker(session.config):
             durations_path = artifacts.logs / f"test_durations_{worker_id}.json"
             save_run_timings(durations_path, timings)
+            test_data_path = artifacts.logs / f"test_data_{worker_id}.json"
+            _write_test_data_snapshot(test_data_path, test_data_logs)
         elif _is_xdist_controller(session.config):
             merged_timings = _load_worker_timing_files(artifacts.logs)
             effective_timings = merged_timings or timings
             durations_path = artifacts.logs / "test_durations.json"
             save_run_timings(durations_path, effective_timings)
             timings = effective_timings
+
+            merged_test_data = _load_worker_test_data_files(artifacts.logs)
+            effective_test_data = merged_test_data or test_data_logs
+            test_data_path = artifacts.logs / "test_data.json"
+            _write_test_data_snapshot(test_data_path, effective_test_data)
         else:
             durations_path = artifacts.logs / "test_durations.json"
             save_run_timings(durations_path, timings)
+            test_data_path = artifacts.logs / "test_data.json"
+            _write_test_data_snapshot(test_data_path, test_data_logs)
 
         previous = load_previous_timings(artifacts.root)
         for regression in detect_slow_regressions(timings, previous):
@@ -1511,33 +1639,41 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_protocol(item: pytest.Item, nextitem: pytest.Item | None):
+    step_trace_token = start_test_step_trace(item.nodeid)
+    test_data_token = start_test_data_dump(item.nodeid)
     started = time.perf_counter()
     started_at = _utc_now()
     item.config._test_case_started_at[item.nodeid] = started_at
     item.config._test_case_started_perf[item.nodeid] = started
     scenario = _get_scenario_description(item)
     item._scenario_description = scenario
-    outcome = yield
-    _ = outcome
-    duration_seconds = round(time.perf_counter() - started, 3)
-    report = getattr(item, "rep_call", None)
-    status = "unknown"
-    if report is not None:
-        status = report.outcome
-    test_logger = bind_test_context(item.nodeid)
-    test_logger.info(
-        "test_case_timing",
-        nodeid=item.nodeid,
-        duration_seconds=duration_seconds,
-        status=status,
-        scenario=scenario,
-    )
-    item.config._test_case_timings[item.nodeid] = duration_seconds
+    try:
+        outcome = yield
+        _ = outcome
+        duration_seconds = round(time.perf_counter() - started, 3)
+        report = getattr(item, "rep_call", None)
+        status = "unknown"
+        if report is not None:
+            status = report.outcome
+        test_logger = bind_test_context(item.nodeid)
+        test_logger.info(
+            "test_case_timing",
+            nodeid=item.nodeid,
+            duration_seconds=duration_seconds,
+            status=status,
+            scenario=scenario,
+        )
+        item.config._test_case_timings[item.nodeid] = duration_seconds
+    finally:
+        stop_test_data_dump(test_data_token)
+        stop_test_step_trace(step_trace_token)
 
 
 @pytest.hookimpl(trylast=True)
 def pytest_runtest_teardown(item: pytest.Item) -> None:
     if item.nodeid in item.config._test_case_emitted:
+        pop_test_data_dump(item.nodeid)
+        pop_test_step_trace(item.nodeid)
         return
 
     _refresh_environment_probe_metadata(item.config, [item])
@@ -1546,6 +1682,8 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
     run_artifacts: RunArtifacts = item.config._run_artifacts
     run_uid = str(getattr(item.config, "_run_uid", "") or "")
     status = _derive_test_status(item)
+    dumped_test_data = pop_test_data_dump(item.nodeid)
+    steps_payload = pop_test_step_trace(item.nodeid)
     started_at = item.config._test_case_started_at.get(item.nodeid)
     finished_at = _utc_now()
     duration_seconds = float(item.config._test_case_timings.get(item.nodeid, 0.0))
@@ -1570,11 +1708,26 @@ def pytest_runtest_teardown(item: pytest.Item) -> None:
         "visual_heatmap": "visual_heatmap",
         "visual_reference_actual": "visual_reference_actual",
         "visual_reference_baseline": "visual_reference_baseline",
+        "failed_dom": "failed_dom",
     }
     for key, path in artifacts_payload.items():
         if not isinstance(path, str):
             continue
         artifact_list.append(_artifact_entry(kind_map.get(key, "other"), path))
+
+    steps_artifact_path = _write_test_steps_artifact(
+        item.config,
+        nodeid=item.nodeid,
+        status=status,
+        finished_at=finished_at,
+        steps=steps_payload,
+    )
+    if steps_artifact_path:
+        artifact_list.append(_artifact_entry("steps", steps_artifact_path))
+    _emit_steps_to_console(item.config, nodeid=item.nodeid, status=status, steps=steps_payload)
+    if dumped_test_data:
+        item.config._test_case_data_logs[item.nodeid] = dumped_test_data
+        bind_test_context(item.nodeid).info("test_case_data_dump {}", format_dump_for_log(dumped_test_data))
 
     payload = {
         **_build_event_envelope(

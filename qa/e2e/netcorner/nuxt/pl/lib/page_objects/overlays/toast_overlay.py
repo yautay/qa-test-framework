@@ -6,8 +6,8 @@ from enum import StrEnum
 from playwright.sync_api import Page, expect
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
-from framework.base.page_objects import BaseComponent
-from qa.e2e.netcorner.nuxt.pl.lib.allure_decorators import step
+from qa.e2e.netcorner.lib.step_api import step
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 
 
 class ToastType(StrEnum):

@@ -312,9 +312,61 @@ def context(
 
 
 @pytest.fixture(scope="function")
-def page(context: BrowserContext, base_url: str) -> Page:
+def page(
+    request: pytest.FixtureRequest,
+    context: BrowserContext,
+    base_url: str,
+    run_artifacts: RunArtifacts,
+    runtime_env: RuntimeEnv,
+) -> Page:
     """Function-scoped Playwright page used by visual scenarios."""
     page = context.new_page()
     set_onetrust_consent_cookies(page, base_url)
     yield page
+
+    # Capture DOM snapshot on failure if enabled
+    failed = bool(getattr(request.node, "rep_call", None) and request.node.rep_call.failed)
+    if failed and runtime_env.failed_dom_enabled:
+        nodeid_safe = request.node.nodeid.replace("::", "__").replace("/", "_")
+        dom_path = run_artifacts.failed_dom / f"{nodeid_safe}.html"
+        try:
+            dom_content = page.content()
+            dom_path.write_text(dom_content, encoding="utf-8")
+            # Add to node artifacts payload for visual suite integration
+            if not hasattr(request.node, "_artifacts_payload"):
+                request.node._artifacts_payload = {}
+            request.node._artifacts_payload["failed_dom"] = str(dom_path)
+        except Exception as exc:
+            logger.warning(
+                "failed_dom_capture_failed",
+                nodeid=request.node.nodeid,
+                path=str(dom_path),
+                error=str(exc),
+            )
+            # Create placeholder DOM file for consistency
+            try:
+                placeholder_content = f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>DOM Capture Failed</title>
+</head>
+<body>
+    <h1>DOM Capture Failed</h1>
+    <p>Test: {request.node.nodeid}</p>
+    <p>Error: {exc}</p>
+    <p>Timestamp: {datetime.now(UTC).isoformat()}</p>
+</body>
+</html>"""
+                dom_path.write_text(placeholder_content, encoding="utf-8")
+                if not hasattr(request.node, "_artifacts_payload"):
+                    request.node._artifacts_payload = {}
+                request.node._artifacts_payload["failed_dom"] = str(dom_path)
+            except Exception as placeholder_exc:
+                logger.warning(
+                    "failed_dom_placeholder_failed",
+                    nodeid=request.node.nodeid,
+                    path=str(dom_path),
+                    error=str(placeholder_exc),
+                )
+
     page.close()

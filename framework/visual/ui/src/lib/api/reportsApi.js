@@ -103,3 +103,17 @@ export async function sendBuildReport(runId, options = {}) {
   const id = encodeURIComponent(String(runId || "").trim());
   return await postJson(`/api/builds/${id}/report`, {}, options);
 }
+
+export async function fetchAppInfo(options = {}) {
+  const response = await fetch("/api/app-info", { cache: "no-store" });
+  const payload = await parseJsonResponse(response);
+  if (!response.ok) {
+    throw new Error(payload?.error || "unable to fetch app info");
+  }
+  return payload && typeof payload === "object" ? payload : {};
+}
+
+export async function sendJiraComment(runId, body = {}, options = {}) {
+  const id = encodeURIComponent(String(runId || "").trim());
+  return await postJson(`/api/reports/${id}/jira/comment`, body, options);
+}

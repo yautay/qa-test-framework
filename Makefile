@@ -1,7 +1,11 @@
 ifeq ($(OS),Windows_NT)
 PYTHON ?= python
 else
+ifneq ($(wildcard .venv/bin/python),)
+PYTHON ?= .venv/bin/python
+else
 PYTHON ?= python3
+endif
 endif
 
 PYTEST ?= $(PYTHON) -m pytest
@@ -79,4 +83,16 @@ clean-artifacts: ## Usuń artefakty runów, logi tools i common cache
 
 clean-artifacts-older: ## Usuń artefakty starsze niż DAYS (domyślnie 14)
 	$(PYTHON) tools/artifacts/cleanup.py --days $(if $(DAYS),$(DAYS),14)
+
+debug-remote-grid-up: ## Uruchom lokalny Playwright grid przez Docker Compose
+	docker compose -f tools/remote/docker-compose.yml up -d
+
+debug-remote-grid-down: ## Zatrzymaj lokalny Playwright grid przez Docker Compose
+	docker compose -f tools/remote/docker-compose.yml down
+
+debug-minio-up: ## Uruchom lokalne MinIO przez Docker Compose
+	docker compose -f tools/minio/docker-compose.yml up -d
+
+debug-minio-down: ## Zatrzymaj lokalne MinIO przez Docker Compose
+	docker compose -f tools/minio/docker-compose.yml down
 

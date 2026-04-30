@@ -19,23 +19,28 @@ from framework.visual.scenario_loader import format_load_errors, load_scenarios_
 def _worker_id() -> str:
     return str(os.getenv("PYTEST_XDIST_WORKER") or "master")
 
+
 def _apply_scenario_cookies(page, scenario, url: str):
     cookies = scenario.raw_definition.get("cookies")
     if not cookies:
         return
 
     from urllib.parse import urlparse
+
     domain = urlparse(url).hostname
 
-    page.context.add_cookies([
-        {
-            "name": c["name"],
-            "value": c["value"],
-            "domain": domain,
-            "path": "/",
-        }
-        for c in cookies
-    ])
+    page.context.add_cookies(
+        [
+            {
+                "name": c["name"],
+                "value": c["value"],
+                "domain": domain,
+                "path": "/",
+            }
+            for c in cookies
+        ]
+    )
+
 
 def _default_target_git_info() -> dict[str, dict[str, str]]:
     return {

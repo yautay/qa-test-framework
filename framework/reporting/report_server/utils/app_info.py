@@ -6,6 +6,9 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
+import settings
+import settings_cli
+
 from ..context import ReportServerContext
 
 
@@ -70,18 +73,37 @@ def _build_app_info_payload(context: ReportServerContext) -> dict[str, Any]:
         "commit": _runtime_commit(context.repo_root),
     }
     build_info = _read_ui_build_info(context.ui_dist_dir)
+    ui_build_version = build_info.get("version") or build_info.get("ui_src_version") or runtime["version"]
     ui_build = {
-        "version": build_info.get("version", "unknown"),
+        "version": ui_build_version,
         "codename": build_info.get("codename", codename),
         "ui_src_version": build_info.get("ui_src_version", "unknown"),
-        "commit": build_info.get("commit", "unknown"),
+        "commit": build_info.get("commit", runtime["commit"]),
         "built_at": build_info.get("built_at", "unknown"),
     }
+    ticket = str(getattr(settings_cli, "nn_ticket", "") or "").strip()
+    if ticket.lower() == "none":
+        ticket = ""
+    default_note = str(getattr(settings_cli, "run_note", "") or "").strip()
+    default_username = str(getattr(settings, "jira_username", "") or "").strip()
+    default_password = str(getattr(settings, "jira_password", "") or "")
     return {
         "runtime": runtime,
         "ui_build": ui_build,
         "ui_config": {
             "pms_poll_interval_ms": max(100, int(context.pms_poll_interval_ms or 5000)),
             "pms_poll_idle_multiplier": max(1.0, float(context.pms_poll_idle_multiplier or 1.0)),
+            "jira": {
+                "enabled": bool(context.jira_enabled),
+                "auth_mode": str(context.jira_auth_mode or "").strip() or "",
+                "auth_configured": bool(context.jira_auth_configured),
+                "default_ticket": ticket,
+                "default_note": default_note,
+                "default_username": default_username,
+                "default_password": default_password,
+                "default_mode": "auto",
+                "framework_mode": str(getattr(context, "framework_mode", "server") or "server").strip().lower(),
+                "submit_timeout_ms": max(10000, int(getattr(context, "jira_submit_timeout_ms", 120000) or 120000)),
+            },
         },
     }

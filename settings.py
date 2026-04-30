@@ -1,5 +1,5 @@
 # Logging
-console_log_level = "WARNING"
+console_log_level = "ERROR"
 console_suppress_reporting_api_logs = True
 tools_file_log_level = "WARNING"
 tools_logs_dir = "tools/logs"
@@ -9,17 +9,20 @@ log_compression = "zip"
 
 # Runtime
 artifacts_dir = "artifacts"
+framework_mode = "local"  # local | server
 ignore_https_errors = True
-allure_enabled = False
+allure_enabled = True
 pytest_html_enabled = True
 record_video = True
-video_min_seconds = 30
+video_min_seconds = 15
 highlight_on_fail = False
 min_expected_tests = 1
+failed_dom_enabled = True
+trace_enabled = True
 
 # Target git-info probe
 run_git_info_frontend_endpoint = "/git-info"
-run_git_info_backend_endpoint = "/git-info"
+run_git_info_backend_endpoint = "private-api/git-info"
 run_git_info_timeout_seconds = 3
 
 # Grid
@@ -99,6 +102,14 @@ reporting_async_flush_timeout_seconds = 3
 
 # Jira
 jira_url = "https://jira.netcorner.pl"
-jira_username = ""
+jira_username = "michal.pielaszkiewicz"
 jira_password = ""
 jira_verify_ssl = False
+jira_enabled = True
+jira_auth_mode = "basic"
+jira_api_token = ""
+jira_retry_max = 3
+jira_submit_timeout_ms = 180000
+jira_upload_delay_seconds = 1
+jira_pixel_diff_max_width_px = 320
+jira_aso_mentions = ["michal.pielaszkiewicz", "karolina.krajewska", "weronika.bakowska"]

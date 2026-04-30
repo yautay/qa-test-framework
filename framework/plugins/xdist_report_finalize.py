@@ -131,6 +131,31 @@ def _merge_worker_durations(run_root: Path) -> None:
     (logs_dir / "test_durations.json").write_text(json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
+def _merge_worker_test_data(run_root: Path) -> None:
+    logs_dir = run_root / "logs"
+    files = sorted(logs_dir.glob("test_data_*.json"))
+    if not files:
+        return
+
+    merged: dict[str, dict[str, Any]] = {}
+    for path in files:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+            continue
+        cases = payload.get("cases", {}) if isinstance(payload, dict) else {}
+        if not isinstance(cases, dict):
+            continue
+        for nodeid, case_payload in cases.items():
+            if not isinstance(nodeid, str) or not isinstance(case_payload, dict):
+                continue
+            merged[nodeid] = case_payload
+
+    out = {"cases": dict(sorted(merged.items()))}
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    (logs_dir / "test_data.json").write_text(json.dumps(out, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
 def _result_from_dict(data: dict[str, object]) -> VisualResult | None:
     try:
         status_raw = str(data.get("status") or "failed")
@@ -529,6 +554,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
 
     _ensure_run_metadata(run_root, config)
     _merge_worker_durations(run_root)
+    _merge_worker_test_data(run_root)
 
     merged_results, worker_visual_files = _load_merged_worker_visual_results(run_root)
     if worker_visual_files == 0:

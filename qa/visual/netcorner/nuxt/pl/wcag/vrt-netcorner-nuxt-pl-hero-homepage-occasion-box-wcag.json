@@ -1,0 +1,31 @@
+[
+  {
+  "id": "vrt-netcorner-nuxt-pl-hero-homepage-occasion-box-wcag",
+  "name": "Visual home",
+  "target_url": "/",
+  "suite_id": "netcorner/nuxt/pl/wcag",
+  "compare_mode": "hybrid",
+  "capture": {
+    "type": "element",
+    "full_page": false,
+    "selector": "a[data-name=\"DailyDealWidget\"]"
+  },
+  "mask": {
+    "selectors": [
+      "div[data-name*='TimeCounter']",
+      "div[data-name='dealProgressBar']"
+    ]
+  },
+  "thresholds": {
+    "pixel_max": 0.001,
+    "lpips_max": 0.001,
+    "dists_max": 0.001
+  },
+  "cookies": [
+    {
+      "name": "kt-color-mode",
+      "value": "yellow-black"
+    }
+  ]
+  }
+]

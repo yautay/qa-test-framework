@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "netQArner"
 dynamic = ["version"]
 description = "Playwright-first QA automation framework"
-requires-python = ">=3.13"
+requires-python = ">=3.13.2,<3.14"
 
 [tool.netqawner]
 codename = "Łódź Bałuty"
@@ -30,6 +30,7 @@ dev = [
   "opencv-python>=4.10.0",
   "minio>=7.2.9",
   "pyperclip>=1.9.0",
+  "python-dotenv>=1.0.1",
 ]
 
 [tool.setuptools]

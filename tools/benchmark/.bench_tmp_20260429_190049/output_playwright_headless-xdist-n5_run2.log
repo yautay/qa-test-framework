@@ -1,0 +1,53 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.13, pytest-8.1.1, pluggy-1.6.0 -- /home/yautay/repos/qa-test-netquarner/.venv/bin/python
+cachedir: .pytest_cache
+metadata: {'Python': '3.13.13', 'Platform': 'Linux-6.14.0-37-generic-x86_64-with-glibc2.39', 'Packages': {'pytest': '8.1.1', 'pluggy': '1.6.0'}, 'Plugins': {'allure-pytest': '2.16.0', 'html': '4.2.0', 'xdist': '3.8.0', 'metadata': '3.1.1', 'rerunfailures': '16.1'}, 'tester': 'Michal Pielaszkiewicz', 'run_note': 'testy Smoke Test NUXT', 'target_git_frontend': 'not_configured', 'target_git_frontend_branch': '', 'target_git_frontend_commit': '', 'target_git_frontend_status': 'not_configured', 'target_git_backend': 'not_configured', 'target_git_backend_branch': '', 'target_git_backend_commit': '', 'target_git_backend_status': 'not_configured'}
+rootdir: /home/yautay/repos/qa-test-netquarner
+configfile: pytest.ini
+plugins: allure-pytest-2.16.0, html-4.2.0, xdist-3.8.0, metadata-3.1.1, rerunfailures-16.1
+created: 5/5 workers
+5 workers [16 items]
+
+scheduling tests via LoadScheduling
+
+qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[courier_service_company-logged_in] 
+qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[dhl_pop-logged_in] 
+qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[courier_service-logged_in] 
+qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[store_pickup-logged_in] 
+qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[inpost-logged_in] 
+[gw1] [  6%] RERUN qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[dhl_pop-logged_in] 
+qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[dhl_pop-logged_in] 
+[gw4] [ 12%] RERUN qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[store_pickup-logged_in] 
+qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[store_pickup-logged_in] 
+[gw3] [ 18%] PASSED qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[courier_service_company-logged_in] 
+qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[courier_service_company-anonymous] 
+[gw0] [ 25%] PASSED qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[courier_service-logged_in] 
+qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[courier_service-anonymous] 
+[gw2] [ 31%] PASSED qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[inpost-logged_in] 
+qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[inpost-anonymous] 
+[gw4] [ 31%] PASSED qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[store_pickup-logged_in] 
+qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[store_pickup-anonymous] 
+[gw1] [ 31%] PASSED qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[dhl_pop-logged_in] 
+qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[dhl_pop-anonymous] 
+[gw3] [ 37%] PASSED qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[courier_service_company-anonymous] 
+qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[dhl_pop_company-logged_in] 
+[gw0] [ 43%] PASSED qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[courier_service-anonymous] 
+qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[dhl_pop_company-anonymous] 
+[gw4] [ 50%] PASSED qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[store_pickup-anonymous] 
+qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[inpost_company-anonymous] 
+[gw1] [ 56%] PASSED qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[dhl_pop-anonymous] 
+qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[store_pickup_company-logged_in] 
+[gw2] [ 62%] RERUN qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[inpost-anonymous] 
+qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[inpost-anonymous] 
+[gw0] [ 68%] PASSED qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[dhl_pop_company-anonymous] 
+[gw4] [ 75%] PASSED qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[inpost_company-anonymous] 
+[gw3] [ 81%] PASSED qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[dhl_pop_company-logged_in] 
+qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[store_pickup_company-anonymous] 
+[gw1] [ 87%] PASSED qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[store_pickup_company-logged_in] 
+[gw2] [ 87%] PASSED qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[inpost-anonymous] 
+qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[inpost_company-logged_in] 
+[gw3] [ 93%] PASSED qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[store_pickup_company-anonymous] 
+[gw2] [100%] PASSED qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders[inpost_company-logged_in] 
+
+- generated xml file: /home/yautay/repos/qa-test-netquarner/tools/benchmark/.bench_tmp_20260429_190049/junit_playwright_headless-xdist-n5_run2.xml -
+=================== 16 passed, 3 rerun in 243.56s (0:04:03) ====================

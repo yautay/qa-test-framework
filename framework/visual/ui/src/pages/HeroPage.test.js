@@ -3,6 +3,8 @@ import { mount } from "@vue/test-utils";
 import { setActivePinia, createPinia } from "pinia";
 
 import HeroPage from "./HeroPage.vue";
+import { sendJiraComment } from "../lib/api/reportsApi";
+import ReportsList from "../components/hero/ReportsList.vue";
 
 vi.mock("../lib/api/reportsApi", () => ({
   fetchReportsList: vi.fn(async () => [
@@ -25,6 +27,21 @@ vi.mock("../lib/api/reportsApi", () => ({
       run_note: "",
     },
   ]),
+  fetchAppInfo: vi.fn(async () => ({
+    ui_config: {
+      jira: {
+        default_ticket: "ABC-123",
+        default_note: "manual smoke",
+        default_username: "qa.user",
+        default_password: "secret",
+        default_mode: "auto",
+        submit_timeout_ms: 180000,
+        auth_configured: true,
+        auth_mode: "basic",
+      },
+    },
+  })),
+  sendJiraComment: vi.fn(async () => ({})),
 }));
 
 describe("HeroPage", () => {
@@ -91,6 +108,28 @@ describe("HeroPage", () => {
 
     expect(wrapper.text()).toContain("2");
 
+    wrapper.unmount();
+  });
+
+  it("invokes sendJiraComment when modal submits", async () => {
+    const wrapper = mount(HeroPage, {
+      global: { plugins: [pinia] },
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    const list = wrapper.findComponent(ReportsList);
+    await list.vm.$emit("send-jira", { run_id: "20260218_120000_000001" });
+    await wrapper.vm.$nextTick();
+
+    const modal = wrapper.findComponent({ name: "JiraSendModal" });
+    await modal.vm.$emit("submit", { ticket: "ABC-123", note: "hello", mode: "comment" });
+    await new Promise((resolve) => setTimeout(resolve, 10));
+
+    expect(sendJiraComment).toHaveBeenCalledWith("20260218_120000_000001", {
+      jira_ticket: "ABC-123",
+      user_note: "hello",
+      mode: "comment",
+    }, { timeoutMs: 180000 });
     wrapper.unmount();
   });
 });

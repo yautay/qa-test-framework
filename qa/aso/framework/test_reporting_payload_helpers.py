@@ -4,9 +4,11 @@ import json
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
+from typing import Any, cast
 
 import pytest
 
+from framework.artifacts import build_run_artifacts
 from framework.browser import BrowserSession
 from framework.env import load_env
 from qa.conftest import (
@@ -16,6 +18,7 @@ from qa.conftest import (
     _read_perceptual_quality_signals,
     _refresh_environment_probe_metadata,
     _resolve_execution_context,
+    _write_test_steps_artifact,
 )
 
 try:
@@ -45,6 +48,59 @@ def test_artifact_entry_marks_missing_as_unavailable() -> None:
     assert payload["size_bytes"] == 0
     assert payload["size_mib"] == 0.0
     assert payload["sha256"] == ""
+
+
+def test_artifact_entry_failed_dom_with_real_html_file(tmp_path: Path) -> None:
+    html_content = """<!DOCTYPE html>
+<html>
+<head><title>Test Page</title></head>
+<body><h1>Failed Test DOM</h1><p>Content snapshot</p></body>
+</html>"""
+    html_file = tmp_path / "test_failed.html"
+    html_file.write_text(html_content, encoding="utf-8")
+
+    payload = _artifact_entry("failed_dom", str(html_file))
+
+    assert payload["available"] is True
+    assert payload["size_bytes"] == len(html_content.encode("utf-8"))
+    assert payload["size_mib"] >= 0.0  # Small files can have 0.0 MiB
+    assert payload["kind"] == "failed_dom"
+    assert "sha256" in payload
+
+
+def test_artifact_entry_failed_dom_missing_path() -> None:
+    payload = _artifact_entry("failed_dom", "")
+
+    assert payload["available"] is False
+    assert payload["size_bytes"] == 0
+    assert payload["size_mib"] == 0.0
+    assert payload["sha256"] == ""
+    assert payload["kind"] == "failed_dom"
+
+
+def test_write_test_steps_artifact_creates_json_file(tmp_path: Path) -> None:
+    run_artifacts = build_run_artifacts(str(tmp_path / "artifacts"), run_id="run-steps")
+    config = SimpleNamespace(_run_artifacts=run_artifacts)
+
+    artifact_path = _write_test_steps_artifact(
+        config,
+        nodeid="qa/e2e/sample.py::test_case[param]",
+        status="failed",
+        finished_at="2026-01-01T12:00:00+00:00",
+        steps=[
+            {
+                "title": "Krok 1",
+                "status": "passed",
+                "duration_ms": 123,
+            }
+        ],
+    )
+
+    assert artifact_path
+    payload = json.loads(Path(artifact_path).read_text(encoding="utf-8"))
+    assert payload["nodeid"] == "qa/e2e/sample.py::test_case[param]"
+    assert payload["status"] == "failed"
+    assert payload["step_count"] == 1
 
 
 def test_read_perceptual_quality_signals_uses_defaults_without_status_file(tmp_path: Path) -> None:
@@ -143,7 +199,7 @@ def test_capture_target_git_info_accepts_commit_hash_camel_case(monkeypatch: pyt
     class _Response:
         status_code = 200
         url = "https://example.test/git-info"
-        headers = {}
+        headers: dict[str, str] = {}
         text = "{}"
 
         @staticmethod
@@ -173,7 +229,7 @@ def test_refresh_environment_probe_updates_target_git_info_from_resolved_base_ur
     class _Response:
         status_code = 200
         url = "https://komputronik-kokoko.gamma.netcorner.pl/git-info"
-        headers = {}
+        headers: dict[str, str] = {}
         text = "{}"
 
         @staticmethod
@@ -220,11 +276,12 @@ def test_refresh_environment_probe_updates_target_git_info_from_resolved_base_ur
     )
     item = SimpleNamespace(nodeid="qa/e2e/netcorner/nuxt/pl/tests/test_dummy.py::test_case")
 
-    _refresh_environment_probe_metadata(config, [item])
+    _refresh_environment_probe_metadata(config, [cast(pytest.Item, item)])
 
-    assert config._run_metadata["target_git_info"]["frontend"]["status"] == "ok"
-    assert config._run_metadata["target_git_info"]["frontend"]["branch"] == "feature/demo"
-    assert config._run_metadata["target_git_info"]["frontend"]["commit"] == "abc1234"
+    refreshed_metadata = cast(dict[str, Any], config._run_metadata)
+    assert refreshed_metadata["target_git_info"]["frontend"]["status"] == "ok"
+    assert refreshed_metadata["target_git_info"]["frontend"]["branch"] == "feature/demo"
+    assert refreshed_metadata["target_git_info"]["frontend"]["commit"] == "abc1234"
 
 
 def test_publish_report_metadata_writes_allure_environment_properties(tmp_path: Path) -> None:

@@ -186,7 +186,9 @@ def context(
         ignore_https_errors=runtime_env.ignore_https_errors,
         record_video_dir=str(run_artifacts.videos) if runtime_env.record_video else None,
     )
-    context.tracing.start(screenshots=True, snapshots=True, sources=True)
+    trace_enabled = runtime_env.trace_enabled
+    if trace_enabled:
+        context.tracing.start(screenshots=True, snapshots=True, sources=True)
     yield context
 
     failed = bool(getattr(request.node, "rep_call", None) and request.node.rep_call.failed)
@@ -201,19 +203,20 @@ def context(
         except Exception:
             raw_video_path = None
 
-    if failed:
-        trace_path = run_artifacts.traces / f"{nodeid_safe}.zip"
-        context.tracing.stop(path=str(trace_path))
-        artifacts_payload["trace"] = str(trace_path)
-        _allure_attach_file(
-            pytestconfig,
-            trace_path,
-            name="trace",
-            attachment_type="application/zip",
-            extension="zip",
-        )
-    else:
-        context.tracing.stop()
+    if trace_enabled:
+        if failed:
+            trace_path = run_artifacts.traces / f"{nodeid_safe}.zip"
+            context.tracing.stop(path=str(trace_path))
+            artifacts_payload["trace"] = str(trace_path)
+            _allure_attach_file(
+                pytestconfig,
+                trace_path,
+                name="trace",
+                attachment_type="application/zip",
+                extension="zip",
+            )
+        else:
+            context.tracing.stop()
 
     context.close()
 
@@ -335,4 +338,54 @@ def page(
         attachment_type="image/png",
         extension="png",
     )
+
+    # Capture DOM snapshot if enabled
+    if runtime_env.failed_dom_enabled:
+        dom_path = run_artifacts.failed_dom / f"{nodeid_safe}.html"
+        try:
+            dom_content = page.content()
+            dom_path.write_text(dom_content, encoding="utf-8")
+            if not hasattr(request.node, "_screenshot_artifacts"):
+                request.node._screenshot_artifacts = {}
+            request.node._screenshot_artifacts["failed_dom"] = str(dom_path)
+            _allure_attach_file(
+                pytestconfig,
+                dom_path,
+                name="failed_dom",
+                attachment_type="text/html",
+                extension="html",
+            )
+        except Exception as exc:
+            logger.warning(
+                "failed_dom_capture_failed",
+                nodeid=request.node.nodeid,
+                path=str(dom_path),
+                error=str(exc),
+            )
+            # Create placeholder DOM file for consistency
+            try:
+                placeholder_content = f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>DOM Capture Failed</title>
+</head>
+<body>
+    <h1>DOM Capture Failed</h1>
+    <p>Test: {request.node.nodeid}</p>
+    <p>Error: {exc}</p>
+    <p>Timestamp: {datetime.now(UTC).isoformat()}</p>
+</body>
+</html>"""
+                dom_path.write_text(placeholder_content, encoding="utf-8")
+                if not hasattr(request.node, "_screenshot_artifacts"):
+                    request.node._screenshot_artifacts = {}
+                request.node._screenshot_artifacts["failed_dom"] = str(dom_path)
+            except Exception as placeholder_exc:
+                logger.warning(
+                    "failed_dom_placeholder_failed",
+                    nodeid=request.node.nodeid,
+                    path=str(dom_path),
+                    error=str(placeholder_exc),
+                )
+
     page.close()

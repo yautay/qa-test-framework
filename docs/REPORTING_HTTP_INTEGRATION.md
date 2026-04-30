@@ -35,6 +35,27 @@ Supported variables:
 - `REPORTING_ASYNC_MAX_RETRY_AGE_SECONDS`
 - `REPORTING_ASYNC_FLUSH_TIMEOUT_SECONDS`
 
+## Jira visual reporting
+
+The hero page can post structured comments to Jira for visual runs. Configure it with the following variables:
+
+- `JIRA_ENABLED` (`0|1`) – enables the hero tile action and backend endpoint.
+- `JIRA_URL` – Jira base URL for REST API v2 (`https://jira.example`).
+- `JIRA_USERNAME` / `JIRA_PASSWORD` – credentials for `JIRA_AUTH_MODE=basic`.
+- `JIRA_AUTH_MODE` (`basic|token`) – controls whether to send a traditional login or an API token in place of the password.
+- `JIRA_API_TOKEN` – required when `JIRA_AUTH_MODE=token`.
+- `JIRA_VERIFY_SSL` (`0|1`) – toggles SSL verification for Jira API calls.
+- `JIRA_RETRY_MAX` – number of attempts for comments/attachments before failing.
+- `JIRA_SUBMIT_TIMEOUT_MS` – UI/backend Jira submission timeout budget (used by modal request timeout and Jira client request timeout).
+- `JIRA_UPLOAD_DELAY_SECONDS` – pause between consecutive pixel diff uploads.
+- `JIRA_PIXEL_DIFF_MAX_WIDTH_PX` – maximum width for resized diff attachments (default `320`).
+- `JIRA_ASO_MENTIONS` – comma-separated Jira user handles inserted when ASO cases exist (examples: `michal.pielaszkiewicz,weronika.bakowska`).
+- `FRAMEWORK_MODE` (`local|server`) – controls Jira diff artifact strategy:
+  - `local` uploads diff screenshots as Jira attachments and renders thumbnail references in the Jira table,
+  - `server` skips Jira attachments and keeps diff links pointing to the report server URL.
+
+Logging: retries emit warnings with ticket/run metadata, terminal failures log errors without the comment body or credentials.
+
 Example:
 
 ```env
@@ -125,7 +146,7 @@ Test result payload includes:
 - `timing` (`started_at`, `finished_at`, `duration_ms`)
 - `scenario`
 - `markers`
-- `artifacts` (trace/video/screenshot metadata list)
+- `artifacts` (trace/video/screenshot/failed_dom metadata list)
   - each artifact includes `size_bytes` and `size_mib`
 - optional `visual`
 
@@ -138,6 +159,11 @@ On failed tests with screenshot artifacts:
 - client sends `multipart/form-data` to test-result endpoint,
 - field `payload` contains full JSON payload,
 - files are attached as repeated `screenshots` parts (`raw` and `annotated` when available).
+
+Failed DOM snapshots are included in the `artifacts` array with kind `failed_dom`:
+- captured automatically for browser test failures (E2E and Visual suites),
+- contains the page DOM content as HTML at time of failure,
+- enables post-mortem debugging of element state and content issues.
 
 If multipart upload fails, client falls back to plain JSON request.
 

@@ -3,8 +3,8 @@ from __future__ import annotations
 from playwright.sync_api import Page
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_page import BasePage, LoadState
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.hero_component import HeroComponent
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import ContentSection, HeroPageContentSection
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages import configurator_page, my_account_page, register_page
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import HeroPageContentSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.footer_section import FooterSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.header_section import HeaderSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.navigation_section import NavigationSection
@@ -51,3 +51,23 @@ class HomePage(BasePage):
         if self.__footer is None:
             self.__footer = FooterSection(self.page)
         return self.__footer
+
+    def open_login_overlay(self):
+        self.header.actions.open_login()
+        return self.overlays.login.wait_visible()
+
+    def open_register_page(self) -> register_page.RegisterPage:
+        self.open_login_overlay().enter_register_form()
+        return register_page.RegisterPage(self.page, self.base_url).wait_loaded()
+
+    def open_account_page(self) -> my_account_page.MyAccountPage:
+        self.header.actions.open_account()
+        return my_account_page.MyAccountPage(self.page, self.base_url).wait_loaded()
+
+    def open_configurator_from_banner(self) -> configurator_page.ConfiguratorPage:
+        self.content.hero.go_to_pc_configurator_from_banner()
+        return configurator_page.ConfiguratorPage(self.page, self.base_url).wait_loaded()
+
+    def open_configurator_from_swiper(self) -> configurator_page.ConfiguratorPage:
+        self.content.hero.go_to_pc_configurator_from_swiper()
+        return configurator_page.ConfiguratorPage(self.page, self.base_url).wait_loaded()

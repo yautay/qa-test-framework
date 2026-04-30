@@ -6,7 +6,7 @@ If you develop the framework itself, use `README-DEV.md`.
 
 ## CI status
 
-### GitHub Actions (priv)
+### CI Actions
 
 | Job | develop | netquarner |
 | --- | --- | --- |
@@ -24,42 +24,88 @@ If your GitLab/Bitbucket/Jenkins instances expose public badge URLs, add them he
 
 ### Windows (recommended)
 
+Detailed step-by-step guide for testers: `docs/WINDOWS_SETUP_DLA_TESTERA.md`
+English version: `docs/WINDOWS_SETUP_FOR_TESTER.md`
+
 Option A (double-click):
 1. Open the `tools/windows` folder.
 2. Run `Setup_Windows.cmd`.
-3. Follow setup prompts.
+3. Wait for bootstrap to finish (`uv`, Python `3.13.2`, `.venv`, dependencies, Playwright Chromium).
 
 Option B (PowerShell):
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\windows\setup_windows.ps1
+powershell -ExecutionPolicy Bypass -File .\tools\windows\bootstrap.ps1
 ```
 
-Activate virtual environment:
+Recommended post-check:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\.venv\Scripts\Activate.ps1
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 doctor
 ```
 
-### Linux/macOS
+Daily Windows commands:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 aso
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 e2e
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 visual
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 report
+```
+
+Node is not required for testers on Windows. The report app uses committed `framework/visual/ui/dist/`.
+Node `22` is only needed when maintaining the report UI itself.
+
+### Linux/macOS (WSL2 recommended on Windows)
+
+Option A (WSL helper script):
 
 ```bash
-pyenv install -s 3.13.2
-pyenv local 3.13.2
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-python -m pip install -e .[dev]
-python -m playwright install chromium
+bash tools/wsl/Setup_WSL.sh
+```
+
+Recommended post-check:
+
+```bash
+bash tools/wsl/run.sh doctor
+```
+
+Option B (manual):
+
+```bash
+uv python install 3.13.2
+uv sync --frozen --extra dev
+uv run --frozen --extra dev python -m playwright install chromium
 ```
 
 ## Run tests
+
+### Windows
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 api
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 aso
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 e2e
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 visual
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 verify
+```
+
+### Linux/macOS
 
 ```bash
 make test-e2e
 make test-visual
 make test-aso
 make clean-artifacts-older DAYS=14
+```
+
+WSL wrapper commands (optional):
+
+```bash
+bash tools/wsl/run.sh aso
+bash tools/wsl/run.sh e2e
+bash tools/wsl/run.sh visual
+bash tools/wsl/run.sh report
 ```
 
 Useful selectors:
@@ -101,6 +147,15 @@ make test-visual
 make report-serve
 make debug-minio-up
 make debug-minio-down
+```
+
+Windows equivalents:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 visual
+powershell -ExecutionPolicy Bypass -File .\tools\windows\run.ps1 report
+docker compose -f tools\minio\docker-compose.yml up -d
+docker compose -f tools\minio\docker-compose.yml down
 ```
 
 Baseline review from report UI:

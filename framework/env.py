@@ -70,6 +70,7 @@ class RuntimeEnv:
     headless: bool
     ignore_https_errors: bool
     base_url: str
+    framework_mode: str
     server_name: str
     reference_host: str
     record_video: bool
@@ -100,6 +101,8 @@ class RuntimeEnv:
     allure_enabled: bool
     pytest_html_enabled: bool
     highlight_on_fail: bool
+    failed_dom_enabled: bool
+    trace_enabled: bool
     min_expected_tests: int
     run_git_info_frontend_endpoint: str
     run_git_info_backend_endpoint: str
@@ -136,6 +139,18 @@ class RuntimeEnv:
     visual_uncertain_pixel_delta: float
     visual_uncertain_lpips_delta: float
     visual_uncertain_dists_delta: float
+    jira_enabled: bool
+    jira_url: str
+    jira_username: str
+    jira_password: str
+    jira_verify_ssl: bool
+    jira_auth_mode: str
+    jira_api_token: str
+    jira_retry_max: int
+    jira_submit_timeout_ms: int
+    jira_upload_delay_seconds: float
+    jira_pixel_diff_max_width_px: int
+    jira_aso_mentions: tuple[str, ...]
 
 
 def load_env() -> RuntimeEnv:
@@ -167,6 +182,13 @@ def load_env() -> RuntimeEnv:
     def env_bool(name: str, default: bool) -> bool:
         return _as_bool(env_value(name), default)
 
+    def env_list(name: str, default: str) -> tuple[str, ...]:
+        v = env_value(name)
+        raw = default if v is None else v
+        if not raw:
+            return ()
+        return tuple(item.strip() for item in str(raw).split(",") if item.strip())
+
     # --- defaults from settings ----------------------------------------
 
     settings_headless = bool(settings_cli.is_session_headless)
@@ -194,6 +216,9 @@ def load_env() -> RuntimeEnv:
     reference_host = env_str("REFERENCE_HOST", str(getattr(settings_cli, "reference_host", "")))
 
     base_url = env_value("BASE_URL") or env_value("BASE_URL_OVERRIDE") or settings_cli.base_url_override or ""
+    framework_mode = env_str("FRAMEWORK_MODE", str(getattr(settings, "framework_mode", "server"))).strip().lower()
+    if framework_mode not in {"local", "server"}:
+        framework_mode = "server"
 
     return RuntimeEnv(
         browser=browser,
@@ -211,6 +236,7 @@ def load_env() -> RuntimeEnv:
             settings.ignore_https_errors,
         ),
         base_url=base_url,
+        framework_mode=framework_mode,
         server_name=server_name,
         reference_host=reference_host,
         record_video=env_bool("RECORD_VIDEO", bool(settings.record_video)),
@@ -292,6 +318,8 @@ def load_env() -> RuntimeEnv:
         allure_enabled=env_bool("ALLURE_ENABLED", bool(settings.allure_enabled)),
         pytest_html_enabled=env_bool("PYTEST_HTML_ENABLED", bool(settings.pytest_html_enabled)),
         highlight_on_fail=env_bool("HIGHLIGHT_ON_FAIL", settings.highlight_on_fail),
+        failed_dom_enabled=env_bool("FAILED_DOM_ENABLED", settings.failed_dom_enabled),
+        trace_enabled=env_bool("TRACE_ENABLED", settings.trace_enabled),
         min_expected_tests=env_int("MIN_EXPECTED_TESTS", settings.min_expected_tests),
         run_git_info_frontend_endpoint=env_str(
             "RUN_GIT_INFO_FRONTEND_ENDPOINT",
@@ -440,5 +468,32 @@ def load_env() -> RuntimeEnv:
         visual_uncertain_dists_delta=env_float(
             "VISUAL_UNCERTAIN_DISTS_DELTA",
             float(settings.visual_uncertain_dists_delta),
+        ),
+        jira_enabled=env_bool("JIRA_ENABLED", bool(getattr(settings, "jira_enabled", False))),
+        jira_url=env_str("JIRA_URL", str(getattr(settings, "jira_url", ""))),
+        jira_username=env_str("JIRA_USERNAME", str(getattr(settings, "jira_username", ""))),
+        jira_password=env_str("JIRA_PASSWORD", str(getattr(settings, "jira_password", ""))),
+        jira_verify_ssl=env_bool(
+            "JIRA_VERIFY_SSL",
+            bool(getattr(settings, "jira_verify_ssl", False)),
+        ),
+        jira_auth_mode=env_str("JIRA_AUTH_MODE", str(getattr(settings, "jira_auth_mode", "basic"))).strip().lower(),
+        jira_api_token=env_str("JIRA_API_TOKEN", str(getattr(settings, "jira_api_token", ""))),
+        jira_retry_max=env_int("JIRA_RETRY_MAX", int(getattr(settings, "jira_retry_max", 3))),
+        jira_submit_timeout_ms=env_int(
+            "JIRA_SUBMIT_TIMEOUT_MS",
+            int(getattr(settings, "jira_submit_timeout_ms", 120000)),
+        ),
+        jira_upload_delay_seconds=env_float(
+            "JIRA_UPLOAD_DELAY_SECONDS",
+            float(getattr(settings, "jira_upload_delay_seconds", 1)),
+        ),
+        jira_pixel_diff_max_width_px=env_int(
+            "JIRA_PIXEL_DIFF_MAX_WIDTH_PX",
+            int(getattr(settings, "jira_pixel_diff_max_width_px", 320)),
+        ),
+        jira_aso_mentions=env_list(
+            "JIRA_ASO_MENTIONS",
+            ",".join(getattr(settings, "jira_aso_mentions", []) or []),
         ),
     )

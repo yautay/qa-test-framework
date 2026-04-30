@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -39,6 +40,26 @@ def find_chrome_executable() -> str:
 WIZARD_AUTH = "Basic bmMtdGVjaC11c2VyOnlnQldYYzBObVNqS3ZnQlZlbkl4SHRoVg=="
 
 
+def parse_nc_ssh_value(raw_value: str) -> tuple[str, str] | None:
+    value = raw_value.strip()
+    if not value:
+        return None
+
+    host_port_match = re.search(r"(?P<host>[^\s:]+):(?P<port>\d+)", value)
+    if host_port_match:
+        return host_port_match.group("host"), host_port_match.group("port")
+
+    token_match = re.search(r"\b(?P<host>[^\s]+)\s+-p\s+(?P<port>\d+)\b", value)
+    if token_match:
+        return token_match.group("host"), token_match.group("port")
+
+    tokens = value.split()
+    if len(tokens) >= 2 and tokens[-1].isdigit():
+        return tokens[-2], tokens[-1]
+
+    return None
+
+
 def get_rendered_page() -> tuple[Playwright, Browser, Page]:
     pw = sync_playwright().start()
     browser = pw.chromium.launch(
@@ -72,10 +93,11 @@ def parse_wizard() -> list:
     inputs_data = []
     for el in elements:
         input_id_attr = el.get_attribute("id") or ""
-        input_id = input_id_attr.split("-")[0] if input_id_attr else ""
-        input_value = el.input_value().split()
-        host = input_value[1]
-        port = input_value[-1]
+        input_id = input_id_attr.removesuffix("-nc-connection") if input_id_attr else ""
+        parsed = parse_nc_ssh_value(el.input_value())
+        if not parsed:
+            continue
+        host, port = parsed
         if "nodekom" in host:
             continue
         inputs_data.append({"id": input_id, "host": host, "port": port})
@@ -94,7 +116,9 @@ def check_vm_crontab(ssh_host: str, ssh_port: str) -> bool:
         "sshpass",
         "-p",
         nc_container_pass,
-        "ssh -o StrictHostKeyChecking=no",
+        "ssh",
+        "-o",
+        "StrictHostKeyChecking=no",
         "-p",
         ssh_port,
         ssh_host,
@@ -134,7 +158,9 @@ def check_vm_mock(ssh_host: str, ssh_port: str) -> bool:
         "sshpass",
         "-p",
         nc_container_pass,
-        "ssh -o StrictHostKeyChecking=no",
+        "ssh",
+        "-o",
+        "StrictHostKeyChecking=no",
         "-p",
         ssh_port,
         ssh_host,

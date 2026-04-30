@@ -1,0 +1,61 @@
+{
+    "python.testing.pytestArgs": [
+        "qa"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "files.watcherExclude": {
+        "artifacts/**": true,
+        ".visual_cache/**": true,
+        ".opencode/**": true,
+        ".venv/**": true,
+        ".pytest_cache/**": true,
+        "**/__pycache__/**": true,
+        "framework/visual/ui/node_modules/**": true,
+        "framework/visual/ui/coverage/**": true,
+        "framework/visual/ui/dist/**": true,
+        "qa/visual/baselines/**": true,
+        "tmp/**": true,
+        "logs/**": true,
+        "log/**": true,
+        "Screenshots/**": true
+    },
+    "search.exclude": {
+        "artifacts/**": true,
+        ".visual_cache/**": true,
+        ".opencode/**": true,
+        ".venv/**": true,
+        ".pytest_cache/**": true,
+        "**/__pycache__/**": true,
+        "framework/visual/ui/node_modules/**": true,
+        "framework/visual/ui/coverage/**": true,
+        "framework/visual/ui/dist/**": true,
+        "qa/visual/baselines/**": true,
+        "tmp/**": true,
+        "logs/**": true,
+        "log/**": true,
+        "Screenshots/**": true
+    },
+    "python.analysis.exclude": [
+        "artifacts/**",
+        ".visual_cache/**",
+        ".opencode/**",
+        ".venv/**",
+        ".pytest_cache/**",
+        "**/__pycache__/**",
+        "framework/visual/ui/node_modules/**",
+        "framework/visual/ui/coverage/**",
+        "framework/visual/ui/dist/**",
+        "qa/visual/baselines/**",
+        "**/node_modules"
+    ],
+    "files.exclude": {
+    "**/__pycache__": true,
+    "**/.pytest_cache": true,
+    "**/.mypy_cache": true,
+    "**/.ruff_cache": true,
+    "**/.coverage": true,
+    "**/htmlcov": true,
+    "**/.venv": true
+}
+}

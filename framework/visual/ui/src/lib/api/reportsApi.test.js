@@ -10,6 +10,8 @@ import {
   heartbeatBuildLock,
   releaseBuildLock,
   sendBuildReport,
+  fetchAppInfo,
+  sendJiraComment,
 } from "./reportsApi";
 
 function response(body, ok = true, status = 200) {
@@ -102,6 +104,36 @@ describe("reportsApi", () => {
     expect(payload.run_id).toBe("run-1");
     expect(payload.results).toEqual([{ scenario_id: "s-1" }]);
     expect(payload.build_metadata.visual.excluded_count).toBe(1);
+  });
+
+  it("fetches app info", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => response({ ui_config: { jira: { default_ticket: "ABC-1" } } }))); 
+
+    const payload = await fetchAppInfo();
+
+    expect(payload.ui_config).toBeDefined();
+    expect(fetch).toHaveBeenCalledWith("/api/app-info", { cache: "no-store" });
+  });
+
+  it("throws when app info endpoint fails", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => response({ error: "boom" }, false, 500)));
+
+    await expect(fetchAppInfo()).rejects.toThrow("boom");
+  });
+
+  it("sends jira comment", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => response({ accepted: true }))); 
+    const SignalCtor = globalThis.AbortSignal || Object;
+
+    const payload = await sendJiraComment("run 1", { jira_ticket: "TEST-1" });
+
+    expect(payload.accepted).toBe(true);
+    expect(fetch).toHaveBeenCalledWith("/api/reports/run%201/jira/comment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jira_ticket: "TEST-1" }),
+      signal: expect.any(SignalCtor),
+    });
   });
 
   it("fetches build tags", async () => {

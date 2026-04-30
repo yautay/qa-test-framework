@@ -10,10 +10,13 @@ from urllib.parse import parse_qs, urlparse
 
 from loguru import logger
 
+from framework.integrations.jira import JiraClientError
+
 from ..constants import CHALLENGE_TTL_SECONDS
 from ..context import ChallengeEntry, ReportServerContext
 from ..paths import _build_dir, _resolve_actual_png, _safe_run_id_or_error
 from ..reports import _list_reports_payload, _read_build_metadata, _read_results_rows, _read_run_metadata
+from ..services.jira import send_jira_comment
 from ..services.pdf import _generate_bug_pdf
 from ..services.sync import (
     _apply_event_to_state,
@@ -571,6 +574,88 @@ def _build_handler(context: ReportServerContext):
                         },
                     )
                     return
+
+                m_jira = re.match(r"^/api/reports/([^/]+)/jira/comment$", path)
+                if m_jira:
+                    try:
+                        run_id = _safe_run_id_or_error(m_jira.group(1))
+                    except ValueError as exc:
+                        self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                        return
+                    if not context.jira_enabled:
+                        self._send_json(
+                            HTTPStatus.SERVICE_UNAVAILABLE,
+                            {"error": "jira integration is disabled"},
+                        )
+                        return
+                    report_dir = context.resolve_run_dir(run_id)
+                    if report_dir is None:
+                        self._send_json(
+                            HTTPStatus.NOT_FOUND,
+                            {"error": "report not found", "run_id": run_id},
+                        )
+                        return
+                    try:
+                        payload = self._read_json_body()
+                        ticket_raw = _normalize_text(payload.get("jira_ticket"), trim=True)
+                        ticket = ticket_raw.upper()
+                        if not ticket:
+                            raise ValueError("missing jira_ticket")
+                        if not re.fullmatch(r"^[A-Z][A-Z0-9]+-[0-9]+$", ticket):
+                            raise ValueError("invalid jira_ticket")
+                        note = _normalize_text(payload.get("user_note"), trim=True)
+                        if len(note) > TEXT_MAX_LENGTH:
+                            raise ValueError("note exceeds limit")
+                        requested_mode = _normalize_text(payload.get("mode"), trim=True).lower() or "comment"
+                        if requested_mode not in {"auto", "comment", "subtask"}:
+                            raise ValueError("invalid mode")
+                        auth_payload: dict[str, str] | None = None
+                        if not context.jira_auth_configured:
+                            raw_auth = payload.get("auth")
+                            if not isinstance(raw_auth, dict):
+                                raise ValueError("auth credentials required")
+                            username = _normalize_text(raw_auth.get("username"), trim=True)
+                            password = _normalize_text(raw_auth.get("password"), trim=True)
+                            api_token = _normalize_text(raw_auth.get("api_token"), trim=True)
+                            auth_mode = context.jira_auth_mode or "basic"
+                            if auth_mode == "token":
+                                if not username or not api_token:
+                                    raise ValueError("jira auth username+token required")
+                            else:
+                                if not username or not password:
+                                    raise ValueError("jira auth username+password required")
+                            auth_payload = {
+                                "username": username,
+                                "password": password,
+                                "api_token": api_token,
+                                "mode": auth_mode,
+                            }
+                        scheme = "https" if self.headers.get("X-Forwarded-Proto", "").lower() == "https" else "http"
+                        host = str(self.headers.get("Host", "")).strip()
+                        result = send_jira_comment(
+                            context=context,
+                            run_id=run_id,
+                            report_dir=report_dir,
+                            issue_key=ticket,
+                            user_note=note,
+                            mode=requested_mode,
+                            auth=auth_payload,
+                            scheme=scheme,
+                            host=host,
+                        )
+                        self._send_json(HTTPStatus.OK, {"accepted": True, **result})
+                        return
+                    except ValueError as exc:
+                        self._send_json(HTTPStatus.BAD_REQUEST, {"error": str(exc)})
+                        return
+                    except JiraClientError as exc:
+                        logger.warning("jira_request_failed", run_id=run_id, error=str(exc))
+                        self._send_json(HTTPStatus.BAD_GATEWAY, {"error": str(exc)})
+                        return
+                    except Exception:
+                        logger.opt(exception=True).warning("jira_request_exception", run_id=run_id)
+                        self._send_json(HTTPStatus.INTERNAL_SERVER_ERROR, {"error": "internal server error"})
+                        return
 
                 m_send = re.match(r"^/api/reports/([^/]+)/baseline/send$", path)
                 if not m_send:
