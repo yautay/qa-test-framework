@@ -102,6 +102,32 @@ def test_merge_worker_durations_ignores_invalid_payloads(tmp_path: Path) -> None
     assert merged["cases"] == {"a::test": 1.2, "b::test": 2.5}
 
 
+def test_merge_worker_test_data_ignores_invalid_payloads(tmp_path: Path) -> None:
+    run_root = tmp_path / "artifacts" / "run"
+    logs = run_root / "logs"
+    logs.mkdir(parents=True)
+    (logs / "test_data_gw0.json").write_text(
+        json.dumps(
+            {
+                "cases": {
+                    "a::test": {"auth_case": {"authenticated": True}},
+                    "b::test": {"product": {"product_name": "Laptop"}},
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    (logs / "test_data_gw1.json").write_text("not-json", encoding="utf-8")
+
+    plugin._merge_worker_test_data(run_root)
+
+    merged = json.loads((logs / "test_data.json").read_text(encoding="utf-8"))
+    assert merged["cases"] == {
+        "a::test": {"auth_case": {"authenticated": True}},
+        "b::test": {"product": {"product_name": "Laptop"}},
+    }
+
+
 def test_load_merged_worker_visual_results_deduplicates_by_identity(tmp_path: Path) -> None:
     run_root = tmp_path / "artifacts" / "run"
     gw0 = run_root / "workers" / "gw0"
@@ -450,7 +476,7 @@ def test_send_test_result_updates_preserves_failed_dom_from_worker_payload(
     heatmap_file = report_dir / heatmap_rel
     heatmap_file.parent.mkdir(parents=True, exist_ok=True)
     heatmap_file.write_bytes(b"heat")
-    
+
     nodeid = "qa/visual/test_failed.py::test_case[failed_with_dom]"
     (workers / "test_result_payloads.json").write_text(
         json.dumps(
@@ -468,7 +494,12 @@ def test_send_test_result_updates_preserves_failed_dom_from_worker_payload(
                     },
                     "artifacts": [
                         {"kind": "trace", "path": "trace.zip", "available": True},
-                        {"kind": "failed_dom", "path": "failed-dom/test_case.html", "available": True, "size_bytes": 245},
+                        {
+                            "kind": "failed_dom",
+                            "path": "failed-dom/test_case.html",
+                            "available": True,
+                            "size_bytes": 245,
+                        },
                         {"kind": "screenshot_raw", "path": "screenshots/test_raw.png", "available": True},
                     ],
                 }
@@ -523,7 +554,7 @@ def test_send_test_result_updates_preserves_failed_dom_from_worker_payload(
     payload = cast(dict[str, Any], client.calls[0])
     assert payload["attempt"] == 2
     artifacts = cast(list[dict[str, Any]], payload["artifacts"])
-    
+
     # Verify that failed_dom artifact from worker payload is preserved
     failed_dom_artifacts = [item for item in artifacts if item.get("kind") == "failed_dom"]
     assert len(failed_dom_artifacts) == 1
@@ -531,11 +562,11 @@ def test_send_test_result_updates_preserves_failed_dom_from_worker_payload(
     assert failed_dom["path"] == "failed-dom/test_case.html"
     assert failed_dom["available"] is True
     assert failed_dom["size_bytes"] == 245
-    
+
     # Verify that other worker artifacts are also preserved
     assert any(item.get("kind") == "trace" for item in artifacts)
     assert any(item.get("kind") == "screenshot_raw" for item in artifacts)
-    
+
     # Verify that visual heatmap is added
     heatmap_artifacts = [item for item in artifacts if item.get("kind") == "visual_heatmap"]
     assert len(heatmap_artifacts) == 1
