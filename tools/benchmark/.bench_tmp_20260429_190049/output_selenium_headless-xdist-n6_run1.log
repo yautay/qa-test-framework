@@ -1,0 +1,74 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.1.1, pluggy-1.6.0 -- /home/yautay/repos/nc-functional-tests-py/.venv/bin/python
+cachedir: .pytest_cache
+Test order randomisation NOT enabled. Enable with --random-order or --random-order-bucket=<bucket_type>
+metadata: {'Python': '3.12.3', 'Platform': 'Linux-6.14.0-37-generic-x86_64-with-glibc2.39', 'Packages': {'pytest': '8.1.1', 'pluggy': '1.6.0'}, 'Plugins': {'playwright': '0.7.0', 'html': '4.1.1', 'random-order': '1.1.1', 'xdist': '3.6.1', 'allure-pytest': '2.13.5', 'metadata': '3.1.1', 'rerunfailures': '16.1', 'base-url': '2.1.0', 'profiling': '1.8.1'}, 'Base URL': ''}
+rootdir: /home/yautay/repos/nc-functional-tests-py
+configfile: pytest.ini
+plugins: playwright-0.7.0, html-4.1.1, random-order-1.1.1, xdist-3.6.1, allure-pytest-2.13.5, metadata-3.1.1, rerunfailures-16.1, base-url-2.1.0, profiling-1.8.1
+created: 6/6 workers
+6 workers [10 items]
+
+scheduling tests via LoadScheduling
+
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_digital_1_digital_licence_registered 
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_delivery_2_delivery_at_home_logged_in_cart 
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_delivery_3_delivery_at_home_non_registered 
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_mixed_1_mixed_licence_with_product_registered 
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_digital_2_digital_licence_non_registered 
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_delivery_1_delivery_at_home_registered 
+[gw2] [ 10%] PASSED TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_delivery_3_delivery_at_home_non_registered 
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_pickup_2_self_pickup_logged_in_cart 
+[gw0] [ 20%] PASSED TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_delivery_1_delivery_at_home_registered 
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_mixed_2_mixed_licence_with_product_non_registered 
+[gw1] [ 30%] PASSED TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_delivery_2_delivery_at_home_logged_in_cart 
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_pickup_1_self_pickup_registered 
+[gw4] [ 40%] PASSED TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_digital_2_digital_licence_non_registered 
+[gw5] [ 50%] PASSED TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_mixed_1_mixed_licence_with_product_registered 
+[gw3] [ 60%] PASSED TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_digital_1_digital_licence_registered 
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_pickup_3_self_pickup_non_registered 
+[gw2] [ 70%] PASSED TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_pickup_2_self_pickup_logged_in_cart 
+[gw1] [ 80%] PASSED TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_pickup_1_self_pickup_registered 
+[gw0] [ 90%] PASSED TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_mixed_2_mixed_licence_with_product_non_registered 
+[gw3] [100%] PASSED TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_pickup_3_self_pickup_non_registered 
+
+=============================== warnings summary ===============================
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py: 10 warnings
+  /home/yautay/repos/nc-functional-tests-py/Lib/DriverSession/Driver.py:52: DeprecationWarning: setting remote_server_addr in RemoteConnection() is deprecated, set in client_config instead
+    remote_connection = BaseWebDriver.BaseRemoteConnection(self.grid_url)
+
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py: 10 warnings
+  /usr/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=54865) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py: 10 warnings
+  /usr/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=54859) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py: 10 warnings
+  /usr/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=54862) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_digital_2_digital_licence_non_registered
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_digital_2_digital_licence_non_registered
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_digital_2_digital_licence_non_registered
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_digital_2_digital_licence_non_registered
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_digital_2_digital_licence_non_registered
+  /usr/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=54871) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_mixed_1_mixed_licence_with_product_registered
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_mixed_1_mixed_licence_with_product_registered
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_mixed_1_mixed_licence_with_product_registered
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_mixed_1_mixed_licence_with_product_registered
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py::TestOrders::test_order_mixed_1_mixed_licence_with_product_registered
+  /usr/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=54874) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+TestCases/NetCornerProducts/pl_komputronik_nuxt/Test/SmokeTestsNUXT/TestOrders.py: 10 warnings
+  /usr/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=54868) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /home/yautay/repos/qa-test-netquarner/tools/benchmark/.bench_tmp_20260429_190049/junit_selenium_headless-xdist-n6_run1.xml -
+================= 10 passed, 60 warnings in 434.24s (0:07:14) ==================

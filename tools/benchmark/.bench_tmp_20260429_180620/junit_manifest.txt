@@ -1,0 +1,2 @@
+playwright|headless-seq|1|/home/yautay/repos/qa-test-netquarner/tools/benchmark/.bench_tmp_20260429_180620/junit_playwright_headless-seq_run1.xml
+selenium|headless-seq|1|/home/yautay/repos/qa-test-netquarner/tools/benchmark/.bench_tmp_20260429_180620/junit_selenium_headless-seq_run1.xml
