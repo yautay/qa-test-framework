@@ -347,6 +347,85 @@ generate_framework_summary() {
     echo "" >> "$f"
 }
 
+generate_overall_summary() {
+    local f="$SUMMARY_FILE"
+
+    echo "## Podsumowanie globalne (wszystkie runy/frameworki)" >> "$f"
+    echo "" >> "$f"
+    echo "| Framework | Runy z danymi | Łączny czas (s) | Łącznie testów | Śr. s/test (globalnie) | Śr. s/test (avg z runów) |" >> "$f"
+    echo "|-----------|---------------|-----------------|----------------|------------------------|--------------------------|" >> "$f"
+
+    local frameworks=("playwright")
+    if [[ "$COMPARE_SELENIUM" -eq 1 ]]; then
+        frameworks+=("selenium")
+    fi
+
+    local all_sum_dur=0
+    local all_sum_tests=0
+    local all_run_count=0
+    local all_sum_run_ratios=0
+
+    for framework in "${frameworks[@]}"; do
+        local sum_dur=0
+        local sum_tests=0
+        local run_count=0
+        local sum_run_ratios=0
+
+        for mode_spec in "${MODES[@]}"; do
+            IFS='|' read -r mode_label extra_args <<< "$mode_spec"
+            for i in $(seq 1 $RUNS_PER_MODE); do
+                local key="${framework}|${mode_label}|${i}"
+                local d="${DURATIONS[$key]:-0}"
+                local p="${PASSED[$key]:-0}"
+                local fl="${FAILED[$key]:-0}"
+                local run_tests
+                run_tests=$(echo "$p + $fl" | bc)
+
+                sum_dur=$(echo "$sum_dur + $d" | bc)
+                sum_tests=$(echo "$sum_tests + $run_tests" | bc)
+
+                if [[ "$run_tests" -gt 0 ]]; then
+                    local run_ratio
+                    run_ratio=$(echo "scale=4; $d / $run_tests" | bc)
+                    sum_run_ratios=$(echo "$sum_run_ratios + $run_ratio" | bc)
+                    run_count=$((run_count + 1))
+                fi
+            done
+        done
+
+        local avg_global="N/A"
+        local avg_runs="N/A"
+        if [[ "$sum_tests" -gt 0 ]]; then
+            avg_global=$(echo "scale=3; $sum_dur / $sum_tests" | bc)
+        fi
+        if [[ "$run_count" -gt 0 ]]; then
+            avg_runs=$(echo "scale=3; $sum_run_ratios / $run_count" | bc)
+        fi
+
+        echo "| $framework | $run_count | $sum_dur | $sum_tests | $avg_global | $avg_runs |" >> "$f"
+
+        all_sum_dur=$(echo "$all_sum_dur + $sum_dur" | bc)
+        all_sum_tests=$(echo "$all_sum_tests + $sum_tests" | bc)
+        all_sum_run_ratios=$(echo "$all_sum_run_ratios + $sum_run_ratios" | bc)
+        all_run_count=$((all_run_count + run_count))
+    done
+
+    local all_avg_global="N/A"
+    local all_avg_runs="N/A"
+    if [[ "$all_sum_tests" -gt 0 ]]; then
+        all_avg_global=$(echo "scale=3; $all_sum_dur / $all_sum_tests" | bc)
+    fi
+    if [[ "$all_run_count" -gt 0 ]]; then
+        all_avg_runs=$(echo "scale=3; $all_sum_run_ratios / $all_run_count" | bc)
+    fi
+
+    echo "| **RAZEM** | $all_run_count | $all_sum_dur | $all_sum_tests | $all_avg_global | $all_avg_runs |" >> "$f"
+    echo "" >> "$f"
+    echo "- \`Śr. s/test (globalnie)\` = łączny czas / łączna liczba testów." >> "$f"
+    echo "- \`Śr. s/test (avg z runów)\` = średnia z wartości (czas runu / liczba testów w runie)." >> "$f"
+    echo "" >> "$f"
+}
+
 generate_comparison_section() {
     local f="$SUMMARY_FILE"
     if [[ "$COMPARE_SELENIUM" -ne 1 ]]; then
@@ -633,6 +712,7 @@ generate_framework_summary "playwright" "$TEST_FILE"
 if [[ "$COMPARE_SELENIUM" -eq 1 ]]; then
     generate_framework_summary "selenium" "$SELENIUM_TEST_TARGET"
 fi
+generate_overall_summary
 generate_comparison_section
 
 echo "" >> "$SUMMARY_FILE"
