@@ -27,8 +27,14 @@ class BreadcrumbComponent(BaseComponent):
         return self
 
     @step("Pobieram teksty wszystkich pozycji breadcrumb")
-    def get_all_texts(self) -> list[str]:
-        """Returns breadcrumb link labels in order (left-to-right)."""
+    def get_all_texts(self, timeout_ms: int = 10_000) -> list[str]:
+        """Returns breadcrumb link labels in order (left-to-right).
+
+        Waits for the root element to become visible before reading.  Breadcrumbs
+        are client-rendered; callers must ensure they are on a page that renders
+        this component (e.g. product detail pages) — listing pages do not.
+        """
+        expect(self.root).to_be_visible(timeout=timeout_ms)
         count = self.__items.count()
         return [(self.__items.nth(i).text_content() or "").strip() for i in range(count)]
 

@@ -62,6 +62,25 @@ class NavigationComponent(BaseComponent):
         )
         return [h for h in hrefs if h]
 
+    @step("Pobieram linki poziomu 2 (tekst+href) megamenu dla: {root_name} > {level1_name}")
+    def get_level2_items_for(self, root_name: str, level1_name: str) -> list[tuple[str, str]]:
+        """Returns (link_text, href) pairs for all level-2 links in the panel for level1_name.
+
+        Use this instead of get_level2_links_for when you need to look up links by
+        visible text (e.g. category name) rather than URL fragment — required for
+        categories whose slugs do not contain the Polish display name.
+        """
+        root_li = self.__get_root_category_li(root_name)
+        dropdown = root_li.locator("[data-role='dropdownContent']")
+        idx = self.__find_level1_index(dropdown, level1_name)
+        if idx < 0:
+            return []
+        level2_div = dropdown.locator("div[data-categories-lvl='2']").nth(idx)
+        raw: list[list[str]] = level2_div.evaluate(
+            "el => [...el.querySelectorAll('a')].map(a => [a.textContent.trim(), a.getAttribute('href') || ''])"
+        )
+        return [(text, href) for text, href in raw if href]
+
     @step("Pobieram href kategorii poziomu 1: {root_name} > {level1_name}")
     def get_level1_href(self, root_name: str, level1_name: str) -> str:
         """Returns the href of the level-1 category link matching level1_name."""

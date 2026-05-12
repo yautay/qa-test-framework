@@ -13,7 +13,9 @@ pytestmark = [pytest.mark.e2e, pytest.mark.layout]
 # Each entry: (root, first_lvl, second_lvl | None, third_lvl | None)
 # In the current NUXT megamenu DOM:
 #   - first_lvl is a level-1 item (ul[data-categories-lvl='1'] li a)
-#   - second_lvl and third_lvl are level-2 items inside the first_lvl panel
+#   - second_lvl and third_lvl are level-2 items looked up by LINK TEXT,
+#     not by URL fragment, because Polish characters (ł, ó, ę …) are
+#     not preserved in ASCII slugs.
 # ---------------------------------------------------------------------------
 _ONE_LEVEL_CASES = [
     pytest.param("RTV",                    "Telewizory",              None,          None, id="one_level_rtv_telewizory"),
@@ -22,15 +24,24 @@ _ONE_LEVEL_CASES = [
 ]
 
 _TWO_LEVEL_CASES = [
-    pytest.param("Sprzęt PC", "Peryferia PC", "Klawiatury",    None, id="two_levels_peryferia_klawiatury"),
-    pytest.param("Sprzęt PC", "Peryferia PC", "Monitory",      None, id="two_levels_peryferia_monitory"),
-    pytest.param("Sprzęt PC", "Części PC",    "Karty graficzne", None, id="two_levels_czesci_gpu"),
+    pytest.param("Sprzęt PC", "Peryferia PC", "Klawiatury",        None, id="two_levels_peryferia_klawiatury"),
+    pytest.param("Sprzęt PC", "Peryferia PC", "Monitory",          None, id="two_levels_peryferia_monitory"),
+    pytest.param("Sprzęt PC", "Części PC",    "Karty graficzne",   None, id="two_levels_czesci_gpu"),
+    # "Sieci i komunikacja" panel — covers the section formerly tested as
+    # three-level Monitoring > Kamery do monitoringu (those sub-links are not
+    # exposed as direct level-2 megamenu items in the NUXT megamenu).
+    pytest.param("Sprzęt PC", "Sieci i komunikacja", "NAS - serwery plików", None, id="two_levels_sieci_nas"),
+    # "Części PC" panel — covers the section formerly tested as three-level
+    # Chłodzenie > Wentylatory (same reason as above).
+    pytest.param("Sprzęt PC", "Części PC",    "Procesory",         None, id="two_levels_czesci_procesory"),
 ]
 
 _THREE_LEVEL_CASES = [
-    pytest.param("Sprzęt PC", "Sieci i komunikacja", "Monitoring",               "Kamery do monitoringu",         id="three_levels_monitoring_kamery"),
-    pytest.param("Sprzęt PC", "Oprogramowanie",      "Programy biurowe",         "Microsoft Office",              id="three_levels_ms_office"),
-    pytest.param("Sprzęt PC", "Części PC",           "Chłodzenie",               "Wentylatory do komputerów",     id="three_levels_chlodzenie_wentylatory"),
+    # MS Office is a direct level-2 megamenu link inside the "Oprogramowanie"
+    # panel alongside its parent "Programy biurowe" — this is the only path
+    # in the current NUXT megamenu that exposes a genuine parent+child pair as
+    # flat level-2 links.
+    pytest.param("Sprzęt PC", "Oprogramowanie", "Programy biurowe", "Microsoft Office", id="three_levels_ms_office"),
 ]
 
 # URLs excluded from product listing assertion (known non-listing pages)
@@ -38,12 +49,20 @@ _EXCLUDED_URL_FRAGMENTS = ("laptop-dla-nauczyciela", "advanced-configurator")
 
 
 def _verify_link_has_listing(page, base_url: str, href: str) -> None:
-    """Navigate to href and assert the product listing is visible."""
-    path = href.lstrip("/")
+    """Navigate to href (must start with '/') and assert the product listing is visible."""
     listing = ListingPage(page, base_url)
-    listing.open(path).wait_loaded()
+    listing.open(href).wait_loaded()
     count = listing.content.content.count()
     assert count > 0, f"URL '{href}' nie zawiera produktów na listingu."
+
+
+def _find_href_by_text(items: list[tuple[str, str]], text: str) -> str | None:
+    """Find href where link text contains *text* (case-insensitive)."""
+    text_lower = text.lower()
+    for link_text, href in items:
+        if text_lower in link_text.lower():
+            return href
+    return None
 
 
 def _run_category_tree_case(
@@ -60,43 +79,39 @@ def _run_category_tree_case(
 
     nav = home.navigation
 
-    # 1. Collect level-2 links for the first_lvl tile
-    level2_links = nav.get_level2_links_for(root, first_lvl)
-    assert level2_links, (
+    # 1. Collect level-2 (text, href) items for the first_lvl tile
+    level2_items = nav.get_level2_items_for(root, first_lvl)
+    assert level2_items, (
         f"Megamenu '{root} > {first_lvl}' nie zawiera żadnych linków poziomu 2."
     )
 
     if second_lvl is None:
         # One-level case: verify a representative sample of level-2 links
         sample = [
-            href for href in level2_links
+            href for _text, href in level2_items
             if not any(ex in href for ex in _EXCLUDED_URL_FRAGMENTS)
         ][:3]  # visit up to 3 links to keep test fast
         for href in sample:
             _verify_link_has_listing(page, base_url, href)
         return
 
-    # Two/three-level: navigate to second_lvl link
-    second_href = next(
-        (h for h in level2_links if second_lvl.lower() in h.lower()),
-        None,
-    )
+    # Two/three-level: look up second_lvl by link text (not URL slug)
+    second_href = _find_href_by_text(level2_items, second_lvl)
     assert second_href is not None, (
-        f"Nie znaleziono linku dla '{second_lvl}' w megamenu '{root} > {first_lvl}'."
+        f"Nie znaleziono linku dla '{second_lvl}' w megamenu '{root} > {first_lvl}'. "
+        f"Dostępne: {[t for t, _ in level2_items]}"
     )
-    if not any(ex in second_href for ex in _EXCLUDED_URL_FRAGMENTS):
+    if not any(ex in second_href for ex in _EXCLUDED_URL_FRAGMENTS) and third_lvl is None:
         _verify_link_has_listing(page, base_url, second_href)
 
     if third_lvl is None:
         return
 
-    # Three-level: navigate to third_lvl link (also a level-2 link in current DOM)
-    third_href = next(
-        (h for h in level2_links if third_lvl.lower() in h.lower()),
-        None,
-    )
+    # Three-level: look up third_lvl by link text (also a level-2 link in current DOM)
+    third_href = _find_href_by_text(level2_items, third_lvl)
     assert third_href is not None, (
-        f"Nie znaleziono linku dla '{third_lvl}' w megamenu '{root} > {first_lvl}'."
+        f"Nie znaleziono linku dla '{third_lvl}' w megamenu '{root} > {first_lvl}'. "
+        f"Dostępne: {[t for t, _ in level2_items]}"
     )
     if not any(ex in third_href for ex in _EXCLUDED_URL_FRAGMENTS):
         _verify_link_has_listing(page, base_url, third_href)
@@ -139,7 +154,7 @@ def test_category_tree_three_levels(page, runtime_env, root, first_lvl, second_l
 
     Nota: W bieżącej strukturze DOM megamenu NUXT wszystkie liście drzewa są
     linkami poziomu 2. Oba 'second_lvl' i 'third_lvl' odnalezione są w tym samym
-    panelu megamenu dla 'first_lvl'.
+    panelu megamenu dla 'first_lvl' — wyszukiwanie po tekście linku (nie slug URL).
 
     Migracja z: CategoryTreeTestsNUXT/TestCategoryTree.py — test_category_tree_three_levels
     """

@@ -17,15 +17,16 @@ def strip_prefix(text: str, prefix: str) -> str:
 
 
 def normalize_price(text: str) -> str:
-    match = re.search(r"([\d\s]+(?:[\.,]\d{2})?)", text)
+    cleaned = text.replace("\xa0", " ")
+    match = re.search(r"([\d\s]+(?:[\.,]\d{2})?)", cleaned)
     if match:
         return match.group(1).replace(" ", "")
-    return text
+    return cleaned
 
 
 def price_text_to_float(text: str) -> float:
-    """Convert a raw price string (e.g. '1 599,99 zł') to a comparable float."""
+    """Convert a raw price string (e.g. '1 599,99 zł' or '28\xa0499 zł') to a comparable float."""
     normalized = normalize_price(text)
     if not normalized:
         return 0.0
-    return float(normalized.replace(",", ".").replace(" ", ""))
+    return float(normalized.replace(",", ".").replace(" ", "").replace("\xa0", ""))

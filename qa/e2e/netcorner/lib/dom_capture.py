@@ -4,7 +4,7 @@ import gzip
 import hashlib
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import urlparse
@@ -40,10 +40,16 @@ class DomCaptureSession:
     viewport: str
     enabled: bool = False
 
+    # computed in __post_init__ — must be declared for slots=True compatibility
+    test_dir: Path = field(init=False)
+    index_path: Path = field(init=False)
+    _hashes: set[str] = field(init=False, default_factory=set)
+    _seq: int = field(init=False, default=0)
+
     def __post_init__(self) -> None:
         self.test_dir = self.dom_root / _safe_nodeid(self.nodeid)
         self.index_path = self.test_dir / "index.jsonl"
-        self._hashes: set[str] = set()
+        self._hashes = set()
         self._seq = 0
 
         if not self.enabled:

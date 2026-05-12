@@ -102,8 +102,21 @@ class ListingSortingComponent(BaseComponent):
     @step("Wybieram opcję z listy sortowania: {option}")
     def select_sort_option(self, option: ListingSortingComponent.SortOption) -> Self:
         option_label = option.value
-        self.__select_from_custom_dropdown(self.__sort_dropdown, self.__sort_options_container, option_label)
-        expect(self.__sort_dropdown).to_contain_text(option_label, timeout=15_000)
+        page = self.root.page
+        # Open the dropdown (no navigation).
+        self.pointer_click(self.__sort_dropdown)
+        # Click the chosen option — triggers a SPA route change (Vue Router
+        # pushState).  expect_navigation with domcontentloaded does NOT work
+        # here because domcontentloaded already fired on initial load.  Instead
+        # we use networkidle which waits until the data fetch triggered by the
+        # route change has settled.
+        option_locator = self.__sort_options_container.get_by_text(option_label, exact=True).first
+        self.pointer_click(option_locator)
+        page.wait_for_load_state("networkidle", timeout=15_000)
+        # Confirm listing content and at least one tile are visible.
+        listing_content = page.locator("[data-name='listingContent']")
+        expect(listing_content).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+        expect(listing_content.locator("[data-name='listingTile']").first).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
         return self
 
     @step("Wybieram opcję z listy dostępności: {option}")
@@ -197,6 +210,15 @@ class ListingContentComponent(BaseComponent):
 
     def count(self) -> int:
         return self.__tiles.count()
+
+    def wait_for_tiles(self, timeout: int = 15_000) -> None:
+        """Wait until at least one listing tile is visible.
+
+        Nuxt pages undergo client-side hydration after domcontentloaded, during
+        which SSR tiles are briefly removed and re-rendered.  Callers that need
+        an accurate ``count()`` must wait here first.
+        """
+        expect(self.__tiles.first).to_be_visible(timeout=timeout)
 
     @step("Pobieram ceny finalne wszystkich produktów na listingu")
     def get_all_final_prices(self) -> list[float]:
