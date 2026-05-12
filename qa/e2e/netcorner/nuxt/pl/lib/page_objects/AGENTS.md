@@ -17,6 +17,13 @@
 - Keep methods small, typed, and single-purpose.
 - No silent fallback chains, no broad exception swallowing for locator failures.
 
+## AI Naming For DOM Capture
+- Every page class must define stable `PAGE_ID`.
+- `PAGE_ID` format: `netcorner.pl.<area>.<view>`.
+- Keep names English, explicit, and stable; avoid synonyms and abbreviations.
+- Use event name `page_loaded` for page-level snapshots by default.
+- For known transition gaps (no page `wait_loaded`), use bounded explicit events (example: `listing_pagination_next`).
+
 ## Step And Wait Standards
 - Use `step`/`step_context` from `qa.e2e.netcorner.lib.step_api`.
 - Do not import `allure.step` directly in page object code.

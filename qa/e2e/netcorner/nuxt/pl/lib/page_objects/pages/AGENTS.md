@@ -13,7 +13,9 @@
 ## Page Object Rules
 - A page class must represent a full screen and be named `*Page`.
 - Keep `PATH` when the page has a stable route.
+- Define stable `PAGE_ID` in format `netcorner.pl.<area>.<view>`.
 - Implement `wait_loaded(...)` and validate page readiness via visible key sections/components.
+- Capture DOM on page-level `wait_loaded(...)` with event `page_loaded` when `--collect_dom` is enabled.
 - Expose page sections through lazy properties (`header`, `navigation`, `content`, `footer`).
 - Keep page methods business-oriented (`open_register_page`, `open_account_page`).
 - When action changes screen context, return a new page object (already loaded).

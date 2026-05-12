@@ -13,6 +13,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.navigation_section impor
 
 class ProductPage(BasePage):
     PATH = "/product/"
+    PAGE_ID = "netcorner.pl.product.details"
 
     def __init__(self, page: Page, base_url: str):
         super().__init__(page, base_url)
@@ -27,6 +28,7 @@ class ProductPage(BasePage):
         self.content.wait_visible()
         self.navigation.wait_visible()
         self.footer.wait_visible()
+        self.capture_dom_snapshot(event="page_loaded")
         return self
 
     @property

@@ -13,6 +13,8 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.products.products_data_models import
 
 
 class ListingPage(BasePage):
+    PAGE_ID = "netcorner.pl.listing.category"
+
     def __init__(self, page: Page, base_url: str):
         super().__init__(page, base_url)
         self.__content: ListingContentSection | None = None
@@ -26,6 +28,7 @@ class ListingPage(BasePage):
         self.content.wait_visible()
         self.navigation.wait_visible()
         self.footer.wait_visible()
+        self.capture_dom_snapshot(event="page_loaded")
         return self
 
     @property
