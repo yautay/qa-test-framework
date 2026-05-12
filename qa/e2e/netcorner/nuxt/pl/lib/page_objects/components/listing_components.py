@@ -9,7 +9,7 @@ from playwright.sync_api import Locator, Page, expect
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.lib.dom_capture import capture_page_dom
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.utils import get_visible_text, normalize_price, strip_prefix
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.utils import get_visible_text, normalize_price, strip_prefix, price_text_to_float
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.products.products_data_models import (
     AvailabilityStatus,
     AvailabilityStatuses,
@@ -197,6 +197,27 @@ class ListingContentComponent(BaseComponent):
 
     def count(self) -> int:
         return self.__tiles.count()
+
+    @step("Pobieram ceny finalne wszystkich produktów na listingu")
+    def get_all_final_prices(self) -> list[float]:
+        """Returns final prices of all visible listing tiles as floats for sort comparison."""
+        count = self.__tiles.count()
+        prices: list[float] = []
+        for i in range(count):
+            price_el = self.__tiles.nth(i).locator("[data-price-type='final']").first
+            raw = (price_el.text_content() or "").strip()
+            prices.append(price_text_to_float(raw))
+        return prices
+
+    @step("Pobieram nazwy wszystkich produktów na listingu")
+    def get_all_product_names(self) -> list[str]:
+        """Returns product names (h2) of all visible listing tiles for sort comparison."""
+        count = self.__tiles.count()
+        names: list[str] = []
+        for i in range(count):
+            name_el = self.__tiles.nth(i).locator("a[title] h2").first
+            names.append((name_el.text_content() or "").strip().lower())
+        return names
 
     @step("Wyszukuję pierwszy produkt o statusie dostępności: {shipping_status}")
     def find_first_product_by_shipping_status(

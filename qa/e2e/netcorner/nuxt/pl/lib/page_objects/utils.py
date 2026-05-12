@@ -21,3 +21,11 @@ def normalize_price(text: str) -> str:
     if match:
         return match.group(1).replace(" ", "")
     return text
+
+
+def price_text_to_float(text: str) -> float:
+    """Convert a raw price string (e.g. '1 599,99 zł') to a comparable float."""
+    normalized = normalize_price(text)
+    if not normalized:
+        return 0.0
+    return float(normalized.replace(",", ".").replace(" ", ""))

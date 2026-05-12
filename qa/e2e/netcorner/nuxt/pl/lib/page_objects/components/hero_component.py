@@ -29,6 +29,11 @@ class HeroComponent(BaseComponent):
         self.__link_contact_us = self.find("a:has(span:text-is('Skontaktuj się'))")
         self.__link_komputronik_stores = self.find("a:has(span:text-is('Salony Komputronik'))")
 
+        # layout structure locators
+        self.__hero_slider = self.find("[data-name='heroSlider']")
+        self.__banner_pagination = self.find("#pagination-hero-banner")
+        self.__daily_deal = self.find("[data-name='dailyDeal']")
+
     # actions
     @step("Klikam 'Konfiguruj PC'")
     def go_to_pc_configurator_from_banner(self) -> None:
@@ -74,4 +79,17 @@ class HeroComponent(BaseComponent):
     @step("Sprawdzam widoczność logo marki Asus")
     def expect_brand_asus_visible(self, timeout_ms: int = 10_000) -> Self:
         expect(self.__image_brand_asus).to_be_visible(timeout=timeout_ms)
+        return self
+
+    # --- layout assertions ---
+
+    @step("Sprawdzam widoczność slidera banerów strony głównej")
+    def expect_banners_visible(self, timeout_ms: int = 10_000) -> Self:
+        expect(self.__hero_slider).to_be_visible(timeout=timeout_ms)
+        expect(self.__banner_pagination).to_be_visible(timeout=timeout_ms)
+        return self
+
+    @step("Sprawdzam widoczność sekcji produktów (dailyDeal)")
+    def expect_products_section_visible(self, timeout_ms: int = 10_000) -> Self:
+        expect(self.__daily_deal).to_be_visible(timeout=timeout_ms)
         return self

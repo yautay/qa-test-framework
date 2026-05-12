@@ -49,40 +49,34 @@ Istniejące testy Playwright pokrywające poniższe scenariusze:
 
 ### LayoutElementsTestsNUXT → `tests/tests_layout/`
 
-- [ ] `TestHeaderElements.py` → `test_header_elements.py`
+- [x] `TestHeaderElements.py` → `test_header_elements.py`
   - Weryfikacja widoczności elementów nagłówka, linków, kategorii zero-level, wyszukiwarki
-- [ ] `TestHomePageElements.py` → `test_homepage_elements.py`
+- [x] `TestHomePageElements.py` → `test_homepage_elements.py`
   - Bannery, kontenery produktów na stronie głównej
-- [ ] `TestRegisterPageElements.py` → `test_register_page_elements.py`
+- [x] `TestRegisterPageElements.py` → `test_register_page_elements.py`
   - 🔵 new-po: weryfikacja elementów formularza rejestracji (pola, przyciski, błędy)
-- [ ] `TestFooterElements.py` → `test_footer_elements.py`
+- [x] `TestFooterElements.py` → `test_footer_elements.py`
   - Linki i sekcje stopki (FooterSection już istnieje)
 
 ### SortingTestsNUXT → `tests/tests_listing/`
 
-- [ ] `TestSortingProductList.py` → `test_sorting_product_list.py`
+- [x] `TestSortingProductList.py` → `test_sorting_product_list.py`
   - Sortowanie listingu: 4 warianty sortowania z asercją kolejności
-- [ ] `TestSortingProductSearch.py` → `test_sorting_product_search.py`
+- [x] `TestSortingProductSearch.py` → `test_sorting_product_search.py`
   - Sortowanie wyników wyszukiwania
 
 ### SearchTestsNUXT → `tests/tests_search/`
 
-- [ ] `TestSimpleSearch.py` → `test_simple_search.py`
+- [x] `TestSimpleSearch.py` → `test_simple_search.py`
   - Wyszukiwanie frazy → niepusta lista wyników
-- [ ] `TestSimpleSearchExceptions.py` → `test_simple_search_exceptions.py`
-  - Wyszukiwanie fraz bez wyników / edge cases
-- [ ] `TestSearchSuggestions.py` → `test_search_suggestions.py`
+- [x] `TestSearchSuggestions.py` → `test_search_suggestions.py`
   - 🔵 new-po: weryfikacja podpowiedzi wyszukiwarki (suggester) — SearchBarComponent istnieje
-- [ ] `TestSearchListings.py` → `test_search_listings.py`
+- [x] `TestSearchListings.py` → `test_search_listings.py`
   - Wyszukiwanie → nawigacja na listing wyników
-- [ ] `TestSearchListingsExceptions.py` → `test_search_listings_exceptions.py`
-  - Przypadki brzegowe wyników listingu
-- [ ] `TestSearchGroupCodes.py` → `test_search_group_codes.py`
-  - Wyszukiwanie po kodach grupowych produktów
 
 ### CategoryTreeTestsNUXT → `tests/tests_navigation/`
 
-- [ ] `TestCategoryTree.py` → `test_category_tree.py`
+- [x] `TestCategoryTree.py` → `test_category_tree.py`
   - 🔵 new-po: traversal 1/2/3 poziomów drzewa kategorii przez NavigationSection
 
 ---
@@ -234,6 +228,15 @@ Istniejące testy Playwright pokrywające poniższe scenariusze:
 - [ ] `TestErrorPages.py` → `test_error_pages.py`
   - 🔴 admin: weryfikacja stron błędów (może być realizowana bez admina częściowo)
 
+### SearchTestsNUXT (przeniesione z Fazy 1 — wymagają admina) → `tests/tests_search/`
+
+- [ ] `TestSimpleSearchExceptions.py` → `test_simple_search_exceptions.py`
+  - 🔴 admin: czyta wyjątki kategorii z `AdminPage.AdminFunctionalObjects` (settingsExceptionList)
+- [ ] `TestSearchListingsExceptions.py` → `test_search_listings_exceptions.py`
+  - 🔴 admin: czyta `settingsExceptionList` z admina przed testem
+- [ ] `TestSearchGroupCodes.py` → `test_search_group_codes.py`
+  - 🔴 admin: tworzy kody grupowe produktów w adminie przed testem
+
 ---
 
 ## 🔴🟡 Faza 5 — Wymaga admin + Mailhog (uzupełnienia)
@@ -311,10 +314,10 @@ Poniższe nie są testami e2e w sensie scenariuszy użytkownika:
 | Faza | Testy | Blokery | Szacowany nakład |
 |---|---|---|---|
 | ✅ Faza 0 — Już gotowe | 6 | — | — |
-| 🟢 Faza 1 — Pure UI | 14 | brak | ~3–5 dni |
+| ✅ Faza 1 — Pure UI | 10 | brak | ✅ DONE |
 | 🟡 Faza 2 — Produkty + konto | 16 | 🔵 nowe PO | ~5–8 dni |
 | 🔵 Faza 3 — Zamówienia bez admina | 6 | 🔵 nowe PO | ~3–5 dni |
-| 🔴 Faza 4 — Wymaga admina | 37 | 🔴 DEBT-001 | ~8–12 dni |
+| 🔴 Faza 4 — Wymaga admina | 40 | 🔴 DEBT-001 | ~8–12 dni |
 | 🔴🟡 Faza 5 — Admin + Mailhog | 18 | 🔴 DEBT-001 + 🟡 Sprint 4 | ~5–8 dni |
 | 🚫 Poza zakresem | 8 | — | — |
 | **Łącznie do migracji** | **91** | | **~24–38 dni** |

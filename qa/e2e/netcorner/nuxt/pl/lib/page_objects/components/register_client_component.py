@@ -102,3 +102,16 @@ class RegisterClientComponent(BaseComponent):
         expect(checkbox).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
         self.pointer_click(checkbox)
         return self
+
+    # --- layout assertions ---
+
+    @step("Sprawdzam widoczność wszystkich elementów formularza rejestracji")
+    def expect_form_elements_visible(self, timeout_ms: int = 10_000) -> Self:
+        expect(self.__input_login).to_be_visible(timeout=timeout_ms)
+        expect(self.__input_password).to_be_visible(timeout=timeout_ms)
+        expect(self.__input_password_repeated).to_be_visible(timeout=timeout_ms)
+        expect(self.__checkbox_terms).to_be_visible(timeout=timeout_ms)
+        expect(self.__recaptcha_container).to_be_visible(timeout=timeout_ms)
+        expect(self.__button_register).to_be_visible(timeout=timeout_ms)
+        expect(self.__button_login_redirect).to_be_visible(timeout=timeout_ms)
+        return self
