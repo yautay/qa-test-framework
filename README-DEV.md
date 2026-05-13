@@ -210,3 +210,33 @@ Grid notes:
 - `auto` tries Playwright protocol first and then Selenium CDP bridge.
 - `selenium_cdp` is Chromium-only (`chromium`/`chrome`).
 - `GRID_CDP_ENDPOINT` can be used to provide explicit CDP endpoint when Selenium Grid does not expose `se:cdp`.
+
+#### Grid Authentication
+
+Two independent auth contexts are supported: one for the WS/HTTP endpoint and one for the CDP endpoint.
+
+| Env var | Description |
+|---|---|
+| `GRID_WS_AUTH_MODE` | Auth mode for the WS endpoint and all Selenium HTTP probes: `none` (default), `basic`, or `token` |
+| `GRID_WS_USERNAME` | Username for `basic` mode |
+| `GRID_WS_PASSWORD` | Password for `basic` mode |
+| `GRID_WS_TOKEN` | Bearer token for `token` mode |
+| `GRID_CDP_AUTH_MODE` | Auth mode for the CDP WebSocket connection: `none` (default), `basic`, or `token` |
+| `GRID_CDP_USERNAME` | Username for CDP `basic` mode |
+| `GRID_CDP_PASSWORD` | Password for CDP `basic` mode |
+| `GRID_CDP_TOKEN` | Bearer token for CDP `token` mode |
+
+Examples:
+
+```bash
+# Basic auth on the WS/HTTP Grid endpoint
+GRID_WS_AUTH_MODE=basic
+GRID_WS_USERNAME=user
+GRID_WS_PASSWORD=secret
+
+# Bearer token on the WS/HTTP Grid endpoint
+GRID_WS_AUTH_MODE=token
+GRID_WS_TOKEN=mytoken
+```
+
+> Note: `GRID_WS_AUTH_MODE` credentials are applied to all Selenium HTTP probe requests (POST `/session`, GET `/session/{id}/se/cdp`, DELETE `/session/{id}`) in addition to the Playwright WebSocket connect call.
