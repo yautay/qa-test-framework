@@ -27,7 +27,7 @@ run_git_info_timeout_seconds = 3
 
 # Grid
 grid_provider = "playwright"
-grid_ws_endpoint = "ws://10.21.69.118:3034/ws"
+grid_ws_endpoint = "ws://10.21.69.118:3034/pw-ws"
 grid_cdp_endpoint = ""
 grid_connect_timeout_ms = 30000
 

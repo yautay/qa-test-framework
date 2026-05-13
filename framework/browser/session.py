@@ -25,6 +25,12 @@ class GridAuthError(RuntimeError):
 
 def _build_grid_auth_headers(auth_mode: str, username: str, password: str, token: str) -> dict[str, str]:
     """Return Authorization header dict for the given auth mode, or empty dict for 'none'."""
+    headers: dict[str, str] = {
+        "Connection": "Upgrade",
+        "Upgrade": "websocket",
+        "Sec-WebSocket-Version": "13",
+        "Sec-WebSocket-Key": "dGhlIHNhbXBsZSBub25jZQ==",
+    }
     mode = (auth_mode or "none").strip().lower()
     if mode == "basic":
         user = (username or "").strip()
@@ -32,12 +38,12 @@ def _build_grid_auth_headers(auth_mode: str, username: str, password: str, token
         if user and secret:
             raw = f"{user}:{secret}"
             encoded = base64.b64encode(raw.encode("utf-8")).decode("ascii")
-            return {"Authorization": f"Basic {encoded}"}
+            headers["Authorization"] = f"Basic {encoded}"
     elif mode == "token":
         tok = (token or "").strip()
         if tok:
-            return {"Authorization": f"Bearer {tok}"}
-    return {}
+            headers["Authorization"] = f"Bearer {tok}"
+    return headers
 
 
 def open_browser_session(playwright_instance: Playwright, runtime_env: RuntimeEnv) -> BrowserSession:
