@@ -10,8 +10,12 @@ class ListingDataBuilder:
         self.filters = None
 
 
-def first_aviable_laptop_case() -> ListingsData:
+def first_available_laptop_case() -> ListingsData:
     return ListingsData(
         category_url="search-filter/5022/laptopy-do-gier",
         product_availability_status=AvailabilityStatuses.ONE_DAY,
     )
+
+
+def first_aviable_laptop_case() -> ListingsData:
+    return first_available_laptop_case()
