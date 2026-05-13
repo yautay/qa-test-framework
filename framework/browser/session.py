@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import base64
+import warnings
 from dataclasses import dataclass
 import secrets
 from typing import Any
+from urllib.parse import urlsplit, urlunsplit
 
 import requests
 from playwright.sync_api import Browser, Playwright
@@ -46,6 +48,40 @@ def _build_grid_auth_headers(auth_mode: str, username: str, password: str, token
         if tok:
             headers["Authorization"] = f"Bearer {tok}"
     return headers
+
+
+def _normalize_playwright_ws_endpoint(endpoint: str) -> str:
+    """Normalize ws/wss endpoint paths to avoid redirect-only slash fixes on the server."""
+    token = endpoint.strip()
+    if not token:
+        return token
+
+    parsed = urlsplit(token)
+    if parsed.scheme not in {"ws", "wss"}:
+        return token
+
+    path = parsed.path or ""
+    if not path or path == "/" or path.endswith("/"):
+        return token
+
+    return urlunsplit((parsed.scheme, parsed.netloc, f"{path}/", parsed.query, parsed.fragment))
+
+
+def _warn_if_playwright_provider_uses_http_endpoint(provider: str, endpoint: str) -> None:
+    """Warn when GRID_PROVIDER=playwright is configured with an HTTP discovery URL."""
+    if provider.strip().lower() != "playwright":
+        return
+
+    scheme = urlsplit(endpoint.strip()).scheme.lower()
+    if scheme not in {"http", "https"}:
+        return
+
+    warnings.warn(
+        "GRID_PROVIDER=playwright is using GRID_WS_ENDPOINT with HTTP(S) scheme. "
+        "Prefer ws:// or wss:// to avoid discovery/auth redirect issues.",
+        RuntimeWarning,
+        stacklevel=3,
+    )
 
 
 def open_browser_session(playwright_instance: Playwright, runtime_env: RuntimeEnv) -> BrowserSession:
@@ -143,6 +179,8 @@ def _connect_auto_grid(playwright_instance: Playwright, runtime_env: RuntimeEnv)
 def _connect_playwright_grid(playwright_instance: Playwright, runtime_env: RuntimeEnv) -> BrowserSession:
     browser_name = "chromium" if runtime_env.browser == "chrome" else runtime_env.browser
     browser_type = getattr(playwright_instance, browser_name)
+    ws_endpoint = _normalize_playwright_ws_endpoint(runtime_env.grid_ws_endpoint)
+    _warn_if_playwright_provider_uses_http_endpoint(runtime_env.grid_provider, ws_endpoint)
     ws_auth_headers = _build_grid_auth_headers(
         runtime_env.grid_ws_auth_mode,
         runtime_env.grid_ws_username,
@@ -151,7 +189,7 @@ def _connect_playwright_grid(playwright_instance: Playwright, runtime_env: Runti
     )
     try:
         browser = browser_type.connect(
-            runtime_env.grid_ws_endpoint,
+            ws_endpoint,
             timeout=runtime_env.grid_connect_timeout_ms,
             headers=ws_auth_headers or None,
         )
@@ -165,7 +203,7 @@ def _connect_playwright_grid(playwright_instance: Playwright, runtime_env: Runti
                 f"Original error: {exc}"
             ) from exc
         raise
-    return BrowserSession(browser=browser, provider="playwright", endpoint=runtime_env.grid_ws_endpoint)
+    return BrowserSession(browser=browser, provider="playwright", endpoint=ws_endpoint)
 
 
 def _connect_selenium_cdp_grid(playwright_instance: Playwright, runtime_env: RuntimeEnv) -> BrowserSession:

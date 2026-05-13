@@ -94,6 +94,58 @@ def test_open_browser_session_uses_playwright_provider_when_forced() -> None:
     assert playwright.chromium.connect_calls[0]["endpoint"] == "ws://127.0.0.1:9323/"
 
 
+def test_open_browser_session_normalizes_playwright_ws_endpoint_with_trailing_slash() -> None:
+    env = replace(
+        load_env(),
+        is_grid_available=True,
+        grid_provider="playwright",
+        grid_ws_endpoint="ws://127.0.0.1:9323/pw-ws",
+        browser="chromium",
+    )
+    playwright = _FakePlaywright()
+
+    session = open_browser_session(cast(Any, playwright), env)
+
+    assert session.provider == "playwright"
+    assert session.endpoint == "ws://127.0.0.1:9323/pw-ws/"
+    assert playwright.chromium.connect_calls[0]["endpoint"] == "ws://127.0.0.1:9323/pw-ws/"
+
+
+def test_open_browser_session_normalizes_playwright_wss_endpoint_and_preserves_query() -> None:
+    env = replace(
+        load_env(),
+        is_grid_available=True,
+        grid_provider="playwright",
+        grid_ws_endpoint="wss://127.0.0.1:9323/pw-ws?foo=1",
+        browser="chromium",
+    )
+    playwright = _FakePlaywright()
+
+    session = open_browser_session(cast(Any, playwright), env)
+
+    assert session.provider == "playwright"
+    assert session.endpoint == "wss://127.0.0.1:9323/pw-ws/?foo=1"
+    assert playwright.chromium.connect_calls[0]["endpoint"] == "wss://127.0.0.1:9323/pw-ws/?foo=1"
+
+
+def test_open_browser_session_warns_for_playwright_http_endpoint() -> None:
+    env = replace(
+        load_env(),
+        is_grid_available=True,
+        grid_provider="playwright",
+        grid_ws_endpoint="http://127.0.0.1:9323/pw-ws",
+        browser="chromium",
+    )
+    playwright = _FakePlaywright()
+
+    with pytest.warns(RuntimeWarning, match="GRID_PROVIDER=playwright"):
+        session = open_browser_session(cast(Any, playwright), env)
+
+    assert session.provider == "playwright"
+    assert session.endpoint == "http://127.0.0.1:9323/pw-ws"
+    assert playwright.chromium.connect_calls[0]["endpoint"] == "http://127.0.0.1:9323/pw-ws"
+
+
 def test_open_browser_session_auto_falls_back_to_selenium_cdp(monkeypatch: pytest.MonkeyPatch) -> None:
     env = replace(
         load_env(),
