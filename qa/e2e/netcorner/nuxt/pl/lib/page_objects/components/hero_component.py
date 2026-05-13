@@ -33,6 +33,10 @@ class HeroComponent(BaseComponent):
         self.__hero_slider = self.find("[data-name='heroSlider']")
         self.__banner_pagination = self.find("#pagination-hero-banner")
         self.__daily_deal = self.find("[data-name='dailyDeal']")
+        self.__daily_deal_widget = self.find("[data-name='DailyDealWidget']")
+        self.__daily_deal_name = self.find("[data-name='DailyDealWidgetName']")
+        self.__daily_deal_final_price = self.find("[data-name='DailyDealWidgetFinalPrice']")
+        self.__deal_progress_bar = self.find("[data-name='dealProgressBar']")
 
     # actions
     @step("Klikam 'Konfiguruj PC'")
@@ -92,4 +96,16 @@ class HeroComponent(BaseComponent):
     @step("Sprawdzam widoczność sekcji produktów (dailyDeal)")
     def expect_products_section_visible(self, timeout_ms: int = 10_000) -> Self:
         expect(self.__daily_deal).to_be_visible(timeout=timeout_ms)
+        return self
+
+    @step("Sprawdzam widoczność widgetu OZO")
+    def expect_ozo_widget_visible(self, timeout_ms: int = 10_000) -> Self:
+        expect(self.__daily_deal_widget).to_be_visible(timeout=timeout_ms)
+        return self
+
+    @step("Sprawdzam komplet danych widgetu OZO")
+    def expect_ozo_widget_has_core_data(self, timeout_ms: int = 10_000) -> Self:
+        expect(self.__daily_deal_name).to_be_visible(timeout=timeout_ms)
+        expect(self.__daily_deal_final_price).to_be_visible(timeout=timeout_ms)
+        expect(self.__deal_progress_bar).to_be_visible(timeout=timeout_ms)
         return self

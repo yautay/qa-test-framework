@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listings_data_models import ListingsData
+from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listings_data_models import ListingCase, ListingsData
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.products.products_data_models import AvailabilityStatuses
 
 
@@ -19,3 +19,12 @@ def first_available_laptop_case() -> ListingsData:
 
 def first_aviable_laptop_case() -> ListingsData:
     return first_available_laptop_case()
+
+
+def phase2_listing_cases() -> list[ListingCase]:
+    return [
+        ListingCase(
+            case_id="pl_products_laptops_one_day",
+            factory=first_available_laptop_case,
+        )
+    ]

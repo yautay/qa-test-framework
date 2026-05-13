@@ -5,10 +5,20 @@ branch: feature/NN-24016-ai-w-pisaniu-testow-e2e
 repository: qa-test-netquarner
 topic: "Plan implementacji migracji OrdersTestsNUXT: Selenium → Playwright"
 tags: [plan, migration, orders, e2e, playwright, sprints, mailhog]
-last_updated: 2026-05-12
+last_updated: 2026-05-13
 ---
 
 # Plan migracji OrdersTestsNUXT
+
+## Checkpoint (2026-05-13)
+
+- Równolegle do planu Orders uruchomiono Fazę 2 (Products) z `migration_todo.md`.
+- Dostarczono 8 testów produktowych (Wave 1 + część Wave 2), które budują brakującą bazę PO pod dalszą migrację.
+- Dostarczono `test_product_ozo.py` oraz rozpoczęto Faza 2-alfa dla forms/CRUD (wariant checkout: kurier + BLIK).
+- Wydzielono Faza 2-beta dla hardeningu danych produktowych:
+  - `test_products_list_sezam_filter.py` — stabilny Sezam bez `skip`
+  - `test_adhoc_product.py` — stabilny ad-hoc bez `skip`
+- Następny krok po wznowieniu: domknięcie Fazy 2-beta i przejście do Fazy 3 (Orders bez admina).
 
 ## Cel
 
