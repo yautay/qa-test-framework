@@ -3,7 +3,7 @@ from __future__ import annotations
 """Build a frozen RuntimeEnv using CLI settings, env vars, and dotenv files."""
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from importlib import metadata as importlib_metadata
 
 from dotenv import dotenv_values
@@ -67,6 +67,14 @@ class RuntimeEnv:
     grid_ws_endpoint: str
     grid_cdp_endpoint: str
     grid_connect_timeout_ms: int
+    grid_ws_auth_mode: str
+    grid_ws_username: str
+    grid_ws_password: str = field(repr=False)
+    grid_ws_token: str = field(repr=False)
+    grid_cdp_auth_mode: str
+    grid_cdp_username: str
+    grid_cdp_password: str = field(repr=False)
+    grid_cdp_token: str = field(repr=False)
     headless: bool
     ignore_https_errors: bool
     base_url: str
@@ -82,7 +90,7 @@ class RuntimeEnv:
     reporting_source_producer_id: str
     framework_version: str
     reporting_api_url: str
-    reporting_api_token: str
+    reporting_api_token: str = field(repr=False)
     reporting_api_run_start_endpoint: str
     reporting_api_test_result_endpoint: str
     reporting_api_run_finish_endpoint: str
@@ -118,7 +126,7 @@ class RuntimeEnv:
     visual_shift_compensation_y_px: int
     visual_minio_endpoint: str
     visual_minio_access_key: str
-    visual_minio_secret_key: str
+    visual_minio_secret_key: str = field(repr=False)
     visual_minio_bucket: str
     visual_minio_secure: bool
     pms_enabled: bool
@@ -142,10 +150,10 @@ class RuntimeEnv:
     jira_enabled: bool
     jira_url: str
     jira_username: str
-    jira_password: str
+    jira_password: str = field(repr=False)
     jira_verify_ssl: bool
     jira_auth_mode: str
-    jira_api_token: str
+    jira_api_token: str = field(repr=False)
     jira_retry_max: int
     jira_submit_timeout_ms: int
     jira_upload_delay_seconds: float
@@ -230,6 +238,18 @@ def load_env() -> RuntimeEnv:
             "GRID_CONNECT_TIMEOUT_MS",
             settings_grid_connect_timeout_ms,
         ),
+        grid_ws_auth_mode=env_str(
+            "GRID_WS_AUTH_MODE", str(getattr(settings, "grid_ws_auth_mode", "none"))
+        ).strip().lower(),
+        grid_ws_username=env_str("GRID_WS_USERNAME", str(getattr(settings, "grid_ws_username", ""))),
+        grid_ws_password=env_str("GRID_WS_PASSWORD", str(getattr(settings, "grid_ws_password", ""))),
+        grid_ws_token=env_str("GRID_WS_TOKEN", str(getattr(settings, "grid_ws_token", ""))),
+        grid_cdp_auth_mode=env_str(
+            "GRID_CDP_AUTH_MODE", str(getattr(settings, "grid_cdp_auth_mode", "none"))
+        ).strip().lower(),
+        grid_cdp_username=env_str("GRID_CDP_USERNAME", str(getattr(settings, "grid_cdp_username", ""))),
+        grid_cdp_password=env_str("GRID_CDP_PASSWORD", str(getattr(settings, "grid_cdp_password", ""))),
+        grid_cdp_token=env_str("GRID_CDP_TOKEN", str(getattr(settings, "grid_cdp_token", ""))),
         headless=env_bool("HEADLESS", settings_headless),
         ignore_https_errors=env_bool(
             "IGNORE_HTTPS_ERRORS",

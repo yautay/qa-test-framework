@@ -31,6 +31,16 @@ grid_ws_endpoint = "http://10.21.69.57:4444"
 grid_cdp_endpoint = ""
 grid_connect_timeout_ms = 30000
 
+grid_ws_auth_mode = "none"   # none | basic | token
+grid_ws_username = ""
+grid_ws_password = ""
+grid_ws_token = ""
+
+grid_cdp_auth_mode = "none"  # none | basic | token
+grid_cdp_username = ""
+grid_cdp_password = ""
+grid_cdp_token = ""
+
 # Visual
 visual_enabled = True
 visual_compare_mode = "hybrid"

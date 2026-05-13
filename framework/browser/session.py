@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 from dataclasses import dataclass
 from typing import Any
 
@@ -16,6 +17,27 @@ class BrowserSession:
     endpoint: str
     selenium_session_id: str = ""
     selenium_grid_url: str = ""
+
+
+class GridAuthError(RuntimeError):
+    """Raised when Grid rejects a connection with a 401 Unauthorized response."""
+
+
+def _build_grid_auth_headers(auth_mode: str, username: str, password: str, token: str) -> dict[str, str]:
+    """Return Authorization header dict for the given auth mode, or empty dict for 'none'."""
+    mode = (auth_mode or "none").strip().lower()
+    if mode == "basic":
+        user = (username or "").strip()
+        secret = (password or "").strip()
+        if user and secret:
+            raw = f"{user}:{secret}"
+            encoded = base64.b64encode(raw.encode("utf-8")).decode("ascii")
+            return {"Authorization": f"Basic {encoded}"}
+    elif mode == "token":
+        tok = (token or "").strip()
+        if tok:
+            return {"Authorization": f"Bearer {tok}"}
+    return {}
 
 
 def open_browser_session(playwright_instance: Playwright, runtime_env: RuntimeEnv) -> BrowserSession:
@@ -113,10 +135,28 @@ def _connect_auto_grid(playwright_instance: Playwright, runtime_env: RuntimeEnv)
 def _connect_playwright_grid(playwright_instance: Playwright, runtime_env: RuntimeEnv) -> BrowserSession:
     browser_name = "chromium" if runtime_env.browser == "chrome" else runtime_env.browser
     browser_type = getattr(playwright_instance, browser_name)
-    browser = browser_type.connect(
-        runtime_env.grid_ws_endpoint,
-        timeout=runtime_env.grid_connect_timeout_ms,
+    ws_auth_headers = _build_grid_auth_headers(
+        runtime_env.grid_ws_auth_mode,
+        runtime_env.grid_ws_username,
+        runtime_env.grid_ws_password,
+        runtime_env.grid_ws_token,
     )
+    try:
+        browser = browser_type.connect(
+            runtime_env.grid_ws_endpoint,
+            timeout=runtime_env.grid_connect_timeout_ms,
+            headers=ws_auth_headers or None,
+        )
+    except Exception as exc:
+        msg = str(exc)
+        if "401" in msg or "unauthorized" in msg.lower():
+            raise GridAuthError(
+                f"Grid connection refused (401 Unauthorized). "
+                f"Check grid_ws_auth_mode, grid_ws_username/grid_ws_password or grid_ws_token "
+                f"in settings.py (or env vars GRID_WS_AUTH_MODE / GRID_WS_USERNAME / GRID_WS_TOKEN). "
+                f"Original error: {exc}"
+            ) from exc
+        raise
     return BrowserSession(browser=browser, provider="playwright", endpoint=runtime_env.grid_ws_endpoint)
 
 
@@ -129,6 +169,19 @@ def _connect_selenium_cdp_grid(playwright_instance: Playwright, runtime_env: Run
     selenium_session_id = ""
     selenium_grid_url = ""
 
+    ws_auth_headers = _build_grid_auth_headers(
+        runtime_env.grid_ws_auth_mode,
+        runtime_env.grid_ws_username,
+        runtime_env.grid_ws_password,
+        runtime_env.grid_ws_token,
+    )
+    cdp_auth_headers = _build_grid_auth_headers(
+        runtime_env.grid_cdp_auth_mode,
+        runtime_env.grid_cdp_username,
+        runtime_env.grid_cdp_password,
+        runtime_env.grid_cdp_token,
+    )
+
     if not cdp_endpoint:
         if _is_direct_cdp_endpoint(runtime_env.grid_ws_endpoint):
             cdp_endpoint = runtime_env.grid_ws_endpoint
@@ -140,6 +193,7 @@ def _connect_selenium_cdp_grid(playwright_instance: Playwright, runtime_env: Run
                     browser_name=browser_name,
                     headless=runtime_env.headless,
                     timeout_ms=runtime_env.grid_connect_timeout_ms,
+                    ws_auth_headers=ws_auth_headers,
                 )
             except RuntimeError as exc:
                 if runtime_env.headless or not _looks_like_chrome_startup_failure(str(exc)):
@@ -149,20 +203,41 @@ def _connect_selenium_cdp_grid(playwright_instance: Playwright, runtime_env: Run
                     browser_name=browser_name,
                     headless=True,
                     timeout_ms=runtime_env.grid_connect_timeout_ms,
+                    ws_auth_headers=ws_auth_headers,
                 )
 
     try:
         browser = playwright_instance.chromium.connect_over_cdp(
             cdp_endpoint,
             timeout=runtime_env.grid_connect_timeout_ms,
+            headers=cdp_auth_headers or None,
         )
     except Exception as exc:
+        msg = str(exc)
+        if "401" in msg or "unauthorized" in msg.lower():
+            if selenium_session_id and selenium_grid_url:
+                try:
+                    _delete_selenium_session(
+                        grid_url=selenium_grid_url,
+                        session_id=selenium_session_id,
+                        timeout_ms=runtime_env.grid_connect_timeout_ms,
+                        ws_auth_headers=ws_auth_headers,
+                    )
+                except Exception:
+                    pass
+            raise GridAuthError(
+                f"Grid CDP connection refused (401 Unauthorized). "
+                f"Check grid_cdp_auth_mode, grid_cdp_username/grid_cdp_password or grid_cdp_token "
+                f"in settings.py (or env vars GRID_CDP_AUTH_MODE / GRID_CDP_USERNAME / GRID_CDP_TOKEN). "
+                f"Original error: {exc}"
+            ) from exc
         if selenium_session_id and selenium_grid_url:
             try:
                 _delete_selenium_session(
                     grid_url=selenium_grid_url,
                     session_id=selenium_session_id,
                     timeout_ms=runtime_env.grid_connect_timeout_ms,
+                    ws_auth_headers=ws_auth_headers,
                 )
             except Exception:
                 pass
@@ -207,6 +282,7 @@ def _create_selenium_session_for_cdp(
     browser_name: str,
     headless: bool,
     timeout_ms: int,
+    ws_auth_headers: dict[str, str] | None = None,
 ) -> tuple[str, str]:
     always_match: dict[str, Any] = {
         "browserName": "chrome" if browser_name == "chromium" else browser_name,
@@ -232,12 +308,21 @@ def _create_selenium_session_for_cdp(
         }
     }
     timeout_seconds = max(timeout_ms / 1000.0, 1.0)
+    request_headers = {"Content-Type": "application/json; charset=utf-8"}
+    if ws_auth_headers:
+        request_headers.update(ws_auth_headers)
     response = requests.post(
         f"{grid_url}/session",
         json=payload,
-        headers={"Content-Type": "application/json; charset=utf-8"},
+        headers=request_headers,
         timeout=timeout_seconds,
     )
+    if response.status_code == 401:
+        raise GridAuthError(
+            "Selenium Grid session creation refused (401 Unauthorized). "
+            "Check grid_ws_auth_mode, grid_ws_username/grid_ws_password or grid_ws_token "
+            "in settings.py (or env vars GRID_WS_AUTH_MODE / GRID_WS_USERNAME / GRID_WS_TOKEN)."
+        )
     if response.status_code >= 400:
         error_details = _extract_webdriver_error_details(response)
         raise RuntimeError(f"Selenium Grid session creation failed (status={response.status_code}): {error_details}")
@@ -252,9 +337,13 @@ def _create_selenium_session_for_cdp(
     if not session_id:
         raise RuntimeError("Could not resolve Selenium session id from Grid response")
 
-    cdp_endpoint = _extract_cdp_endpoint_from_payload(response_payload, grid_url=grid_url, session_id=session_id)
+    cdp_endpoint = _extract_cdp_endpoint_from_payload(
+        response_payload, grid_url=grid_url, session_id=session_id, ws_auth_headers=ws_auth_headers
+    )
     if not cdp_endpoint:
-        _delete_selenium_session(grid_url=grid_url, session_id=session_id, timeout_ms=timeout_ms)
+        _delete_selenium_session(
+            grid_url=grid_url, session_id=session_id, timeout_ms=timeout_ms, ws_auth_headers=ws_auth_headers
+        )
         raise RuntimeError(
             "Could not resolve CDP endpoint from Selenium Grid session capabilities. "
             "Set GRID_CDP_ENDPOINT explicitly or ensure Grid exposes se:cdp/debuggerAddress."
@@ -262,7 +351,13 @@ def _create_selenium_session_for_cdp(
     return session_id, cdp_endpoint
 
 
-def _extract_cdp_endpoint_from_payload(payload: dict[str, Any], *, grid_url: str, session_id: str) -> str:
+def _extract_cdp_endpoint_from_payload(
+    payload: dict[str, Any],
+    *,
+    grid_url: str,
+    session_id: str,
+    ws_auth_headers: dict[str, str] | None = None,
+) -> str:
     value = payload.get("value") if isinstance(payload, dict) else None
     capabilities = value.get("capabilities") if isinstance(value, dict) else None
     if not isinstance(capabilities, dict):
@@ -281,13 +376,16 @@ def _extract_cdp_endpoint_from_payload(payload: dict[str, Any], *, grid_url: str
                 return debugger_address
             return f"http://{debugger_address}"
 
-    endpoint = _try_get_grid_cdp_endpoint(grid_url=grid_url, session_id=session_id)
+    endpoint = _try_get_grid_cdp_endpoint(grid_url=grid_url, session_id=session_id, ws_auth_headers=ws_auth_headers)
     return endpoint.strip()
 
 
-def _try_get_grid_cdp_endpoint(*, grid_url: str, session_id: str) -> str:
+def _try_get_grid_cdp_endpoint(
+    *, grid_url: str, session_id: str, ws_auth_headers: dict[str, str] | None = None
+) -> str:
     response = requests.get(
         f"{grid_url}/session/{session_id}/se/cdp",
+        headers=ws_auth_headers or {},
         timeout=5,
     )
     if response.status_code >= 400:
@@ -306,10 +404,13 @@ def _try_get_grid_cdp_endpoint(*, grid_url: str, session_id: str) -> str:
     return ""
 
 
-def _delete_selenium_session(*, grid_url: str, session_id: str, timeout_ms: int) -> None:
+def _delete_selenium_session(
+    *, grid_url: str, session_id: str, timeout_ms: int, ws_auth_headers: dict[str, str] | None = None
+) -> None:
     timeout_seconds = max(timeout_ms / 1000.0, 1.0)
     response = requests.delete(
         f"{grid_url}/session/{session_id}",
+        headers=ws_auth_headers or {},
         timeout=timeout_seconds,
     )
     if response.status_code in (404, 410):

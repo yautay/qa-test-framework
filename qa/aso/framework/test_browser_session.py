@@ -261,7 +261,9 @@ def test_open_browser_session_retries_selenium_with_headless_on_devtoolsactivepo
     playwright = _FakePlaywright()
     calls: list[bool] = []
 
-    def _fake_create(*, grid_url: str, browser_name: str, headless: bool, timeout_ms: int):
+    def _fake_create(
+        *, grid_url: str, browser_name: str, headless: bool, timeout_ms: int, ws_auth_headers: object = None
+    ):
         _ = (grid_url, browser_name, timeout_ms)
         calls.append(headless)
         if not headless:
@@ -315,7 +317,7 @@ def test_open_browser_session_deletes_selenium_session_when_cdp_attach_fails(
         lambda **_kwargs: ("session-2", "ws://10.0.0.10:4444/session/session-2/se/cdp"),
     )
 
-    def _fake_delete(*, grid_url: str, session_id: str, timeout_ms: int) -> None:
+    def _fake_delete(*, grid_url: str, session_id: str, timeout_ms: int, ws_auth_headers: object = None) -> None:
         deleted["grid_url"] = grid_url
         deleted["session_id"] = session_id
         deleted["timeout_ms"] = timeout_ms
