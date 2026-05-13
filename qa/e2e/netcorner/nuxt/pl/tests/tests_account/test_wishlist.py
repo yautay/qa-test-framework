@@ -25,8 +25,13 @@ def test_add_product_to_wishlist(page, context, runtime_env):
     assert selected_product_data is not None, "Nie udało się otworzyć karty produktu."
     product_page = ProductPage(page, runtime_env.base_url)
     product_page.click_wishlist()
+    wishlist_name = "Testowa lista życzeń"
     product_page.overlays.wishlist.click_create_new_list()
-    product_page.overlays.wishlist.enter_wishlist_name("Testowa lista życzeń")
+    product_page.overlays.wishlist.enter_wishlist_name(wishlist_name)
     product_page.overlays.wishlist.click_create_wishlist()
+    product_page.overlays.wishlist.set_wishlist_checkbox_state(True, wishlist_name)
+    product_page.overlays.wishlist.click_add_to_selected()
+    product_page.overlays.wishlist.go_to_wishlist()
+    x=1
     
 

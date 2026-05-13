@@ -83,6 +83,7 @@ class ProductPageWishlistOverlay(BaseComponent):
         self.__add_to_selected_button = self.find("button").filter(has_text="Dodaj do wybranej")
         self.__wishlist_name_input = self.find("#wishlistInput")
         self.__create_wishlist_button = self.find("button").filter(has_text="Utwórz listę")
+        self.__go_to_wishlist_button = self.find("role=button[name='Przejdź do listy życzeń']")
 
     def __resolve_wishlist_checkbox(self, wishlist_name: str | None = None) -> Locator:
         if wishlist_name:
@@ -127,5 +128,11 @@ class ProductPageWishlistOverlay(BaseComponent):
         if not _wait_until_visible(self, overlay_timeout):
             return
         self.pointer_click(self.__create_wishlist_button)
+
+    @step("Klikam 'Przejdź do listy życzeń'")
+    def go_to_wishlist(self, overlay_timeout: int = 7_500) -> None:
+        if not _wait_until_visible(self, overlay_timeout):
+            return
+        self.pointer_click(self.__go_to_wishlist_button)
 
 
