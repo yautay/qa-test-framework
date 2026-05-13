@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from playwright.sync_api import Locator, Page, expect
+from playwright.sync_api import Locator, Page
 
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
@@ -48,6 +48,26 @@ class ProductRecapComponent(BaseComponent):
             system_code=strip_prefix(get_visible_text(self.__system_code), "Kod systemowy:"),
             reviews=get_visible_text(self.__reviews_link),
         )
+
+
+class ProductActionsComponent(BaseComponent):
+    def __init__(self, root: Locator) -> None:
+        super().__init__(root, name="Product Actions Component")
+        self.__compare_button = self.find("button[title='Porównaj'][data-name='productAction']")
+        self.__wishlist_button = self.find("button[title='Lista życzeń'][data-name='productAction']")
+        self.__print_button = self.find("button[title='Drukuj'][data-name='productAction']")
+
+    @step("Klikam Porównaj")
+    def click_compare(self) -> None:
+        self.pointer_click(self.__compare_button)
+
+    @step("Klikam Lista życzeń")
+    def click_wishlist(self) -> None:
+        self.pointer_click(self.__wishlist_button)
+
+    @step("Klikam Drukuj")
+    def click_print(self) -> None:
+        self.pointer_click(self.__print_button)
 
 
 class ProductPriceComponent(BaseComponent):
