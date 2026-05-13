@@ -26,14 +26,14 @@ run_git_info_backend_endpoint = "private-api/git-info"
 run_git_info_timeout_seconds = 3
 
 # Grid
-grid_provider = "auto"
-grid_ws_endpoint = "http://10.21.69.57:4444"
+grid_provider = "playwright"
+grid_ws_endpoint = "ws://10.21.69.118:3034/ws"
 grid_cdp_endpoint = ""
 grid_connect_timeout_ms = 30000
 
 grid_ws_auth_mode = "none"   # none | basic | token
-grid_ws_username = ""
-grid_ws_password = ""
+grid_ws_username = "pw-tests-server-user"
+grid_ws_password = "ijF=VvSn~,aJ,zatxK45U,zEmCx^D47."
 grid_ws_token = ""
 
 grid_cdp_auth_mode = "none"  # none | basic | token
