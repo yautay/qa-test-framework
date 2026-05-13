@@ -96,6 +96,22 @@ Even then:
 - Do not stack redundant pre-checks around those helpers unless the code needs a clearer domain-specific error
 - Do not create alternate click paths for the same element without evidence that the UI contract requires it
 
+## DOM Capture Contract
+
+When pytest runs with `--collect_dom` (or `--collect-dom`), page object code must support consistent DOM snapshots for AI analysis.
+
+- Primary capture trigger is page-level `wait_loaded(...)`.
+- The canonical page identifier is class constant `PAGE_ID`.
+- `PAGE_ID` format is `netcorner.pl.<area>.<view>` and should be stable across refactors.
+- If a UI transition does not go through a page object `wait_loaded(...)` but is important for analysis, capture may be triggered explicitly with a bounded event name.
+- Avoid noisy over-capture; prefer meaningful lifecycle points.
+
+Expected artifact structure:
+
+- `artifacts/<run_id>/dom/<nodeid_safe>/`
+- snapshot files: `<seq>__<event>__<page_id>__<url_token>__<viewport>.html.gz`
+- metadata index: `index.jsonl`
+
 ## Error Handling
 
 - Prefer fail-fast behavior over silent fallback

@@ -12,6 +12,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.navigation_section impor
 
 class PasswordRecoveryPage(BasePage):
     PATH = "/customer/pl/recoveryPasswordForm"
+    PAGE_ID = "netcorner.pl.auth.password_recovery"
 
     def __init__(self, page: Page, base_url: str):
         super().__init__(page, base_url)
@@ -26,6 +27,7 @@ class PasswordRecoveryPage(BasePage):
         self.content.wait_visible()
         self.navigation.wait_visible()
         self.footer.wait_visible()
+        self.capture_dom_snapshot(event="page_loaded")
         return self
 
     @property

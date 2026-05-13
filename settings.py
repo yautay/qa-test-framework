@@ -79,7 +79,7 @@ pms_poll_interval_ms = 2500
 pms_poll_idle_multiplier = 10.0
 
 # Reporting
-reporting_enabled = True
+reporting_enabled = False
 reporting_schema_version = "2.1"
 reporting_source_project = "netQArner"
 reporting_source_producer_id = ""

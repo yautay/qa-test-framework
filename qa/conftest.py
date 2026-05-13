@@ -364,6 +364,8 @@ def _resolve_allure_results_dir(config: pytest.Config) -> Path | None:
 
 
 def _write_allure_environment_properties(config: pytest.Config, metadata: dict[str, Any]) -> None:
+    if hasattr(config, "workerinput"):
+        return
     results_dir = _resolve_allure_results_dir(config)
     if results_dir is None:
         return

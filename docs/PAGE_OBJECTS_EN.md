@@ -781,6 +781,34 @@ Broader framework-level validation:
 make test-aso
 ```
 
+## DOM snapshots for AI analysis (`--collect_dom`)
+
+For E2E runs you can enable proactive DOM snapshot collection:
+
+```bash
+python -m pytest qa/e2e/netcorner/nuxt/pl/tests -q --collect_dom
+```
+
+Alias is also supported:
+
+```bash
+python -m pytest qa/e2e/netcorner/nuxt/pl/tests -q --collect-dom
+```
+
+Contract and behavior:
+
+- capture is test-scoped (`per test`), not global,
+- primary trigger is `wait_loaded(...)` on page objects,
+- snapshots are compressed (`.html.gz`) and deduplicated by content hash,
+- each page object should define stable `PAGE_ID` in format `netcorner.pl.<area>.<view>`,
+- optional extra capture points may be added only for known transition gaps (for example listing pagination).
+
+Artifact layout:
+
+- `artifacts/<run_id>/dom/<nodeid_safe>/`
+- files: `<seq>__<event>__<page_id>__<url_token>__<viewport>.html.gz`
+- index metadata: `index.jsonl`
+
 ## Short cheat sheet
 
 If you remember only a few things, remember these:
