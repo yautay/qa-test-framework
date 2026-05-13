@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 from dataclasses import dataclass
+import secrets
 from typing import Any
 
 import requests
@@ -29,7 +30,8 @@ def _build_grid_auth_headers(auth_mode: str, username: str, password: str, token
         "Connection": "Upgrade",
         "Upgrade": "websocket",
         "Sec-WebSocket-Version": "13",
-        "Sec-WebSocket-Key": "dGhlIHNhbXBsZSBub25jZQ==",
+        # RFC6455 requires a fresh random key for each websocket handshake.
+        "Sec-WebSocket-Key": base64.b64encode(secrets.token_bytes(16)).decode("ascii"),
     }
     mode = (auth_mode or "none").strip().lower()
     if mode == "basic":
