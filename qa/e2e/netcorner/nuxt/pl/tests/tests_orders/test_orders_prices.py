@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import re
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 
 import allure
 import pytest
 
 from qa.e2e.netcorner.lib.data_dump_to_logs import dump_data
+from qa.e2e.netcorner.lib.price_utils import parse_price
 from qa.e2e.netcorner.nuxt.pl.lib.flows.cart_and_checkout_wrappers import CartAndCheckoutWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.flows.select_product_wrappers import SelectProductWrappers
@@ -21,20 +21,6 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import Clie
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listing_data_generators import first_available_laptop_case
 
 pytestmark = [pytest.mark.e2e, pytest.mark.orders]
-
-
-def _parse_price(price_text: str | None) -> Decimal | None:
-    """Wyciąga pierwszą liczbę dziesiętną ze stringa ceny, np. '1 299,99 zł' → Decimal('1299.99')."""
-    if price_text is None:
-        return None
-    normalized = re.sub(r"\s", "", price_text).replace(",", ".")
-    match = re.search(r"\d+\.\d+|\d+", normalized)
-    if not match:
-        return None
-    try:
-        return Decimal(match.group())
-    except InvalidOperation:
-        return None
 
 
 @allure.feature("Zamówienia")
@@ -58,8 +44,8 @@ def test_orders_prices(page, context, runtime_env, admin_panel, auth_case: AuthS
     assert selected_product_data is not None, "Nie udało się wybrać produktu testowego."
     assert selected_product_data.product_page_data is not None, "Produkt nie został dodany do koszyka."
 
-    listing_price = _parse_price(listings_data.final_price)
-    product_page_price = _parse_price(selected_product_data.product_page_data.final_price)
+    listing_price = parse_price(listings_data.final_price)
+    product_page_price = parse_price(selected_product_data.product_page_data.final_price)
 
     receiver = private_person_delivery_courier_receiver()
     purchaser = private_person_checkout_purchaser()
@@ -86,7 +72,7 @@ def test_orders_prices(page, context, runtime_env, admin_panel, auth_case: AuthS
     order_number = checkout_process_data.typ_summary_data.order_number.strip()
     assert order_number, "Nie udało się potwierdzić złożenia zamówienia: brak numeru zamówienia w podsumowaniu."
 
-    typ_total = _parse_price(checkout_process_data.typ_summary_data.total_to_pay)
+    typ_total = parse_price(checkout_process_data.typ_summary_data.total_to_pay)
     assert typ_total is not None, (
         f"Nie udało się odczytać ceny 'Do zapłaty' na stronie TYP "
         f"(raw: '{checkout_process_data.typ_summary_data.total_to_pay}')."

@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 
-from playwright.sync_api import Locator, Page
+from playwright.sync_api import Locator, Page, expect
 
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
@@ -75,9 +75,7 @@ class CheckoutSummaryComponent(BaseComponent):
         Use this in monitoring/smoke tests to confirm checkout is fully filled
         without actually submitting the order.
         """
-        from playwright.sync_api import expect as pw_expect
-
-        pw_expect(self.__place_order_button).to_be_visible(timeout=timeout)
+        expect(self.__place_order_button).to_be_visible(timeout=timeout)
         return self.get_data()
 
     def __get_delivery_price(self) -> str:

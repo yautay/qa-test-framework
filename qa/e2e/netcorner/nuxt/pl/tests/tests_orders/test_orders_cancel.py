@@ -82,15 +82,16 @@ def test_orders_cancel(page, context, runtime_env):
     # (a) zamówienie zostało anulowane → status = "Anulowane"
     # (b) anulowanie nie powiodło się → toast z informacją o błędzie
     # Oba są akceptowalne w środowisku testowym (zależy od stanu realizacji).
-    page.wait_for_timeout(2_000)
-
     toast_failure = page.locator(
         "li[data-name*='toast'], [data-name='toast']"
     ).filter(has_text="nie powiodło")
 
-    if toast_failure.count() > 0 and toast_failure.first.is_visible(timeout=3_000):
+    try:
+        toast_failure.first.wait_for(state="visible", timeout=5_000)
         # Anulowanie zablokowane przez system — akceptowalny wynik
         return
+    except Exception:  # noqa: BLE001
+        pass  # Brak toasta — sprawdź status zamówienia
 
     # Brak komunikatu o błędzie → zamówienie powinno być anulowane
     orders_page2 = OrdersListPage(page, runtime_env.base_url).open_and_wait_orders()

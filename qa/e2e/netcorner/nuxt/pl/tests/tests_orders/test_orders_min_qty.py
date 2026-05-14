@@ -56,8 +56,9 @@ def test_orders_min_qty(page, context, runtime_env, path, label):
     product_page = ProductPage(page, runtime_env.base_url).open(path).wait_loaded()
     min_qty = product_page.content.price.get_min_qty()
 
-    assert min_qty is not None and min_qty > 0, (
-        f"Produkt {label}: nie znaleziono atrybutu 'data-min-qty' na stronie produktu. "
+    assert min_qty is not None and 1 < min_qty < 100, (
+        f"Produkt {label}: nieprawidłowa wartość min_qty={min_qty}. "
+        f"Oczekiwano wartości w zakresie 2–99. "
         f"Upewnij się, że produkt ma zdefiniowaną minimalną ilość zamówieniową."
     )
 

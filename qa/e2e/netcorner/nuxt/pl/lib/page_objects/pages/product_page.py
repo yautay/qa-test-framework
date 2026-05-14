@@ -60,8 +60,6 @@ class ProductPage(BasePage):
         return self.overlays.login.wait_visible()
 
     def open_account_page(self) -> MyAccountPage:
-        from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.my_account_page import MyAccountPage
-
         self.header.actions.open_account()
         return MyAccountPage(self.page, self.base_url).wait_loaded()
 

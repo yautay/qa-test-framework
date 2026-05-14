@@ -66,7 +66,10 @@ class OrderRowComponent(BaseComponent):
         )
 
     def has_cancel_button(self) -> bool:
-        return self.__btn_cancel.count() > 0 and self.__btn_cancel.is_visible()
+        try:
+            return self.__btn_cancel.is_visible(timeout=1_000)
+        except Exception:  # noqa: BLE001
+            return False
 
     @step("Klikam 'Anuluj zamówienie'")
     def click_cancel(self) -> None:

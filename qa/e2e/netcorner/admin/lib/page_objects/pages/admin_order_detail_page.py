@@ -1,24 +1,21 @@
 from __future__ import annotations
 
+import logging
 import re
-from decimal import Decimal, InvalidOperation
 
 from playwright.sync_api import Page
 
 from qa.e2e.netcorner.admin.lib.page_objects.base_page import AdminBasePage, LoadState
 from qa.e2e.netcorner.admin.lib.test_data.admin_order_models import AdminOrderData, AdminOrderProduct
+from qa.e2e.netcorner.lib.price_utils import parse_price
+
+logger = logging.getLogger(__name__)
 
 
-def _parse_price(raw: str) -> Decimal:
-    """Convert Polish-formatted price string (e.g. '1 234,56 zł') to Decimal."""
-    cleaned = re.sub(r"[^\d,.]", "", raw.replace(",", "."))
-    # If there are multiple dots, only the last is decimal separator
-    parts = cleaned.rsplit(".", 1)
-    normalized = parts[0].replace(".", "") + ("." + parts[1] if len(parts) == 2 else "")
-    try:
-        return Decimal(normalized)
-    except InvalidOperation:
-        return Decimal("0.00")
+def _parse_price_nonnull(raw: str):
+    """Wrapper that always returns a Decimal (falls back to 0.00 on None)."""
+    from decimal import Decimal
+    return parse_price(raw) or Decimal("0.00")
 
 
 class AdminOrderDetailPage(AdminBasePage):
@@ -111,12 +108,12 @@ class AdminOrderDetailPage(AdminBasePage):
         # NOTE: the admin HTML has a bug — both "Suma brutto" and "Suma netto" use
         # id="productBruttoSum". We always want the first (brutto) occurrence.
         raw = self.page.locator(self._LOC_SUMMARY_PRICE).first.inner_text(timeout=5_000)
-        return _parse_price(raw)
+        return _parse_price_nonnull(raw)
 
     def get_shipping_price(self) -> Decimal:
         raw_shipping = self.page.locator(self._LOC_SHIPPING_PRICE).inner_text(timeout=5_000)
         raw_param = self.page.locator(self._LOC_SHIPPING_PRICE_PARAM).inner_text(timeout=3_000)
-        return _parse_price(raw_shipping) + _parse_price(raw_param)
+        return _parse_price_nonnull(raw_shipping) + _parse_price_nonnull(raw_param)
 
     def get_purchaser_raw_lines(self) -> list[str]:
         """Return purchaser block text split into non-empty lines."""
@@ -182,10 +179,11 @@ class AdminOrderDetailPage(AdminBasePage):
                 qty_text = cells.nth(2).inner_text(timeout=2_000).strip()
                 price_text = cells.nth(5).inner_text(timeout=2_000).strip()
                 qty = int(re.sub(r"[^\d]", "", qty_text) or "0")
-                price = _parse_price(price_text)
+                price = _parse_price_nonnull(price_text)
                 if name:
                     products.append(AdminOrderProduct(name=name, quantity=qty, unit_price_gross=price))
-            except Exception:  # noqa: BLE001
+            except (TimeoutError, ValueError) as e:
+                logger.warning("Failed to parse product row %d: %s", i, e)
                 continue
         return products
 
@@ -204,10 +202,11 @@ class AdminOrderDetailPage(AdminBasePage):
 
         status_select = self.page.locator(self._LOC_STATUS_SELECT)
         status_select.wait_for(state="visible", timeout=8_000)
+
+        # Register dialog handler BEFORE the action that may trigger it
+        self.page.on("dialog", lambda dialog: dialog.accept())
         status_select.select_option(value=status_id)
 
-        # Some status changes trigger a confirm() dialog
-        self.page.on("dialog", lambda dialog: dialog.accept())
         self.page.wait_for_load_state("domcontentloaded", timeout=15_000)
         self.page.locator(self._LOC_PAGE_HEADER).wait_for(state="visible", timeout=10_000)
 

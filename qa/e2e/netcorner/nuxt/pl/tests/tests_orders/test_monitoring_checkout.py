@@ -47,14 +47,15 @@ def test_monitoring_checkout(page, context, runtime_env, delivery_case: Checkout
 
     checkout = CartAndCheckoutWrappers(page, context, runtime_env)
     checkout.process_cart()
-    summary_data = checkout.process_checkout_steps_only(
+    result = checkout.process_checkout(
         delivery_case.delivery_type,
         delivery_case.delivery_objects,
         delivery_case.purchaser_objects,
         delivery_case.payment_objects,
+        submit=False,
     )
 
-    assert summary_data.total_to_pay, (
+    assert result.summary_data.total_to_pay, (
         f"Wariant {delivery_case.case_id}: brak kwoty 'Do zapłaty' w podsumowaniu — "
         "checkout mógł nie dotrzeć do ostatniego kroku."
     )
