@@ -144,18 +144,16 @@ def test_resolve_execution_context_uses_connected_browser_session() -> None:
     env = load_env()
     session = BrowserSession(
         browser=object(),
-        provider="selenium_cdp",
-        endpoint="ws://10.0.0.10:9222/devtools/browser/abc",
-        selenium_session_id="session-1",
-        selenium_grid_url="http://10.0.0.10:4444",
+        provider="playwright",
+        endpoint="ws://10.0.0.10:3034/pw-ws/",
     )
 
     payload = _resolve_execution_context(env, session)
 
     assert payload["grid_enabled"] is True
-    assert payload["grid_provider"] == "selenium_cdp"
-    assert payload["grid_endpoint"] == "http://10.0.0.10:4444"
-    assert payload["grid_cdp_endpoint"] == "ws://10.0.0.10:9222/devtools/browser/abc"
+    assert payload["grid_provider"] == "playwright"
+    assert payload["grid_endpoint"] == "ws://10.0.0.10:3034/pw-ws/"
+    assert payload["grid_cdp_endpoint"] == ""
 
 
 def test_capture_target_git_info_returns_not_configured_when_no_urls(monkeypatch: pytest.MonkeyPatch) -> None:

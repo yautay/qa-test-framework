@@ -65,16 +65,11 @@ class RuntimeEnv:
     is_grid_available: bool
     grid_provider: str
     grid_ws_endpoint: str
-    grid_cdp_endpoint: str
     grid_connect_timeout_ms: int
     grid_ws_auth_mode: str
     grid_ws_username: str
     grid_ws_password: str = field(repr=False)
     grid_ws_token: str = field(repr=False)
-    grid_cdp_auth_mode: str
-    grid_cdp_username: str
-    grid_cdp_password: str = field(repr=False)
-    grid_cdp_token: str = field(repr=False)
     headless: bool
     ignore_https_errors: bool
     base_url: str
@@ -201,9 +196,8 @@ def load_env() -> RuntimeEnv:
 
     settings_headless = bool(settings_cli.is_session_headless)
     settings_grid_available = bool(settings_cli.is_grid_available)
-    settings_grid_provider = str(getattr(settings, "grid_provider", "auto"))
+    settings_grid_provider = str(getattr(settings, "grid_provider", "playwright"))
     settings_grid_ws_endpoint = settings.grid_ws_endpoint
-    settings_grid_cdp_endpoint = str(getattr(settings, "grid_cdp_endpoint", ""))
     settings_grid_connect_timeout_ms = settings.grid_connect_timeout_ms
 
     configured_browser = env_str(
@@ -233,7 +227,6 @@ def load_env() -> RuntimeEnv:
         is_grid_available=env_bool("IS_GRID_AVAILABLE", settings_grid_available),
         grid_provider=env_str("GRID_PROVIDER", settings_grid_provider).strip().lower(),
         grid_ws_endpoint=env_str("GRID_WS_ENDPOINT", settings_grid_ws_endpoint),
-        grid_cdp_endpoint=env_str("GRID_CDP_ENDPOINT", settings_grid_cdp_endpoint),
         grid_connect_timeout_ms=env_int(
             "GRID_CONNECT_TIMEOUT_MS",
             settings_grid_connect_timeout_ms,
@@ -244,12 +237,6 @@ def load_env() -> RuntimeEnv:
         grid_ws_username=env_str("GRID_WS_USERNAME", str(getattr(settings, "grid_ws_username", ""))),
         grid_ws_password=env_str("GRID_WS_PASSWORD", str(getattr(settings, "grid_ws_password", ""))),
         grid_ws_token=env_str("GRID_WS_TOKEN", str(getattr(settings, "grid_ws_token", ""))),
-        grid_cdp_auth_mode=env_str(
-            "GRID_CDP_AUTH_MODE", str(getattr(settings, "grid_cdp_auth_mode", "none"))
-        ).strip().lower(),
-        grid_cdp_username=env_str("GRID_CDP_USERNAME", str(getattr(settings, "grid_cdp_username", ""))),
-        grid_cdp_password=env_str("GRID_CDP_PASSWORD", str(getattr(settings, "grid_cdp_password", ""))),
-        grid_cdp_token=env_str("GRID_CDP_TOKEN", str(getattr(settings, "grid_cdp_token", ""))),
         headless=env_bool("HEADLESS", settings_headless),
         ignore_https_errors=env_bool(
             "IGNORE_HTTPS_ERRORS",
