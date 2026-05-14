@@ -27,11 +27,19 @@
 ## Test Environment Connectivity
 - Test environments use internal netcorner.pl domains (e.g. `komputronik-galak.test.netcorner.pl`). VPN is required.
 - The TLS certificate is issued by an internal CA not trusted by the system store. Use `curl -sk` or Playwright's `ignore_https_errors=True` (already set via `RuntimeEnv.ignore_https_errors`).
-- Admin panel URL pattern: `https://admin-<server_name>.netcorner.pl/admin.php` — constructed from `settings.py`: `test_admin_server_url = "https://admin-"+server_name+".netcorner.pl/"`.
-- For `komputronik-galak` env specifically, the admin is reachable at `https://komputronik-galak.test.netcorner.pl/admin.php` (same host, `/admin.php` path, not a separate subdomain).
-- Admin credentials: login `at.tester`, password from `nc-functional-tests-py/settings.py` (base64-encoded, decode with `base64 -d`). Do not use `root`/komercja credentials.
-- Mailhog URL pattern: `https://mail-<server_name>.netcorner.pl` — resolved via `resolve_mail_inbox_env(server_name)` in `qa/e2e/netcorner/mailhog/lib/config.py`.
+- **`server_name` in `settings_cli.py` is `"galak.test"`** — this is the token passed to `resolve_admin_env()` and `resolve_mail_inbox_env()`.
+- Frontend URL: `https://komputronik-galak.test.netcorner.pl/` (base_url from `settings_cli.py`).
+- Admin panel URL: `https://admin-galak.test.netcorner.pl/admin.php` — constructed by `resolve_admin_env("galak.test")` in `qa/e2e/netcorner/admin/lib/config.py`.
+- Admin credentials: login `at.tester`, password `p3yEna8GfA7GdMR8TBKTm4myT7` (base64-decoded from `nc-functional-tests-py/settings.py`). Do not use `root`/komercja credentials.
+- Admin sales channel for PL tests: `id=1` (komputronik.pl). Selected via `AdminContextPage.select_context(1)`.
+- Mailhog URL: `https://mail-galak.test.netcorner.pl` — resolved via `resolve_mail_inbox_env("galak.test")`.
 - Connectivity check: `curl -skL -o /dev/null -w "%{http_code}" <url>` — expect `200` or `302` when VPN is active.
+- To verify admin access from scripts: use `playwright.sync_api` with `ignore_https_errors=True` in browser context — the standard test setup already sets this via `RuntimeEnv.ignore_https_errors`.
+- **Admin HTML quirks confirmed live (2026-05-14):**
+  - `id="productBruttoSum"` appears twice (brutto + netto bug) — always use `.first`.
+  - Order list links: use `a[href*='order_id']:not([title=''])` to skip edit-icon duplicates.
+  - Order comment element: `id="salesman_comment"` (not `.form-row`).
+  - Status change: clicking `#orderStatus > a` triggers AJAX that injects `select[id*='status_id']`.
 
 ## Workflow Traps
 - Exclude `.opencode/node_modules/` from searches; it is local OpenCode plugin noise, not product code.

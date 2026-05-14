@@ -22,9 +22,12 @@ class AdminOrdersPage(AdminBasePage):
 
     _LOC_PAGE_HEADER = "h1:has-text('Lista zamówień')"
     _LOC_ADMIN_CONTAINER = "#sf_admin_container"
-    # Order link: <a title="181255/2026" href="/admin.php/orders/edit/pl/order_id/11047208">
-    _LOC_ORDER_LINK_BY_NUMBER = "a[title='{order_number}']"
-    _LOC_ANY_ORDER_LINK = "a[href*='order_id']"
+    # Order links have title in format "NNNNNN/YYYY" — use regex-like selector to avoid
+    # matching menu/icon links which either have no title or non-numeric titles.
+    # CSS: a[title][href*='order_id'] — but edit icon links have title="" so we filter
+    # further by requiring title to match order number pattern via :not([title=""])
+    _LOC_ORDER_LINK_BY_NUMBER = "a[title='{order_number}'][href*='order_id']"
+    _LOC_ANY_ORDER_LINK = "a[href*='order_id']:not([title=''])"
 
     def __init__(self, page: Page, base_url: str) -> None:
         super().__init__(page, base_url)

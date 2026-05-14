@@ -72,7 +72,7 @@ class AdminOrderDetailPage(AdminBasePage):
     _LOC_SHIPPING_PRICE_PARAM = "#edit_price_shipping_parameter"
 
     _LOC_PARAMETER_CARD = "a[href*='order_parameter_card_id']"
-    _LOC_ORDER_COMMENT = ".form-row:has-text('komentarz')"
+    _LOC_ORDER_COMMENT = "#salesman_comment"
 
     # Status change: clicking #orderStatus > a triggers an AJAX call that replaces
     # the content of #orderStatus with a <select name containing 'status_id'>
@@ -108,7 +108,9 @@ class AdminOrderDetailPage(AdminBasePage):
         return self.page.locator(self._LOC_ORDER_STATUS).inner_text(timeout=5_000).strip()
 
     def get_summary_price_gross(self) -> Decimal:
-        raw = self.page.locator(self._LOC_SUMMARY_PRICE).inner_text(timeout=5_000)
+        # NOTE: the admin HTML has a bug — both "Suma brutto" and "Suma netto" use
+        # id="productBruttoSum". We always want the first (brutto) occurrence.
+        raw = self.page.locator(self._LOC_SUMMARY_PRICE).first.inner_text(timeout=5_000)
         return _parse_price(raw)
 
     def get_shipping_price(self) -> Decimal:
