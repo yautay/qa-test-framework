@@ -298,3 +298,128 @@ class CartAndCheckoutWrappers:
             summary_data=summary_data,
             typ_summary_data=typ_summary_data,
         )
+
+    def process_checkout_steps_only(
+        self,
+        delivery_type: DeliveryTypes,
+        delivery_objects: DeliveryObjects | None = None,
+        purchaser_objects: PurchaserObjects | None = None,
+        payment_objects: PaymentObjects | None = None,
+    ) -> CheckoutSummaryData:
+        """Run all checkout steps (delivery, purchaser, payment) without submitting the order.
+
+        Returns the ``CheckoutSummaryData`` captured when the summary section becomes visible
+        (i.e. the "Zamawiam z obowiązkiem zapłaty" button is present and clickable).
+        The order is NOT placed.  Use this for monitoring/smoke scenarios that verify the full
+        checkout path is reachable without consuming real order capacity.
+        """
+        # Delegate full flow to process_checkout but intercept just before submit.
+        # We replicate the steps inline to avoid coupling to submit path.
+        checkout = CheckoutPage(self.__page, self.__runtime_env.base_url).wait_loaded()
+        checkout.content.delivery_type.wait_visible()
+
+        match delivery_type:
+            case DeliveryTypes.STORE_PICKUP:
+                checkout.content.delivery_type.click_storehouse_tile()
+                checkout.content.delivery_object.wait_visible().click_delivery_object_tile()
+                if not isinstance(delivery_objects, DeliveryStorehouseReceiverData):
+                    raise TypeError(
+                        "Dla STORE_PICKUP argument delivery_objects musi być typu DeliveryStorehouseReceiverData."
+                    )
+                search_value = next(
+                    (v.strip() for v in (delivery_objects.postal_code, delivery_objects.city) if v and v.strip()),
+                    "",
+                )
+                storehouse_overlay = Overlays(self.__page).checkout_storehouse_receiver.wait_visible()
+                storehouse_overlay.search_storehouses(search_value)
+                if delivery_objects.storehouse_data_id:
+                    storehouse_overlay.choose_storehouse_by_data_id(delivery_objects.storehouse_data_id)
+                elif delivery_objects.storehouse_name:
+                    storehouse_overlay.choose_storehouse_by_name(delivery_objects.storehouse_name)
+                else:
+                    storehouse_overlay.choose_random_storehouse()
+                self.__assert_selected_delivery_provider(checkout, DeliveryTypes.STORE_PICKUP)
+
+            case DeliveryTypes.DHL_POP:
+                checkout.content.delivery_type.click_dhl_tile()
+                checkout.content.delivery_object.wait_visible().click_delivery_object_tile()
+                if not isinstance(delivery_objects, DeliveryDhlPopReceiverData):
+                    raise TypeError("Dla DHL_POP argument delivery_objects musi być typu DeliveryDhlPopReceiverData.")
+                search_value = next(
+                    (v.strip() for v in (delivery_objects.postal_code, delivery_objects.city) if v and v.strip()),
+                    "",
+                )
+                dhl_pop_overlay = Overlays(self.__page).checkout_dhl_pop_receiver.wait_visible()
+                dhl_pop_overlay.search_pop_points(search_value)
+                if delivery_objects.pop_data_id:
+                    dhl_pop_overlay.choose_pop_point_by_data_id(delivery_objects.pop_data_id)
+                elif delivery_objects.pop_name:
+                    dhl_pop_overlay.choose_pop_point_by_name(delivery_objects.pop_name)
+                else:
+                    dhl_pop_overlay.choose_random_pop_point()
+                self.__assert_selected_delivery_provider(checkout, DeliveryTypes.DHL_POP)
+
+            case DeliveryTypes.INPOST:
+                checkout.content.delivery_type.click_inpost_tile()
+                checkout.content.delivery_object.wait_visible().click_delivery_object_tile()
+                if not isinstance(delivery_objects, DeliveryInpostReceiverData):
+                    raise TypeError("Dla INPOST argument delivery_objects musi być typu DeliveryInpostReceiverData.")
+                search_value = next(
+                    (
+                        v.strip()
+                        for v in (delivery_objects.locker_code, delivery_objects.postal_code, delivery_objects.city)
+                        if v and v.strip()
+                    ),
+                    "",
+                )
+                inpost_overlay = Overlays(self.__page).checkout_inpost_receiver.wait_visible()
+                inpost_overlay.search_inpost_points(search_value)
+                if delivery_objects.inpost_point_data_id:
+                    inpost_overlay.choose_inpost_point_by_data_id(delivery_objects.inpost_point_data_id)
+                elif delivery_objects.inpost_point_name:
+                    inpost_overlay.choose_inpost_point_by_name(delivery_objects.inpost_point_name)
+                else:
+                    inpost_overlay.choose_random_inpost_point()
+                self.__assert_selected_delivery_provider(checkout, DeliveryTypes.INPOST)
+
+            case DeliveryTypes.COURIER_SERVICE:
+                checkout.content.delivery_type.click_courier_tile()
+                checkout.content.delivery_object.wait_visible().click_delivery_object_tile()
+                if not isinstance(delivery_objects, DeliveryCourierReceiverData):
+                    raise TypeError(
+                        "Dla COURIER_SERVICE argument delivery_objects musi być typu DeliveryCourierReceiverData."
+                    )
+                courier_overlay = Overlays(self.__page).checkout_courier_receiver.wait_visible()
+                courier_overlay.fill_receiver_data(delivery_objects)
+                courier_overlay.click_add_details()
+                courier_overlay.wait_hidden(timeout=10_000)
+                delivery_methods = checkout.content.delivery_methods.wait_visible().wait_for_available_methods(
+                    timeout=10_000
+                )
+                delivery_methods.choose_random_available_method()
+
+            case _:
+                raise ValueError(f"Nieobsługiwany typ dostawy: {delivery_type}")
+
+        checkout.content.purchaser.wait_visible().set_electronic_invoice(True)
+        if not isinstance(purchaser_objects, CheckoutPurchaserData):
+            raise TypeError("Argument purchaser_objects musi być typu CheckoutPurchaserData.")
+        checkout.content.purchaser.wait_visible().click_add_data_tile()
+        purchaser_overlay = Overlays(self.__page).checkout_purchaser.wait_visible()
+        purchaser_overlay.fill_purchaser_data(purchaser_objects)
+        purchaser_overlay.click_add_details()
+        purchaser_overlay.wait_hidden(timeout=10_000)
+
+        if not isinstance(payment_objects, CheckoutPaymentData):
+            raise TypeError("Argument payment_objects musi być typu CheckoutPaymentData.")
+        payment_methods_component = checkout.content.payment_methods.wait_visible()
+        if payment_objects.payment_method is not None:
+            payment_methods_component.choose_payment_method(payment_objects.payment_method)
+        else:
+            payment_methods_component.choose_random_available_method()
+        if payment_objects.comment:
+            payment_methods_component.set_order_comment(payment_objects.comment)
+        if payment_objects.required_consent:
+            payment_methods_component.set_required_consent(PaymentRequiredConsent.REGULATION)
+
+        return checkout.content.summary.wait_visible().wait_place_order_button_visible()

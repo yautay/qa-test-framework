@@ -88,6 +88,23 @@ class ProductPriceComponent(BaseComponent):
         self.root = candidates.first
         return self.root
 
+    @step("Odczytuję minimalną ilość zamówienia (data-min-qty)")
+    def get_min_qty(self) -> int | None:
+        """Return the minimum order quantity from ``data-min-qty`` attribute, or None.
+
+        The attribute lives on a ``span[data-min-qty]`` inside ``addToCartWrapper``.
+        Returns ``None`` when the product has no minimum quantity restriction.
+        """
+        self.__resolved_root()
+        min_qty_el = self.root.locator("[data-min-qty]").first
+        if min_qty_el.count() == 0 or not min_qty_el.is_visible():
+            return None
+        raw = min_qty_el.get_attribute("data-min-qty")
+        try:
+            return int(raw) if raw is not None else None
+        except ValueError:
+            return None
+
     @step("Sprawdzam widoczność komponentu limitowanej sprzedaży OZO")
     def expect_limited_sale_visible(self, timeout_ms: int = 10_000) -> Self:
         self.__resolved_root()

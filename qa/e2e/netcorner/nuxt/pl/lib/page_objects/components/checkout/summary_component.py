@@ -59,6 +59,27 @@ class CheckoutSummaryComponent(BaseComponent):
         self.pointer_click(self.__place_order_button)
         return summary_data
 
+    @step("Odczytuję dane podsumowania koszyka")
+    def get_data(self) -> CheckoutSummaryData:
+        """Return summary data without clicking the place-order button."""
+        return CheckoutSummaryData(
+            delivery_price=self.__get_delivery_price(),
+            delivery_surcharge=self.__parse_money(self.__get_payment_fee()),
+            total_to_pay=self.__get_total_to_pay(),
+        )
+
+    @step("Czekam na widoczność przycisku 'Zamawiam'")
+    def wait_place_order_button_visible(self, timeout: int = 10_000) -> CheckoutSummaryData:
+        """Wait until the place-order button is visible and return summary data.
+
+        Use this in monitoring/smoke tests to confirm checkout is fully filled
+        without actually submitting the order.
+        """
+        from playwright.sync_api import expect as pw_expect
+
+        pw_expect(self.__place_order_button).to_be_visible(timeout=timeout)
+        return self.get_data()
+
     def __get_delivery_price(self) -> str:
         return self.__read_text(self.__delivery_price)
 

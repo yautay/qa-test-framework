@@ -62,6 +62,12 @@ class MyAccountPage(BasePage):
         self.header.actions.open_account()
         return MyAccountPage(self.page, self.base_url).wait_loaded()
 
+    def open_orders_page(self) -> "OrdersListPage":
+        from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.orders_list_page import OrdersListPage
+
+        self.content.menu_root.open_orders()
+        return OrdersListPage(self.page, self.base_url).wait_loaded()
+
     def open_password_change_page(self) -> MyAccountChangePasswordPage:
         self.content.menu_root.open_password_change()
         return MyAccountChangePasswordPage(self.page, self.base_url).wait_loaded()
