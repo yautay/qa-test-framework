@@ -19,25 +19,38 @@ class OrderRowData:
 
 
 class OrderRowComponent(BaseComponent):
-    """Represents a single order row in the customer account orders list.
+    """Represents a single order entry in the customer account orders list.
 
-    Root: ``[data-name='ordersGroupProduct']`` — one element per order.
+    DOM structure (no ``data-name`` on the container itself)::
+
+        <div>
+          <h3 class="text-lg">Zamówienie nr: <span class="ml-4">181302/2026</span></h3>
+          ...
+          <div data-name="orderValue">...</div>
+          <div data-name="orderStatus">Nowe</div>
+          <button>Szczegóły zamówienia</button>
+          <button>Anuluj zamówienie</button>
+          <div data-name="ordersGroupProductList">
+            <div data-name="ordersGroupProduct">...produkt...</div>
+          </div>
+        </div>
+
+    Root is passed in from ``OrdersListComponent._rows()`` which selects
+    ``h3.text-lg:has(span.ml-4)`` ancestors via ``locator("div:has(> h3.text-lg)")``.
     """
-
-    ROOT_SELECTOR = "[data-name='ordersGroupProduct']"
 
     def __init__(self, root: Locator) -> None:
         super().__init__(root, name="Order Row Component")
+        self.__order_number_span = self.find("h3.text-lg span.ml-4")
         self.__order_status = self.find("[data-name='orderStatus']")
         self.__order_value = self.find("[data-name='orderValue']")
-        self.__btn_details = self.root.get_by_role("button", name="Szczegóły zamówienia")
         self.__btn_cancel = self.root.get_by_role("button", name="Anuluj zamówienie")
 
     def get_order_number(self) -> str:
-        """Extract order number from text like 'Zamówienie nr: 12345/2026'."""
-        full_text = self.root.inner_text()
-        match = re.search(r"\b(\d{4,}/\d{4})\b", full_text)
-        return match.group(1) if match else ""
+        """Return order number like '181302/2026' from the h3 span."""
+        text = (self.__order_number_span.first.text_content() or "").strip()
+        # Normalise whitespace variants (narrow no-break space, regular space)
+        return re.sub(r"\s", "", text)
 
     def get_status(self) -> str:
         return get_visible_text(self.__order_status)
@@ -55,10 +68,6 @@ class OrderRowComponent(BaseComponent):
     def has_cancel_button(self) -> bool:
         return self.__btn_cancel.count() > 0 and self.__btn_cancel.is_visible()
 
-    @step("Klikam 'Szczegóły zamówienia'")
-    def click_details(self) -> None:
-        self.pointer_click(self.__btn_details)
-
     @step("Klikam 'Anuluj zamówienie'")
     def click_cancel(self) -> None:
         self.pointer_click(self.__btn_cancel)
@@ -67,24 +76,30 @@ class OrderRowComponent(BaseComponent):
 class OrdersListComponent(BaseComponent):
     """Orders list on the customer account page.
 
-    Root: ``#pageContent`` scoped to the orders area.
-    The list renders ``[data-name='ordersGroupProduct']`` items after hydration.
+    Root: ``#pageContent``.
+
+    Each order is a ``<div>`` containing a ``<h3 class="text-lg">`` with the order number.
+    There is no stable ``data-name`` on the order container itself.
     """
 
     ROOT_SELECTOR = "#pageContent"
+
+    # Selector for the order-level container div.
+    # Each order has an h3.text-lg with a span.ml-4 holding the order number.
+    _ORDER_CONTAINER_SELECTOR = "div:has(> h3.text-lg > span.ml-4)"
 
     def __init__(self, scope: Page | Locator) -> None:
         super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Orders List Component")
 
     @step("Czekam na załadowanie listy zamówień")
     def wait_orders_loaded(self, timeout: int = 15_000) -> Self:
-        self.root.locator("[data-name='ordersGroupProduct']").first.wait_for(
+        self.root.locator(self._ORDER_CONTAINER_SELECTOR).first.wait_for(
             state="visible", timeout=timeout
         )
         return self
 
     def _rows(self) -> Locator:
-        return self.root.locator("[data-name='ordersGroupProduct']")
+        return self.root.locator(self._ORDER_CONTAINER_SELECTOR)
 
     def count(self) -> int:
         return self._rows().count()
@@ -95,10 +110,12 @@ class OrdersListComponent(BaseComponent):
     @step("Szukam zamówienia nr {order_number}")
     def find_order_by_number(self, order_number: str) -> OrderRowComponent | None:
         """Return the OrderRowComponent for the given order number, or None."""
+        # Normalise search key (remove whitespace) to match get_order_number() output
+        needle = re.sub(r"\s", "", order_number)
         rows = self._rows()
         for i in range(rows.count()):
             row = OrderRowComponent(rows.nth(i))
-            if row.get_order_number() == order_number:
+            if row.get_order_number() == needle:
                 return row
         return None
 
