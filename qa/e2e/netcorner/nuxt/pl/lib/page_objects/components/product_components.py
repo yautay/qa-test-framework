@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Self
 
 from playwright.sync_api import Locator, Page, expect
 
@@ -86,6 +87,13 @@ class ProductPriceComponent(BaseComponent):
                 return self.root
         self.root = candidates.first
         return self.root
+
+    @step("Sprawdzam widoczność komponentu limitowanej sprzedaży OZO")
+    def expect_limited_sale_visible(self, timeout_ms: int = 10_000) -> Self:
+        self.__resolved_root()
+        limited_sale = self.root.locator("[data-name='limitedSale']").first
+        expect(limited_sale).to_be_visible(timeout=timeout_ms)
+        return self
 
     @step("Dodaję produkt do koszyka")
     def add_to_cart(self) -> ProductPriceData:

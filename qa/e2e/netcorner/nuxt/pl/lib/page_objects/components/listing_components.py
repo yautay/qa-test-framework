@@ -53,6 +53,16 @@ class ListingFiltersComponent(BaseComponent):
         self.__click_all_show_all_features_buttons()
         return self
 
+    @step("Aplikuję filtr: {name}")
+    def apply_filter_by_name(self, name: str) -> Self:
+        filter_label = self.root.get_by_text(name, exact=True).first
+        expect(filter_label).to_be_visible(
+            timeout=self.DEFAULT_TIMEOUT
+        ), f"Filtr '{name}' nie istnieje na listingu — sprawdź URL lub dostępność filtra na środowisku."
+        self.pointer_click(filter_label)
+        self.root.page.wait_for_load_state("networkidle", timeout=15_000)
+        return self
+
 
 class SortOptions(StrEnum):
     DEFAULT = "Domyślnie"
