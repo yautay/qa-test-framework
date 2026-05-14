@@ -158,18 +158,20 @@ Istniejące testy Playwright pokrywające poniższe scenariusze:
   - Infrastruktura: `company_checkout_purchaser()` — gotowa ✅
 - [ ] `TestOrderPrices.py` → `test_orders_prices.py`
   - Weryfikacja numeru zamówienia — checkout OK, asercja ceny bez admina (TODO admin)
-- [ ] `TestOrderCancel.py` → `test_orders_cancel.py`
-  - 🔵 new-po: `OrderDetailPage` (konto klienta) + przycisk anulowania + odczyt statusu
-- [ ] `TestOrderWithMinQtyProduct.py` → `test_orders_min_qty.py`
-  - 🔵 new-po: detekcja `min_qty` z `ProductComponents.get_min_qty_for_order()`
+- [x] `TestOrderCancel.py` → `test_orders_cancel.py` ✅ DONE (bba4fdf)
+  - Nowe PO: `OrdersListPage`, `OrdersListComponent`, `OrderRowComponent`
+  - Fix: selektor kontenera zamówienia `div:has(> h3.text-lg > span.ml-4)` (nie `ordersGroupProduct`)
+- [x] `TestOrderWithMinQtyProduct.py` → `test_orders_min_qty.py` ✅ DONE (8eb08de)
+  - Nowe PO: `get_min_qty()` w `ProductPriceComponent`
+  - Fix: `CartPage.wait_loaded()` czeka na hydration `[data-name='cartProducts']`
 - [ ] `TestOrderMatrixVsList.py` → `test_orders_matrix_vs_list.py`
   - Checkout z różnymi kodami pocztowymi (matrix/list path) — bez admin konfiguracji
 
 ### MonitoringTestsNUXT → `tests/tests_monitoring/`
 
-- [ ] `TestMonitoring.py` → `test_monitoring_checkout.py`
-  - Wiele kombinacji dostawy/płatności bez finalizacji zamówienia (`submit_order=False`)
-  - Infrastruktura: `CartAndCheckoutWrappers` — gotowa ✅
+- [x] `TestMonitoring.py` → `test_monitoring_checkout.py` ✅ DONE (e53a606)
+  - 8 kombinacji dostawy/płatności bez finalizacji zamówienia (`submit_order=False`)
+  - Infrastruktura: `CartAndCheckoutWrappers.process_checkout_steps_only()` — gotowa ✅
 
 ---
 
