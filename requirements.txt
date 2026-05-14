@@ -1,0 +1,20 @@
+# Generated from pyproject.toml [project.optional-dependencies.dev]
+# Install with: pip install -r requirements.txt
+black>=26.3.1
+ruff>=0.8.0
+mypy>=1.10.0
+bandit>=1.7.10
+pip-audit>=2.7.0
+pygments>=2.20.0
+pytest>=8.3.0
+allure-pytest>=2.13.5
+pytest-html>=4.1.1
+pytest-xdist>=3.6.0
+playwright>=1.48.0
+loguru>=0.7.2
+requests>=2.33.0
+reportlab>=4.2.5
+opencv-python>=4.10.0
+minio>=7.2.9
+pyperclip>=1.9.0
+python-dotenv>=1.0.1
