@@ -188,8 +188,10 @@ Istniejące testy Playwright pokrywające poniższe scenariusze:
   - 🔴 admin: weryfikacja zamówienia + 🔵 new-po: `DeliveryTypes.BIG_SIZE_WITHOUT_LIFT`
 - [ ] `TestOrderDimensionModule.py` → `test_orders_dimension_module.py`
   - 🔴 admin + 🔵 new-po: cart restriction assertions (28 kombinacji produktów gabarytowych)
-- [ ] `TestOrderCompanyData.py` — domknięcie TODO
-  - 🔴 admin: weryfikacja NIP w danych nabywcy w adminie
+- [x] `TestOrderCompanyData.py` → `test_orders_company_data.py` ✅ DONE
+  - `admin_panel` fixture + `AdminWrappers.assert_order_details()` z `expected_nip`
+  - Uwaga: nazwa firmy w adminie pochodzi z GUS (nie z buildera) — asercja tylko NIP
+  - 2 warianty: `logged_in`, `anonymous` — oba PASSED
 - [ ] `TestOrderPrices.py` — domknięcie TODO
   - 🔴 admin: porównanie cen TYP vs admin
 
@@ -336,15 +338,20 @@ Poniższe nie są testami e2e w sensie scenariuszy użytkownika:
 |---|---|---|---|
 | ✅ Faza 0 — Już gotowe | 6 | — | — |
 | ✅ Faza 1 — Pure UI | 10 | brak | ✅ DONE |
-| 🟡 Faza 2 — Produkty + konto | 16 | 🔵 nowe PO | ~5–8 dni |
-| 🔵 Faza 3 — Zamówienia bez admina | 6 | 🔵 nowe PO | ~3–5 dni |
+| ✅ Faza 2 — Produkty + konto | 16 | 🔵 nowe PO | ✅ DONE |
+| ✅ Faza 3 — Zamówienia bez admina | 6 | 🔵 nowe PO | ✅ DONE |
 | 🔴 Faza 4 — Wymaga admina | 40 | 🔴 DEBT-001 | ~8–12 dni |
 | 🔴🟡 Faza 5 — Admin + Mailhog | 18 | 🔴 DEBT-001 + 🟡 Sprint 4 | ~5–8 dni |
 | 🚫 Poza zakresem | 8 | — | — |
 | **Łącznie do migracji** | **91** | | **~24–38 dni** |
 
-### Status implementacji (2026-05-13)
+### Status implementacji (2026-05-14)
 
+- ✅ Faza 3 zamknięta: `test_orders_cancel`, `test_orders_min_qty`, `test_monitoring_checkout` — wszystkie PASSED.
+  - Fix: selektor kontenera zamówienia na liście konta klienta (`div:has(>h3.text-lg>span.ml-4)`, nie `ordersGroupProduct`).
+  - Fix: `CartPage.wait_loaded()` czeka na hydration `[data-name='cartProducts']` przed odczytem koszyka.
+- ✅ Faza 4 (częściowa): `test_orders_company_data` — 2 warianty (logged_in, anonymous) PASSED.
+  - Nazwa firmy w adminie pochodzi z GUS — asercja tylko po NIP (`7770020640`).
 - Zaimplementowano 16/16 testów Fazy 2 (w tym 6 testów oznaczonych jako Faza 2-alfa / smoke-warunkowe).
 - Dodane pliki testów: `qa/e2e/netcorner/nuxt/pl/tests/tests_products/`.
 - Dodane komponenty PO: `comparison_component.py`, `omnibus_price_component.py`, `product_opinion_component.py` + rozszerzenie `hero_component.py` o widget OZO.

@@ -66,10 +66,11 @@ def test_orders_company_data(page, context, runtime_env, admin_panel, auth_case:
     order_number = checkout_process_data.typ_summary_data.order_number.strip()
     assert order_number, "Nie udało się potwierdzić złożenia zamówienia: brak numeru zamówienia w podsumowaniu."
 
+    # Weryfikacja NIP w adminie — nazwa firmy pochodzi z GUS (nie z buildera),
+    # więc asercja opiera się wyłącznie na numerze NIP.
     admin_panel.assert_order_details(
         order_number,
         expected_nip=_COMPANY_NIP,
-        expected_purchaser_fragments=[purchaser.company_name],
     )
 
 

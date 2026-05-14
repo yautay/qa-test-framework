@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import re
-
 import allure
 import pytest
 
@@ -10,19 +8,33 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listing_data_generators imp
 
 pytestmark = [pytest.mark.e2e]
 
+# Kategoria z produktami — pełny zakres bez filtra "tylko dostępne",
+# żeby po włączeniu checkboxa tymczasowo niedostępne były widoczne.
+_LAPTOPS_LISTING_URL = "search-filter/5022/laptopy-do-gier"
+
 
 @allure.feature("Produkty")
 @allure.severity(allure.severity_level.NORMAL)
 @pytest.mark.scenario("Na listingu można wyświetlić produkty tymczasowo niedostępne")
 def test_temporarily_unavailable_products(page, runtime_env):
-    listings_data = first_available_laptop_case()
-    listing = ListingPage(page, f"{runtime_env.base_url}/{listings_data.category_url}").open().wait_loaded()
+    listing = ListingPage(page, f"{runtime_env.base_url}/{_LAPTOPS_LISTING_URL}").open().wait_loaded()
 
+    # Włącz widoczność niedostępnych produktów
     listing.content.sorting.set_show_unavailable(True)
-    tiles = listing.content.content.root.locator("[data-name='listingTile']")
-    unavailable_count = tiles.filter(has_text=re.compile(r"niedost", re.IGNORECASE)).count()
+    listing.content.content.wait_for_tiles()
 
-    if unavailable_count == 0:
-        pytest.skip("Brak produktów niedostępnych na badanej kategorii w tym momencie.")
+    tiles = page.locator("[data-name='listingTile']")
+    total = tiles.count()
+    assert total > 0, "Brak jakichkolwiek kafelków po włączeniu widoczności niedostępnych produktów."
 
-    assert unavailable_count > 0, "Nie wykryto produktów niedostępnych po włączeniu opcji ich wyświetlania."
+    # Produkt niedostępny nie ma widocznego przycisku "Dodaj do koszyka"
+    unavailable_count = 0
+    for i in range(total):
+        add_btn = tiles.nth(i).locator("[data-name='addToCartButton']").first
+        if add_btn.count() == 0 or not add_btn.is_visible():
+            unavailable_count += 1
+
+    assert unavailable_count > 0, (
+        f"Nie wykryto produktów niedostępnych spośród {total} kafelków na listingu "
+        f"(oczekiwano przynajmniej jednego bez przycisku 'Dodaj do koszyka')."
+    )

@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import re
-
 import allure
 import pytest
 
@@ -14,7 +12,7 @@ pytestmark = [pytest.mark.e2e]
 
 @allure.feature("Formularze")
 @allure.severity(allure.severity_level.NORMAL)
-@pytest.mark.scenario("Formularze nabywcy i odbiorcy są dostępne w panelu konta")
+@pytest.mark.scenario("Sekcje nabywcy i odbiorcy są dostępne w panelu konta")
 def test_forms_account(page, context, runtime_env):
     user_data = ClientDataBuilder().with_required_terms().build()
     assert ClientWrappers(page, context, runtime_env).register_new_client(user_data), (
@@ -23,25 +21,22 @@ def test_forms_account(page, context, runtime_env):
 
     account = HomePage(page, runtime_env.base_url).open_account_page()
 
-    purchasers_link = page.locator("a[href='/customer/account/purchasers']").first
-    if purchasers_link.count() == 0 or not purchasers_link.is_visible():
-        pytest.skip("Na środowisku nie znaleziono aktywnego linku do sekcji nabywców.")
+    # Purchasers — nawigacja + weryfikacja że strona się otworzyła
     account.content.menu_root.open_purchasers()
-    if "/customer/account/purchasers" not in page.url:
-        pytest.skip("Sekcja nabywców nie jest dostępna dla bieżącego konta na env.")
+    page.wait_for_url("**/customer/account/purchasers", timeout=10_000)
+    assert "/customer/account/purchasers" in page.url, (
+        "Sekcja nabywców nie jest dostępna — strona nie załadowała się po kliknięciu linku menu."
+    )
+    assert page.get_by_role("heading", name="Lista danych do faktur").is_visible(), (
+        "Brak nagłówka 'Lista danych do faktur' na stronie nabywców."
+    )
 
-    purchasers_add = page.get_by_role("button", name=re.compile(r"Dodaj", re.IGNORECASE)).count()
-    if purchasers_add == 0:
-        pytest.skip("Na środowisku nie znaleziono przycisku dodawania nabywcy.")
-
-    account.open_account_page()
-    receivers_link = page.locator("a[href='/customer/account/receivers']").first
-    if receivers_link.count() == 0 or not receivers_link.is_visible():
-        pytest.skip("Na środowisku nie znaleziono aktywnego linku do sekcji odbiorców.")
-    account.content.menu_root.open_receivers()
-    if "/customer/account/receivers" not in page.url:
-        pytest.skip("Sekcja odbiorców nie jest dostępna dla bieżącego konta na env.")
-
-    receivers_add = page.get_by_role("button", name=re.compile(r"Dodaj", re.IGNORECASE)).count()
-    if receivers_add == 0:
-        pytest.skip("Na środowisku nie znaleziono przycisku dodawania odbiorcy.")
+    # Receivers — wróć do konta i nawiguj do odbiorców
+    HomePage(page, runtime_env.base_url).open_account_page().content.menu_root.open_receivers()
+    page.wait_for_url("**/customer/account/receivers", timeout=10_000)
+    assert "/customer/account/receivers" in page.url, (
+        "Sekcja odbiorców nie jest dostępna — strona nie załadowała się po kliknięciu linku menu."
+    )
+    assert page.get_by_role("heading", name="Lista danych do dostawy").is_visible(), (
+        "Brak nagłówka 'Lista danych do dostawy' na stronie odbiorców."
+    )
