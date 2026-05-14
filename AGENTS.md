@@ -24,6 +24,15 @@
 - Visual outputs live under `artifacts/<run_id>/visual/`; the report server default port is `4173`.
 - `npm run build` in `framework/visual/ui` runs Vitest with coverage before bundling. `npm run build:fast` skips tests and just creates the `dist/` bundle used by CI and `make report-serve`.
 
+## Test Environment Connectivity
+- Test environments use internal netcorner.pl domains (e.g. `komputronik-galak.test.netcorner.pl`). VPN is required.
+- The TLS certificate is issued by an internal CA not trusted by the system store. Use `curl -sk` or Playwright's `ignore_https_errors=True` (already set via `RuntimeEnv.ignore_https_errors`).
+- Admin panel URL pattern: `https://admin-<server_name>.netcorner.pl/admin.php` — constructed from `settings.py`: `test_admin_server_url = "https://admin-"+server_name+".netcorner.pl/"`.
+- For `komputronik-galak` env specifically, the admin is reachable at `https://komputronik-galak.test.netcorner.pl/admin.php` (same host, `/admin.php` path, not a separate subdomain).
+- Admin credentials: login `at.tester`, password from `nc-functional-tests-py/settings.py` (base64-encoded, decode with `base64 -d`). Do not use `root`/komercja credentials.
+- Mailhog URL pattern: `https://mail-<server_name>.netcorner.pl` — resolved via `resolve_mail_inbox_env(server_name)` in `qa/e2e/netcorner/mailhog/lib/config.py`.
+- Connectivity check: `curl -skL -o /dev/null -w "%{http_code}" <url>` — expect `200` or `302` when VPN is active.
+
 ## Workflow Traps
 - Exclude `.opencode/node_modules/` from searches; it is local OpenCode plugin noise, not product code.
 - README files mention targets such as `debug-minio-up`, `debug-remote-grid-up`, and `clean-visual-baselines`, but those targets are not defined in the checked-in root `Makefile`.
