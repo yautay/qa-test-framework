@@ -63,17 +63,14 @@ def _normalize_playwright_ws_endpoint(endpoint: str) -> str:
     return urlunsplit((parsed.scheme, parsed.netloc, f"{path}/", parsed.query, parsed.fragment))
 
 
-def _warn_if_playwright_provider_uses_http_endpoint(provider: str, endpoint: str) -> None:
-    """Warn when GRID_PROVIDER=playwright is configured with an HTTP discovery URL."""
-    if provider.strip().lower() != "playwright":
-        return
-
+def _warn_if_grid_endpoint_uses_http_scheme(endpoint: str) -> None:
+    """Warn when GRID_WS_ENDPOINT is configured with an HTTP discovery URL."""
     scheme = urlsplit(endpoint.strip()).scheme.lower()
     if scheme not in {"http", "https"}:
         return
 
     warnings.warn(
-        "GRID_PROVIDER=playwright is using GRID_WS_ENDPOINT with HTTP(S) scheme. "
+        "GRID_WS_ENDPOINT uses HTTP(S) scheme. "
         "Prefer ws:// or wss:// to avoid discovery/auth redirect issues.",
         RuntimeWarning,
         stacklevel=3,
@@ -84,15 +81,9 @@ def open_browser_session(playwright_instance: Playwright, runtime_env: RuntimeEn
     if not runtime_env.is_grid_available:
         return _launch_local_browser(playwright_instance, runtime_env)
 
-    provider = runtime_env.grid_provider.strip().lower()
-    if provider == "playwright":
-        if not runtime_env.grid_ws_endpoint.strip():
-            raise RuntimeError("GRID_PROVIDER=playwright requires GRID_WS_ENDPOINT")
-        return _connect_playwright_grid(playwright_instance, runtime_env)
-
-    raise RuntimeError(
-        f"Unsupported GRID_PROVIDER={runtime_env.grid_provider!r}. Supported values: playwright"
-    )
+    if not runtime_env.grid_ws_endpoint.strip():
+        raise RuntimeError("IS_GRID_AVAILABLE=1 requires GRID_WS_ENDPOINT")
+    return _connect_playwright_grid(playwright_instance, runtime_env)
 
 
 def close_browser_session(session: BrowserSession, runtime_env: RuntimeEnv) -> None:
@@ -114,7 +105,7 @@ def _connect_playwright_grid(playwright_instance: Playwright, runtime_env: Runti
     browser_name = "chromium" if runtime_env.browser == "chrome" else runtime_env.browser
     browser_type = getattr(playwright_instance, browser_name)
     ws_endpoint = _normalize_playwright_ws_endpoint(runtime_env.grid_ws_endpoint)
-    _warn_if_playwright_provider_uses_http_endpoint(runtime_env.grid_provider, ws_endpoint)
+    _warn_if_grid_endpoint_uses_http_scheme(ws_endpoint)
     ws_auth_headers = _build_grid_auth_headers(
         runtime_env.grid_ws_auth_mode,
         runtime_env.grid_ws_username,

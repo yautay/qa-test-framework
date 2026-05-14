@@ -63,7 +63,6 @@ class RuntimeEnv:
 
     browser: str
     is_grid_available: bool
-    grid_provider: str
     grid_ws_endpoint: str
     grid_connect_timeout_ms: int
     grid_ws_auth_mode: str
@@ -196,7 +195,6 @@ def load_env() -> RuntimeEnv:
 
     settings_headless = bool(settings_cli.is_session_headless)
     settings_grid_available = bool(settings_cli.is_grid_available)
-    settings_grid_provider = str(getattr(settings, "grid_provider", "playwright"))
     settings_grid_ws_endpoint = settings.grid_ws_endpoint
     settings_grid_connect_timeout_ms = settings.grid_connect_timeout_ms
 
@@ -225,7 +223,6 @@ def load_env() -> RuntimeEnv:
     return RuntimeEnv(
         browser=browser,
         is_grid_available=env_bool("IS_GRID_AVAILABLE", settings_grid_available),
-        grid_provider=env_str("GRID_PROVIDER", settings_grid_provider).strip().lower(),
         grid_ws_endpoint=env_str("GRID_WS_ENDPOINT", settings_grid_ws_endpoint),
         grid_connect_timeout_ms=env_int(
             "GRID_CONNECT_TIMEOUT_MS",

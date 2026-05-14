@@ -1048,7 +1048,7 @@ def _resolve_execution_context(env: RuntimeEnv, browser_session: object | None =
             "browser": env.browser,
             "headless": env.headless,
             "grid_enabled": env.is_grid_available,
-            "grid_provider": env.grid_provider if env.is_grid_available else "",
+            "grid_provider": "playwright" if env.is_grid_available else "",
             "grid_endpoint": env.grid_ws_endpoint if env.is_grid_available else "",
             "grid_cdp_endpoint": "",
         }

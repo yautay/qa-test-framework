@@ -53,7 +53,6 @@ def test_open_browser_session_uses_playwright_provider_when_forced() -> None:
     env = replace(
         load_env(),
         is_grid_available=True,
-        grid_provider="playwright",
         grid_ws_endpoint="ws://127.0.0.1:9323/",
         browser="chromium",
     )
@@ -69,7 +68,6 @@ def test_open_browser_session_normalizes_playwright_ws_endpoint_with_trailing_sl
     env = replace(
         load_env(),
         is_grid_available=True,
-        grid_provider="playwright",
         grid_ws_endpoint="ws://127.0.0.1:9323/pw-ws",
         browser="chromium",
     )
@@ -86,7 +84,6 @@ def test_open_browser_session_normalizes_playwright_wss_endpoint_and_preserves_q
     env = replace(
         load_env(),
         is_grid_available=True,
-        grid_provider="playwright",
         grid_ws_endpoint="wss://127.0.0.1:9323/pw-ws?foo=1",
         browser="chromium",
     )
@@ -103,13 +100,12 @@ def test_open_browser_session_warns_for_playwright_http_endpoint() -> None:
     env = replace(
         load_env(),
         is_grid_available=True,
-        grid_provider="playwright",
         grid_ws_endpoint="http://127.0.0.1:9323/pw-ws",
         browser="chromium",
     )
     playwright = _FakePlaywright()
 
-    with pytest.warns(RuntimeWarning, match="GRID_PROVIDER=playwright"):
+    with pytest.warns(RuntimeWarning, match=r"GRID_WS_ENDPOINT uses HTTP\(S\) scheme"):
         session = open_browser_session(cast(Any, playwright), env)
 
     assert session.provider == "playwright"
@@ -117,17 +113,16 @@ def test_open_browser_session_warns_for_playwright_http_endpoint() -> None:
     assert playwright.chromium.connect_calls[0]["endpoint"] == "http://127.0.0.1:9323/pw-ws"
 
 
-def test_open_browser_session_rejects_non_playwright_grid_provider() -> None:
+def test_open_browser_session_raises_when_grid_endpoint_missing() -> None:
     env = replace(
         load_env(),
         is_grid_available=True,
-        grid_provider="auto",
-        grid_ws_endpoint="ws://127.0.0.1:9323/",
+        grid_ws_endpoint="",
         browser="chromium",
     )
     playwright = _FakePlaywright()
 
-    with pytest.raises(RuntimeError, match="Supported values: playwright"):
+    with pytest.raises(RuntimeError, match="IS_GRID_AVAILABLE=1 requires GRID_WS_ENDPOINT"):
         open_browser_session(cast(Any, playwright), env)
 
 
@@ -135,7 +130,6 @@ def test_open_browser_session_raises_grid_auth_error_on_401() -> None:
     env = replace(
         load_env(),
         is_grid_available=True,
-        grid_provider="playwright",
         grid_ws_endpoint="ws://127.0.0.1:9323/",
         browser="chromium",
     )

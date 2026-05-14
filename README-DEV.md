@@ -205,9 +205,6 @@ Reporting notes:
 - `REPORTING_SOURCE_ORIGIN` can be left empty to auto-detect (`ci` when `CI` exists, otherwise `local`).
 - `source.framework_version` is auto-resolved from package metadata (falls back to `unknown` when metadata is unavailable).
 
-Grid notes:
-- `GRID_PROVIDER` supports only: `playwright` (default).
-
 #### Grid Authentication
 
 | Env var | Description |

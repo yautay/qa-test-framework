@@ -20,6 +20,4 @@ docker compose -f tools/remote/docker-compose.yml down
 IS_GRID_AVAILABLE=1 GRID_WS_ENDPOINT=ws://127.0.0.1:9323/ python -m pytest -m smoke -q
 ```
 
-## Grid provider selection
-
-- `GRID_PROVIDER=playwright` (default): Playwright protocol (`browser_type.connect`).
+The framework always uses Playwright protocol for remote runs (`browser_type.connect`).
