@@ -1048,19 +1048,13 @@ def _resolve_execution_context(env: RuntimeEnv, browser_session: object | None =
             "browser": env.browser,
             "headless": env.headless,
             "grid_enabled": env.is_grid_available,
-            "grid_provider": env.grid_provider if env.is_grid_available else "",
+            "grid_provider": "playwright" if env.is_grid_available else "",
             "grid_endpoint": env.grid_ws_endpoint if env.is_grid_available else "",
-            "grid_cdp_endpoint": env.grid_cdp_endpoint if env.is_grid_available else "",
+            "grid_cdp_endpoint": "",
         }
 
     grid_enabled = session.provider != "local"
-    grid_endpoint = ""
-    grid_cdp_endpoint = ""
-    if session.provider == "playwright":
-        grid_endpoint = session.endpoint
-    elif session.provider == "selenium_cdp":
-        grid_endpoint = session.selenium_grid_url
-        grid_cdp_endpoint = session.endpoint
+    grid_endpoint = session.endpoint if grid_enabled else ""
 
     return {
         "browser": env.browser,
@@ -1068,7 +1062,7 @@ def _resolve_execution_context(env: RuntimeEnv, browser_session: object | None =
         "grid_enabled": grid_enabled,
         "grid_provider": session.provider if grid_enabled else "",
         "grid_endpoint": grid_endpoint,
-        "grid_cdp_endpoint": grid_cdp_endpoint,
+        "grid_cdp_endpoint": "",
     }
 
 
