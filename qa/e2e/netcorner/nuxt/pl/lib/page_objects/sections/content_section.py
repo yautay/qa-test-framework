@@ -39,6 +39,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.product_components imp
     ProductRecapComponent,
 )
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.register_client_component import RegisterClientComponent
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.wishlist_components import WishlistComponent
 
 
 class ContentSection:
@@ -95,6 +96,18 @@ class MyAccountContentSection(ContentSection):
         if self.__my_account_password_change is None:
             self.__my_account_password_change = MyAccountPasswordChangeComponent(self.root)
         return self.__my_account_password_change
+
+
+class WishlistContentSection(ContentSection):
+    def __init__(self, page: Page) -> None:
+        super().__init__(page)
+        self.__wishlist: WishlistComponent | None = None
+
+    @property
+    def wishlist(self) -> WishlistComponent:
+        if self.__wishlist is None:
+            self.__wishlist = WishlistComponent(self.root)
+        return self.__wishlist
 
 
 class HeroPageContentSection(ContentSection):
