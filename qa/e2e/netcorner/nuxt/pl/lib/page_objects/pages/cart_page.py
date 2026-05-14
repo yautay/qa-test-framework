@@ -24,6 +24,7 @@ class CartPage(BasePage):
         super().wait_loaded(state=state, timeout=timeout)
         self.content.wait_visible()
         self.navigation.wait_visible()
+        self.content.cart.wait_products_loaded()
         self.capture_dom_snapshot(event="page_loaded")
         return self
 
