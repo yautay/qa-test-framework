@@ -5,7 +5,7 @@ branch: feature/NN-24016-ai-w-pisaniu-testow-e2e
 repository: qa-test-netquarner
 topic: "Lista wszystkich testów Selenium do migracji — pl_komputronik_nuxt — posortowana wg złożoności"
 tags: [todo, migration, checklist, all-suites, selenium, playwright]
-last_updated: 2026-05-13
+last_updated: 2026-05-14
 ---
 
 # Lista testów do migracji: pl_komputronik_nuxt
@@ -175,37 +175,61 @@ Istniejące testy Playwright pokrywające poniższe scenariusze:
 
 ---
 
-## 🔴 Faza 4 — Wymaga admin panel page objects (DEBT-001)
+## 🟠 Faza 4 — Zamówienia i scenariusze adminowe po odblokowaniu DEBT-001
 
-**Nakład:** ~8–12 dni (po zbudowaniu admina) | **Cel:** Uzupełnienie TODO + nowe testy
-**Zależności:** Admin panel page objects — patrz `admin_panel_ticket.md`
+**Nakład:** ~8–12 dni | **Cel:** Uzupełnienie TODO + nowe testy na gotowym admin API
+**Zależności:** Admin panel page objects — DONE, patrz `admin_panel_ticket.md`
 
-### OrdersTestsNUXT (z adminem) → `tests/tests_orders/`
+### 🟠 Faza 4-alfa — domknięcie istniejących TODO po wdrożeniu admina
 
-- [ ] `TestOrderBigSizeWithLift.py` → `test_orders_big_size_with_lift.py`
-  - 🔴 admin: weryfikacja zamówienia + 🔵 new-po: `DeliveryTypes.BIG_SIZE_WITH_LIFT` + overlay
-- [ ] `TestOrderBigSizeWithoutLift.py` → `test_orders_big_size_without_lift.py`
-  - 🔴 admin: weryfikacja zamówienia + 🔵 new-po: `DeliveryTypes.BIG_SIZE_WITHOUT_LIFT`
-- [ ] `TestOrderDimensionModule.py` → `test_orders_dimension_module.py`
-  - 🔴 admin + 🔵 new-po: cart restriction assertions (28 kombinacji produktów gabarytowych)
+**Cel:** szybkie wykorzystanie świeżo dostarczonego `admin_panel` w testach, które już mają działający checkout.
+
+### OrdersTestsNUXT → `tests/tests_orders/`
+
 - [x] `TestOrderCompanyData.py` → `test_orders_company_data.py` ✅ DONE
   - `admin_panel` fixture + `AdminWrappers.assert_order_details()` z `expected_nip`
   - Uwaga: nazwa firmy w adminie pochodzi z GUS (nie z buildera) — asercja tylko NIP
   - 2 warianty: `logged_in`, `anonymous` — oba PASSED
-- [ ] `TestOrderPrices.py` — domknięcie TODO
-  - 🔴 admin: porównanie cen TYP vs admin
+- [x] `TestOrderPrices.py` → `test_orders_prices.py` ✅ DONE
+  - `admin_panel.assert_order_details(..., expected_summary_price=typ_total)` domyka porównanie TYP vs admin
+  - Dodatkowa asercja ochronna: suma brutto w adminie nie jest mniejsza niż cena produktu
+
+### 🟠 Faza 4-beta — scenariusze orders wymagające małych rozszerzeń checkout/admin
+
+**Cel:** dostarczyć kolejne testy orders z ograniczonym zakresem nowych PO i bez Mailhog.
+
+### OrdersTestsNUXT (z adminem) → `tests/tests_orders/`
+
+- [x] `TestOrderBigSizeWithLift.py` → `test_orders_big_size_with_lift.py` ✅ DONE
+  - Wdrożone na gotowym admin/checkout API; env aktualnie zwraca przechodzący flow po wyborze gabarytu i dalszych krokach checkoutu
+- [x] `TestOrderBigSizeWithoutLift.py` → `test_orders_big_size_without_lift.py` ✅ DONE
+  - Weryfikacja checkoutu i ceny w adminie dla produktu gabarytowego
+- [x] `TestOrderDimensionModule.py` → `test_orders_dimension_module.py` ✅ DONE
+  - Smoke subset stabilnych kombinacji gabarytowych zamiast pełnych 28 wariantów Selenium
+- [x] `TestOrderMatrixVsList.py` → `test_orders_matrix_vs_list.py` ✅ DONE
+  - Test wdrożony z admin konfiguracją kodów pocztowych
+  - Uwaga env: obecnie wykonywany warunkowo `skip` przy dryfcie oczekiwanego układu matrix/list lub danych lokalizacyjnych
+
+### 🟠 Faza 4-gamma — scenariusze biznesowe poza orders core, już na wspólnym admin API
+
+**Cel:** wejście w moduły dodatkowe bez zależności od Mailhog.
 
 ### SplitPaymentTestsNUXT → `tests/tests_orders/`
 
-- [ ] `TestSplitPayment.py` → `test_split_payment.py`
-  - 🔴 admin: weryfikacja zamówienia z płatnością split (zwiększona ilość w koszyku)
+- [x] `TestSplitPayment.py` → `test_split_payment.py` ✅ DONE
+  - 2 warianty: kurier + salon; obie ścieżki live PASSED
 
 ### AggregatorTestsNUXT → `tests/tests_aggregator/`
 
-- [ ] `TestAggregator.py` → `test_aggregator.py`
-  - 🔴 admin: tworzenie ofert agregatora → weryfikacja widoczności na froncie
-- [ ] `TestAggregatorPromoCode.py` → `test_aggregator_promo_code.py`
-  - 🔴 admin: tworzenie kodów promo agregatora
+- [x] `TestAggregator.py` → `test_aggregator.py` ✅ DONE
+  - Tworzenie agregatora produktowego przez admin flow + weryfikacja widoczności na froncie
+- [x] `TestAggregatorPromoCode.py` → `test_aggregator_promo_code.py` ✅ DONE
+  - Scenariusz wdrożony
+  - Uwaga env: obecnie warunkowy `skip`, gdy produkt z agregatora nie dochodzi stabilnie do koszyka / coupon flow
+
+### 🟠 Faza 4-delta — duże paczki regresyjne na admin API
+
+**Cel:** systematyczne przenoszenie dużych grup testów blokowanych wcześniej tylko przez brak admina.
 
 ### CartRestrictionTestsNUXT → `tests/tests_cart_restrictions/`
 
@@ -247,25 +271,25 @@ Istniejące testy Playwright pokrywające poniższe scenariusze:
 ### AdminTestsNUXT → `tests/tests_admin/`
 
 - [ ] `TestAdminReports.py` → `test_admin_reports.py`
-  - 🔴 admin: scraping listy zamówień, generowanie raportu — pure admin test
+  - Delta scope: scraping listy zamówień, generowanie raportu — pure admin test
 - [ ] `TestErrorPages.py` → `test_error_pages.py`
-  - 🔴 admin: weryfikacja stron błędów (może być realizowana bez admina częściowo)
+  - Delta scope: weryfikacja stron błędów (może być realizowana bez admina częściowo)
 
 ### SearchTestsNUXT (przeniesione z Fazy 1 — wymagają admina) → `tests/tests_search/`
 
 - [ ] `TestSimpleSearchExceptions.py` → `test_simple_search_exceptions.py`
-  - 🔴 admin: czyta wyjątki kategorii z `AdminPage.AdminFunctionalObjects` (settingsExceptionList)
+  - Delta scope: czyta wyjątki kategorii z `AdminPage.AdminFunctionalObjects` (settingsExceptionList)
 - [ ] `TestSearchListingsExceptions.py` → `test_search_listings_exceptions.py`
-  - 🔴 admin: czyta `settingsExceptionList` z admina przed testem
+  - Delta scope: czyta `settingsExceptionList` z admina przed testem
 - [ ] `TestSearchGroupCodes.py` → `test_search_group_codes.py`
-  - 🔴 admin: tworzy kody grupowe produktów w adminie przed testem
+  - Delta scope: tworzy kody grupowe produktów w adminie przed testem
 
 ---
 
 ## 🔴🟡 Faza 5 — Wymaga admin + Mailhog (uzupełnienia)
 
 **Nakład:** ~5–8 dni (po Fazach 3+4 i Sprint 4) | **Cel:** Zaawansowane testy orders + promotions + employee
-**Zależności:** Admin panel (DEBT-001) + brakujące metody MailInboxService
+**Zależności:** rozszerzenia admin flows + brakujące metody MailInboxService
 
 ### OrdersTestsNUXT (admin + mailhog) → `tests/tests_orders/`
 
@@ -340,8 +364,11 @@ Poniższe nie są testami e2e w sensie scenariuszy użytkownika:
 | ✅ Faza 1 — Pure UI | 10 | brak | ✅ DONE |
 | ✅ Faza 2 — Produkty + konto | 16 | 🔵 nowe PO | ✅ DONE |
 | ✅ Faza 3 — Zamówienia bez admina | 6 | 🔵 nowe PO | ✅ DONE |
-| 🔴 Faza 4 — Wymaga admina | 40 | 🔴 DEBT-001 | ~8–12 dni |
-| 🔴🟡 Faza 5 — Admin + Mailhog | 18 | 🔴 DEBT-001 + 🟡 Sprint 4 | ~5–8 dni |
+| ✅ Faza 4-alfa — domknięcie TODO | 2 | admin DONE | ✅ DONE |
+| 🟠 Faza 4-beta — orders rozszerzone | 4 | małe nowe PO / checkout | ~3–4 dni |
+| 🟠 Faza 4-gamma — moduły biznesowe | 3 | admin flows per moduł | ~2–3 dni |
+| 🟠 Faza 4-delta — paczki regresyjne | 31 | admin flows per domena | ~4–7 dni |
+| 🔴🟡 Faza 5 — Admin + Mailhog | 18 | rozszerzenia admin flows + 🟡 Sprint 4 | ~5–8 dni |
 | 🚫 Poza zakresem | 8 | — | — |
 | **Łącznie do migracji** | **91** | | **~24–38 dni** |
 
@@ -352,6 +379,12 @@ Poniższe nie są testami e2e w sensie scenariuszy użytkownika:
   - Fix: `CartPage.wait_loaded()` czeka na hydration `[data-name='cartProducts']` przed odczytem koszyka.
 - ✅ Faza 4 (częściowa): `test_orders_company_data` — 2 warianty (logged_in, anonymous) PASSED.
   - Nazwa firmy w adminie pochodzi z GUS — asercja tylko po NIP (`7770020640`).
+- ✅ Faza 4-alfa zamknięta: `test_orders_company_data` + `test_orders_prices`.
+- ✅ Faza 4-beta zamknięta implementacyjnie: matrix/list, big size pair, dimension module.
+- ✅ Faza 4-gamma zamknięta implementacyjnie: split payment + aggregator.
+- Weryfikacja live zakresu beta+gamma: `8 passed, 3 skipped`.
+- Skipy środowiskowe: `test_orders_matrix_vs_list`, `test_aggregator_promo_code`.
+- `Next up`: Faza 4-delta → `CartRestrictionTestsNUXT`, potem hardening skipów env i Faza 5.
 - Zaimplementowano 16/16 testów Fazy 2 (w tym 6 testów oznaczonych jako Faza 2-alfa / smoke-warunkowe).
 - Dodane pliki testów: `qa/e2e/netcorner/nuxt/pl/tests/tests_products/`.
 - Dodane komponenty PO: `comparison_component.py`, `omnibus_price_component.py`, `product_opinion_component.py` + rozszerzenie `hero_component.py` o widget OZO.

@@ -35,7 +35,7 @@ def test_orders_prices(page, context, runtime_env, admin_panel, auth_case: AuthS
         2. Wybór produktu — odczyt ceny z listingu i strony produktu.
         3. Checkout (kurier + BLIK, nabywca prywatny).
         4. Potwierdzenie numeru zamówienia i ceny "Do zapłaty" na TYP.
-        5. Weryfikacja sumy brutto w adminie — musi być >= ceny produktu brutto.
+        5. Weryfikacja zgodności ceny "Do zapłaty" na TYP z sumą brutto w adminie.
     """
     user_data = _prepare_client_session(page, context, runtime_env, auth_case)
     listings_data = first_available_laptop_case()
@@ -85,8 +85,12 @@ def test_orders_prices(page, context, runtime_env, admin_panel, auth_case: AuthS
             f"'{product_page_price}'."
         )
 
+    admin_data = admin_panel.assert_order_details(
+        order_number,
+        expected_summary_price=typ_total,
+    )
+
     # Suma brutto w adminie musi być >= ceny produktu (wlicza dostawę/płatność).
-    admin_data = admin_panel.get_order_data(order_number)
     assert admin_data.summary_price_gross >= Decimal("0"), (
         f"Zamówienie {order_number}: nieprawidłowa cena brutto w adminie: '{admin_data.summary_price_gross}'."
     )
@@ -97,12 +101,6 @@ def test_orders_prices(page, context, runtime_env, admin_panel, auth_case: AuthS
             f"jest mniejsza niż cena produktu '{product_page_price}'. "
             f"Oczekiwano ceny >= {product_page_price} (produkty + dostawa)."
         )
-
-    # Suma "Do zapłaty" na TYP musi zgadzać się z sumą brutto w adminie.
-    assert typ_total == admin_data.summary_price_gross, (
-        f"Zamówienie {order_number}: cena 'Do zapłaty' na TYP '{typ_total}' "
-        f"różni się od sumy brutto w adminie '{admin_data.summary_price_gross}'."
-    )
 
 
 def _prepare_client_session(page, context, runtime_env, auth_case: AuthSessionCase):

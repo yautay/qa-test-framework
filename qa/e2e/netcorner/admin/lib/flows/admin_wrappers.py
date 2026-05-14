@@ -8,6 +8,12 @@ from playwright.sync_api import Page
 
 from framework.env import RuntimeEnv
 from qa.e2e.netcorner.admin.lib.config import AdminEnv, resolve_admin_env
+from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_aggregator_pages import (
+    AdminAggregatorCreatePage,
+    AdminAggregatorEditPage,
+    AdminAggregatorItemCreatePage,
+)
+from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_configuration_page import AdminConfigurationPage
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_context_page import AdminContextPage
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_login_page import AdminLoginPage
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_order_detail_page import AdminOrderDetailPage
@@ -177,6 +183,57 @@ class AdminWrappers:
         detail_page.wait_loaded()
         detail_page.change_status(status_id)
         logger.debug("Admin: order {} status changed to id={}", order_number, status_id)
+
+    def configure_enforced_shopping_path_postcodes(
+        self,
+        *,
+        ensure_present: list[str] | None = None,
+        ensure_absent: list[str] | None = None,
+    ) -> list[str]:
+        self.open_admin()
+        config_page = AdminConfigurationPage(self.__page, self.__admin_env.base_url).navigate_to()
+        postcodes = config_page.get_enforced_postcodes()
+        normalized = [value.strip() for value in postcodes if value.strip()]
+
+        for value in ensure_present or []:
+            candidate = value.strip()
+            if candidate and candidate not in normalized:
+                normalized.append(candidate)
+
+        for value in ensure_absent or []:
+            candidate = value.strip()
+            if candidate:
+                normalized = [item for item in normalized if item != candidate]
+
+        config_page.set_enforced_postcodes(normalized)
+        return normalized
+
+    def create_products_aggregator(
+        self,
+        *,
+        name: str,
+        work_name: str,
+        url_slug: str,
+        item_name: str,
+        section_code: str,
+        product_codes: str,
+        discount_code: str | None = None,
+    ) -> str:
+        self.open_admin()
+        aggregator_id = AdminAggregatorCreatePage(self.__page, self.__admin_env.base_url).navigate_to().create(
+            name=name,
+            work_name=work_name,
+            url_slug=url_slug,
+        )
+        edit_page = AdminAggregatorEditPage(self.__page, self.__admin_env.base_url, aggregator_id).navigate_to()
+        edit_page.open_add_element()
+        AdminAggregatorItemCreatePage(self.__page, self.__admin_env.base_url).wait_loaded().create_products_item(
+            name=item_name,
+            section_code=section_code,
+            product_codes=product_codes,
+            discount_code=discount_code,
+        )
+        return f"{self.__runtime_env.base_url}/promocje/{url_slug}"
 
 
 __all__ = ["AdminWrappers"]

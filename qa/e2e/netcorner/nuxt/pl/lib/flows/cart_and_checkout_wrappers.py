@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import time
 from dataclasses import dataclass
 from decimal import Decimal
@@ -11,6 +12,7 @@ from framework.env import RuntimeEnv
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.cart_components import CartProductData
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.checkout import (
     CheckoutSummaryData,
+    DeliveryMethodsLayout,
     DeliveryTypeData,
     PaymentMethodData,
     TypSummaryData,
@@ -36,6 +38,8 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkout_data_models import
 @dataclass(frozen=True, slots=True)
 class CheckoutProcessData:
     delivery_types_aviable: DeliveryTypeData
+    delivery_methods_layout: DeliveryMethodsLayout | None
+    available_delivery_methods: list[str] | list[list[str]] | None
     available_payment_methods: list[PaymentMethodData]
     payment_surcharge: Decimal
     summary_data: CheckoutSummaryData
@@ -129,18 +133,35 @@ class CartAndCheckoutWrappers:
 
             self.__page.wait_for_timeout(self.DELIVERY_PROVIDER_STABILITY_POLL_MS)
 
+    def __enable_lift_service_if_visible(self) -> bool:
+        lift_text = re.compile(r"wnies", re.IGNORECASE)
+        for locator in (
+            self.__page.get_by_text(lift_text),
+            self.__page.locator("label").filter(has_text=lift_text),
+        ):
+            count = locator.count()
+            for index in range(count):
+                candidate = locator.nth(index)
+                if candidate.is_visible():
+                    candidate.click(force=True)
+                    self.__page.wait_for_timeout(500)
+                    return True
+        return False
+
     def __run_delivery_steps(
         self,
         checkout: CheckoutPage,
         delivery_type: DeliveryTypes,
         delivery_objects: DeliveryObjects | None,
-    ) -> None:
+    ) -> tuple[DeliveryMethodsLayout | None, list[str] | list[list[str]] | None]:
         """Execute the delivery selection step on the checkout page.
 
         Handles all delivery types, including overlay interactions and
         stability assertions for provider-based types.
         """
         checkout.content.delivery_type.wait_visible()
+        delivery_methods_layout: DeliveryMethodsLayout | None = None
+        available_delivery_methods: list[str] | list[list[str]] | None = None
 
         match delivery_type:
             case DeliveryTypes.STORE_PICKUP:
@@ -244,11 +265,18 @@ class CartAndCheckoutWrappers:
                 delivery_methods = checkout.content.delivery_methods.wait_visible().wait_for_available_methods(
                     timeout=10_000
                 )
-                delivery_methods.get_methods_layout()
-                delivery_methods.choose_random_available_method()
+                delivery_methods_layout, available_delivery_methods = delivery_methods.get_methods_layout()
+                if delivery_objects.preferred_delivery_method_text:
+                    delivery_methods.choose_method_containing(delivery_objects.preferred_delivery_method_text)
+                else:
+                    delivery_methods.choose_random_available_method()
+                if delivery_objects.enable_lift_service and not self.__enable_lift_service_if_visible():
+                    raise RuntimeError("Nie znaleziono widocznej opcji włączenia usługi wniesienia.")
 
             case _:
                 raise ValueError(f"Nieobsługiwany typ dostawy: {delivery_type}")
+
+        return delivery_methods_layout, available_delivery_methods
 
     def process_cart(self) -> dict[str, CartProductData]:
         cart = CartPage(self.__page, self.__runtime_env.base_url).wait_loaded()
@@ -280,10 +308,14 @@ class CartAndCheckoutWrappers:
         """
         checkout = CheckoutPage(self.__page, self.__runtime_env.base_url).wait_loaded()
         delivery_types_aviable = checkout.content.delivery_type.get_delivery_type_availability()
+        delivery_methods_layout: DeliveryMethodsLayout | None = None
+        available_delivery_methods: list[str] | list[list[str]] | None = None
         available_payment_methods: list[PaymentMethodData] = []
         payment_surcharge = Decimal("0.00")
 
-        self.__run_delivery_steps(checkout, delivery_type, delivery_objects)
+        delivery_methods_layout, available_delivery_methods = self.__run_delivery_steps(
+            checkout, delivery_type, delivery_objects
+        )
 
         checkout.content.purchaser.wait_visible().set_electronic_invoice(True)
 
@@ -304,6 +336,10 @@ class CartAndCheckoutWrappers:
 
         if payment_objects.payment_method is not None:
             payment_surcharge = payment_methods_component.choose_payment_method(payment_objects.payment_method)
+        elif payment_objects.payment_method_label_contains:
+            payment_surcharge = payment_methods_component.choose_method_containing(
+                payment_objects.payment_method_label_contains
+            )
         else:
             payment_surcharge = payment_methods_component.choose_random_available_method()
 
@@ -317,6 +353,8 @@ class CartAndCheckoutWrappers:
             summary_data = checkout.content.summary.wait_visible().wait_place_order_button_visible()
             return CheckoutProcessData(
                 delivery_types_aviable=delivery_types_aviable,
+                delivery_methods_layout=delivery_methods_layout,
+                available_delivery_methods=available_delivery_methods,
                 available_payment_methods=available_payment_methods,
                 payment_surcharge=payment_surcharge,
                 summary_data=summary_data,
@@ -326,6 +364,8 @@ class CartAndCheckoutWrappers:
         summary_data, typ_summary_data = checkout.submit_order()
         return CheckoutProcessData(
             delivery_types_aviable=delivery_types_aviable,
+            delivery_methods_layout=delivery_methods_layout,
+            available_delivery_methods=available_delivery_methods,
             available_payment_methods=available_payment_methods,
             payment_surcharge=payment_surcharge,
             summary_data=summary_data,
