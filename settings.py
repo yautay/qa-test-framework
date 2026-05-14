@@ -26,10 +26,13 @@ run_git_info_backend_endpoint = "private-api/git-info"
 run_git_info_timeout_seconds = 3
 
 # Grid
-grid_provider = "auto"
-grid_ws_endpoint = "http://10.21.69.57:4444"
-grid_cdp_endpoint = ""
+grid_ws_endpoint = "ws://10.21.69.118:3034/pw-ws"
 grid_connect_timeout_ms = 30000
+
+grid_ws_auth_mode = "basic"   # none | basic | token
+grid_ws_username = "pw-tests-server-user"
+grid_ws_password = "$F@ouyr.&%R9nm3Uv<rmp;4b&7@7ckFv"
+grid_ws_token = ""
 
 # Visual
 visual_enabled = True
