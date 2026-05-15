@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
+from dataclasses import dataclass
 
 from playwright.sync_api import Page
 
@@ -10,6 +11,12 @@ from qa.e2e.netcorner.admin.lib.test_data.admin_order_models import AdminOrderDa
 from qa.e2e.netcorner.lib.price_utils import parse_price
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class AdminStatusOption:
+    value: str
+    label: str
 
 
 def _parse_price_nonnull(raw: str):
@@ -203,12 +210,32 @@ class AdminOrderDetailPage(AdminBasePage):
         status_select = self.page.locator(self._LOC_STATUS_SELECT)
         status_select.wait_for(state="visible", timeout=8_000)
 
-        # Register dialog handler BEFORE the action that may trigger it
-        self.page.on("dialog", lambda dialog: dialog.accept())
-        status_select.select_option(value=status_id)
+        order_id_match = re.search(r"/order_id/(\d+)", self.page.url)
+        assert order_id_match is not None, f"Nie udało się odczytać order_id z URL admina: '{self.page.url}'."
+        order_id = order_id_match.group(1)
+        change_status_url = (
+            f"{self.base_url}/admin.php/orders/ChangeStatus/pl/order_id/{order_id}/status_id/{status_id}/sendMail/1"
+        )
+        self.page.goto(change_status_url, wait_until="domcontentloaded")
 
         self.page.wait_for_load_state("domcontentloaded", timeout=15_000)
         self.page.locator(self._LOC_PAGE_HEADER).wait_for(state="visible", timeout=10_000)
 
+    def get_status_options(self) -> list[AdminStatusOption]:
+        self.page.locator(self._LOC_ORDER_STATUS).click()
+        status_select = self.page.locator(self._LOC_STATUS_SELECT)
+        status_select.wait_for(state="visible", timeout=8_000)
 
-__all__ = ["AdminOrderDetailPage"]
+        options = status_select.locator("option")
+        result: list[AdminStatusOption] = []
+        for index in range(options.count()):
+            option = options.nth(index)
+            value = (option.get_attribute("value") or "").strip()
+            label = option.inner_text(timeout=1_000).strip()
+            if not value or not label:
+                continue
+            result.append(AdminStatusOption(value=value, label=label))
+        return result
+
+
+__all__ = ["AdminOrderDetailPage", "AdminStatusOption"]

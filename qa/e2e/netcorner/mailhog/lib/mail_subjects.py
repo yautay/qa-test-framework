@@ -39,6 +39,30 @@ class MailSubjects:
         description="Mail o problemie z zamówieniem",
     )
 
+    CART_OFFER = MailSubjectPattern(
+        key="cart_offer",
+        regex=r"(?i)^.*ofert.*koszyk.*$",
+        description="Mail z ofertą koszykową",
+    )
+
+    @staticmethod
+    def order_status_changed(status_name: str | None = None) -> MailSubjectPattern:
+        escaped_status_name = re.escape(status_name) if status_name else r".+"
+        return MailSubjectPattern(
+            key="order_status_changed",
+            regex=rf"(?i)^.*{escaped_status_name}.*$",
+            description="Mail o zmianie statusu zamówienia",
+        )
+
+    @staticmethod
+    def partner_storehouse_order(order_number: str | None = None) -> MailSubjectPattern:
+        escaped_order_number = re.escape(order_number) if order_number else r"[A-Z]*\d+/\d{4}"
+        return MailSubjectPattern(
+            key="partner_storehouse_order",
+            regex=rf"^Zamówienie sklepu\s+.+\s+numer:\s*{escaped_order_number}$",
+            description="Mail dla salonu partnerskiego o zamówieniu",
+        )
+
     @staticmethod
     def order_shop_number(shop_host: str, order_number: str | None = None) -> MailSubjectPattern:
         escaped_shop_host = re.escape(str(shop_host or "").strip())

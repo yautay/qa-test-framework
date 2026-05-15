@@ -184,6 +184,16 @@ class AdminWrappers:
         detail_page.change_status(status_id)
         logger.debug("Admin: order {} status changed to id={}", order_number, status_id)
 
+    def get_order_status_options(self, order_number: str):
+        self.open_admin()
+        orders_page = AdminOrdersPage(self.__page, self.__admin_env.base_url)
+        orders_page.navigate_to()
+        orders_page.open_order(order_number)
+
+        detail_page = AdminOrderDetailPage(self.__page, self.__admin_env.base_url)
+        detail_page.wait_loaded()
+        return detail_page.get_status_options()
+
     def configure_enforced_shopping_path_postcodes(
         self,
         *,
