@@ -16,6 +16,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.password_recovery_overla
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.product_page_overlays import (
     ProductPageGoToCartOverlay,
     ProductPagePromotionsOverlay,
+    ProductPageWishlistOverlay,
 )
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.toast_overlay import ToastOverlay
 
@@ -28,6 +29,7 @@ class Overlays:
         self.__toast: ToastOverlay | None = None
         self.__go_to_cart: ProductPageGoToCartOverlay | None = None
         self.__promotions: ProductPagePromotionsOverlay | None = None
+        self.__wishlist: ProductPageWishlistOverlay | None = None
         self.__checkout_courier_receiver: DeliveryCourierReceiverOverlay | None = None
         self.__checkout_dhl_pop_receiver: DeliveryDhlPopReceiverOverlay | None = None
         self.__checkout_inpost_receiver: DeliveryInpostReceiverOverlay | None = None
@@ -63,6 +65,12 @@ class Overlays:
         if self.__promotions is None:
             self.__promotions = ProductPagePromotionsOverlay(self.page)
         return self.__promotions
+
+    @property
+    def wishlist(self) -> ProductPageWishlistOverlay:
+        if self.__wishlist is None:
+            self.__wishlist = ProductPageWishlistOverlay(self.page)
+        return self.__wishlist
 
     @property
     def checkout_courier_receiver(self) -> DeliveryCourierReceiverOverlay:

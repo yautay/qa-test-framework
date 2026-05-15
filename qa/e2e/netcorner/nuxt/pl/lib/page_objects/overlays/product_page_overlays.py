@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from playwright.sync_api import Page
+from playwright.sync_api import Locator, Page
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from qa.e2e.netcorner.lib.step_api import step
@@ -69,3 +69,70 @@ class ProductPagePromotionsOverlay(BaseComponent):
             return promotions
         self.pointer_click(self.__button_buy_only_product)
         return promotions
+
+
+class ProductPageWishlistOverlay(BaseComponent):
+    def __init__(self, page: Page):
+        super().__init__(
+            page.locator('[data-name="dialogContent"]:visible'),
+            name="Product Wishlist Overlay",
+        )
+
+        self.__wishlist_checkboxes = self.find("[id^='checkboxWishlistAdd-']")
+        self.__create_new_list_button = self.find("button").filter(has_text="Utwórz nową listę")
+        self.__add_to_selected_button = self.find("button").filter(has_text="Dodaj do wybranej")
+        self.__wishlist_name_input = self.find("#wishlistInput")
+        self.__create_wishlist_button = self.find("button").filter(has_text="Utwórz listę")
+        self.__go_to_wishlist_button = self.find("role=button[name='Przejdź do listy życzeń']")
+
+    def __resolve_wishlist_checkbox(self, wishlist_name: str | None = None) -> Locator:
+        if wishlist_name:
+            return self.find(f"#checkboxWishlistAdd-{wishlist_name}")
+        return self.__wishlist_checkboxes.first
+
+    @step("Ustawiam stan checkboxa na liście życzeń")
+    def set_wishlist_checkbox_state(
+        self,
+        checked: bool,
+        wishlist_name: str | None = None,
+        overlay_timeout: int = 7_500,
+    ) -> None:
+        if not _wait_until_visible(self, overlay_timeout):
+            return
+        checkbox = self.__resolve_wishlist_checkbox(wishlist_name)
+        if checked:
+            checkbox.check()
+        else:
+            checkbox.uncheck()
+
+    @step("Klikam 'Utwórz nową listę'")
+    def click_create_new_list(self, overlay_timeout: int = 7_500) -> None:
+        if not _wait_until_visible(self, overlay_timeout):
+            return
+        self.pointer_click(self.__create_new_list_button)
+
+    @step("Klikam 'Dodaj do wybranej'")
+    def click_add_to_selected(self, overlay_timeout: int = 7_500) -> None:
+        if not _wait_until_visible(self, overlay_timeout):
+            return
+        self.pointer_click(self.__add_to_selected_button)
+
+    @step("Wpisuję nazwę listy życzeń")
+    def enter_wishlist_name(self, value: str, overlay_timeout: int = 7_500) -> None:
+        if not _wait_until_visible(self, overlay_timeout):
+            return
+        self.safe_type(self.__wishlist_name_input, value)
+
+    @step("Klikam przycisk Utwórz listę")
+    def click_create_wishlist(self, overlay_timeout: int = 7_500) -> None:
+        if not _wait_until_visible(self, overlay_timeout):
+            return
+        self.pointer_click(self.__create_wishlist_button)
+
+    @step("Klikam 'Przejdź do listy życzeń'")
+    def go_to_wishlist(self, overlay_timeout: int = 7_500) -> None:
+        if not _wait_until_visible(self, overlay_timeout):
+            return
+        self.pointer_click(self.__go_to_wishlist_button)
+
+
