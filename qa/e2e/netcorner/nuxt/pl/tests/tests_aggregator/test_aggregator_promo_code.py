@@ -10,7 +10,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.flows.cart_and_checkout_wrappers import CartAn
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.cart_page import CartPage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.product_page import ProductPage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import (
-    checkout_payment_prepaid_transfer_required_terms,
+    checkout_payment_blik_required_terms,
     private_person_checkout_purchaser,
     private_person_delivery_courier_receiver,
 )
@@ -52,7 +52,8 @@ def test_aggregator_promo_code(page, context, runtime_env, admin_panel):
     accept_cookie_banner_if_visible(page)
     product_page = ProductPage(page, runtime_env.base_url).wait_loaded()
     product_page.add_to_cart()
-    page.goto(f"{runtime_env.base_url}/cart", wait_until="domcontentloaded")
+    page.goto(f"{runtime_env.base_url}/cart", wait_until="networkidle")
+    accept_cookie_banner_if_visible(page)
     cart_page = CartPage(page, runtime_env.base_url).wait_loaded()
 
     cart_page.content.summary.enter_coupon_code(_PROMO_CODE)
@@ -61,7 +62,7 @@ def test_aggregator_promo_code(page, context, runtime_env, admin_panel):
 
     receiver = private_person_delivery_courier_receiver()
     purchaser = private_person_checkout_purchaser()
-    payment = checkout_payment_prepaid_transfer_required_terms()
+    payment = checkout_payment_blik_required_terms()
 
     checkout_wrappers = CartAndCheckoutWrappers(page, context, runtime_env)
     checkout_wrappers.process_cart()
