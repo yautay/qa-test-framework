@@ -227,9 +227,92 @@ Istniejące testy Playwright pokrywające poniższe scenariusze:
   - Scenariusz wdrożony
   - Uwaga env: obecnie warunkowy `skip`, gdy produkt z agregatora nie dochodzi stabilnie do koszyka / coupon flow
 
-### 🟠 Faza 4-delta — duże paczki regresyjne na admin API
+### 🟠 Faza 4-delta — testy admin/search na gotowym admin API
 
-**Cel:** systematyczne przenoszenie dużych grup testów blokowanych wcześniej tylko przez brak admina.
+**Cel:** domknięcie zależnych od admina testów spoza orders core bez wchodzenia jeszcze w pełną paczkę cart restrictions.
+
+### AdminTestsNUXT → `tests/tests_admin/`
+
+- [ ] `TestAdminReports.py` → `test_admin_reports.py`
+  - Delta scope: scraping listy zamówień, generowanie raportu — pure admin test
+- [ ] `TestErrorPages.py` → `test_error_pages.py`
+  - Delta scope: weryfikacja stron błędów (może być realizowana bez admina częściowo)
+
+### SearchTestsNUXT (przeniesione z Fazy 1 — wymagają admina) → `tests/tests_search/`
+
+- [ ] `TestSimpleSearchExceptions.py` → `test_simple_search_exceptions.py`
+  - Delta scope: czyta wyjątki kategorii z `AdminPage.AdminFunctionalObjects` (settingsExceptionList)
+- [ ] `TestSearchListingsExceptions.py` → `test_search_listings_exceptions.py`
+  - Delta scope: czyta `settingsExceptionList` z admina przed testem
+- [ ] `TestSearchGroupCodes.py` → `test_search_group_codes.py`
+  - Delta scope: tworzy kody grupowe produktów w adminie przed testem
+
+---
+
+## 🔴🟠 Faza 5 — Wymaga admin + Mailhog (uzupełnienia)
+
+**Nakład:** ~5–8 dni (po Fazach 3+4 i Sprint 4) | **Cel:** Zaawansowane testy orders + employee
+**Zależności:** rozszerzenia admin flows + brakujące metody MailInboxService
+
+### OrdersTestsNUXT (admin + mailhog) → `tests/tests_orders/`
+
+- [ ] `TestOrderStatuses.py` → `test_orders_statuses.py`
+  - 🔴 admin: zmiana statusów zamówienia
+  - 🟡 mailhog: `has_mail_with_subject_containing` + `MailSubjects.ORDER_STATUS_CHANGED`
+  - 🔵 new-po: `OrderDetailPage` — odczyt statusu (jeśli nie zbudowane w Fazie 3)
+- [ ] `TestOrderPartnerStorehouse.py` → `test_orders_partner_storehouse.py`
+  - 🔴 admin: weryfikacja zamówienia
+  - 🟡 mailhog: `count_mails_matching` + `MailSubjects.PARTNER_STOREHOUSE_ORDER`
+- [ ] `TestOrderCartOffer.py` → `test_orders_cart_offer.py`
+  - 🔴 admin: tworzenie oferty koszykowej + wysyłka do klienta + URL oferty
+  - 🟡 mailhog: `MailSubjects.CART_OFFER` + link z maila
+  - 🔵 new-po: `CartOfferPage` — strona oferty koszykowej (URL → cena → dodaj do koszyka)
+- [ ] `TestOrderOzo.py` → `test_orders_ozo.py`
+  - 🔴 admin: reset liczników OZO w setUp/tearDown (fixture)
+  - 🔵 new-po: `OzoBoxComponent` (homepage), `LimitedSaleComponent` (karta produktu)
+- [ ] `TestOrderDigitalLicense.py` → `test_orders_digital_license.py`
+  - 🔴 admin: weryfikacja zamówienia
+  - 🔵 new-po: obsługa produktów cyfrowych w `SelectProductWrappers` (flaga `digital=True`, filtry)
+
+### EmployeeProgramTestsNUXT → `tests/tests_employee_program/`
+
+- [ ] `TestEmployeeProgramGroupOrderSms.py` → `test_employee_program_order_sms.py`
+  - 🔴 admin: tworzenie kodu SMS + 🟡 mailhog: weryfikacja maila
+- [ ] `TestEmployeeProgramGroupOrderQr.py` → `test_employee_program_order_qr.py`
+  - 🔴 admin: tworzenie kodu QR
+- [ ] `TestEmployeeProgramGroupRegisterSms.py` → `test_employee_program_register_sms.py`
+  - 🔴 admin + 🟡 mailhog
+- [ ] `TestEmployeeProgramGroupRegisterQr.py` → `test_employee_program_register_qr.py`
+  - 🔴 admin
+- [ ] `TestEmployeeProgramGroupCrudSms.py` → `test_employee_program_crud_sms.py`
+  - 🔴 admin + 🟡 mailhog: CRUD kodów SMS
+- [ ] `TestEmployeeProgramGroupCrudQr.py` → `test_employee_program_crud_qr.py`
+  - 🔴 admin: CRUD kodów QR
+
+---
+
+## 🟠 Faza 6 — PromotionsTestsNUXT jako osobny pakiet domenowy
+
+**Nakład:** ~2–4 dni | **Cel:** Testy promocji po domknięciu Faz 4 i 5
+**Zależności:** admin flows dla promocji + punktowe nowe PO na karcie produktu
+
+### PromotionsTestsNUXT → `tests/tests_promotions/`
+
+- [ ] `TestPromotionsPromotionCodes.py` → `test_promotions_promo_codes.py`
+  - 🔴 admin: tworzenie kodu promo → weryfikacja zastosowania w koszyku + adminie
+- [ ] `TestPromotionsSezamCrossedOutPrice.py` → `test_promotions_sezam.py`
+  - 🔴 admin: konfiguracja promocji Sezam + weryfikacja cen przekreślonych
+- [ ] `TestPromotionsPromotionService.py` → `test_promotions_service.py`
+  - 🔴 admin: usługi promocyjne (montaż, ubezpieczenie) w zamówieniu
+- [ ] `TestPromotionsPromotionCodesOnProductPage.py` → `test_promotions_promo_codes_product_page.py`
+  - 🔴 admin + 🔵 new-po: kody promo widoczne na karcie produktu
+
+---
+
+## 🟣 Faza 7 — CartRestrictionTestsNUXT jako osobny pakiet domenowy
+
+**Nakład:** ~4–7 dni | **Cel:** pełne przeniesienie ograniczeń koszyka po domknięciu Faz 4 i 5
+**Zależności:** admin flows per domena + nowe page objects / asercje restrykcji koszyka
 
 ### CartRestrictionTestsNUXT → `tests/tests_cart_restrictions/`
 
@@ -268,77 +351,6 @@ Istniejące testy Playwright pokrywające poniższe scenariusze:
 - [ ] `TestDropshippingCartRestrictions.py` → `test_cart_restriction_dropshipping.py` 🔵 new-po
 - [ ] `TestAdvancedDropshippingCartRestrictions.py` → `test_cart_restriction_dropshipping_advanced.py` 🔵 new-po
 
-### AdminTestsNUXT → `tests/tests_admin/`
-
-- [ ] `TestAdminReports.py` → `test_admin_reports.py`
-  - Delta scope: scraping listy zamówień, generowanie raportu — pure admin test
-- [ ] `TestErrorPages.py` → `test_error_pages.py`
-  - Delta scope: weryfikacja stron błędów (może być realizowana bez admina częściowo)
-
-### SearchTestsNUXT (przeniesione z Fazy 1 — wymagają admina) → `tests/tests_search/`
-
-- [ ] `TestSimpleSearchExceptions.py` → `test_simple_search_exceptions.py`
-  - Delta scope: czyta wyjątki kategorii z `AdminPage.AdminFunctionalObjects` (settingsExceptionList)
-- [ ] `TestSearchListingsExceptions.py` → `test_search_listings_exceptions.py`
-  - Delta scope: czyta `settingsExceptionList` z admina przed testem
-- [ ] `TestSearchGroupCodes.py` → `test_search_group_codes.py`
-  - Delta scope: tworzy kody grupowe produktów w adminie przed testem
-
----
-
-## 🔴🟡 Faza 5 — Wymaga admin + Mailhog (uzupełnienia)
-
-**Nakład:** ~5–8 dni (po Fazach 3+4 i Sprint 4) | **Cel:** Zaawansowane testy orders + promotions + employee
-**Zależności:** rozszerzenia admin flows + brakujące metody MailInboxService
-
-### OrdersTestsNUXT (admin + mailhog) → `tests/tests_orders/`
-
-- [ ] `TestOrderStatuses.py` → `test_orders_statuses.py`
-  - 🔴 admin: zmiana statusów zamówienia
-  - 🟡 mailhog: `has_mail_with_subject_containing` + `MailSubjects.ORDER_STATUS_CHANGED`
-  - 🔵 new-po: `OrderDetailPage` — odczyt statusu (jeśli nie zbudowane w Fazie 3)
-- [ ] `TestOrderPartnerStorehouse.py` → `test_orders_partner_storehouse.py`
-  - 🔴 admin: weryfikacja zamówienia
-  - 🟡 mailhog: `count_mails_matching` + `MailSubjects.PARTNER_STOREHOUSE_ORDER`
-- [ ] `TestOrderCartOffer.py` → `test_orders_cart_offer.py`
-  - 🔴 admin: tworzenie oferty koszykowej + wysyłka do klienta + URL oferty
-  - 🟡 mailhog: `MailSubjects.CART_OFFER` + link z maila
-  - 🔵 new-po: `CartOfferPage` — strona oferty koszykowej (URL → cena → dodaj do koszyka)
-- [ ] `TestOrderOzo.py` → `test_orders_ozo.py`
-  - 🔴 admin: reset liczników OZO w setUp/tearDown (fixture)
-  - 🔵 new-po: `OzoBoxComponent` (homepage), `LimitedSaleComponent` (karta produktu)
-- [ ] `TestOrderDigitalLicense.py` → `test_orders_digital_license.py`
-  - 🔴 admin: weryfikacja zamówienia
-  - 🔵 new-po: obsługa produktów cyfrowych w `SelectProductWrappers` (flaga `digital=True`, filtry)
-
-### PromotionsTestsNUXT → `tests/tests_promotions/`
-
-- [ ] `TestPromotionsPromotionCodes.py` → `test_promotions_promo_codes.py`
-  - 🔴 admin: tworzenie kodu promo → weryfikacja zastosowania w koszyku + adminie
-- [ ] `TestPromotionsSezamCrossedOutPrice.py` → `test_promotions_sezam.py`
-  - 🔴 admin: konfiguracja promocji Sezam + weryfikacja cen przekreślonych
-- [ ] `TestPromotionsPromotionService.py` → `test_promotions_service.py`
-  - 🔴 admin: usługi promocyjne (montaż, ubezpieczenie) w zamówieniu
-- [ ] `TestPromotionsPromotionCodesOnProductPage.py` → `test_promotions_promo_codes_product_page.py`
-  - 🔴 admin + 🔵 new-po: kody promo widoczne na karcie produktu
-
-### EmployeeProgramTestsNUXT → `tests/tests_employee_program/`
-
-- [ ] `TestEmployeeProgramGroupOrderSms.py` → `test_employee_program_order_sms.py`
-  - 🔴 admin: tworzenie kodu SMS + 🟡 mailhog: weryfikacja maila
-- [ ] `TestEmployeeProgramGroupOrderQr.py` → `test_employee_program_order_qr.py`
-  - 🔴 admin: tworzenie kodu QR
-- [ ] `TestEmployeeProgramGroupRegisterSms.py` → `test_employee_program_register_sms.py`
-  - 🔴 admin + 🟡 mailhog
-- [ ] `TestEmployeeProgramGroupRegisterQr.py` → `test_employee_program_register_qr.py`
-  - 🔴 admin
-- [ ] `TestEmployeeProgramGroupCrudSms.py` → `test_employee_program_crud_sms.py`
-  - 🔴 admin + 🟡 mailhog: CRUD kodów SMS
-- [ ] `TestEmployeeProgramGroupCrudQr.py` → `test_employee_program_crud_qr.py`
-  - 🔴 admin: CRUD kodów QR
-
----
-
 ## 🚫 Poza zakresem migracji e2e
 
 Poniższe nie są testami e2e w sensie scenariuszy użytkownika:
@@ -367,8 +379,10 @@ Poniższe nie są testami e2e w sensie scenariuszy użytkownika:
 | ✅ Faza 4-alfa — domknięcie TODO | 2 | admin DONE | ✅ DONE |
 | 🟠 Faza 4-beta — orders rozszerzone | 4 | małe nowe PO / checkout | ~3–4 dni |
 | 🟠 Faza 4-gamma — moduły biznesowe | 3 | admin flows per moduł | ~2–3 dni |
-| 🟠 Faza 4-delta — paczki regresyjne | 31 | admin flows per domena | ~4–7 dni |
-| 🔴🟡 Faza 5 — Admin + Mailhog | 18 | rozszerzenia admin flows + 🟡 Sprint 4 | ~5–8 dni |
+| 🟠 Faza 4-delta — admin + search | 5 | admin flows per domena | ~2–3 dni |
+| 🔴🟡 Faza 5 — Admin + Mailhog | 11 | rozszerzenia admin flows + 🟡 Sprint 4 | ~5–8 dni |
+| 🟠 Faza 6 — promotions | 4 | admin flows promocji + punktowe nowe PO | ~2–4 dni |
+| 🟣 Faza 7 — cart restrictions | 29 | admin flows + nowe PO restrykcji | ~4–7 dni |
 | 🚫 Poza zakresem | 8 | — | — |
 | **Łącznie do migracji** | **91** | | **~24–38 dni** |
 
@@ -384,7 +398,7 @@ Poniższe nie są testami e2e w sensie scenariuszy użytkownika:
 - ✅ Faza 4-gamma zamknięta implementacyjnie: split payment + aggregator.
 - Weryfikacja live zakresu beta+gamma: `8 passed, 3 skipped`.
 - Skipy środowiskowe: `test_orders_matrix_vs_list`, `test_aggregator_promo_code`.
-- `Next up`: Faza 4-delta → `CartRestrictionTestsNUXT`, potem hardening skipów env i Faza 5.
+- `Next up`: domknięcie skipów env w Fazie 4-beta/gamma, potem nowa Faza 4-delta (`AdminTestsNUXT` + `SearchTestsNUXT`), następnie Faza 5, osobna Faza 6 dla `PromotionsTestsNUXT` i Faza 7 dla `CartRestrictionTestsNUXT`.
 - Zaimplementowano 16/16 testów Fazy 2 (w tym 6 testów oznaczonych jako Faza 2-alfa / smoke-warunkowe).
 - Dodane pliki testów: `qa/e2e/netcorner/nuxt/pl/tests/tests_products/`.
 - Dodane komponenty PO: `comparison_component.py`, `omnibus_price_component.py`, `product_opinion_component.py` + rozszerzenie `hero_component.py` o widget OZO.

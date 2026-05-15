@@ -31,8 +31,10 @@ Testy blokowane przez ten dług (z `migration_todo.md`):
 
 | Faza | Testy |
 |---|---|
-| Faza 4 | TestOrderBigSizeWithLift, TestOrderBigSizeWithoutLift, TestOrderDimensionModule, TestOrderCompanyData (TODO domknięcie), TestOrderPrices (TODO domknięcie), TestSplitPayment, TestAggregator, TestAggregatorPromoCode, CartRestrictionTestsNUXT (29 testów) |
-| Faza 5 | TestOrderStatuses, TestOrderPartnerStorehouse, TestOrderCartOffer, TestOrderOzo, TestPromotions* (4), TestEmployeeProgram* (6), SmokeTestsNUXT/TestOrders |
+| Faza 4 | TestOrderBigSizeWithLift, TestOrderBigSizeWithoutLift, TestOrderDimensionModule, TestOrderCompanyData (TODO domknięcie), TestOrderPrices (TODO domknięcie), TestSplitPayment, TestAggregator, TestAggregatorPromoCode |
+| Faza 5 | TestOrderStatuses, TestOrderPartnerStorehouse, TestOrderCartOffer, TestOrderOzo, TestEmployeeProgram* (6), SmokeTestsNUXT/TestOrders |
+| Faza 6 | TestPromotions* (4) |
+| Faza 7 | CartRestrictionTestsNUXT (29 testów) |
 
 ## Implementation (2026-05-14)
 
@@ -85,7 +87,7 @@ def admin_panel(page, runtime_env) -> AdminWrappers
 - [x] `AdminWrappers.assert_order_details` z asercjami NIP / ceny / statusu / nabywcy
 - [x] Zmiana statusu zamówienia (`AdminOrderDetailPage.change_status`)
 
-### Zakres rozszerzony (Faza 5) — TODO
+### Zakres rozszerzony (Fazy 5-6) — TODO
 
 - [ ] `AdminCartOfferPage` — tworzenie oferty koszykowej
 - [ ] `AdminOzoPage` — reset liczników OZO
@@ -114,7 +116,7 @@ def admin_panel(page, runtime_env) -> AdminWrappers
 - Porównanie danych z TYP z danymi w adminie
 - Metoda: `AdminWrappers.assert_order_details(order_number, expected_data)`
 
-### Funkcjonalny zakres rozszerzony (odblokowanie Fazy 5)
+### Funkcjonalny zakres rozszerzony (odblokowanie Faz 5-6)
 
 #### Zmiana statusu zamówienia
 - Wybór statusu z listy → zapis → `AdminOrderDetailPage.change_status(status_id)`

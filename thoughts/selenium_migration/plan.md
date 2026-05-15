@@ -56,11 +56,14 @@ last_updated: 2026-05-14
 
 ## Next Up
 
-1. Wejść w Fazę 4-delta: pierwsza fala `CartRestrictionTestsNUXT` na gotowym admin API.
-2. Ustabilizować środowiskowe skipy z Fazy 4-beta/gamma:
+1. Domknąć istniejące skipy / drift env w Fazie 4-beta/gamma:
    - `test_orders_matrix_vs_list.py`
    - `test_aggregator_promo_code.py`
-3. Rozszerzyć Mailhog (`count_mails_matching`, `has_mail_with_subject_containing`, nowe subjecty) i wejść w Fazę 5.
+2. Zrealizować nową, zawężoną Fazę 4-delta:
+   - `AdminTestsNUXT`
+   - `SearchTestsNUXT` zależne od admina
+3. Wejść w Fazę 5 po rozszerzeniu Mailhog (`count_mails_matching`, `has_mail_with_subject_containing`, nowe subjecty).
+4. Wydzielić `PromotionsTestsNUXT` do osobnej Fazy 6 oraz przesunąć `CartRestrictionTestsNUXT` do Fazy 7.
 
 ## Cel
 
