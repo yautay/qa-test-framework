@@ -7,6 +7,8 @@ import pytest
 from playwright.sync_api import expect
 
 from qa.e2e.netcorner.nuxt.pl.lib.flows.cart_and_checkout_wrappers import CartAndCheckoutWrappers
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.cart_page import CartPage
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.product_page import ProductPage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import (
     checkout_payment_prepaid_transfer_required_terms,
     private_person_checkout_purchaser,
@@ -31,6 +33,7 @@ def test_aggregator_promo_code(page, context, runtime_env, admin_panel):
         item_name="Klawiatury promo",
         section_code="Agregator",
         product_codes="KL-LOG-094",
+        discount_code=_PROMO_CODE,
     )
 
     open_home_and_accept_cookies(page, runtime_env.base_url)
@@ -43,26 +46,17 @@ def test_aggregator_promo_code(page, context, runtime_env, admin_panel):
     accept_cookie_banner_if_visible(page)
 
     page.get_by_role("button", name="Dodaj do koszyka").first.click()
-    page.wait_for_timeout(1_000)
+    page.wait_for_load_state("domcontentloaded")
     accept_cookie_banner_if_visible(page)
+    page.goto(page.url, wait_until="domcontentloaded")
+    accept_cookie_banner_if_visible(page)
+    product_page = ProductPage(page, runtime_env.base_url).wait_loaded()
+    product_page.add_to_cart()
+    page.goto(f"{runtime_env.base_url}/cart", wait_until="domcontentloaded")
+    cart_page = CartPage(page, runtime_env.base_url).wait_loaded()
 
-    promo_button = page.get_by_role("button", name="Nie, dziękuję - chcę kupić tylko produkt")
-    if promo_button.count() and promo_button.first.is_visible():
-        promo_button.first.click(force=True)
-        page.wait_for_timeout(500)
-
-    cart_button = page.get_by_role("button", name="Przejdź do koszyka")
-    if cart_button.count() and cart_button.first.is_visible():
-        cart_button.first.click(force=True)
-        page.wait_for_timeout(500)
-    else:
-        page.goto(f"{runtime_env.base_url}/cart", wait_until="domcontentloaded")
-
-    cart_page = page.locator("[data-role='cartSummary']")
-    if not (cart_page.count() and cart_page.first.is_visible()):
-        pytest.skip("Środowisko nie doprowadziło produktu z agregatora promo do koszyka z polem kodu rabatowego.")
-    page.locator("#couponCode").fill(_PROMO_CODE)
-    page.get_by_role("button", name="Dodaj kod").click()
+    cart_page.content.summary.enter_coupon_code(_PROMO_CODE)
+    cart_page.content.summary.click_add_coupon_code()
     expect(page.locator("#couponCode")).to_have_value(_PROMO_CODE, timeout=10_000)
 
     receiver = private_person_delivery_courier_receiver()

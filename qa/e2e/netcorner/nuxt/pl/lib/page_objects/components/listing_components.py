@@ -251,6 +251,17 @@ class ListingContentComponent(BaseComponent):
             names.append((name_el.text_content() or "").strip().lower())
         return names
 
+    @step("Pobieram kody systemowe wszystkich produktów na listingu")
+    def get_all_system_codes(self) -> list[str]:
+        count = self.__tiles.count()
+        codes: list[str] = []
+        for i in range(count):
+            tile = ListingProductTileComponent(self.__tiles.nth(i))
+            code = tile.get_system_code().strip()
+            if code:
+                codes.append(code)
+        return codes
+
     @step("Wyszukuję pierwszy produkt o statusie dostępności: {shipping_status}")
     def find_first_product_by_shipping_status(
         self, shipping_status: AvailabilityStatus

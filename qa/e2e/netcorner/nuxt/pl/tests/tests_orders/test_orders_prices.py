@@ -44,7 +44,7 @@ def test_orders_prices(page, context, runtime_env, admin_panel, auth_case: AuthS
     assert selected_product_data is not None, "Nie udało się wybrać produktu testowego."
     assert selected_product_data.product_page_data is not None, "Produkt nie został dodany do koszyka."
 
-    listing_price = parse_price(listings_data.final_price)
+    listing_price = parse_price(selected_product_data.listing_data.final_price)
     product_page_price = parse_price(selected_product_data.product_page_data.final_price)
 
     receiver = private_person_delivery_courier_receiver()

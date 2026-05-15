@@ -7,6 +7,9 @@
 
 ## Verified Commands
 - Root `Makefile` is the source of truth for Python commands. Check `make help` before trusting README command lists.
+- Prefer `make ...` targets or `.venv/bin/python -m ...` for all Python test/lint commands. Do not use plain `python`, `pytest`, or `pip` from the system shell, because that can silently pick the wrong interpreter.
+- Fast sanity check before any Python test run: `make help`, `.venv/bin/python --version`, then run either `make <target>` or `.venv/bin/python -m pytest ...`.
+- If you need a direct pytest invocation for a focused file, use `.venv/bin/python -m pytest <path> -q` from repo root.
 - Full Python verification is `make check`, in this order: `test-aso -> lint -> format-check -> typecheck -> security -> verify-discovery -> verify-scenarios -> collect`.
 - Focused suites: `make test-aso`, `make test-e2e`, `make test-api`, `make test-visual`, `make test-smoke`.
 - `make check` does not cover the Vue report UI. If you touch `framework/visual/ui`, also run `npm run test:unit` and `npm run build:fast` in `framework/visual/ui` to match CI.
@@ -14,6 +17,8 @@
 - CI ASO parity env: `HEADLESS=1 IS_GRID_AVAILABLE=0 REPORTING_ENABLED=0 ALLURE_ENABLED=0 PYTEST_HTML_ENABLED=0 RECORD_VIDEO=0` before `make verify-discovery`, `make verify-scenarios`, `make test-aso`.
 
 ## Pytest And Runtime Gotchas
+- Repo-local interpreter is `.venv/bin/python`; it must resolve to Python 3.13. If not, stop and fix the environment before debugging tests.
+- A failed import like `cannot import name 'UTC' from 'datetime'` means the wrong interpreter was used; switch immediately to `.venv/bin/python -m pytest ...` or `make ...`.
 - `pytest.ini` disables `anyio`, `pytest-playwright`, and `pytest-base-url`. Do not assume those plugins' fixtures or CLI behavior are available.
 - Runtime defaults come from checked-in `settings_cli.py`. `--server-name`, `--reference-host`, and `--base-url` override them for one run; otherwise tests use the checked-in defaults.
 - `BASE_URL` / `BASE_URL_OVERRIDE` come from env or `.env`, but `server_name` comes from `settings_cli.py` unless you pass `--server-name`.

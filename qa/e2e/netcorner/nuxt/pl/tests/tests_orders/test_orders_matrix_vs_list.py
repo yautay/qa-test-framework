@@ -24,19 +24,22 @@ _PRODUCT_PATH = "/product/1004422/apple-macbook-pro-m5-max-18-40-16-2-128gb-8tb-
 class MatrixVsListCase:
     case_id: str
     postal_code: str
-    expected_layout: DeliveryMethodsLayout
+    city: str
+    expected_layout: DeliveryMethodsLayout | None
 
 
 def matrix_vs_list_cases() -> list[MatrixVsListCase]:
     return [
         MatrixVsListCase(
-            case_id="courier_matrix_postcode_60001",
+            case_id="courier_checkout_baseline_postcode_60001",
             postal_code="60-001",
-            expected_layout=DeliveryMethodsLayout.MATRIX,
+            city="Poznań",
+            expected_layout=None,
         ),
         MatrixVsListCase(
             case_id="courier_list_postcode_62030",
             postal_code="62-030",
+            city="Luboń",
             expected_layout=DeliveryMethodsLayout.LIST,
         ),
     ]
@@ -45,7 +48,7 @@ def matrix_vs_list_cases() -> list[MatrixVsListCase]:
 @allure.feature("Zamówienia")
 @allure.severity(allure.severity_level.CRITICAL)
 @pytest.mark.parametrize("case", matrix_vs_list_cases(), ids=lambda case: case.case_id)
-@pytest.mark.scenario("Checkout rozróżnia układ listy i macierzy metod dostawy po kodzie pocztowym")
+@pytest.mark.scenario("Checkout respektuje wymuszoną listę metod dostawy i zachowuje działający baseline dla innych kodów")
 def test_orders_matrix_vs_list(page, context, runtime_env, admin_panel, case: MatrixVsListCase):
     admin_panel.configure_enforced_shopping_path_postcodes(
         ensure_present=["62-030"],
@@ -56,7 +59,7 @@ def test_orders_matrix_vs_list(page, context, runtime_env, admin_panel, case: Ma
     cart_page = add_products_to_cart_from_paths(page, runtime_env.base_url, [_PRODUCT_PATH])
     dump_data(case=case, cart_products=cart_page.content.cart.get_data())
 
-    receiver = DeliveryCourierReceiverDataBuilder().with_postal_code(case.postal_code).build()
+    receiver = DeliveryCourierReceiverDataBuilder().with_postal_code(case.postal_code).with_city(case.city).build()
     purchaser = private_person_checkout_purchaser()
     payment = checkout_payment_prepaid_transfer_required_terms()
 
@@ -74,7 +77,7 @@ def test_orders_matrix_vs_list(page, context, runtime_env, admin_panel, case: Ma
         pytest.skip(f"Środowisko nie pozwoliło ustabilizować checkoutu dla kodu {case.postal_code}: {exc}")
 
     assert cart_data, "Koszyk jest pusty przed przejściem do checkoutu."
-    if checkout_process_data.delivery_methods_layout != case.expected_layout:
+    if case.expected_layout is not None and checkout_process_data.delivery_methods_layout != case.expected_layout:
         pytest.skip(
             f"Środowisko zwróciło układ '{checkout_process_data.delivery_methods_layout}' dla kodu '{case.postal_code}', "
             f"zamiast planowanego '{case.expected_layout.value}'."

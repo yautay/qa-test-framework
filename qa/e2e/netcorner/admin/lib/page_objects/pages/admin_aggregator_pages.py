@@ -101,7 +101,19 @@ class AdminAggregatorItemCreatePage(AdminBasePage):
         self.__products_source_code.check()
         self.__product_codes.fill(product_codes)
         if discount_code:
-            self.__discount_code.fill(discount_code)
+            if self.__discount_code.is_visible():
+                self.__discount_code.fill(discount_code)
+            else:
+                self.__discount_code.evaluate(
+                    """
+                    (element, value) => {
+                        element.value = value;
+                        element.dispatchEvent(new Event('input', { bubbles: true }));
+                        element.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                    """,
+                    discount_code,
+                )
         self.__save.click()
         self.page.wait_for_load_state("domcontentloaded")
 
