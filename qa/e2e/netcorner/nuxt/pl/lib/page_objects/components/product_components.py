@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Self
 
@@ -134,6 +135,29 @@ class ProductPriceComponent(BaseComponent):
         self.__resolved_root()
         limited_sale = self.root.locator("[data-name='limitedSale']").first
         expect(limited_sale).to_be_visible(timeout=timeout_ms)
+        return self
+
+    @step("Pobieram dane limitowanej sprzedaży OZO")
+    def get_limited_sale_status(self, timeout_ms: int = 10_000) -> dict[str, int] | None:
+        """Return limited sale counters from the product page OZO component.
+
+        Returns:
+            {"limited_sale_left": int, "limited_sale_sold": int}
+            or None if the component is not visible.
+        """
+        self.__resolved_root()
+        limited_sale = self.root.locator("[data-name='limitedSale']").first
+        if not limited_sale.is_visible(timeout=timeout_ms):
+            return None
+        text = limited_sale.inner_text()
+        # DOM: "Pozostało X szt. z Y szt."
+        match = re.search(r"Pozostało\s+(\d+)\s+szt\.\s+z\s+(\d+)\s+szt\.", text)
+        if not match:
+            return None
+        remaining = int(match.group(1))
+        total = int(match.group(2))
+        sold = total - remaining
+        return {"limited_sale_left": remaining, "limited_sale_sold": sold}
         return self
 
     @step("Dodaję produkt do koszyka")

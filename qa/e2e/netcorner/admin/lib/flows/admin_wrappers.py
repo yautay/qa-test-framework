@@ -15,6 +15,7 @@ from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_aggregator_pages import
 )
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_configuration_page import AdminConfigurationPage
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_context_page import AdminContextPage
+from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_delta_pages import AdminProductOzoPage
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_login_page import AdminLoginPage
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_order_detail_page import AdminOrderDetailPage
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_orders_page import AdminOrdersPage
@@ -244,6 +245,21 @@ class AdminWrappers:
             discount_code=discount_code,
         )
         return f"{self.__runtime_env.base_url}/promocje/{url_slug}"
+
+    def reset_ozo_for_product(self, product_id: int) -> None:
+        """Reset OZO (limited-sale) counters for a product to a clean test state.
+
+        Deactivates all currently active promotions on the product and creates
+        a fresh one with default test parameters (sold=3, total=50, per_customer=1).
+
+        Args:
+            product_id: Admin product ID for the OZO test product.
+        """
+        self.open_admin()
+        ozo_page = AdminProductOzoPage(self.__page, self.__admin_env.base_url, product_id)
+        ozo_page.navigate_to()
+        ozo_page.reset_ozo_promotion()
+        logger.debug("Admin: OZO promotion reset for product_id={}", product_id)
 
 
 __all__ = ["AdminWrappers"]
