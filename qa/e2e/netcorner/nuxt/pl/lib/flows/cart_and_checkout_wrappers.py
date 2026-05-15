@@ -49,6 +49,10 @@ class CheckoutProcessData:
 class CartAndCheckoutWrappers:
     DELIVERY_PROVIDER_STABILITY_WINDOW_MS = 2_500
     DELIVERY_PROVIDER_STABILITY_POLL_MS = 100
+    # Maximum number of consecutive read failures tolerated inside the stability
+    # window before raising.  A value of 2 absorbs one brief AJAX re-render cycle
+    # (component unmount → remount) that may make all tiles temporarily unresolvable.
+    DELIVERY_PROVIDER_STABILITY_MAX_CONSECUTIVE_ERRORS = 2
 
     def __init__(self, page: Page, context: BrowserContext, runtime_env: RuntimeEnv) -> None:
         self.__page = page
@@ -96,24 +100,38 @@ class CartAndCheckoutWrappers:
 
         stability_start = time.monotonic()
         stability_deadline = stability_start + (self.DELIVERY_PROVIDER_STABILITY_WINDOW_MS / 1000)
+        consecutive_errors = 0
         while time.monotonic() < stability_deadline:
             try:
                 stable_provider = delivery_type_component.get_selected_delivery_provider(timeout=1_000)
+                consecutive_errors = 0
             except RuntimeError as exc:
+                consecutive_errors += 1
                 elapsed_ms = int(max(0.0, time.monotonic() - stability_start) * 1000)
-                logger.error(
-                    "TEST_ERROR code=DELIVERY_PROVIDER_UNREADABLE_AFTER_PICKUP expected_provider={} actual_provider={} "
-                    "delivery_type={} page_url={} elapsed_ms={} error={}",
-                    expected_provider,
-                    "<unknown>",
-                    delivery_type.value,
-                    self.__page.url,
+                if consecutive_errors > self.DELIVERY_PROVIDER_STABILITY_MAX_CONSECUTIVE_ERRORS:
+                    logger.error(
+                        "TEST_ERROR code=DELIVERY_PROVIDER_UNREADABLE_AFTER_PICKUP expected_provider={} actual_provider={} "
+                        "delivery_type={} page_url={} elapsed_ms={} error={}",
+                        expected_provider,
+                        "<unknown>",
+                        delivery_type.value,
+                        self.__page.url,
+                        elapsed_ms,
+                        str(exc),
+                    )
+                    raise AssertionError(
+                        "Nie udało się odczytać aktywnego typu dostawy po zamknięciu modala punktu odbioru."
+                    ) from exc
+                # Transient read failure (e.g. component re-mount during AJAX recalc).
+                # Sleep and retry while still inside the deadline.
+                logger.warning(
+                    "DELIVERY_PROVIDER_READ_TRANSIENT_ERROR consecutive={} elapsed_ms={} error={}",
+                    consecutive_errors,
                     elapsed_ms,
                     str(exc),
                 )
-                raise AssertionError(
-                    "Nie udało się odczytać aktywnego typu dostawy po zamknięciu modala punktu odbioru."
-                ) from exc
+                self.__page.wait_for_timeout(self.DELIVERY_PROVIDER_STABILITY_POLL_MS)
+                continue
 
             if stable_provider != expected_provider:
                 elapsed_ms = int(max(0.0, time.monotonic() - stability_start) * 1000)

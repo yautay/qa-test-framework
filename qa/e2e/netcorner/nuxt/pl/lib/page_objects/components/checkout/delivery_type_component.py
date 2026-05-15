@@ -68,10 +68,14 @@ class CheckoutDeliveryTypeComponent(BaseComponent):
 
     @staticmethod
     def __is_tile_selected(tile: Locator) -> bool:
-        indicator = tile.locator('[data-name="tileSelectIndicator"] i.i-verify').first
-        if indicator.count() == 0:
-            return False
-        return indicator.is_visible()
+        # Primary signal: stable CSS border class on the tile article element.
+        # The tile receives `border-blue-clear` when selected and `border-gray-mercury`
+        # when not selected. This class is set by the server/hydration and does not
+        # flicker during AJAX re-renders of transport cost, unlike the `i-verify` icon
+        # inside `tileSelectIndicator` which is toggled via a Vue transition and can
+        # momentarily disappear while the checkout recalculates shipping.
+        classes = tile.get_attribute("class") or ""
+        return "border-blue-clear" in classes
 
     def __selected_provider_once(self) -> str:
         for tile_locator in self.__delivery_tiles():

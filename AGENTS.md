@@ -28,6 +28,7 @@
 ## Visual And Artifacts
 - Visual outputs live under `artifacts/<run_id>/visual/`; the report server default port is `4173`.
 - `npm run build` in `framework/visual/ui` runs Vitest with coverage before bundling. `npm run build:fast` skips tests and just creates the `dist/` bundle used by CI and `make report-serve`.
+- Full artifact layout and debugging workflows (logs, traces, DOM snapshots, screenshots) are documented in `docs/DEBUG_AGENTS.md`. **Read that file first when diagnosing a failing E2E test.**
 
 ## Test Environment Connectivity
 - Test environments use internal netcorner.pl domains (e.g. `komputronik-galak.test.netcorner.pl`). VPN is required.
