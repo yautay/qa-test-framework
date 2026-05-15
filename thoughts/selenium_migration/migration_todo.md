@@ -256,11 +256,11 @@ Istniejące testy Playwright pokrywające poniższe scenariusze:
 
 ### OrdersTestsNUXT (admin + mailhog) → `tests/tests_orders/`
 
-- [ ] `TestOrderStatuses.py` → `test_orders_statuses.py`
+- [x] `TestOrderStatuses.py` → `test_orders_statuses.py`
   - 🔴 admin: zmiana statusów zamówienia
   - 🟡 mailhog: `has_mail_with_subject_containing` + `MailSubjects.ORDER_STATUS_CHANGED`
   - 🔵 new-po: `OrderDetailPage` — odczyt statusu (jeśli nie zbudowane w Fazie 3)
-- [ ] `TestOrderPartnerStorehouse.py` → `test_orders_partner_storehouse.py`
+- [x] `TestOrderPartnerStorehouse.py` → `test_orders_partner_storehouse.py`
   - 🔴 admin: weryfikacja zamówienia
   - 🟡 mailhog: `count_mails_matching` + `MailSubjects.PARTNER_STOREHOUSE_ORDER`
 - [ ] `TestOrderCartOffer.py` → `test_orders_cart_offer.py`
