@@ -65,3 +65,6 @@ class ProductPage(BasePage):
 
     def add_to_cart(self) -> ProductPriceData:
         return self.content.price.add_to_cart()
+
+    def click_wishlist(self) -> None:
+        self.content.actions.click_wishlist()

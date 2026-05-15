@@ -35,7 +35,7 @@ class ProductComponentsData:
 
 
 class ProductRecapComponent(BaseComponent):
-    ROOT_SELECTOR = "[data-name='productRecapInfo']"
+    ROOT_SELECTOR = "[data-name='productPrimaryInfo']"
 
     def __init__(self, scope: Page | Locator) -> None:
         super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Product Recap Component")
@@ -44,11 +44,35 @@ class ProductRecapComponent(BaseComponent):
         self.__reviews_link = self.find("a[href='#Opinie']")
 
     def get_data(self) -> ProductRecapData:
+        product_name_element = self.__product_name.first
+        product_name_element.wait_for(state="visible", timeout=self.DEFAULT_TIMEOUT)
+        product_name = (product_name_element.text_content() or "").strip()
+
         return ProductRecapData(
-            product_name=get_visible_text(self.__product_name),
+            product_name=product_name,
             system_code=strip_prefix(get_visible_text(self.__system_code), "Kod systemowy:"),
             reviews=get_visible_text(self.__reviews_link),
         )
+
+
+class ProductActionsComponent(BaseComponent):
+    def __init__(self, root: Locator) -> None:
+        super().__init__(root, name="Product Actions Component")
+        self.__compare_button = self.find("button[title='Porównaj'][data-name='productAction']")
+        self.__wishlist_button = self.find("button[title='Lista życzeń'][data-name='productAction']")
+        self.__print_button = self.find("button[title='Drukuj'][data-name='productAction']")
+
+    @step("Klikam Porównaj")
+    def click_compare(self) -> None:
+        self.pointer_click(self.__compare_button)
+
+    @step("Klikam Lista życzeń")
+    def click_wishlist(self) -> None:
+        self.pointer_click(self.__wishlist_button)
+
+    @step("Klikam Drukuj")
+    def click_print(self) -> None:
+        self.pointer_click(self.__print_button)
 
 
 class ProductPriceComponent(BaseComponent):
