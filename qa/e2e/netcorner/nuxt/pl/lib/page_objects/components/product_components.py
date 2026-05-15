@@ -34,7 +34,7 @@ class ProductComponentsData:
 
 
 class ProductRecapComponent(BaseComponent):
-    ROOT_SELECTOR = "[data-name='productRecapInfo']"
+    ROOT_SELECTOR = "[data-name='productPrimaryInfo']"
 
     def __init__(self, scope: Page | Locator) -> None:
         super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Product Recap Component")
@@ -43,8 +43,12 @@ class ProductRecapComponent(BaseComponent):
         self.__reviews_link = self.find("a[href='#Opinie']")
 
     def get_data(self) -> ProductRecapData:
+        product_name_element = self.__product_name.first
+        product_name_element.wait_for(state="visible", timeout=self.DEFAULT_TIMEOUT)
+        product_name = (product_name_element.text_content() or "").strip()
+
         return ProductRecapData(
-            product_name=get_visible_text(self.__product_name),
+            product_name=product_name,
             system_code=strip_prefix(get_visible_text(self.__system_code), "Kod systemowy:"),
             reviews=get_visible_text(self.__reviews_link),
         )
