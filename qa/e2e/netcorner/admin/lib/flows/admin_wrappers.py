@@ -15,7 +15,12 @@ from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_aggregator_pages import
 )
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_configuration_page import AdminConfigurationPage
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_context_page import AdminContextPage
-from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_delta_pages import AdminProductOzoPage
+from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_delta_pages import (
+    AdminCartOfferPage,
+    AdminEmployeeProgramPage,
+    AdminProductOzoPage,
+    EmployeeProgramGroupData,
+)
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_login_page import AdminLoginPage
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_order_detail_page import AdminOrderDetailPage
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_orders_page import AdminOrdersPage
@@ -245,6 +250,110 @@ class AdminWrappers:
             discount_code=discount_code,
         )
         return f"{self.__runtime_env.base_url}/promocje/{url_slug}"
+
+
+    # ------------------------------------------------------------------
+    # Cart Offer
+    # ------------------------------------------------------------------
+
+    def create_cart_offer_and_send_email(
+        self,
+        *,
+        product_id: int,
+        recipient_email: str,
+        channel_id: str = "1",
+        price_type_id: str = "1",
+        price_category_id: str | None = None,
+        fixed_price: str | None = None,
+        expiration_days: int = 7,
+    ) -> str:
+        """Create a cart offer in admin and send it via email.
+
+        Args:
+            product_id: Admin product ID.
+            recipient_email: Email to send the offer to.
+            channel_id: Sales channel value (default '1').
+            price_type_id: '1' = fixed price, other = dynamic.
+            price_category_id: Optional price category value.
+            fixed_price: Fixed brutto price string (for static offers).
+            expiration_days: Days until offer expires.
+
+        Returns:
+            The admin edit-page URL (contains offer id) after save.
+        """
+        self.open_admin()
+        cart_offer_page = AdminCartOfferPage(self.__page, self.__admin_env.base_url)
+        cart_offer_page.navigate_to_create()
+        offer_url = cart_offer_page.create_cart_offer(
+            product_id=product_id,
+            recipient_email=recipient_email,
+            channel_id=channel_id,
+            price_type_id=price_type_id,
+            price_category_id=price_category_id,
+            fixed_price=fixed_price,
+            expiration_days=expiration_days,
+        )
+        # After save, send the offer email from the edit page
+        cart_offer_page.send_offer_email()
+        logger.debug("Admin: cart offer created and sent to {} from url={}", recipient_email, offer_url)
+        return offer_url
+
+    # ------------------------------------------------------------------
+    # Employee Program (Partner Groups)
+    # ------------------------------------------------------------------
+
+    def create_employee_group(self, data: EmployeeProgramGroupData) -> str:
+        """Create a partner/employee group in admin.
+
+        Args:
+            data: EmployeeProgramGroupData with group configuration.
+
+        Returns:
+            The group ID string extracted from the redirect URL.
+        """
+        self.open_admin()
+        emp_page = AdminEmployeeProgramPage(self.__page, self.__admin_env.base_url)
+        emp_page.navigate_to_create()
+        group_id = emp_page.create_group(data)
+        logger.debug("Admin: employee group '{}' created, id={}", data.group_name, group_id)
+        return group_id
+
+    def delete_employee_group(self, group_id: str) -> None:
+        """Delete a partner/employee group by ID.
+
+        Args:
+            group_id: The group ID string to delete.
+        """
+        self.open_admin()
+        emp_page = AdminEmployeeProgramPage(self.__page, self.__admin_env.base_url)
+        emp_page.delete_group(group_id)
+        logger.debug("Admin: employee group id={} deleted", group_id)
+
+    def get_employee_group_sms_hashes(self, group_id: str) -> list[str]:
+        """Navigate to the employee group edit page and return the SMS hashes.
+
+        Args:
+            group_id: The group ID string.
+
+        Returns:
+            List of SMS hash strings.
+        """
+        self.open_admin()
+        emp_page = AdminEmployeeProgramPage(self.__page, self.__admin_env.base_url)
+        emp_page.navigate_to_edit(group_id)
+        return emp_page.get_sms_hashes()
+
+    def generate_employee_group_qr(self, group_id: str) -> None:
+        """Navigate to the employee group edit page and generate a new QR code.
+
+        Args:
+            group_id: The group ID string.
+        """
+        self.open_admin()
+        emp_page = AdminEmployeeProgramPage(self.__page, self.__admin_env.base_url)
+        emp_page.navigate_to_edit(group_id)
+        emp_page.generate_new_qr_code()
+        logger.debug("Admin: QR code regenerated for employee group id={}", group_id)
 
     def reset_ozo_for_product(self, product_id: int) -> None:
         """Reset OZO (limited-sale) counters for a product to a clean test state.

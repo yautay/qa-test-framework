@@ -371,13 +371,289 @@ class AdminProductOzoPage(AdminBasePage):
         self._wait_ajax()
 
 
+@dataclass(frozen=True)
+class CartOfferData:
+    """Data returned after creating a cart offer in admin."""
+    offer_id: str
+
+
+class AdminCartOfferPage(AdminBasePage):
+    """Admin cart offer create/edit page.
+
+    URL create: <admin_base_url>/admin.php/cartOffer/create/pl
+    URL edit:   <admin_base_url>/admin.php/cartOffer/edit/pl/id/{id}
+
+    Locators confirmed from Selenium CartOfferLocators.py + CartOfferObjects.py.
+    """
+
+    PAGE_ID = "netcorner.admin.cart_offer.form"
+    CREATE_PATH = "/admin.php/cartOffer/create/pl"
+    LIST_PATH = "/admin.php/cartOffer/list/pl"
+
+    # Form selectors
+    _SEL_CHANNEL = "#ktr_cart_offer_cart_offer_sales_channel_id"
+    _SEL_ACTIVE = "#ktr_cart_offer_cart_offer_active"
+    _SEL_PRICE_TYPE = "#ktr_cart_offer_cart_offer_price_type_1"
+    _SEL_PRICE_CATEGORY = "#priceCategory"
+    _INPUT_EXPIRATION = "#ktr_cart_offer_cart_offer_expiration_date"
+    _INPUT_EMAIL = "#ktr_cart_offer_cart_offer_email"
+    _INPUT_SUBJECT = "#ktr_cart_offer_cart_offer_email_subject"
+    _BTN_SAVE = "input[name='save'][type='submit']"
+    # Product row: product ID used in selector
+    _INPUT_PRODUCT_PRICE_TMPL = "#cartOfferProducts_{product_id}_priceGross"
+    # Row with add-product button
+    _BTN_SEND_EMAIL = "input[value='Wyślij e-mail']"
+    # Product section
+    _SELECT_PRODUCT_ID = "#ktr_cart_offer_cart_offer_products"
+
+    def __init__(self, page: Page, base_url: str) -> None:
+        super().__init__(page, base_url)
+
+    def navigate_to_create(self) -> AdminCartOfferPage:
+        self.page.goto(f"{self.base_url}{self.CREATE_PATH}")
+        return self.wait_loaded()
+
+    def navigate_to_list(self) -> AdminCartOfferPage:
+        self.page.goto(f"{self.base_url}{self.LIST_PATH}")
+        self.page.wait_for_load_state("domcontentloaded")
+        return self
+
+    def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> AdminCartOfferPage:
+        super().wait_loaded(state=state, timeout=timeout)
+        from playwright.sync_api import expect as pw_expect
+        pw_expect(self.page.locator(self._SEL_CHANNEL)).to_be_visible(timeout=timeout or self.DEFAULT_TIMEOUT)
+        return self
+
+    def create_cart_offer(
+        self,
+        *,
+        product_id: int,
+        qty: int = 1,
+        recipient_email: str,
+        channel_id: str = "1",
+        price_type_id: str = "1",
+        price_category_id: str | None = None,
+        expiration_days: int = 7,
+        fixed_price: str | None = None,
+    ) -> str:
+        """Fill and save the cart offer form. Returns the offer URL extracted from the list.
+
+        Args:
+            product_id: Admin product ID to add to the offer.
+            qty: Quantity.
+            recipient_email: Email to send the cart offer to.
+            channel_id: Sales channel option value (default '1' = komputronik.pl).
+            price_type_id: Price type select value. '1' = fixed, other = dynamic.
+            price_category_id: Price category select value (optional).
+            expiration_days: Days until offer expires.
+            fixed_price: Fixed brutto price string (only for static/fixed price type).
+        Returns:
+            The cart offer URL taken from the success redirect URL or list.
+        """
+        expiration_date = (datetime.now() + timedelta(days=expiration_days)).strftime("%Y-%m-%d")
+
+        self.page.locator(self._SEL_CHANNEL).select_option(value=channel_id)
+
+        # Active checkbox
+        active_cb = self.page.locator(self._SEL_ACTIVE)
+        if active_cb.count() and not active_cb.is_checked():
+            active_cb.check()
+
+        # Expiration date — datepicker, set via JS
+        self.page.eval_on_selector(
+            self._INPUT_EXPIRATION, f"el => el.value = '{expiration_date}'"
+        )
+
+        # Email recipient
+        email_inp = self.page.locator(self._INPUT_EMAIL)
+        if email_inp.count():
+            email_inp.fill(recipient_email)
+
+        # Price type
+        price_type_sel = self.page.locator(self._SEL_PRICE_TYPE)
+        if price_type_sel.count():
+            price_type_sel.select_option(value=price_type_id)
+
+        # Price category
+        if price_category_id is not None:
+            price_cat_sel = self.page.locator(self._SEL_PRICE_CATEGORY)
+            if price_cat_sel.count():
+                price_cat_sel.select_option(value=price_category_id)
+
+        # Add product — admin uses a product search / select field
+        product_sel = self.page.locator(self._SELECT_PRODUCT_ID)
+        if product_sel.count():
+            product_sel.fill(str(product_id))
+            # Trigger keyup/change to load product row
+            product_sel.press("Enter")
+            self.page.wait_for_timeout(1_500)
+
+        # Fixed price per product (only when price_type is fixed)
+        if fixed_price is not None:
+            price_input_sel = self._INPUT_PRODUCT_PRICE_TMPL.format(product_id=product_id)
+            price_inp = self.page.locator(price_input_sel)
+            if price_inp.count():
+                price_inp.fill(fixed_price)
+
+        self.page.locator(self._BTN_SAVE).first.click()
+        self.page.wait_for_load_state("domcontentloaded")
+
+        # Return current URL — it redirects to the edit page with id in path
+        return self.page.url
+
+    def send_offer_email(self) -> None:
+        """Click 'Wyślij e-mail' to dispatch the cart offer email to the recipient."""
+        btn = self.page.locator(self._BTN_SEND_EMAIL)
+        if btn.count():
+            btn.first.click()
+            self.page.wait_for_load_state("domcontentloaded")
+
+    def get_offer_id_from_url(self) -> str | None:
+        """Extract the offer id from the current admin URL (edit page)."""
+        url = self.page.url
+        match = re.search(r"/cartOffer/edit/pl/id/(\d+)", url)
+        return match.group(1) if match else None
+
+
+@dataclass(frozen=True)
+class EmployeeProgramGroupData:
+    """Data model for partner/employee group created in admin."""
+    group_name: str
+    price_category_id: str = "68"  # default employee price category
+    enable_qr: bool = False
+    phone_numbers: list[str] | None = None
+
+
+class AdminEmployeeProgramPage(AdminBasePage):
+    """Admin partner/employee group create/edit page.
+
+    URL create: <admin_base_url>/admin.php/partnerEmployeeGroup/create/pl
+    URL list:   <admin_base_url>/admin.php/partnerEmployeeGroup/list/pl
+    URL edit:   <admin_base_url>/admin.php/partnerEmployeeGroup/edit/pl/id/{id}
+
+    Locators confirmed from Selenium PartnerGroupLocators.py + PartnerGroupObjects.py.
+    """
+
+    PAGE_ID = "netcorner.admin.employee_program.form"
+    CREATE_PATH = "/admin.php/partnerEmployeeGroup/create/pl"
+    LIST_PATH = "/admin.php/partnerEmployeeGroup/list/pl"
+
+    # Form selectors
+    _INPUT_GROUP_NAME = "#ktr_partner_employee_group_group_name"
+    _SELECT_PRICE_CATEGORY = "#ktr_partner_employee_group_group_price_category_id"
+    _CB_ENABLE_QR = "#ktr_partner_employee_group_qr_code"
+    _INPUT_SMS_MSG = "#ktr_partner_employee_group_sms_message"
+    _INPUT_IMPORT_PHONES = "#ktr_partner_employee_group_phone_numbers_import"
+    _BTN_SHOW_HASHES = "input[value='Pokaż hashe']"
+    _ELEMENTS_HASHES = ".hash-list li, #hashList li, td.hash"
+    _BTN_GENERATE_QR = "input[value='Generuj nowy kod QR']"
+    _BTN_SAVE = "input[name='save'][type='submit']"
+    # Delete button in list
+    _BTN_DELETE_IN_LIST = "a[href*='partnerEmployeeGroup/delete']"
+
+    def __init__(self, page: Page, base_url: str) -> None:
+        super().__init__(page, base_url)
+
+    def navigate_to_create(self) -> AdminEmployeeProgramPage:
+        self.page.goto(f"{self.base_url}{self.CREATE_PATH}")
+        return self.wait_loaded()
+
+    def navigate_to_list(self) -> AdminEmployeeProgramPage:
+        self.page.goto(f"{self.base_url}{self.LIST_PATH}")
+        self.page.wait_for_load_state("domcontentloaded")
+        return self
+
+    def navigate_to_edit(self, group_id: str) -> AdminEmployeeProgramPage:
+        self.page.goto(f"{self.base_url}/admin.php/partnerEmployeeGroup/edit/pl/id/{group_id}")
+        return self.wait_loaded()
+
+    def wait_loaded(
+        self, *, state: LoadState = "domcontentloaded", timeout: int | None = None
+    ) -> AdminEmployeeProgramPage:
+        super().wait_loaded(state=state, timeout=timeout)
+        from playwright.sync_api import expect as pw_expect
+        pw_expect(self.page.locator(self._INPUT_GROUP_NAME)).to_be_visible(
+            timeout=timeout or self.DEFAULT_TIMEOUT
+        )
+        return self
+
+    def create_group(self, data: EmployeeProgramGroupData) -> str:
+        """Fill and save the employee group form.
+
+        Returns:
+            The group ID extracted from the redirect URL after save.
+        """
+        self.page.locator(self._INPUT_GROUP_NAME).fill(data.group_name)
+
+        price_cat_sel = self.page.locator(self._SELECT_PRICE_CATEGORY)
+        if price_cat_sel.count():
+            price_cat_sel.select_option(value=data.price_category_id)
+
+        if data.enable_qr:
+            qr_cb = self.page.locator(self._CB_ENABLE_QR)
+            if qr_cb.count() and not qr_cb.is_checked():
+                qr_cb.check()
+
+        if data.phone_numbers:
+            phone_inp = self.page.locator(self._INPUT_IMPORT_PHONES)
+            if phone_inp.count():
+                phone_inp.fill("\n".join(data.phone_numbers))
+
+        self.page.locator(self._BTN_SAVE).first.click()
+        self.page.wait_for_load_state("domcontentloaded")
+
+        return self.get_group_id_from_url() or ""
+
+    def get_group_id_from_url(self) -> str | None:
+        """Extract the group id from the current admin URL."""
+        url = self.page.url
+        match = re.search(r"/partnerEmployeeGroup/edit/pl/id/(\d+)", url)
+        return match.group(1) if match else None
+
+    def get_sms_hashes(self) -> list[str]:
+        """Click 'Pokaż hashe' and return the list of SMS hash codes."""
+        btn = self.page.locator(self._BTN_SHOW_HASHES)
+        if btn.count():
+            btn.first.click()
+            self.page.wait_for_timeout(1_000)
+        hashes_el = self.page.locator(self._ELEMENTS_HASHES)
+        return [
+            hashes_el.nth(i).inner_text().strip()
+            for i in range(hashes_el.count())
+            if hashes_el.nth(i).inner_text().strip()
+        ]
+
+    def generate_new_qr_code(self) -> None:
+        """Click 'Generuj nowy kod QR' and wait for it."""
+        btn = self.page.locator(self._BTN_GENERATE_QR)
+        if btn.count():
+            btn.first.click()
+            self.page.wait_for_load_state("domcontentloaded")
+
+    def delete_group(self, group_id: str) -> None:
+        """Navigate to list and delete the group with the given ID."""
+        self.navigate_to_list()
+        delete_link = self.page.locator(f"a[href*='partnerEmployeeGroup/delete/pl/id/{group_id}']")
+        if delete_link.count():
+            delete_link.first.click()
+            self.page.wait_for_load_state("domcontentloaded")
+
+    def is_group_registered(self, email: str) -> bool:
+        """Check if a user email appears in the group member list on the edit page."""
+        return self.page.locator(f"td:has-text('{email}')").count() > 0
+
+
 __all__ = [
+    "AdminCartOfferPage",
     "AdminCategorySearchKeywordsPage",
+    "AdminEmployeeProgramPage",
     "AdminMissingLinksPage",
     "AdminOrdersReportsPage",
     "AdminProductOzoPage",
     "AdminSearchCodeGroupPage",
     "AdminSettingsExceptionListPage",
+    "CartOfferData",
+    "EmployeeProgramGroupData",
     "ListingExceptionEntry",
     "SearchKeywordEntry",
 ]
