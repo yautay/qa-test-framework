@@ -7,8 +7,9 @@ from typing import Self
 from playwright.sync_api import Locator, Page, expect
 
 from qa.e2e.netcorner.lib.step_api import step
+from qa.e2e.netcorner.lib.dom_capture import capture_page_dom
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.utils import get_visible_text, normalize_price, strip_prefix
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.utils import get_visible_text, normalize_price, strip_prefix, price_text_to_float
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.products.products_data_models import (
     AvailabilityStatus,
     AvailabilityStatuses,
@@ -101,8 +102,21 @@ class ListingSortingComponent(BaseComponent):
     @step("Wybieram opcję z listy sortowania: {option}")
     def select_sort_option(self, option: ListingSortingComponent.SortOption) -> Self:
         option_label = option.value
-        self.__select_from_custom_dropdown(self.__sort_dropdown, self.__sort_options_container, option_label)
-        expect(self.__sort_dropdown).to_contain_text(option_label, timeout=15_000)
+        page = self.root.page
+        # Open the dropdown (no navigation).
+        self.pointer_click(self.__sort_dropdown)
+        # Click the chosen option — triggers a SPA route change (Vue Router
+        # pushState).  expect_navigation with domcontentloaded does NOT work
+        # here because domcontentloaded already fired on initial load.  Instead
+        # we use networkidle which waits until the data fetch triggered by the
+        # route change has settled.
+        option_locator = self.__sort_options_container.get_by_text(option_label, exact=True).first
+        self.pointer_click(option_locator)
+        page.wait_for_load_state("networkidle", timeout=15_000)
+        # Confirm listing content and at least one tile are visible.
+        listing_content = page.locator("[data-name='listingContent']")
+        expect(listing_content).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+        expect(listing_content.locator("[data-name='listingTile']").first).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
         return self
 
     @step("Wybieram opcję z listy dostępności: {option}")
@@ -197,6 +211,36 @@ class ListingContentComponent(BaseComponent):
     def count(self) -> int:
         return self.__tiles.count()
 
+    def wait_for_tiles(self, timeout: int = 15_000) -> None:
+        """Wait until at least one listing tile is visible.
+
+        Nuxt pages undergo client-side hydration after domcontentloaded, during
+        which SSR tiles are briefly removed and re-rendered.  Callers that need
+        an accurate ``count()`` must wait here first.
+        """
+        expect(self.__tiles.first).to_be_visible(timeout=timeout)
+
+    @step("Pobieram ceny finalne wszystkich produktów na listingu")
+    def get_all_final_prices(self) -> list[float]:
+        """Returns final prices of all visible listing tiles as floats for sort comparison."""
+        count = self.__tiles.count()
+        prices: list[float] = []
+        for i in range(count):
+            price_el = self.__tiles.nth(i).locator("[data-price-type='final']").first
+            raw = (price_el.text_content() or "").strip()
+            prices.append(price_text_to_float(raw))
+        return prices
+
+    @step("Pobieram nazwy wszystkich produktów na listingu")
+    def get_all_product_names(self) -> list[str]:
+        """Returns product names (h2) of all visible listing tiles for sort comparison."""
+        count = self.__tiles.count()
+        names: list[str] = []
+        for i in range(count):
+            name_el = self.__tiles.nth(i).locator("a[title] h2").first
+            names.append((name_el.text_content() or "").strip().lower())
+        return names
+
     @step("Wyszukuję pierwszy produkt o statusie dostępności: {shipping_status}")
     def find_first_product_by_shipping_status(
         self, shipping_status: AvailabilityStatus
@@ -217,4 +261,9 @@ class ListingContentComponent(BaseComponent):
         with self.root.page.expect_navigation(wait_until="domcontentloaded"):
             self.pointer_click(next_page_link)
         self.wait_visible()
+        capture_page_dom(
+            self.root.page,
+            event="listing_pagination_next",
+            page_id="netcorner.pl.listing.category",
+        )
         return True

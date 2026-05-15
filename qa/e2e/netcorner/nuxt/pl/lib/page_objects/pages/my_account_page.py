@@ -16,6 +16,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.navigation_section impor
 
 class MyAccountPage(BasePage):
     PATH = "/customer/account"
+    PAGE_ID = "netcorner.pl.account.main"
 
     def __init__(self, page: Page, base_url: str):
         super().__init__(page, base_url)
@@ -30,6 +31,7 @@ class MyAccountPage(BasePage):
         self.content.wait_visible()
         self.navigation.wait_visible()
         self.footer.wait_visible()
+        self.capture_dom_snapshot(event="page_loaded")
         return self
 
     @property
@@ -79,6 +81,7 @@ class MyAccountPage(BasePage):
 
 class MyAccountChangePasswordPage(MyAccountPage):
     PATH = "/customer/account/password-change"
+    PAGE_ID = "netcorner.pl.account.password_change"
 
     def __init__(self, page: Page, base_url: str):
         super().__init__(page, base_url)
@@ -94,6 +97,7 @@ class MyAccountChangePasswordPage(MyAccountPage):
         timeout: int | None = None,
     ) -> MyAccountChangePasswordPage:
         super().wait_loaded(state=state, timeout=timeout)
+        self.capture_dom_snapshot(event="page_loaded")
         return self
 
 class MyAccountWishlistPage(MyAccountPage):

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from playwright.sync_api import Locator, Page
+from typing import Self
+
+from playwright.sync_api import Locator, Page, expect
 
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
@@ -11,6 +13,87 @@ class NavigationComponent(BaseComponent):
 
     def __init__(self, scope: Page | Locator) -> None:
         super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Navigation Component")
+
+        self.__categories_bar = self.find("[data-name='megamenuDesktop'][data-categories-lvl='0']")
+
+    # --- layout assertions ---
+
+    @step("Sprawdzam widoczność paska kategorii poziomu 0")
+    def expect_categories_bar_visible(self, timeout_ms: int = 10_000) -> Self:
+        expect(self.__categories_bar).to_be_visible(timeout=timeout_ms)
+        return self
+
+    @step("Pobieram liczbę kategorii poziomu 0")
+    def get_zero_level_category_count(self) -> int:
+        return self.__categories_bar.locator("li").count()
+
+    # --- megamenu traversal ---
+
+    def __get_root_category_li(self, root_name: str) -> Locator:
+        """Returns the root <li> element for the given root category name."""
+        return self.__categories_bar.locator("li").filter(has_text=root_name).first
+
+    def __find_level1_index(self, dropdown: Locator, level1_name: str) -> int:
+        """Returns the 0-based index of the level-1 category matching level1_name, or -1."""
+        items = dropdown.locator("ul[data-categories-lvl='1'] li a")
+        count = items.count()
+        for i in range(count):
+            text = (items.nth(i).text_content() or "").strip()
+            if level1_name.lower() in text.lower():
+                return i
+        return -1
+
+    @step("Pobieram linki poziomu 2 megamenu dla: {root_name} > {level1_name}")
+    def get_level2_links_for(self, root_name: str, level1_name: str) -> list[str]:
+        """Returns all level-2 category hrefs visible in the megamenu panel
+        when root_name root category is open and level1_name item is selected.
+
+        Reads directly from the DOM (bypassing display:none) — equivalent to
+        what the Selenium hover-based implementation collected.
+        """
+        root_li = self.__get_root_category_li(root_name)
+        dropdown = root_li.locator("[data-role='dropdownContent']")
+        idx = self.__find_level1_index(dropdown, level1_name)
+        if idx < 0:
+            return []
+        level2_div = dropdown.locator("div[data-categories-lvl='2']").nth(idx)
+        hrefs: list[str | None] = level2_div.evaluate(
+            "el => [...el.querySelectorAll('a')].map(a => a.getAttribute('href'))"
+        )
+        return [h for h in hrefs if h]
+
+    @step("Pobieram linki poziomu 2 (tekst+href) megamenu dla: {root_name} > {level1_name}")
+    def get_level2_items_for(self, root_name: str, level1_name: str) -> list[tuple[str, str]]:
+        """Returns (link_text, href) pairs for all level-2 links in the panel for level1_name.
+
+        Use this instead of get_level2_links_for when you need to look up links by
+        visible text (e.g. category name) rather than URL fragment — required for
+        categories whose slugs do not contain the Polish display name.
+        """
+        root_li = self.__get_root_category_li(root_name)
+        dropdown = root_li.locator("[data-role='dropdownContent']")
+        idx = self.__find_level1_index(dropdown, level1_name)
+        if idx < 0:
+            return []
+        level2_div = dropdown.locator("div[data-categories-lvl='2']").nth(idx)
+        raw: list[list[str]] = level2_div.evaluate(
+            "el => [...el.querySelectorAll('a')].map(a => [a.textContent.trim(), a.getAttribute('href') || ''])"
+        )
+        return [(text, href) for text, href in raw if href]
+
+    @step("Pobieram href kategorii poziomu 1: {root_name} > {level1_name}")
+    def get_level1_href(self, root_name: str, level1_name: str) -> str:
+        """Returns the href of the level-1 category link matching level1_name."""
+        root_li = self.__get_root_category_li(root_name)
+        dropdown = root_li.locator("[data-role='dropdownContent']")
+        items = dropdown.locator("ul[data-categories-lvl='1'] li a")
+        count = items.count()
+        for i in range(count):
+            item = items.nth(i)
+            text = (item.text_content() or "").strip()
+            if level1_name.lower() in text.lower():
+                return item.get_attribute("href") or ""
+        return ""
 
 
 class CheckoutNavigationComponent(BaseComponent):

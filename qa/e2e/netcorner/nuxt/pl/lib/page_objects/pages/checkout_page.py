@@ -14,6 +14,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.navigation_section impor
 
 class CheckoutPage(BasePage):
     PATH = "/order/checkout"
+    PAGE_ID = "netcorner.pl.checkout.main"
 
     def __init__(self, page: Page, base_url: str):
         super().__init__(page, base_url)
@@ -24,6 +25,7 @@ class CheckoutPage(BasePage):
         super().wait_loaded(state=state, timeout=timeout)
         self.content.wait_visible()
         self.navigation.wait_visible()
+        self.capture_dom_snapshot(event="page_loaded")
         return self
 
     @property
