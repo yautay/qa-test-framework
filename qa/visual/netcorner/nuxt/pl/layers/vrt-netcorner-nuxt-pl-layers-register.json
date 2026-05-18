@@ -1,9 +1,10 @@
 {
-  "id": "vrt-netcorner-nuxt-pl-layers-login",
-  "name": "Login page visual",
+  "id": "vrt-netcorner-nuxt-pl-layers-register",
+  "name": "Register layer visual",
   "suite_id": "netcorner/nuxt/pl/layers",
   "target_url": "/",
   "compare_mode": "hybrid",
+  "skip_navigation": true,
   "capture": {
     "type": "page",
     "full_page": true
@@ -19,15 +20,5 @@
     "lpips_max": 0.12,
     "dists_max": 0.12
   },
-  "steps": [
-    {
-      "action": "click",
-      "selector": "[data-name='loginDialogTrigger']"
-    },
-    {
-      "action": "wait_for_selector",
-      "selector": "[data-name='loginForm']:visible",
-      "timeout_ms": 5000
-    }
-  ]
+  "steps": []
 }

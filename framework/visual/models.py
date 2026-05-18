@@ -372,6 +372,7 @@ class VisualScenario:
     perceptual_required: bool = False
     raw_definition: dict[str, Any] = field(default_factory=dict)
     source_file: str = ""
+    skip_navigation: bool = False
 
     def __post_init__(self) -> None:
         if not self.scenario_id.strip():
@@ -409,6 +410,7 @@ class VisualScenario:
             steps=steps,
             perceptual_required=_opt_bool(d, "perceptual_required", False),
             raw_definition=deepcopy(d),
+            skip_navigation=_opt_bool(d, "skip_navigation", False),
         )
 
 
