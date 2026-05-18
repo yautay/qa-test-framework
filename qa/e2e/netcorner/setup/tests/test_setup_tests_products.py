@@ -5,7 +5,7 @@ import pytest
 from qa.e2e.netcorner.setup.setup_data import RECOMPUTING_PRODUCT_PURCHASE_ELIGIBILITY_IDS
 from qa.e2e.netcorner.setup.setup_flows import NetcornerSetupService
 
-pytestmark = [pytest.mark.setup]
+pytestmark = [pytest.mark.setup, pytest.mark.target("netcorner-nuxt-pl")]
 
 
 @pytest.mark.scenario("SetUpNUXT: TestSetUpTestsProducts")

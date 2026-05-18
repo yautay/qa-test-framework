@@ -58,8 +58,8 @@ class NetcornerSetupService:
             raise ValueError("Page jest wymagana dla setupu promotion-service.")
 
         self._page.goto(promotions_base_url, wait_until="domcontentloaded")
-        login = self._page.locator("input[name='login'], #login").first
-        password = self._page.locator("input[name='password'], #password").first
+        login = self._page.locator("#inputUsername, input[name='login'], #login").first
+        password = self._page.locator("#inputPassword, input[name='password'], #password").first
         submit = self._page.locator("button[type='submit'], input[type='submit']").first
 
         if login.count() > 0 and password.count() > 0:
@@ -70,5 +70,5 @@ class NetcornerSetupService:
 
         for promotion_id in promotion_ids:
             self._page.goto(f"{promotions_base_url}/promotion/edit/{promotion_id}", wait_until="domcontentloaded")
-            self._page.locator("input[value='Zapisz'], input[type='submit'][name='save']").first.click()
+            self._page.locator("#form-buttons button.btn-success, input[value='Zapisz'], input[type='submit'][name='save']").first.click()
             self._page.wait_for_load_state("domcontentloaded")

@@ -42,7 +42,7 @@ test-smoke: ## Testy dymne
 	$(PYTEST) -m smoke -q
 
 test-setup: ## Setupy środowiskowe Netcorner NUxT
-	$(PYTEST) qa/e2e/netcorner/nuxt/pl/tests/tests_setup -q
+	$(PYTEST) qa/e2e/netcorner/setup/tests -q
 
 
 ##@ Development
