@@ -65,22 +65,38 @@ def test_orders_matrix_vs_list(page, context, runtime_env, admin_panel, case: Ma
 
     checkout_wrappers = CartAndCheckoutWrappers(page, context, runtime_env)
     cart_data = checkout_wrappers.process_cart()
-    try:
-        checkout_process_data = checkout_wrappers.process_checkout(
-            receiver.delivery_type,
-            receiver,
-            purchaser,
-            payment,
-            submit=False,
-        )
-    except AssertionError as exc:
-        pytest.skip(f"Środowisko nie pozwoliło ustabilizować checkoutu dla kodu {case.postal_code}: {exc}")
+    checkout_error: AssertionError | None = None
+    checkout_process_data = None
+
+    for attempt in range(2):
+        try:
+            checkout_process_data = checkout_wrappers.process_checkout(
+                receiver.delivery_type,
+                receiver,
+                purchaser,
+                payment,
+                submit=False,
+            )
+            checkout_error = None
+            break
+        except AssertionError as exc:
+            checkout_error = exc
+            if attempt == 1:
+                break
+            page.goto(f"{runtime_env.base_url}/cart", wait_until="domcontentloaded")
+            cart_data = checkout_wrappers.process_cart()
+
+    assert checkout_error is None and checkout_process_data is not None, (
+        f"Checkout nie ustabilizował się dla kodu {case.postal_code} po 2 próbach: {checkout_error}"
+    )
 
     assert cart_data, "Koszyk jest pusty przed przejściem do checkoutu."
     if case.expected_layout is not None and checkout_process_data.delivery_methods_layout != case.expected_layout:
-        pytest.skip(
-            f"Środowisko zwróciło układ '{checkout_process_data.delivery_methods_layout}' dla kodu '{case.postal_code}', "
-            f"zamiast planowanego '{case.expected_layout.value}'."
+        actual_layout = checkout_process_data.delivery_methods_layout
+        actual_label = actual_layout.value if actual_layout else "unknown"
+        assert actual_layout == case.expected_layout, (
+            f"Kod '{case.postal_code}' zwrócił układ '{actual_label}', "
+            f"oczekiwano '{case.expected_layout.value}'."
         )
     assert checkout_process_data.available_delivery_methods, (
         f"Dla kodu pocztowego '{case.postal_code}' nie wykryto żadnych metod dostawy."
