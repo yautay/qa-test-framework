@@ -5,6 +5,15 @@
 - The only separate Node project is `framework/visual/ui` (CI uses Node 22 there). Run `npm ci` inside that directory; the repo root is not a Node workspace.
 - `qa/aso/framework/**` is the main framework regression/unit-style suite for `framework/`; most backend tests are there, not under a top-level `tests/` directory.
 
+## Nested AGENTS Guides
+- `qa/e2e/netcorner/nuxt/pl/tests/AGENTS.md`
+- `qa/e2e/netcorner/nuxt/pl/lib/page_objects/AGENTS.md`
+- `qa/e2e/netcorner/nuxt/pl/lib/page_objects/components/AGENTS.md`
+- `qa/e2e/netcorner/nuxt/pl/lib/page_objects/overlays/AGENTS.md`
+- `qa/e2e/netcorner/nuxt/pl/lib/page_objects/pages/AGENTS.md`
+- `qa/e2e/netcorner/nuxt/pl/lib/page_objects/sections/AGENTS.md`
+- `qa/e2e/netcorner/nuxt/pl/lib/test_data/AGENTS.md`
+
 ## Verified Commands
 - Root `Makefile` is the source of truth for Python commands. Check `make help` before trusting README command lists.
 - Prefer `make ...` targets or `.venv/bin/python -m ...` for all Python test/lint commands. Do not use plain `python`, `pytest`, or `pip` from the system shell, because that can silently pick the wrong interpreter.
@@ -54,5 +63,14 @@
 ## E2E Page Object Contract
 - For `qa/e2e/**`, follow `docs/E2E_PAGE_OBJECT_CONTRACT.md`.
 - Do not introduce new silent fallback chains in page objects or wrappers.
+- Do not introduce forced fallback/retry ladders in E2E tests ("try a few alternative paths until one passes") unless a documented, deterministic UI contract explicitly requires variants.
 - Prefer root-scoped locators and semantic Playwright locators over global page lookups.
 - When touching legacy E2E page objects, migrate the touched area toward the contract instead of preserving ambiguous fallback behavior.
+
+## E2E Test Authoring Best Practices
+- Domain split must stay strict: **assertions belong to tests**, while page objects/wrappers expose intent-driven actions and typed reads only.
+- Do not move business assertions into POM methods (no hidden `expect(...)` / `assert` in page object action APIs).
+- Keep test structure aligned with existing suites (arrange data/setup -> execute flow via wrappers/POM -> assert explicit business outcomes).
+- Use semantic scenario naming and markers (`@pytest.mark.scenario(...)`, `pytestmark`) consistent with neighboring tests.
+- Prefer explicit, typed test data from generators/builders in `lib/test_data/**` over inline ad-hoc dicts.
+- Parameterize behavior variants with `pytest.mark.parametrize(..., ids=lambda case: case.case_id)` and stable case objects (`case_id`, factory/data model) instead of branching logic inside one test.
