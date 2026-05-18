@@ -23,6 +23,9 @@
 ## Visual And Artifacts
 - Visual outputs live under `artifacts/<run_id>/visual/`; the report server default port is `4173`.
 - `npm run build` in `framework/visual/ui` runs Vitest with coverage before bundling. `npm run build:fast` skips tests and just creates the `dist/` bundle used by CI and `make report-serve`.
+- For visual scenario authoring rules (`steps` vs POM, `navigation_mode=auto|prepared`), follow `docs/VISUAL_REGRESION_TESTS_GUIDE.md`.
+- Use `navigation_mode: "prepared"` for POM-driven visual setup, so runner does not re-run `goto(target_url)` before capture.
+- For POM-driven visual setup in tests, use fixture `base_url` when creating page objects (avoid raw `runtime_env.base_url` in test setup).
 
 ## Workflow Traps
 - If a local commit is blocked unexpectedly, check `.git/hooks/pre-commit`: the repo provides `tools/hooks/pre-commit-aso.sh`, which runs `make test-aso`.
