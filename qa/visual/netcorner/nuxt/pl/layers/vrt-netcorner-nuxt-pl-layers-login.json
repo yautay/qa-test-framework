@@ -5,14 +5,8 @@
   "target_url": "/",
   "compare_mode": "hybrid",
   "capture": {
-    "type": "page",
-    "full_page": true
-  },
-  "mask": {
-    "locators": [
-      ".cookie-banner",
-      "[data-testid='dynamic-banner']"
-    ]
+      "type": "element",
+      "locator": "[data-name='dialogContent']"
   },
   "thresholds": {
     "pixel_max": 0.01,
