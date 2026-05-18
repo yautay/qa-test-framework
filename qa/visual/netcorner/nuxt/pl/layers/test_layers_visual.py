@@ -31,7 +31,7 @@ def test_layers_visual(
     pytestconfig: pytest.Config,
 ) -> None:
     if scenario.scenario_id == "vrt-netcorner-nuxt-pl-layers-register":
-        home = HomePage(page, runtime_env.base_url)
+        home = HomePage(page, base_url)
         home.open().wait_loaded().open_register_page()
 
     execute_visual_scenario(

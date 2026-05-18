@@ -11,6 +11,7 @@ from framework.visual.models import (
     DEFAULT_MASK_COLOR,
     CaptureType,
     CompareMode,
+    NavigationMode,
     VisualCapture,
     VisualMask,
     VisualScenario,
@@ -145,6 +146,10 @@ def _scenario_from_payload(payload: dict[str, Any], file_path: Path, idx: int) -
     if compare_mode not in {"pixel", "hybrid"}:
         raise _err(file_path, f"{pfx}compare_mode must be pixel|hybrid (got {compare_mode!r})")
 
+    navigation_mode = _as_str(payload.get("navigation_mode", "auto")).strip().lower()
+    if navigation_mode not in {"auto", "prepared"}:
+        raise _err(file_path, f"{pfx}navigation_mode must be auto|prepared (got {navigation_mode!r})")
+
     capture_raw = payload.get("capture") or {}
     if not isinstance(capture_raw, dict):
         raise _err(file_path, f"{pfx}capture must be an object")
@@ -203,6 +208,7 @@ def _scenario_from_payload(payload: dict[str, Any], file_path: Path, idx: int) -
         perceptual_required=_as_bool(
             payload.get("perceptual_required", False), False, file_path, f"{pfx}perceptual_required"
         ),
+        navigation_mode=cast(NavigationMode, navigation_mode),
         raw_definition=deepcopy(payload),
         source_file=str(file_path),
     )

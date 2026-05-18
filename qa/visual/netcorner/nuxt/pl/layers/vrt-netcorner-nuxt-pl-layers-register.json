@@ -2,8 +2,9 @@
   "id": "vrt-netcorner-nuxt-pl-layers-register",
   "name": "Register layer visual",
   "suite_id": "netcorner/nuxt/pl/layers",
-  "target_url": "/",
+  "target_url": "/register",
   "compare_mode": "hybrid",
+  "navigation_mode": "prepared",
   "capture": {
     "type": "page",
     "full_page": true
