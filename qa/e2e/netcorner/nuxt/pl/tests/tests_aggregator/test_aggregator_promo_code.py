@@ -26,6 +26,7 @@ _PROMO_CODE = "TECHAGGREGATORBRUTTO"
 @pytest.mark.scenario("Produkt z agregatora pozwala przejść do koszyka z kodem promocyjnym")
 def test_aggregator_promo_code(page, context, runtime_env, admin_panel):
     suffix = uuid.uuid4().hex[:8]
+    admin_panel.ensure_aggregator_promo_code(code=_PROMO_CODE)
     frontend_url = admin_panel.create_products_aggregator(
         name=f"Agregator promo {suffix}",
         work_name=f"Agregator promo {suffix}",

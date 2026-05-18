@@ -24,6 +24,7 @@ from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_delta_pages import (
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_login_page import AdminLoginPage
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_order_detail_page import AdminOrderDetailPage
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_orders_page import AdminOrdersPage
+from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_promo_code_page import AdminPromoCodePage
 from qa.e2e.netcorner.admin.lib.test_data.admin_order_models import AdminOrderData
 
 
@@ -249,6 +250,18 @@ class AdminWrappers:
             discount_code=discount_code,
         )
         return f"{self.__runtime_env.base_url}/promocje/{url_slug}"
+
+    def ensure_aggregator_promo_code(
+        self,
+        *,
+        code: str,
+        promotion_name: str = "TESTKODAGREGATOR 1PLN BRUTTO",
+    ) -> None:
+        self.open_admin()
+        AdminPromoCodePage(self.__page, self.__admin_env.base_url).create_aggregator_code(
+            code=code,
+            promotion_name=promotion_name,
+        )
 
 
     # ------------------------------------------------------------------
