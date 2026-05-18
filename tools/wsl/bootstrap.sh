@@ -34,7 +34,6 @@ if [[ "$reinstall" -eq 1 && -d "$repo_root/.venv" ]]; then
 fi
 
 ensure_repo_environment "$repo_root"
-install_local_hooks "$repo_root"
 
 if [[ "$skip_playwright" -eq 0 ]]; then
     install_playwright_chromium "$repo_root"
@@ -44,5 +43,4 @@ info "Bootstrap completed."
 printf 'Repo root: %s\n' "$repo_root"
 printf 'Python: %s\n' "$(get_required_python_version "$repo_root")"
 printf 'Venv: %s\n' "$repo_root/.venv"
-printf 'Pre-commit hook: %s\n' "$repo_root/.git/hooks/pre-commit"
 printf 'Next: bash tools/wsl/run.sh doctor\n'

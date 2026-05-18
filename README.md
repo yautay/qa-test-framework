@@ -193,10 +193,6 @@ Windows cleanup:
 - `tools/windows/Cleanup_Windows.cmd`
 - or `powershell -ExecutionPolicy Bypass -File .\tools\windows\cleanup_windows.ps1`
 
-Windows hook install:
-- included in `tools/windows/bootstrap.ps1`
-- manual reinstall: `powershell -ExecutionPolicy Bypass -File .\tools\hooks\install-local-hooks.ps1`
-
 Artifacts cleanup:
 - `make clean` (full local cleanup: run artifacts + tools logs + common caches)
 - `make clean-artifacts` (same as `make clean`)

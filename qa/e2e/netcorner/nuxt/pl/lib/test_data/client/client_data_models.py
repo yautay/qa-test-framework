@@ -26,3 +26,9 @@ class ClientCase:
 class AuthSessionCase:
     case_id: str
     authenticated: bool
+
+
+@dataclass(frozen=True)
+class PasswordFlowCase:
+    case_id: str
+    factory: Callable[[], ClientData]

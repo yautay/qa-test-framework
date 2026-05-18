@@ -3,7 +3,7 @@ from __future__ import annotations
 """Build a frozen RuntimeEnv using CLI settings, env vars, and dotenv files."""
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from importlib import metadata as importlib_metadata
 
 from dotenv import dotenv_values
@@ -63,10 +63,12 @@ class RuntimeEnv:
 
     browser: str
     is_grid_available: bool
-    grid_provider: str
     grid_ws_endpoint: str
-    grid_cdp_endpoint: str
     grid_connect_timeout_ms: int
+    grid_ws_auth_mode: str
+    grid_ws_username: str
+    grid_ws_password: str = field(repr=False)
+    grid_ws_token: str = field(repr=False)
     headless: bool
     ignore_https_errors: bool
     base_url: str
@@ -82,7 +84,7 @@ class RuntimeEnv:
     reporting_source_producer_id: str
     framework_version: str
     reporting_api_url: str
-    reporting_api_token: str
+    reporting_api_token: str = field(repr=False)
     reporting_api_run_start_endpoint: str
     reporting_api_test_result_endpoint: str
     reporting_api_run_finish_endpoint: str
@@ -102,6 +104,7 @@ class RuntimeEnv:
     pytest_html_enabled: bool
     highlight_on_fail: bool
     failed_dom_enabled: bool
+    trace_enabled: bool
     min_expected_tests: int
     run_git_info_frontend_endpoint: str
     run_git_info_backend_endpoint: str
@@ -117,7 +120,7 @@ class RuntimeEnv:
     visual_shift_compensation_y_px: int
     visual_minio_endpoint: str
     visual_minio_access_key: str
-    visual_minio_secret_key: str
+    visual_minio_secret_key: str = field(repr=False)
     visual_minio_bucket: str
     visual_minio_secure: bool
     pms_enabled: bool
@@ -141,10 +144,10 @@ class RuntimeEnv:
     jira_enabled: bool
     jira_url: str
     jira_username: str
-    jira_password: str
+    jira_password: str = field(repr=False)
     jira_verify_ssl: bool
     jira_auth_mode: str
-    jira_api_token: str
+    jira_api_token: str = field(repr=False)
     jira_retry_max: int
     jira_submit_timeout_ms: int
     jira_upload_delay_seconds: float
@@ -192,9 +195,7 @@ def load_env() -> RuntimeEnv:
 
     settings_headless = bool(settings_cli.is_session_headless)
     settings_grid_available = bool(settings_cli.is_grid_available)
-    settings_grid_provider = str(getattr(settings, "grid_provider", "auto"))
     settings_grid_ws_endpoint = settings.grid_ws_endpoint
-    settings_grid_cdp_endpoint = str(getattr(settings, "grid_cdp_endpoint", ""))
     settings_grid_connect_timeout_ms = settings.grid_connect_timeout_ms
 
     configured_browser = env_str(
@@ -222,13 +223,17 @@ def load_env() -> RuntimeEnv:
     return RuntimeEnv(
         browser=browser,
         is_grid_available=env_bool("IS_GRID_AVAILABLE", settings_grid_available),
-        grid_provider=env_str("GRID_PROVIDER", settings_grid_provider).strip().lower(),
         grid_ws_endpoint=env_str("GRID_WS_ENDPOINT", settings_grid_ws_endpoint),
-        grid_cdp_endpoint=env_str("GRID_CDP_ENDPOINT", settings_grid_cdp_endpoint),
         grid_connect_timeout_ms=env_int(
             "GRID_CONNECT_TIMEOUT_MS",
             settings_grid_connect_timeout_ms,
         ),
+        grid_ws_auth_mode=env_str(
+            "GRID_WS_AUTH_MODE", str(getattr(settings, "grid_ws_auth_mode", "none"))
+        ).strip().lower(),
+        grid_ws_username=env_str("GRID_WS_USERNAME", str(getattr(settings, "grid_ws_username", ""))),
+        grid_ws_password=env_str("GRID_WS_PASSWORD", str(getattr(settings, "grid_ws_password", ""))),
+        grid_ws_token=env_str("GRID_WS_TOKEN", str(getattr(settings, "grid_ws_token", ""))),
         headless=env_bool("HEADLESS", settings_headless),
         ignore_https_errors=env_bool(
             "IGNORE_HTTPS_ERRORS",
@@ -318,6 +323,7 @@ def load_env() -> RuntimeEnv:
         pytest_html_enabled=env_bool("PYTEST_HTML_ENABLED", bool(settings.pytest_html_enabled)),
         highlight_on_fail=env_bool("HIGHLIGHT_ON_FAIL", settings.highlight_on_fail),
         failed_dom_enabled=env_bool("FAILED_DOM_ENABLED", settings.failed_dom_enabled),
+        trace_enabled=env_bool("TRACE_ENABLED", settings.trace_enabled),
         min_expected_tests=env_int("MIN_EXPECTED_TESTS", settings.min_expected_tests),
         run_git_info_frontend_endpoint=env_str(
             "RUN_GIT_INFO_FRONTEND_ENDPOINT",

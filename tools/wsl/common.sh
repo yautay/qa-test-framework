@@ -109,13 +109,3 @@ install_playwright_chromium() {
     info "Installing Playwright Chromium"
     "$python_path" -m playwright install chromium
 }
-
-install_local_hooks() {
-    local repo_root="$1"
-    local hook_installer
-
-    hook_installer="$repo_root/tools/hooks/install-local-hooks.sh"
-    if [[ -d "$repo_root/.git" && -x "$hook_installer" ]]; then
-        "$hook_installer"
-    fi
-}

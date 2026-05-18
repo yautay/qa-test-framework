@@ -3,6 +3,7 @@ from __future__ import annotations
 from playwright.sync_api import Page
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_page import BasePage, LoadState
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.breadcrumb_component import BreadcrumbComponent
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.listing_components import ListingProductData
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages import my_account_page, product_page
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import ListingContentSection
@@ -13,19 +14,25 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.products.products_data_models import
 
 
 class ListingPage(BasePage):
+    PAGE_ID = "netcorner.pl.listing.category"
+
     def __init__(self, page: Page, base_url: str):
         super().__init__(page, base_url)
         self.__content: ListingContentSection | None = None
         self.__navigation: NavigationSection | None = None
         self.__header: HeaderSection | None = None
         self.__footer: FooterSection | None = None
+        self.__breadcrumbs: BreadcrumbComponent | None = None
 
     def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> ListingPage:
         super().wait_loaded(state=state, timeout=timeout)
         self.header.wait_visible()
         self.content.wait_visible()
+        self.content.content.wait_visible()
+        self.content.content.wait_for_tiles()
         self.navigation.wait_visible()
         self.footer.wait_visible()
+        self.capture_dom_snapshot(event="page_loaded")
         return self
 
     @property
@@ -51,6 +58,16 @@ class ListingPage(BasePage):
         if self.__footer is None:
             self.__footer = FooterSection(self.page)
         return self.__footer
+
+    @property
+    def breadcrumbs(self) -> BreadcrumbComponent:
+        if self.__breadcrumbs is None:
+            self.__breadcrumbs = BreadcrumbComponent(self.page)
+        return self.__breadcrumbs
+
+    def get_h1_text(self) -> str:
+        """Returns the text of the page's primary <h1> heading (e.g. producer name)."""
+        return (self.page.locator("h1").first.text_content() or "").strip()
 
     def open_login_overlay(self):
         self.header.actions.open_login()

@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import uuid
 
-from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_data_models import AuthSessionCase, ClientCase, ClientData
+from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_data_models import (
+    AuthSessionCase,
+    ClientCase,
+    ClientData,
+    PasswordFlowCase,
+)
 
 
 class ClientDataBuilder:
@@ -101,6 +106,24 @@ def auth_session_not_registered() -> list[AuthSessionCase]:
 def auth_session_logged() -> list[AuthSessionCase]:
     return [
         AuthSessionCase(case_id="logged_in", authenticated=True),
+    ]
+
+
+def password_change_cases() -> list[PasswordFlowCase]:
+    return [
+        PasswordFlowCase(
+            case_id="pl_password_change",
+            factory=lambda: ClientDataBuilder().with_required_terms().build(),
+        )
+    ]
+
+
+def password_recovery_cases() -> list[PasswordFlowCase]:
+    return [
+        PasswordFlowCase(
+            case_id="pl_password_recovery",
+            factory=lambda: ClientDataBuilder().with_required_terms().build(),
+        )
     ]
 
 

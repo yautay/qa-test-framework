@@ -7,8 +7,9 @@ from typing import Self
 from playwright.sync_api import Locator, Page, expect
 
 from qa.e2e.netcorner.lib.step_api import step
+from qa.e2e.netcorner.lib.dom_capture import capture_page_dom
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.utils import get_visible_text, normalize_price, strip_prefix
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.utils import get_visible_text, normalize_price, strip_prefix, price_text_to_float
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.products.products_data_models import (
     AvailabilityStatus,
     AvailabilityStatuses,
@@ -52,13 +53,24 @@ class ListingFiltersComponent(BaseComponent):
         self.__click_all_show_all_features_buttons()
         return self
 
+    @step("Aplikuję filtr: {name}")
+    def apply_filter_by_name(self, name: str) -> Self:
+        filter_label = self.root.get_by_text(name, exact=True).first
+        expect(filter_label).to_be_visible(
+            timeout=self.DEFAULT_TIMEOUT
+        ), f"Filtr '{name}' nie istnieje na listingu — sprawdź URL lub dostępność filtra na środowisku."
+        self.pointer_click(filter_label)
+        self.root.page.wait_for_load_state("networkidle", timeout=15_000)
+        return self
+
 
 class SortOptions(StrEnum):
-        DEFAULT = "Domyślnie"
-        PRICE_ASC = "Po cenie rosnąco"
-        PRICE_DESC = "Po cenie malejąco"
-        NAME_ASC = "Alfabetycznie A-Z"
-        NAME_DESC = "Alfabetycznie Z-A"
+    DEFAULT = "Domyślnie"
+    PRICE_ASC = "Po cenie rosnąco"
+    PRICE_DESC = "Po cenie malejąco"
+    NAME_ASC = "Alfabetycznie A-Z"
+    NAME_DESC = "Alfabetycznie Z-A"
+
 
 class AvailabilityOptions(StrEnum):
     ANY = "Nieistotne"
@@ -100,8 +112,21 @@ class ListingSortingComponent(BaseComponent):
     @step("Wybieram opcję z listy sortowania: {option}")
     def select_sort_option(self, option: ListingSortingComponent.SortOption) -> Self:
         option_label = option.value
-        self.__select_from_custom_dropdown(self.__sort_dropdown, self.__sort_options_container, option_label)
-        expect(self.__sort_dropdown).to_contain_text(option_label, timeout=15_000)
+        page = self.root.page
+        # Open the dropdown (no navigation).
+        self.pointer_click(self.__sort_dropdown)
+        # Click the chosen option — triggers a SPA route change (Vue Router
+        # pushState).  expect_navigation with domcontentloaded does NOT work
+        # here because domcontentloaded already fired on initial load.  Instead
+        # we use networkidle which waits until the data fetch triggered by the
+        # route change has settled.
+        option_locator = self.__sort_options_container.get_by_text(option_label, exact=True).first
+        self.pointer_click(option_locator)
+        page.wait_for_load_state("networkidle", timeout=15_000)
+        # Confirm listing content and at least one tile are visible.
+        listing_content = page.locator("[data-name='listingContent']")
+        expect(listing_content).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+        expect(listing_content.locator("[data-name='listingTile']").first).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
         return self
 
     @step("Wybieram opcję z listy dostępności: {option}")
@@ -114,8 +139,11 @@ class ListingSortingComponent(BaseComponent):
     @step("Ustawiam checkbox 'Pokaż produkty niedostępne' na: {checked}")
     def set_show_unavailable(self, checked: bool) -> Self:
         if self.__show_unavailable_checkbox.is_checked() != checked:
-            self.pointer_click(self.__show_unavailable_checkbox)
-            self.sleep(2_000)  # Czekamy na odświeżenie listingu po zmianie stanu checkboxa
+            with self.root.page.expect_navigation(wait_until="domcontentloaded", timeout=self.DEFAULT_TIMEOUT):
+                self.pointer_click(self.__show_unavailable_checkbox)
+            listing_content = self.root.page.locator("[data-name='listingContent']")
+            expect(listing_content).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+            expect(listing_content.locator("[data-name='listingTile']").first).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
         return self
 
     def is_show_unavailable_checked(self) -> bool:
@@ -193,6 +221,47 @@ class ListingContentComponent(BaseComponent):
     def count(self) -> int:
         return self.__tiles.count()
 
+    def wait_for_tiles(self, timeout: int = 15_000) -> None:
+        """Wait until at least one listing tile is visible.
+
+        Nuxt pages undergo client-side hydration after domcontentloaded, during
+        which SSR tiles are briefly removed and re-rendered.  Callers that need
+        an accurate ``count()`` must wait here first.
+        """
+        expect(self.__tiles.first).to_be_visible(timeout=timeout)
+
+    @step("Pobieram ceny finalne wszystkich produktów na listingu")
+    def get_all_final_prices(self) -> list[float]:
+        """Returns final prices of all visible listing tiles as floats for sort comparison."""
+        count = self.__tiles.count()
+        prices: list[float] = []
+        for i in range(count):
+            price_el = self.__tiles.nth(i).locator("[data-price-type='final']").first
+            raw = (price_el.text_content() or "").strip()
+            prices.append(price_text_to_float(raw))
+        return prices
+
+    @step("Pobieram nazwy wszystkich produktów na listingu")
+    def get_all_product_names(self) -> list[str]:
+        """Returns product names (h2) of all visible listing tiles for sort comparison."""
+        count = self.__tiles.count()
+        names: list[str] = []
+        for i in range(count):
+            name_el = self.__tiles.nth(i).locator("a[title] h2").first
+            names.append((name_el.text_content() or "").strip().lower())
+        return names
+
+    @step("Pobieram kody systemowe wszystkich produktów na listingu")
+    def get_all_system_codes(self) -> list[str]:
+        count = self.__tiles.count()
+        codes: list[str] = []
+        for i in range(count):
+            tile = ListingProductTileComponent(self.__tiles.nth(i))
+            code = tile.get_system_code().strip()
+            if code:
+                codes.append(code)
+        return codes
+
     @step("Wyszukuję pierwszy produkt o statusie dostępności: {shipping_status}")
     def find_first_product_by_shipping_status(
         self, shipping_status: AvailabilityStatus
@@ -213,4 +282,9 @@ class ListingContentComponent(BaseComponent):
         with self.root.page.expect_navigation(wait_until="domcontentloaded"):
             self.pointer_click(next_page_link)
         self.wait_visible()
+        capture_page_dom(
+            self.root.page,
+            event="listing_pagination_next",
+            page_id="netcorner.pl.listing.category",
+        )
         return True

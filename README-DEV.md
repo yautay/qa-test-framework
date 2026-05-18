@@ -169,13 +169,6 @@ make debug-remote-grid-up
 make debug-remote-grid-down
 ```
 
-## Local git hooks
-
-- Hook source: `tools/hooks/pre-commit-aso.sh`
-- Install (Linux/macOS): `./tools/hooks/install-local-hooks.sh`
-- Install (Windows): `powershell -ExecutionPolicy Bypass -File .\tools\hooks\install-local-hooks.ps1`
-- Hook behavior: runs `python -m pytest -m aso -q` using the repo virtualenv when available
-
 ## Environment matrix (developer view)
 
 Main defaults:
@@ -212,8 +205,26 @@ Reporting notes:
 - `REPORTING_SOURCE_ORIGIN` can be left empty to auto-detect (`ci` when `CI` exists, otherwise `local`).
 - `source.framework_version` is auto-resolved from package metadata (falls back to `unknown` when metadata is unavailable).
 
-Grid notes:
-- `GRID_PROVIDER` supports: `auto` (default), `playwright`, `selenium_cdp`.
-- `auto` tries Playwright protocol first and then Selenium CDP bridge.
-- `selenium_cdp` is Chromium-only (`chromium`/`chrome`).
-- `GRID_CDP_ENDPOINT` can be used to provide explicit CDP endpoint when Selenium Grid does not expose `se:cdp`.
+#### Grid Authentication
+
+| Env var | Description |
+|---|---|
+| `GRID_WS_AUTH_MODE` | Auth mode for the WS endpoint and all Selenium HTTP probes: `none` (default), `basic`, or `token` |
+| `GRID_WS_USERNAME` | Username for `basic` mode |
+| `GRID_WS_PASSWORD` | Password for `basic` mode |
+| `GRID_WS_TOKEN` | Bearer token for `token` mode |
+
+Examples:
+
+```bash
+# Basic auth on the WS/HTTP Grid endpoint
+GRID_WS_AUTH_MODE=basic
+GRID_WS_USERNAME=user
+GRID_WS_PASSWORD=secret
+
+# Bearer token on the WS/HTTP Grid endpoint
+GRID_WS_AUTH_MODE=token
+GRID_WS_TOKEN=mytoken
+```
+
+> Note: `GRID_WS_AUTH_MODE` credentials are applied to the Playwright WebSocket connect call.

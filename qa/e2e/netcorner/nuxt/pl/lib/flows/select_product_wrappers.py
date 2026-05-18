@@ -11,7 +11,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.listing_components imp
     ListingProductData,
     SortOptions,
 )
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.product_components import ProductPriceData
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.product_components import ProductPriceData, ProductRecapData
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.listing_page import ListingPage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listings_data_models import ListingsData
 
@@ -20,6 +20,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listings_data_models import
 class SelectProductData:
     listing_data: ListingProductData
     product_page_data: ProductPriceData | None
+    product: ProductRecapData | None
 
 
 class SelectProductWrappers:
@@ -77,6 +78,7 @@ class SelectProductWrappers:
             selected_product_data, product_page = result
 
         product_page_data = None
+        product = product_page.content.recap.get_data()
         if add_to_cart:
             with step_context("Dodaję wybrany produkt do koszyka"):
                 product_page_data = product_page.add_to_cart()
@@ -86,4 +88,5 @@ class SelectProductWrappers:
         return SelectProductData(
             listing_data=selected_product_data,
             product_page_data=product_page_data,
+            product=product,
         )

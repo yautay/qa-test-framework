@@ -782,6 +782,34 @@ Szersza walidacja backendowo-frameworkowa:
 make test-aso
 ```
 
+## Snapshoty DOM do analizy AI (`--collect_dom`)
+
+Dla uruchomień E2E możesz włączyć proaktywne zbieranie snapshotów DOM:
+
+```bash
+python -m pytest qa/e2e/netcorner/nuxt/pl/tests -q --collect_dom
+```
+
+Działa też alias:
+
+```bash
+python -m pytest qa/e2e/netcorner/nuxt/pl/tests -q --collect-dom
+```
+
+Kontrakt i zachowanie:
+
+- zbieranie jest per test (`per test`), nie globalne,
+- główny trigger to `wait_loaded(...)` na page objectach,
+- snapshoty są kompresowane (`.html.gz`) i deduplikowane po hashu treści,
+- każdy page object powinien mieć stabilne `PAGE_ID` w formacie `netcorner.pl.<area>.<view>`,
+- dodatkowe punkty capture dodawaj tylko dla znanych luk przejść (np. paginacja listingu).
+
+Układ artefaktów:
+
+- `artifacts/<run_id>/dom/<nodeid_safe>/`
+- pliki: `<seq>__<event>__<page_id>__<url_token>__<viewport>.html.gz`
+- indeks metadanych: `index.jsonl`
+
 ## Krótka ściąga na koniec
 
 Jeśli masz zapamiętać tylko kilka rzeczy, zapamiętaj te:

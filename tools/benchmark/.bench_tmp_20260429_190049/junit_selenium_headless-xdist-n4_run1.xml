@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="10" time="756.509" timestamp="2026-04-29T22:17:54.225908" hostname="KaTana"><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_digital_2_digital_licence_non_registered" time="237.782" /><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_delivery_3_delivery_at_home_non_registered" time="170.267" /><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_delivery_1_delivery_at_home_registered" time="199.146" /><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_mixed_2_mixed_licence_with_product_non_registered" time="205.357" /><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_delivery_2_delivery_at_home_logged_in_cart" time="169.454" /><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_pickup_1_self_pickup_registered" time="205.175" /><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_digital_1_digital_licence_registered" time="262.049" /><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_mixed_1_mixed_licence_with_product_registered" time="234.946" /><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_pickup_3_self_pickup_non_registered" time="172.534" /><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_pickup_2_self_pickup_logged_in_cart" time="323.377"><failure message="selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element &lt;article data-name=&quot;orderPickerTile&quot; class=&quot;relative z-30 grid h-full cursor-pointer gap-4 rounded-lg border-2 bg-white p-4 ease-in-out group-hover:z-50 border-gray-mercury dark:border-gray-porcelain lg:p-6&quot;&gt;...&lt;/article&gt; is not clickable at point (353, 1010). Other element would receive the click: &lt;div class=&quot;loadingOverlay z-60&quot;&gt;&lt;/div&gt;&#10;  (Session info: headless chrome=118.0.5993.117); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception&#10;Stacktrace:&#10;#0 0x55e45385dfb3 &lt;unknown&gt;&#10;#1 0x55e4535314a7 &lt;unknown&gt;&#10;#2 0x55e45357eecd &lt;unknown&gt;&#10;#3 0x55e45357d26d &lt;unknown&gt;&#10;#4 0x55e45357b028 &lt;unknown&gt;&#10;#5 0x55e45357a097 &lt;unknown&gt;&#10;#6 0x55e45356ed59 &lt;unknown&gt;&#10;#7 0x55e45359a942 &lt;unknown&gt;&#10;#8 0x55e45356e776 &lt;unknown&gt;&#10;#9 0x55e45359ab0e &lt;unknown&gt;&#10;#10 0x55e4535b3c02 &lt;unknown&gt;&#10;#11 0x55e45359a713 &lt;unknown&gt;&#10;#12 0x55e45356d18b &lt;unknown&gt;&#10;#13 0x55e45356df7e &lt;unknown&gt;&#10;#14 0x55e4538238d8 &lt;unknown&gt;&#10;#15 0x55e453827800 &lt;unknown&gt;&#10;#16 0x55e453831cfc &lt;unknown&gt;&#10;#17 0x55e453828418 &lt;unknown&gt;&#10;#18 0x55e4537f542f &lt;unknown&gt;&#10;#19 0x55e45384c4e8 &lt;unknown&gt;&#10;#20 0x55e45384c6b4 &lt;unknown&gt;&#10;#21 0x55e45385d143 &lt;unknown&gt;&#10;#22 0x7f91e1090609 start_thread">E   selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element &lt;article data-name="orderPickerTile" class="relative z-30 grid h-full cursor-pointer gap-4 rounded-lg border-2 bg-white p-4 ease-in-out group-hover:z-50 border-gray-mercury dark:border-gray-porcelain lg:p-6"&gt;...&lt;/article&gt; is not clickable at point (353, 1010). Other element would receive the click: &lt;div class="loadingOverlay z-60"&gt;&lt;/div&gt;
+      (Session info: headless chrome=118.0.5993.117); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception
+    Stacktrace:
+    #0 0x55e45385dfb3 &lt;unknown&gt;
+    #1 0x55e4535314a7 &lt;unknown&gt;
+    #2 0x55e45357eecd &lt;unknown&gt;
+    #3 0x55e45357d26d &lt;unknown&gt;
+    #4 0x55e45357b028 &lt;unknown&gt;
+    #5 0x55e45357a097 &lt;unknown&gt;
+    #6 0x55e45356ed59 &lt;unknown&gt;
+    #7 0x55e45359a942 &lt;unknown&gt;
+    #8 0x55e45356e776 &lt;unknown&gt;
+    #9 0x55e45359ab0e &lt;unknown&gt;
+    #10 0x55e4535b3c02 &lt;unknown&gt;
+    #11 0x55e45359a713 &lt;unknown&gt;
+    #12 0x55e45356d18b &lt;unknown&gt;
+    #13 0x55e45356df7e &lt;unknown&gt;
+    #14 0x55e4538238d8 &lt;unknown&gt;
+    #15 0x55e453827800 &lt;unknown&gt;
+    #16 0x55e453831cfc &lt;unknown&gt;
+    #17 0x55e453828418 &lt;unknown&gt;
+    #18 0x55e4537f542f &lt;unknown&gt;
+    #19 0x55e45384c4e8 &lt;unknown&gt;
+    #20 0x55e45384c6b4 &lt;unknown&gt;
+    #21 0x55e45385d143 &lt;unknown&gt;
+    #22 0x7f91e1090609 start_thread</failure></testcase></testsuite></testsuites>

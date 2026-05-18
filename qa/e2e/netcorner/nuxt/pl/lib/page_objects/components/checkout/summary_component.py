@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 
-from playwright.sync_api import Locator, Page
+from playwright.sync_api import Locator, Page, expect
 
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
@@ -31,7 +31,9 @@ class CheckoutSummaryComponent(BaseComponent):
         self.__delivery_price = self.find("css=div:has(> span:text-is('Dostawa')) >> span.font-semibold")
         self.__payment_fee = self.find("css=p:text-is('Płatność') + div >> span.block.text-right")
         self.__total_to_pay = self.find("css=p.font-semibold:text-is('Do zapłaty') + span >> span.block.text-right")
-        self.__place_order_button = self.root.get_by_role("button", name="Zamawiam z obowiązkiem zapłaty").first
+        self.__place_order_button = self.root.get_by_role(
+            "button", name=re.compile(r"^(Zamawiam z obowiązkiem zapłaty|Rezerwacja)$", flags=re.IGNORECASE)
+        ).first
 
     @staticmethod
     def __read_text(locator: Locator) -> str:
@@ -56,6 +58,25 @@ class CheckoutSummaryComponent(BaseComponent):
         )
         self.pointer_click(self.__place_order_button)
         return summary_data
+
+    @step("Odczytuję dane podsumowania koszyka")
+    def get_data(self) -> CheckoutSummaryData:
+        """Return summary data without clicking the place-order button."""
+        return CheckoutSummaryData(
+            delivery_price=self.__get_delivery_price(),
+            delivery_surcharge=self.__parse_money(self.__get_payment_fee()),
+            total_to_pay=self.__get_total_to_pay(),
+        )
+
+    @step("Czekam na widoczność przycisku 'Zamawiam'")
+    def wait_place_order_button_visible(self, timeout: int = 10_000) -> CheckoutSummaryData:
+        """Wait until the place-order button is visible and return summary data.
+
+        Use this in monitoring/smoke tests to confirm checkout is fully filled
+        without actually submitting the order.
+        """
+        expect(self.__place_order_button).to_be_visible(timeout=timeout)
+        return self.get_data()
 
     def __get_delivery_price(self) -> str:
         return self.__read_text(self.__delivery_price)

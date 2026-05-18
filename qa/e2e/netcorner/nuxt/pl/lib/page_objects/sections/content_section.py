@@ -34,10 +34,12 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.my_account_component i
 )
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.password_recovery_component import PasswordRecoveryComponent
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.product_components import (
+    ProductActionsComponent,
     ProductPriceComponent,
     ProductRecapComponent,
 )
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.register_client_component import RegisterClientComponent
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.wishlist_components import WishlistComponent
 
 
 class ContentSection:
@@ -94,6 +96,18 @@ class MyAccountContentSection(ContentSection):
         if self.__my_account_password_change is None:
             self.__my_account_password_change = MyAccountPasswordChangeComponent(self.root)
         return self.__my_account_password_change
+
+
+class WishlistContentSection(ContentSection):
+    def __init__(self, page: Page) -> None:
+        super().__init__(page)
+        self.__wishlist: WishlistComponent | None = None
+
+    @property
+    def wishlist(self) -> WishlistComponent:
+        if self.__wishlist is None:
+            self.__wishlist = WishlistComponent(self.root)
+        return self.__wishlist
 
 
 class HeroPageContentSection(ContentSection):
@@ -172,6 +186,7 @@ class ProductContentSection(ContentSection):
         super().__init__(page)
         self.__recap: ProductRecapComponent | None = None
         self.__price: ProductPriceComponent | None = None
+        self.__actions: ProductActionsComponent | None = None
 
     @property
     def recap(self) -> ProductRecapComponent:
@@ -184,6 +199,12 @@ class ProductContentSection(ContentSection):
         if self.__price is None:
             self.__price = ProductPriceComponent(self.root)
         return self.__price
+
+    @property
+    def actions(self) -> ProductActionsComponent:
+        if self.__actions is None:
+            self.__actions = ProductActionsComponent(self.root)
+        return self.__actions
 
 
 class CartContentSection(ContentSection):

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="10" time="2284.780" timestamp="2026-04-29T18:17:24.759386" hostname="KaTana"><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_delivery_1_delivery_at_home_registered" time="206.291" /><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_delivery_2_delivery_at_home_logged_in_cart" time="171.662" /><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_delivery_3_delivery_at_home_non_registered" time="169.880" /><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_digital_1_digital_licence_registered" time="254.106" /><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_digital_2_digital_licence_non_registered" time="233.024" /><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_mixed_1_mixed_licence_with_product_registered" time="311.911"><failure message="selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element &lt;article data-name=&quot;orderPickerTile&quot; class=&quot;relative z-30 grid h-full cursor-pointer gap-4 rounded-lg border-2 bg-white p-4 ease-in-out group-hover:z-50 border-gray-mercury dark:border-gray-porcelain lg:p-6&quot;&gt;...&lt;/article&gt; is not clickable at point (1057, 1010). Other element would receive the click: &lt;div class=&quot;loadingOverlay z-60&quot;&gt;&lt;/div&gt;&#10;  (Session info: headless chrome=118.0.5993.117); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception&#10;Stacktrace:&#10;#0 0x5620b3714fb3 &lt;unknown&gt;&#10;#1 0x5620b33e84a7 &lt;unknown&gt;&#10;#2 0x5620b3435ecd &lt;unknown&gt;&#10;#3 0x5620b343426d &lt;unknown&gt;&#10;#4 0x5620b3432028 &lt;unknown&gt;&#10;#5 0x5620b3431097 &lt;unknown&gt;&#10;#6 0x5620b3425d59 &lt;unknown&gt;&#10;#7 0x5620b3451942 &lt;unknown&gt;&#10;#8 0x5620b3425776 &lt;unknown&gt;&#10;#9 0x5620b3451b0e &lt;unknown&gt;&#10;#10 0x5620b346ac02 &lt;unknown&gt;&#10;#11 0x5620b3451713 &lt;unknown&gt;&#10;#12 0x5620b342418b &lt;unknown&gt;&#10;#13 0x5620b3424f7e &lt;unknown&gt;&#10;#14 0x5620b36da8d8 &lt;unknown&gt;&#10;#15 0x5620b36de800 &lt;unknown&gt;&#10;#16 0x5620b36e8cfc &lt;unknown&gt;&#10;#17 0x5620b36df418 &lt;unknown&gt;&#10;#18 0x5620b36ac42f &lt;unknown&gt;&#10;#19 0x5620b37034e8 &lt;unknown&gt;&#10;#20 0x5620b37036b4 &lt;unknown&gt;&#10;#21 0x5620b3714143 &lt;unknown&gt;&#10;#22 0x7fe959ba9609 start_thread">E   selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element &lt;article data-name="orderPickerTile" class="relative z-30 grid h-full cursor-pointer gap-4 rounded-lg border-2 bg-white p-4 ease-in-out group-hover:z-50 border-gray-mercury dark:border-gray-porcelain lg:p-6"&gt;...&lt;/article&gt; is not clickable at point (1057, 1010). Other element would receive the click: &lt;div class="loadingOverlay z-60"&gt;&lt;/div&gt;
+      (Session info: headless chrome=118.0.5993.117); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception
+    Stacktrace:
+    #0 0x5620b3714fb3 &lt;unknown&gt;
+    #1 0x5620b33e84a7 &lt;unknown&gt;
+    #2 0x5620b3435ecd &lt;unknown&gt;
+    #3 0x5620b343426d &lt;unknown&gt;
+    #4 0x5620b3432028 &lt;unknown&gt;
+    #5 0x5620b3431097 &lt;unknown&gt;
+    #6 0x5620b3425d59 &lt;unknown&gt;
+    #7 0x5620b3451942 &lt;unknown&gt;
+    #8 0x5620b3425776 &lt;unknown&gt;
+    #9 0x5620b3451b0e &lt;unknown&gt;
+    #10 0x5620b346ac02 &lt;unknown&gt;
+    #11 0x5620b3451713 &lt;unknown&gt;
+    #12 0x5620b342418b &lt;unknown&gt;
+    #13 0x5620b3424f7e &lt;unknown&gt;
+    #14 0x5620b36da8d8 &lt;unknown&gt;
+    #15 0x5620b36de800 &lt;unknown&gt;
+    #16 0x5620b36e8cfc &lt;unknown&gt;
+    #17 0x5620b36df418 &lt;unknown&gt;
+    #18 0x5620b36ac42f &lt;unknown&gt;
+    #19 0x5620b37034e8 &lt;unknown&gt;
+    #20 0x5620b37036b4 &lt;unknown&gt;
+    #21 0x5620b3714143 &lt;unknown&gt;
+    #22 0x7fe959ba9609 start_thread</failure></testcase><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_mixed_2_mixed_licence_with_product_non_registered" time="204.632" /><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_pickup_1_self_pickup_registered" time="234.436"><failure message="selenium.common.exceptions.TimeoutException: Message: Element is not clickable. Element: //div[@data-name='orderShippingPicker']//p[contains(text(), 'Salony')]/ancestor::article">E   selenium.common.exceptions.TimeoutException: Message: 
+    Stacktrace:
+    #0 0x5611d453f6aa &lt;unknown&gt;
+    #1 0x5611d42220dc &lt;unknown&gt;
+    #2 0x5611d426e931 &lt;unknown&gt;
+    #3 0x5611d426ea21 &lt;unknown&gt;
+    #4 0x5611d42b3234 &lt;unknown&gt;
+    #5 0x5611d429189d &lt;unknown&gt;
+    #6 0x5611d42b05c3 &lt;unknown&gt;
+    #7 0x5611d4291613 &lt;unknown&gt;
+    #8 0x5611d42614f7 &lt;unknown&gt;
+    #9 0x5611d4261e4e &lt;unknown&gt;
+    #10 0x5611d450587b &lt;unknown&gt;
+    #11 0x5611d4509921 &lt;unknown&gt;
+    #12 0x5611d44f136e &lt;unknown&gt;
+    #13 0x5611d450a482 &lt;unknown&gt;
+    #14 0x5611d44d5ccf &lt;unknown&gt;
+    #15 0x5611d452f0a8 &lt;unknown&gt;
+    #16 0x5611d452f280 &lt;unknown&gt;
+    #17 0x5611d453e7dc &lt;unknown&gt;
+    #18 0x7f0857322609 start_thread
+
+During handling of the above exception, another exception occurred:
+E   selenium.common.exceptions.TimeoutException: Message: Element is not clickable. Element: //div[@data-name='orderShippingPicker']//p[contains(text(), 'Salony')]/ancestor::article</failure></testcase><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_pickup_2_self_pickup_logged_in_cart" time="324.425"><failure message="selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element &lt;article data-name=&quot;orderPickerTile&quot; class=&quot;relative z-30 grid h-full cursor-pointer gap-4 rounded-lg border-2 bg-white p-4 ease-in-out group-hover:z-50 border-gray-mercury dark:border-gray-porcelain lg:p-6&quot;&gt;...&lt;/article&gt; is not clickable at point (353, 1010). Other element would receive the click: &lt;div class=&quot;loadingOverlay z-60&quot;&gt;&lt;/div&gt;&#10;  (Session info: chrome-headless-shell=126.0.6478.61); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception&#10;Stacktrace:&#10;#0 0x558f6b6296aa &lt;unknown&gt;&#10;#1 0x558f6b30c0dc &lt;unknown&gt;&#10;#2 0x558f6b35f6c6 &lt;unknown&gt;&#10;#3 0x558f6b35d516 &lt;unknown&gt;&#10;#4 0x558f6b35aef7 &lt;unknown&gt;&#10;#5 0x558f6b359d2c &lt;unknown&gt;&#10;#6 0x558f6b34d40f &lt;unknown&gt;&#10;#7 0x558f6b37b872 &lt;unknown&gt;&#10;#8 0x558f6b34cd89 &lt;unknown&gt;&#10;#9 0x558f6b37ba3e &lt;unknown&gt;&#10;#10 0x558f6b39a5c3 &lt;unknown&gt;&#10;#11 0x558f6b37b613 &lt;unknown&gt;&#10;#12 0x558f6b34b4f7 &lt;unknown&gt;&#10;#13 0x558f6b34be4e &lt;unknown&gt;&#10;#14 0x558f6b5ef87b &lt;unknown&gt;&#10;#15 0x558f6b5f3921 &lt;unknown&gt;&#10;#16 0x558f6b5db36e &lt;unknown&gt;&#10;#17 0x558f6b5f4482 &lt;unknown&gt;&#10;#18 0x558f6b5bfccf &lt;unknown&gt;&#10;#19 0x558f6b6190a8 &lt;unknown&gt;&#10;#20 0x558f6b619280 &lt;unknown&gt;&#10;#21 0x558f6b6287dc &lt;unknown&gt;&#10;#22 0x7f850f4a5609 start_thread">E   selenium.common.exceptions.ElementClickInterceptedException: Message: element click intercepted: Element &lt;article data-name="orderPickerTile" class="relative z-30 grid h-full cursor-pointer gap-4 rounded-lg border-2 bg-white p-4 ease-in-out group-hover:z-50 border-gray-mercury dark:border-gray-porcelain lg:p-6"&gt;...&lt;/article&gt; is not clickable at point (353, 1010). Other element would receive the click: &lt;div class="loadingOverlay z-60"&gt;&lt;/div&gt;
+      (Session info: chrome-headless-shell=126.0.6478.61); For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#elementclickinterceptedexception
+    Stacktrace:
+    #0 0x558f6b6296aa &lt;unknown&gt;
+    #1 0x558f6b30c0dc &lt;unknown&gt;
+    #2 0x558f6b35f6c6 &lt;unknown&gt;
+    #3 0x558f6b35d516 &lt;unknown&gt;
+    #4 0x558f6b35aef7 &lt;unknown&gt;
+    #5 0x558f6b359d2c &lt;unknown&gt;
+    #6 0x558f6b34d40f &lt;unknown&gt;
+    #7 0x558f6b37b872 &lt;unknown&gt;
+    #8 0x558f6b34cd89 &lt;unknown&gt;
+    #9 0x558f6b37ba3e &lt;unknown&gt;
+    #10 0x558f6b39a5c3 &lt;unknown&gt;
+    #11 0x558f6b37b613 &lt;unknown&gt;
+    #12 0x558f6b34b4f7 &lt;unknown&gt;
+    #13 0x558f6b34be4e &lt;unknown&gt;
+    #14 0x558f6b5ef87b &lt;unknown&gt;
+    #15 0x558f6b5f3921 &lt;unknown&gt;
+    #16 0x558f6b5db36e &lt;unknown&gt;
+    #17 0x558f6b5f4482 &lt;unknown&gt;
+    #18 0x558f6b5bfccf &lt;unknown&gt;
+    #19 0x558f6b6190a8 &lt;unknown&gt;
+    #20 0x558f6b619280 &lt;unknown&gt;
+    #21 0x558f6b6287dc &lt;unknown&gt;
+    #22 0x7f850f4a5609 start_thread</failure></testcase><testcase classname="TestCases.NetCornerProducts.pl_komputronik_nuxt.Test.SmokeTestsNUXT.TestOrders.TestOrders" name="test_order_pickup_3_self_pickup_non_registered" time="174.187" /></testsuite></testsuites>

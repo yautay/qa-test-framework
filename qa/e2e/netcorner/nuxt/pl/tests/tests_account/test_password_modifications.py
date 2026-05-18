@@ -3,11 +3,12 @@ from __future__ import annotations
 import allure
 import pytest
 
+from qa.e2e.netcorner.lib.data_dump_to_logs import dump_data
 from qa.e2e.netcorner.mailhog.lib.flows.inbox_flow import MailInboxService
 from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.password_recovery_page import PasswordRecoveryPage
-from qa.e2e.netcorner.nuxt.pl.lib.test_data.client import ClientCase, ClientDataBuilder
+from qa.e2e.netcorner.nuxt.pl.lib.test_data.client import password_change_cases, password_recovery_cases
 
 pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
 
@@ -16,17 +17,13 @@ pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
 @allure.severity(allure.severity_level.BLOCKER)
 @pytest.mark.parametrize(
     "user_case",
-    [
-        ClientCase(
-            case_id="pl_password_change",
-            factory=lambda: ClientDataBuilder().with_required_terms().build(),
-        )
-    ],
+    password_change_cases(),
     ids=lambda case: case.case_id,
 )
 @pytest.mark.scenario("Zmiana hasła użytkownika")
 def test_password_change(page, context, runtime_env, user_case):
     user_data = user_case.factory()
+    dump_data(user_case=user_case, user_data=user_data)
     assert ClientWrappers(page, context, runtime_env).register_new_client(
         user_data
     ), "Użytkownik nie został poprawnie zarejestrowany."
@@ -45,17 +42,13 @@ def test_password_change(page, context, runtime_env, user_case):
 @allure.severity(allure.severity_level.BLOCKER)
 @pytest.mark.parametrize(
     "user_case",
-    [
-        ClientCase(
-            case_id="pl_password_recovery",
-            factory=lambda: ClientDataBuilder().with_required_terms().build(),
-        )
-    ],
+    password_recovery_cases(),
     ids=lambda case: case.case_id,
 )
 @pytest.mark.scenario("Odzyskiwanie hasła użytkownika")
 def test_password_recovery(page, context, runtime_env, user_case, mail_inbox: MailInboxService):
     user_data = user_case.factory()
+    dump_data(user_case=user_case, user_data=user_data)
     assert ClientWrappers(page, context, runtime_env).register_new_client(
         user_data
     ), "Użytkownik nie został poprawnie zarejestrowany."

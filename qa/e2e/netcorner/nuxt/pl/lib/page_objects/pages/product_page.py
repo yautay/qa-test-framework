@@ -13,6 +13,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.navigation_section impor
 
 class ProductPage(BasePage):
     PATH = "/product/"
+    PAGE_ID = "netcorner.pl.product.details"
 
     def __init__(self, page: Page, base_url: str):
         super().__init__(page, base_url)
@@ -27,6 +28,7 @@ class ProductPage(BasePage):
         self.content.wait_visible()
         self.navigation.wait_visible()
         self.footer.wait_visible()
+        self.capture_dom_snapshot(event="page_loaded")
         return self
 
     @property
@@ -58,10 +60,11 @@ class ProductPage(BasePage):
         return self.overlays.login.wait_visible()
 
     def open_account_page(self) -> MyAccountPage:
-        from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.my_account_page import MyAccountPage
-
         self.header.actions.open_account()
         return MyAccountPage(self.page, self.base_url).wait_loaded()
 
     def add_to_cart(self) -> ProductPriceData:
         return self.content.price.add_to_cart()
+
+    def click_wishlist(self) -> None:
+        self.content.actions.click_wishlist()

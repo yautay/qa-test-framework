@@ -23,6 +23,7 @@ from framework.env import RuntimeEnv, load_env
 from framework.reporting.toggles import resolve_report_toggles as _resolve_report_toggles
 from framework.screenshot_annotator import annotate_fail_screenshot, extract_selector_from_error
 from framework.video_utils import ensure_min_fail_video
+from qa.e2e.netcorner.lib.dom_capture import install_dom_capture_session
 
 VIEWPORT_PRESETS: dict[str, tuple[int, int]] = {
     "mobile": (390, 844),
@@ -31,6 +32,27 @@ VIEWPORT_PRESETS: dict[str, tuple[int, int]] = {
     "2k": (2560, 1440),
     "4k": (3840, 2160),
 }
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    def _has_option(option_name: str) -> bool:
+        return option_name in getattr(parser, "_option_string_actions", {})
+
+    if not _has_option("--collect_dom"):
+        parser.addoption(
+            "--collect_dom",
+            action="store_true",
+            dest="collect_dom",
+            default=False,
+            help="Capture DOM snapshots for E2E page-level wait_loaded() events",
+        )
+    if not _has_option("--collect-dom"):
+        parser.addoption(
+            "--collect-dom",
+            action="store_true",
+            dest="collect_dom",
+            help="Alias for --collect_dom",
+        )
 
 
 def _allure_enabled(pytestconfig: pytest.Config) -> bool:
@@ -186,7 +208,9 @@ def context(
         ignore_https_errors=runtime_env.ignore_https_errors,
         record_video_dir=str(run_artifacts.videos) if runtime_env.record_video else None,
     )
-    context.tracing.start(screenshots=True, snapshots=True, sources=True)
+    trace_enabled = runtime_env.trace_enabled
+    if trace_enabled:
+        context.tracing.start(screenshots=True, snapshots=True, sources=True)
     yield context
 
     failed = bool(getattr(request.node, "rep_call", None) and request.node.rep_call.failed)
@@ -201,19 +225,20 @@ def context(
         except Exception:
             raw_video_path = None
 
-    if failed:
-        trace_path = run_artifacts.traces / f"{nodeid_safe}.zip"
-        context.tracing.stop(path=str(trace_path))
-        artifacts_payload["trace"] = str(trace_path)
-        _allure_attach_file(
-            pytestconfig,
-            trace_path,
-            name="trace",
-            attachment_type="application/zip",
-            extension="zip",
-        )
-    else:
-        context.tracing.stop()
+    if trace_enabled:
+        if failed:
+            trace_path = run_artifacts.traces / f"{nodeid_safe}.zip"
+            context.tracing.stop(path=str(trace_path))
+            artifacts_payload["trace"] = str(trace_path)
+            _allure_attach_file(
+                pytestconfig,
+                trace_path,
+                name="trace",
+                attachment_type="application/zip",
+                extension="zip",
+            )
+        else:
+            context.tracing.stop()
 
     context.close()
 
@@ -260,6 +285,13 @@ def page(
     _allure_apply_dynamic_metadata(request, runtime_env, pytestconfig)
     page = context.new_page()
     set_onetrust_consent_cookies(page, runtime_env.base_url)
+    install_dom_capture_session(
+        page,
+        run_root=run_artifacts.root,
+        nodeid=request.node.nodeid,
+        viewport=str(pytestconfig.getoption("viewport") or "fhd"),
+        enabled=bool(pytestconfig.getoption("collect_dom")),
+    )
     request.node._page = page
     yield page
 
