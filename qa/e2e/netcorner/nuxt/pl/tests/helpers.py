@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from playwright.sync_api import Page
 
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.cart_page import CartPage
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.product_page import ProductPage
 
 

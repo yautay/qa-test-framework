@@ -66,7 +66,7 @@ class AdminWrappers:
         if self.__logged_in:
             return
 
-        admin_url = f"{self.__admin_env.base_url}/admin.php"
+        admin_url = f"{self.__admin_env.base_url}"
         self.__page.goto(admin_url)
         self.__page.wait_for_load_state("domcontentloaded")
 
@@ -220,7 +220,6 @@ class AdminWrappers:
             candidate = value.strip()
             if candidate:
                 normalized = [item for item in normalized if item != candidate]
-
         config_page.set_enforced_postcodes(normalized)
         return normalized
 

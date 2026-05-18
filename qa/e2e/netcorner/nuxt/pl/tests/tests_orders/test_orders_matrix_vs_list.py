@@ -7,17 +7,20 @@ import pytest
 
 from qa.e2e.netcorner.lib.data_dump_to_logs import dump_data
 from qa.e2e.netcorner.nuxt.pl.lib.flows.cart_and_checkout_wrappers import CartAndCheckoutWrappers
+from qa.e2e.netcorner.nuxt.pl.lib.flows.select_product_wrappers import SelectProductWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.checkout import DeliveryMethodsLayout
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import (
     DeliveryCourierReceiverDataBuilder,
     checkout_payment_prepaid_transfer_required_terms,
     private_person_checkout_purchaser,
 )
-from qa.e2e.netcorner.nuxt.pl.tests.helpers import add_products_to_cart_from_paths, open_home_and_accept_cookies
+from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listings_data_models import ListingsData
+from qa.e2e.netcorner.nuxt.pl.lib.test_data.products.products_data_models import AvailabilityStatuses
+from qa.e2e.netcorner.nuxt.pl.tests.helpers import open_home_and_accept_cookies
 
 pytestmark = [pytest.mark.e2e, pytest.mark.orders]
 
-_PRODUCT_PATH = "/product/1004422/apple-macbook-pro-m5-max-18-40-16-2-128gb-8tb-mac-os-gwiezdna-czern-140w-nano-textured.html"
+_CATEGORY_URL = "category/2954/myszki-komputerowe.html"
 
 
 @dataclass(frozen=True)
@@ -34,7 +37,7 @@ def matrix_vs_list_cases() -> list[MatrixVsListCase]:
             case_id="courier_checkout_baseline_postcode_60001",
             postal_code="60-001",
             city="Poznań",
-            expected_layout=None,
+            expected_layout=DeliveryMethodsLayout.MATRIX,
         ),
         MatrixVsListCase(
             case_id="courier_list_postcode_62030",
@@ -56,8 +59,14 @@ def test_orders_matrix_vs_list(page, context, runtime_env, admin_panel, case: Ma
     )
 
     open_home_and_accept_cookies(page, runtime_env.base_url)
-    cart_page = add_products_to_cart_from_paths(page, runtime_env.base_url, [_PRODUCT_PATH])
-    dump_data(case=case, cart_products=cart_page.content.cart.get_data())
+    listings_data = ListingsData(
+        category_url=_CATEGORY_URL,
+        product_availability_status=AvailabilityStatuses.ONE_DAY,
+    )
+    selected_product_data = SelectProductWrappers(page, context, runtime_env).select_test_product(listings_data)
+    assert selected_product_data is not None, "Nie udało się wybrać produktu z kategorii myszek komputerowych."
+    assert selected_product_data.product_page_data is not None, "Produkt nie został dodany do koszyka."
+    dump_data(case=case, listing=selected_product_data.listing_data, product=selected_product_data.product)
 
     receiver = DeliveryCourierReceiverDataBuilder().with_postal_code(case.postal_code).with_city(case.city).build()
     purchaser = private_person_checkout_purchaser()
@@ -65,29 +74,12 @@ def test_orders_matrix_vs_list(page, context, runtime_env, admin_panel, case: Ma
 
     checkout_wrappers = CartAndCheckoutWrappers(page, context, runtime_env)
     cart_data = checkout_wrappers.process_cart()
-    checkout_error: AssertionError | None = None
-    checkout_process_data = None
-
-    for attempt in range(2):
-        try:
-            checkout_process_data = checkout_wrappers.process_checkout(
-                receiver.delivery_type,
-                receiver,
-                purchaser,
-                payment,
-                submit=False,
-            )
-            checkout_error = None
-            break
-        except AssertionError as exc:
-            checkout_error = exc
-            if attempt == 1:
-                break
-            page.goto(f"{runtime_env.base_url}/cart", wait_until="domcontentloaded")
-            cart_data = checkout_wrappers.process_cart()
-
-    assert checkout_error is None and checkout_process_data is not None, (
-        f"Checkout nie ustabilizował się dla kodu {case.postal_code} po 2 próbach: {checkout_error}"
+    checkout_process_data = checkout_wrappers.process_checkout(
+        receiver.delivery_type,
+        receiver,
+        purchaser,
+        payment,
+        submit=False,
     )
 
     assert cart_data, "Koszyk jest pusty przed przejściem do checkoutu."
