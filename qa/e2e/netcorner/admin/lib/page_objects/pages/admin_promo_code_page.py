@@ -41,7 +41,7 @@ class AdminPromoCodePage(AdminBasePage):
         self.page.wait_for_load_state("domcontentloaded")
         return self.__code_rows.filter(has_text=code).count() > 0
 
-    def create_aggregator_code(self, *, code: str, promotion_name: str) -> None:
+    def ensure_promo_code(self, *, code: str, promotion_name: str, type_label: str = "Promocja") -> None:
         self.navigate_to()
         if self.has_code(code):
             return
@@ -49,7 +49,7 @@ class AdminPromoCodePage(AdminBasePage):
         self.__create_button.click()
         expect(self.__type_select).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
 
-        self.__type_select.select_option(label="Promocja")
+        self.__type_select.select_option(label=type_label)
         self.__code_input.fill(code)
 
         if not self.__active_checkbox.is_checked():
@@ -81,3 +81,6 @@ class AdminPromoCodePage(AdminBasePage):
                 self.page.wait_for_load_state("domcontentloaded")
 
         assert self.has_code(code), f"Nie udało się utworzyć kodu promocyjnego '{code}'."
+
+    def create_aggregator_code(self, *, code: str, promotion_name: str) -> None:
+        self.ensure_promo_code(code=code, promotion_name=promotion_name, type_label="Promocja")

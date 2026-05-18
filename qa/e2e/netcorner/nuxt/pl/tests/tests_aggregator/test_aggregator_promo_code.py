@@ -15,6 +15,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import
     private_person_delivery_courier_receiver,
 )
 from qa.e2e.netcorner.nuxt.pl.tests.helpers import accept_cookie_banner_if_visible, open_home_and_accept_cookies
+from qa.e2e.netcorner.setup.setup_flows import NetcornerSetupService
 
 pytestmark = [pytest.mark.e2e, pytest.mark.orders]
 
@@ -26,7 +27,7 @@ _PROMO_CODE = "TECHAGGREGATORBRUTTO"
 @pytest.mark.scenario("Produkt z agregatora pozwala przejść do koszyka z kodem promocyjnym")
 def test_aggregator_promo_code(page, context, runtime_env, admin_panel):
     suffix = uuid.uuid4().hex[:8]
-    admin_panel.ensure_aggregator_promo_code(code=_PROMO_CODE)
+    NetcornerSetupService(admin_panel).ensure_promo_codes()
     frontend_url = admin_panel.create_products_aggregator(
         name=f"Agregator promo {suffix}",
         work_name=f"Agregator promo {suffix}",

@@ -251,16 +251,64 @@ class AdminWrappers:
         )
         return f"{self.__runtime_env.base_url}/promocje/{url_slug}"
 
+    def save_product(self, product_id: int) -> None:
+        self.navigate_to(f"product/edit/pl/product_id/{product_id}")
+        save_button = self.__page.locator("input.sf_admin_action_save").first
+        save_button.click()
+        self.__page.wait_for_load_state("domcontentloaded")
+
+    def save_existing_product_promotion(self, product_id: int) -> None:
+        self.navigate_to(f"product/edit/pl/product_id/{product_id}")
+        promotions_tab = self.__page.locator("a[href='#ui-tabs-1']").first
+        promotions_tab.click()
+        self.__page.locator("#ui-tabs-1 table").first.wait_for(state="visible", timeout=30_000)
+        edit_button = self.__page.locator("#ui-tabs-1 a:has(img[alt='Edit_icon'])").first
+        if edit_button.count() == 0:
+            return
+        edit_button.click()
+        save_promotion = self.__page.locator("#ui-tabs-1 input[name='submit_promotion']").first
+        save_promotion.click()
+        self.__page.wait_for_load_state("domcontentloaded")
+
+    def get_product_codes(self, product_id: int) -> dict[str, str | None]:
+        self.navigate_to(f"product/edit/pl/product_id/{product_id}")
+        codes_text = self.__page.locator("#editHeaderProductCodes").first.inner_text()
+        product_match = re.search(r"Kod produktu:\s*([^,]+)", codes_text)
+        erp_match = re.search(r"Kod produktu ERP:\s*([^,]+)", codes_text)
+        producer_match = re.search(r"Kod producenta produktu:\s*([^,]+)", codes_text)
+        return {
+            "product_code": product_match.group(1).strip() if product_match else None,
+            "erp_code": erp_match.group(1).strip() if erp_match else None,
+            "producer_code": producer_match.group(1).strip() if producer_match else None,
+        }
+
+    def reindex_products_by_erp_codes(self, erp_codes: list[str]) -> None:
+        self.navigate_to("searchProductsIndex/update/pl")
+        textarea = self.__page.locator("#product_codes").first
+        textarea.fill("\n".join(erp_codes))
+        self.__page.locator("input[value='Indeksuj']").first.click()
+        self.__page.locator("div.save-ok").first.wait_for(state="visible", timeout=120_000)
+
     def ensure_aggregator_promo_code(
         self,
         *,
         code: str,
         promotion_name: str = "TESTKODAGREGATOR 1PLN BRUTTO",
     ) -> None:
+        self.ensure_promo_code(code=code, promotion_name=promotion_name)
+
+    def ensure_promo_code(
+        self,
+        *,
+        code: str,
+        promotion_name: str,
+        type_label: str = "Promocja",
+    ) -> None:
         self.open_admin()
-        AdminPromoCodePage(self.__page, self.__admin_env.base_url).create_aggregator_code(
+        AdminPromoCodePage(self.__page, self.__admin_env.base_url).ensure_promo_code(
             code=code,
             promotion_name=promotion_name,
+            type_label=type_label,
         )
 
 

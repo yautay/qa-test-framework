@@ -21,6 +21,7 @@
 - If you need a direct pytest invocation for a focused file, use `.venv/bin/python -m pytest <path> -q` from repo root.
 - Full Python verification is `make check`, in this order: `test-aso -> lint -> format-check -> typecheck -> security -> verify-discovery -> verify-scenarios -> collect`.
 - Focused suites: `make test-aso`, `make test-e2e`, `make test-api`, `make test-visual`, `make test-smoke`.
+- Setup suite: `make test-setup` (Netcorner SetUpNUXT parity for environment/data seeding).
 - `make check` does not cover the Vue report UI. If you touch `framework/visual/ui`, also run `npm run test:unit` and `npm run build:fast` in `framework/visual/ui` to match CI.
 - `make report-serve` only starts the Python report server. It fails if `framework/visual/ui/dist` is missing; build the UI first with `npm run build` or `npm run build:fast` in `framework/visual/ui`.
 - CI ASO parity env: `HEADLESS=1 IS_GRID_AVAILABLE=0 REPORTING_ENABLED=0 ALLURE_ENABLED=0 PYTEST_HTML_ENABLED=0 RECORD_VIDEO=0` before `make verify-discovery`, `make verify-scenarios`, `make test-aso`.
@@ -48,6 +49,7 @@
 - Admin credentials: login `at.tester`, password `p3yEna8GfA7GdMR8TBKTm4myT7` (base64-decoded from `nc-functional-tests-py/settings.py`). Do not use `root`/komercja credentials.
 - Admin sales channel for PL tests: `id=1` (komputronik.pl). Selected via `AdminContextPage.select_context(1)`.
 - Mailhog URL: `https://mail-galak.test.netcorner.pl` — resolved via `resolve_mail_inbox_env("galak.test")`.
+- On every new test environment, run `make test-setup` before running dependent Netcorner E2E suites.
 - Connectivity check: `curl -skL -o /dev/null -w "%{http_code}" <url>` — expect `200` or `302` when VPN is active.
 - To verify admin access from scripts: use `playwright.sync_api` with `ignore_https_errors=True` in browser context — the standard test setup already sets this via `RuntimeEnv.ignore_https_errors`.
 - **Admin HTML quirks confirmed live (2026-05-14):**
