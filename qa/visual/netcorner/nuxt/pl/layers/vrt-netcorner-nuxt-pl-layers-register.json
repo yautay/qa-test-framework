@@ -4,7 +4,6 @@
   "suite_id": "netcorner/nuxt/pl/layers",
   "target_url": "/",
   "compare_mode": "hybrid",
-  "skip_navigation": true,
   "capture": {
     "type": "page",
     "full_page": true
