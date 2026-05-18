@@ -12,7 +12,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client import auth_session_cases
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_data_models import AuthSessionCase
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
-from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listing_data_generators import first_aviable_laptop_case
+from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listing_data_generators import first_available_laptop_case
 
 pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.orders]
 
@@ -24,7 +24,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.orders]
 @pytest.mark.scenario("Podstawowy proces zakupowy - typy dostawy")
 def test_basic_orders(page, context, runtime_env, auth_case: AuthSessionCase, delivery_case: CheckoutDeliveryCase):
     user_data = _prepare_client_session(page, context, runtime_env, auth_case)
-    listings_data = first_aviable_laptop_case()
+    listings_data = first_available_laptop_case()
     selected_product_data = SelectProductWrappers(page, context, runtime_env).select_test_product(listings_data)
     assert selected_product_data is not None, "Nie udało się wybrać produktu testowego."
     assert selected_product_data.product_page_data is not None, "Produkt nie został dodany do koszyka."

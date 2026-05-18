@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
+from typing import Self
 
-from playwright.sync_api import Locator, Page
+from playwright.sync_api import Locator, Page, expect
 
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
@@ -110,6 +112,53 @@ class ProductPriceComponent(BaseComponent):
                 return self.root
         self.root = candidates.first
         return self.root
+
+    @step("Odczytuję minimalną ilość zamówienia (data-min-qty)")
+    def get_min_qty(self) -> int | None:
+        """Return the minimum order quantity from ``data-min-qty`` attribute, or None.
+
+        The attribute lives on a ``span[data-min-qty]`` inside ``addToCartWrapper``.
+        Returns ``None`` when the product has no minimum quantity restriction.
+        """
+        self.__resolved_root()
+        min_qty_el = self.root.locator("[data-min-qty]").first
+        if min_qty_el.count() == 0 or not min_qty_el.is_visible():
+            return None
+        raw = min_qty_el.get_attribute("data-min-qty")
+        try:
+            return int(raw) if raw is not None else None
+        except ValueError:
+            return None
+
+    @step("Sprawdzam widoczność komponentu limitowanej sprzedaży OZO")
+    def expect_limited_sale_visible(self, timeout_ms: int = 10_000) -> Self:
+        self.__resolved_root()
+        limited_sale = self.root.locator("[data-name='limitedSale']").first
+        expect(limited_sale).to_be_visible(timeout=timeout_ms)
+        return self
+
+    @step("Pobieram dane limitowanej sprzedaży OZO")
+    def get_limited_sale_status(self, timeout_ms: int = 10_000) -> dict[str, int] | None:
+        """Return limited sale counters from the product page OZO component.
+
+        Returns:
+            {"limited_sale_left": int, "limited_sale_sold": int}
+            or None if the component is not visible.
+        """
+        self.__resolved_root()
+        limited_sale = self.root.locator("[data-name='limitedSale']").first
+        if not limited_sale.is_visible(timeout=timeout_ms):
+            return None
+        text = limited_sale.inner_text()
+        # DOM: "Pozostało X szt. z Y szt."
+        match = re.search(r"Pozostało\s+(\d+)\s+szt\.\s+z\s+(\d+)\s+szt\.", text)
+        if not match:
+            return None
+        remaining = int(match.group(1))
+        total = int(match.group(2))
+        sold = total - remaining
+        return {"limited_sale_left": remaining, "limited_sale_sold": sold}
+        return self
 
     @step("Dodaję produkt do koszyka")
     def add_to_cart(self) -> ProductPriceData:

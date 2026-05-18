@@ -293,3 +293,32 @@ Efektywne pokrycie: 2 auth_case × 8 delivery_case = **16 kombinacji** ze stacko
 - Wzorzec testu: `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py:23`
 - MyAccount page: `qa/e2e/netcorner/nuxt/pl/lib/page_objects/pages/my_account_page.py:15`
 - Kontrakt page objects: `docs/E2E_PAGE_OBJECT_CONTRACT.md`
+
+---
+
+## Appendix — status wdrożenia (2026-05-13)
+
+- Faza 2 została domknięta implementacyjnie: 16/16 testów dostarczonych, z czego 6 oznaczono jako alpha/smoke-warunkowe.
+- Dostarczone testy produktowe (nowe):
+  - `tests_products/test_add_product_to_cart.py`
+  - `tests_products/test_product_availability.py`
+  - `tests_products/test_temporarily_unavailable_products.py`
+  - `tests_products/test_omnibus_prices.py`
+  - `tests_products/test_product_labels.py`
+  - `tests_products/test_product_comparison.py`
+  - `tests_products/test_add_product_opinion.py`
+  - `tests_products/test_products_list_filtering.py`
+  - `tests_products/test_product_ozo.py`
+  - `tests_products/test_products_list_sezam_filter.py` (alpha/beta hardening)
+  - `tests_products/test_adhoc_product.py` (alpha/beta hardening)
+- Dostarczone testy forms/account (alpha):
+  - `tests_forms/test_forms_checkout.py` (wariant checkout: kurier + BLIK)
+  - `tests_forms/test_forms_account.py`
+  - `tests_account/test_crud_purchaser_receiver_account.py`
+  - `tests_account/test_crud_purchaser_receiver_checkout.py` (wariant checkout: kurier + BLIK)
+- Dodane/rozszerzone komponenty PO:
+  - `comparison_component.py`
+  - `omnibus_price_component.py`
+  - `product_opinion_component.py`
+  - rozszerzenie `hero_component.py` o OZO widget checks.
+- Wydzielono Faza 2-beta dla hardeningu danych produktowych (Sezam i Adhoc), aby usunąć warunkowe `skip` po wskazaniu stabilnych danych.

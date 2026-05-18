@@ -9,6 +9,8 @@ class DeliveryTypes(Enum):
     DHL_POP = "dhl_pop"
     COURIER_SERVICE = "courier_service"
     STORE_PICKUP = "store_pickup"
+    BIG_SIZE_WITHOUT_LIFT = "big_size_without_lift"
+    BIG_SIZE_WITH_LIFT = "big_size_with_lift"
 
 
 class PaymentMethods(Enum):
@@ -49,6 +51,8 @@ class DeliveryCourierReceiverData(DeliveryObjects):
     company_name: str | None = None
     is_company: bool = False
     delivery_type: DeliveryTypes = DeliveryTypes.COURIER_SERVICE
+    preferred_delivery_method_text: str | None = None
+    enable_lift_service: bool = False
 
 
 @dataclass
@@ -109,5 +113,6 @@ class PaymentObjects:
 @dataclass
 class CheckoutPaymentData(PaymentObjects):
     payment_method: PaymentMethods | None = None
+    payment_method_label_contains: str | None = None
     comment: str | None = None
     required_consent: bool = False

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import time
 from dataclasses import dataclass
 from decimal import Decimal
@@ -11,6 +12,7 @@ from framework.env import RuntimeEnv
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.cart_components import CartProductData
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.checkout import (
     CheckoutSummaryData,
+    DeliveryMethodsLayout,
     DeliveryTypeData,
     PaymentMethodData,
     TypSummaryData,
@@ -36,15 +38,21 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkout_data_models import
 @dataclass(frozen=True, slots=True)
 class CheckoutProcessData:
     delivery_types_aviable: DeliveryTypeData
+    delivery_methods_layout: DeliveryMethodsLayout | None
+    available_delivery_methods: list[str] | list[list[str]] | None
     available_payment_methods: list[PaymentMethodData]
     payment_surcharge: Decimal
     summary_data: CheckoutSummaryData
-    typ_summary_data: TypSummaryData
+    typ_summary_data: TypSummaryData | None
 
 
 class CartAndCheckoutWrappers:
     DELIVERY_PROVIDER_STABILITY_WINDOW_MS = 2_500
     DELIVERY_PROVIDER_STABILITY_POLL_MS = 100
+    # Maximum number of consecutive read failures tolerated inside the stability
+    # window before raising.  A value of 2 absorbs one brief AJAX re-render cycle
+    # (component unmount → remount) that may make all tiles temporarily unresolvable.
+    DELIVERY_PROVIDER_STABILITY_MAX_CONSECUTIVE_ERRORS = 2
 
     def __init__(self, page: Page, context: BrowserContext, runtime_env: RuntimeEnv) -> None:
         self.__page = page
@@ -92,24 +100,38 @@ class CartAndCheckoutWrappers:
 
         stability_start = time.monotonic()
         stability_deadline = stability_start + (self.DELIVERY_PROVIDER_STABILITY_WINDOW_MS / 1000)
+        consecutive_errors = 0
         while time.monotonic() < stability_deadline:
             try:
                 stable_provider = delivery_type_component.get_selected_delivery_provider(timeout=1_000)
+                consecutive_errors = 0
             except RuntimeError as exc:
+                consecutive_errors += 1
                 elapsed_ms = int(max(0.0, time.monotonic() - stability_start) * 1000)
-                logger.error(
-                    "TEST_ERROR code=DELIVERY_PROVIDER_UNREADABLE_AFTER_PICKUP expected_provider={} actual_provider={} "
-                    "delivery_type={} page_url={} elapsed_ms={} error={}",
-                    expected_provider,
-                    "<unknown>",
-                    delivery_type.value,
-                    self.__page.url,
+                if consecutive_errors > self.DELIVERY_PROVIDER_STABILITY_MAX_CONSECUTIVE_ERRORS:
+                    logger.error(
+                        "TEST_ERROR code=DELIVERY_PROVIDER_UNREADABLE_AFTER_PICKUP expected_provider={} actual_provider={} "
+                        "delivery_type={} page_url={} elapsed_ms={} error={}",
+                        expected_provider,
+                        "<unknown>",
+                        delivery_type.value,
+                        self.__page.url,
+                        elapsed_ms,
+                        str(exc),
+                    )
+                    raise AssertionError(
+                        "Nie udało się odczytać aktywnego typu dostawy po zamknięciu modala punktu odbioru."
+                    ) from exc
+                # Transient read failure (e.g. component re-mount during AJAX recalc).
+                # Sleep and retry while still inside the deadline.
+                logger.warning(
+                    "DELIVERY_PROVIDER_READ_TRANSIENT_ERROR consecutive={} elapsed_ms={} error={}",
+                    consecutive_errors,
                     elapsed_ms,
                     str(exc),
                 )
-                raise AssertionError(
-                    "Nie udało się odczytać aktywnego typu dostawy po zamknięciu modala punktu odbioru."
-                ) from exc
+                self.__page.wait_for_timeout(self.DELIVERY_PROVIDER_STABILITY_POLL_MS)
+                continue
 
             if stable_provider != expected_provider:
                 elapsed_ms = int(max(0.0, time.monotonic() - stability_start) * 1000)
@@ -129,24 +151,35 @@ class CartAndCheckoutWrappers:
 
             self.__page.wait_for_timeout(self.DELIVERY_PROVIDER_STABILITY_POLL_MS)
 
-    def process_cart(self) -> dict[str, CartProductData]:
-        cart = CartPage(self.__page, self.__runtime_env.base_url).wait_loaded()
-        cart_data = cart.content.cart.get_data()
-        cart.proceed_to_checkout()
-        return cart_data
+    def __enable_lift_service_if_visible(self) -> bool:
+        lift_text = re.compile(r"wnies", re.IGNORECASE)
+        for locator in (
+            self.__page.get_by_text(lift_text),
+            self.__page.locator("label").filter(has_text=lift_text),
+        ):
+            count = locator.count()
+            for index in range(count):
+                candidate = locator.nth(index)
+                if candidate.is_visible():
+                    candidate.click(force=True)
+                    self.__page.wait_for_timeout(500)
+                    return True
+        return False
 
-    def process_checkout(
+    def __run_delivery_steps(
         self,
+        checkout: CheckoutPage,
         delivery_type: DeliveryTypes,
-        delivery_objects: DeliveryObjects | None = None,
-        purchaser_objects: PurchaserObjects | None = None,
-        payment_objects: PaymentObjects | None = None,
-    ) -> CheckoutProcessData:
-        checkout = CheckoutPage(self.__page, self.__runtime_env.base_url).wait_loaded()
+        delivery_objects: DeliveryObjects | None,
+    ) -> tuple[DeliveryMethodsLayout | None, list[str] | list[list[str]] | None]:
+        """Execute the delivery selection step on the checkout page.
+
+        Handles all delivery types, including overlay interactions and
+        stability assertions for provider-based types.
+        """
         checkout.content.delivery_type.wait_visible()
-        delivery_types_aviable = checkout.content.delivery_type.get_delivery_type_availability()
-        available_payment_methods: list[PaymentMethodData] = []
-        payment_surcharge = Decimal("0.00")
+        delivery_methods_layout: DeliveryMethodsLayout | None = None
+        available_delivery_methods: list[str] | list[list[str]] | None = None
 
         match delivery_type:
             case DeliveryTypes.STORE_PICKUP:
@@ -156,7 +189,6 @@ class CartAndCheckoutWrappers:
                     raise TypeError(
                         "Dla STORE_PICKUP argument delivery_objects musi być typu DeliveryStorehouseReceiverData."
                     )
-
                 search_value = next(
                     (
                         value.strip()
@@ -167,7 +199,6 @@ class CartAndCheckoutWrappers:
                 )
                 if not search_value:
                     raise ValueError("Dla STORE_PICKUP wymagany jest kod pocztowy lub miasto do wyszukiwania salonu.")
-
                 storehouse_overlay = Overlays(self.__page).checkout_storehouse_receiver.wait_visible()
                 storehouse_overlay.search_storehouses(search_value)
                 if delivery_objects.storehouse_data_id:
@@ -187,7 +218,6 @@ class CartAndCheckoutWrappers:
                 checkout.content.delivery_object.wait_visible().click_delivery_object_tile()
                 if not isinstance(delivery_objects, DeliveryDhlPopReceiverData):
                     raise TypeError("Dla DHL_POP argument delivery_objects musi być typu DeliveryDhlPopReceiverData.")
-
                 search_value = next(
                     (
                         value.strip()
@@ -198,7 +228,6 @@ class CartAndCheckoutWrappers:
                 )
                 if not search_value:
                     raise ValueError("Dla DHL_POP wymagany jest kod pocztowy lub miasto do wyszukiwania punktu.")
-
                 dhl_pop_overlay = Overlays(self.__page).checkout_dhl_pop_receiver.wait_visible()
                 dhl_pop_overlay.search_pop_points(search_value)
                 if delivery_objects.pop_data_id:
@@ -216,7 +245,6 @@ class CartAndCheckoutWrappers:
                 checkout.content.delivery_object.wait_visible().click_delivery_object_tile()
                 if not isinstance(delivery_objects, DeliveryInpostReceiverData):
                     raise TypeError("Dla INPOST argument delivery_objects musi być typu DeliveryInpostReceiverData.")
-
                 search_value = next(
                     (
                         value.strip()
@@ -227,7 +255,6 @@ class CartAndCheckoutWrappers:
                 )
                 if not search_value:
                     raise ValueError("Dla INPOST wymagany jest kod paczkomatu, kod pocztowy lub miasto.")
-
                 inpost_overlay = Overlays(self.__page).checkout_inpost_receiver.wait_visible()
                 inpost_overlay.search_inpost_points(search_value)
                 if delivery_objects.inpost_point_data_id:
@@ -253,14 +280,60 @@ class CartAndCheckoutWrappers:
                 courier_overlay.fill_receiver_data(delivery_objects)
                 courier_overlay.click_add_details()
                 courier_overlay.wait_hidden(timeout=10_000)
-
                 delivery_methods = checkout.content.delivery_methods.wait_visible().wait_for_available_methods(
                     timeout=10_000
                 )
-                delivery_methods.get_methods_layout()
-                delivery_methods.choose_random_available_method()
+                delivery_methods_layout, available_delivery_methods = delivery_methods.get_methods_layout()
+                if delivery_objects.preferred_delivery_method_text:
+                    delivery_methods.choose_method_containing(delivery_objects.preferred_delivery_method_text)
+                else:
+                    delivery_methods.choose_random_available_method()
+                if delivery_objects.enable_lift_service and not self.__enable_lift_service_if_visible():
+                    raise RuntimeError("Nie znaleziono widocznej opcji włączenia usługi wniesienia.")
+
             case _:
                 raise ValueError(f"Nieobsługiwany typ dostawy: {delivery_type}")
+
+        return delivery_methods_layout, available_delivery_methods
+
+    def process_cart(self) -> dict[str, CartProductData]:
+        cart = CartPage(self.__page, self.__runtime_env.base_url).wait_loaded()
+        cart_data = cart.content.cart.get_data()
+        cart.proceed_to_checkout()
+        return cart_data
+
+    def process_checkout(
+        self,
+        delivery_type: DeliveryTypes,
+        delivery_objects: DeliveryObjects | None = None,
+        purchaser_objects: PurchaserObjects | None = None,
+        payment_objects: PaymentObjects | None = None,
+        *,
+        submit: bool = True,
+    ) -> CheckoutProcessData:
+        """Run checkout steps and optionally submit the order.
+
+        Args:
+            delivery_type: Delivery method to select.
+            delivery_objects: Delivery-specific data (address, pickup point, etc.).
+            purchaser_objects: Purchaser / invoice data.
+            payment_objects: Payment method and consent data.
+            submit: When ``True`` (default) the order is placed and
+                ``typ_summary_data`` is populated.  When ``False`` all steps are
+                completed but the order is NOT submitted — useful for
+                monitoring/smoke scenarios.  ``typ_summary_data`` will be
+                ``None`` in that case.
+        """
+        checkout = CheckoutPage(self.__page, self.__runtime_env.base_url).wait_loaded()
+        delivery_types_aviable = checkout.content.delivery_type.get_delivery_type_availability()
+        delivery_methods_layout: DeliveryMethodsLayout | None = None
+        available_delivery_methods: list[str] | list[list[str]] | None = None
+        available_payment_methods: list[PaymentMethodData] = []
+        payment_surcharge = Decimal("0.00")
+
+        delivery_methods_layout, available_delivery_methods = self.__run_delivery_steps(
+            checkout, delivery_type, delivery_objects
+        )
 
         checkout.content.purchaser.wait_visible().set_electronic_invoice(True)
 
@@ -281,6 +354,10 @@ class CartAndCheckoutWrappers:
 
         if payment_objects.payment_method is not None:
             payment_surcharge = payment_methods_component.choose_payment_method(payment_objects.payment_method)
+        elif payment_objects.payment_method_label_contains:
+            payment_surcharge = payment_methods_component.choose_method_containing(
+                payment_objects.payment_method_label_contains
+            )
         else:
             payment_surcharge = payment_methods_component.choose_random_available_method()
 
@@ -290,9 +367,23 @@ class CartAndCheckoutWrappers:
         if payment_objects.required_consent:
             payment_methods_component.set_required_consent(PaymentRequiredConsent.REGULATION)
 
+        if not submit:
+            summary_data = checkout.content.summary.wait_visible().wait_place_order_button_visible()
+            return CheckoutProcessData(
+                delivery_types_aviable=delivery_types_aviable,
+                delivery_methods_layout=delivery_methods_layout,
+                available_delivery_methods=available_delivery_methods,
+                available_payment_methods=available_payment_methods,
+                payment_surcharge=payment_surcharge,
+                summary_data=summary_data,
+                typ_summary_data=None,
+            )
+
         summary_data, typ_summary_data = checkout.submit_order()
         return CheckoutProcessData(
             delivery_types_aviable=delivery_types_aviable,
+            delivery_methods_layout=delivery_methods_layout,
+            available_delivery_methods=available_delivery_methods,
             available_payment_methods=available_payment_methods,
             payment_surcharge=payment_surcharge,
             summary_data=summary_data,

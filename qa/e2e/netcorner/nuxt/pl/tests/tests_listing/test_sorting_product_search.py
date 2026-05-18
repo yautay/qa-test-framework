@@ -45,10 +45,15 @@ def test_sorting_product_search(page, runtime_env, sort_option):
 
     if is_price_sort:
         data = listing.content.content.get_all_final_prices()
-        expected = sorted(data, reverse=(sort_option == SortOptions.PRICE_DESC))
-        assert data == expected, (
+        descending = sort_option == SortOptions.PRICE_DESC
+        pairs = list(zip(data, data[1:]))
+        if descending:
+            out_of_order = [(a, b) for a, b in pairs if a < b]
+        else:
+            out_of_order = [(a, b) for a, b in pairs if a > b]
+        assert not out_of_order, (
             f"Sortowanie '{sort_option}' nieprawidłowe. "
-            f"Oczekiwano: {expected[:5]}…, otrzymano: {data[:5]}…"
+            f"Pierwsze naruszenie kolejności: {out_of_order[0]}, lista: {data[:8]}…"
         )
     else:
         # Serwer sortuje po wewnętrznym kluczu — weryfikujemy tylko obecność produktów.

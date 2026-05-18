@@ -75,6 +75,37 @@ class InboxPage(BasePage):
             return True
         return False
 
+    @step("Zliczam wiadomości spełniające filtr")
+    def count_messages(
+        self,
+        *,
+        recipient: str | None = None,
+        subject: MailSubjectPattern | None = None,
+    ) -> int:
+        rows = self.__message_rows()
+        row_count = rows.count()
+        matched = 0
+        for index in range(row_count):
+            row = rows.nth(index)
+            if recipient and not self.__row_contains_recipient_email(row=row, recipient=recipient):
+                continue
+            if subject and not self.__row_contains_subject(row=row, subject=subject):
+                continue
+            matched += 1
+        return matched
+
+    @step("Sprawdzam czy istnieje wiadomość z fragmentem tematu")
+    def has_message_with_subject_containing(self, *, recipient: str | None = None, text: str) -> bool:
+        rows = self.__message_rows()
+        row_count = rows.count()
+        for index in range(row_count):
+            row = rows.nth(index)
+            if recipient and not self.__row_contains_recipient_email(row=row, recipient=recipient):
+                continue
+            if self.__row_contains_subject_text(row=row, text=text):
+                return True
+        return False
+
     @step("Pobieram link z treści wiadomości")
     def extract_link(self, link_regex: str) -> str:
         pattern = re.compile(link_regex)
@@ -91,6 +122,23 @@ class InboxPage(BasePage):
         raise AssertionError(f"Nie znaleziono linku pasującego do regex: {link_regex}")
 
     def __open_message_from_rows(self, *, recipient: str, subject: MailSubjectPattern) -> bool:
+        rows = self.__message_rows()
+        row_count = rows.count()
+        for index in range(row_count):
+            row = rows.nth(index)
+            row_text = row.inner_text(timeout=500).strip()
+            if not row_text:
+                continue
+
+            recipient_match = self.__row_contains_recipient_email(row=row, recipient=recipient)
+            subject_match = self.__row_contains_subject(row=row, subject=subject)
+            if recipient_match and subject_match:
+                row.click()
+                return True
+
+        return False
+
+    def __message_rows(self) -> Locator:
         if self.__provider == MailInboxProvider.ROUNDCUBE:
             row_selectors = (
                 "#messagelist tbody tr",
@@ -109,23 +157,10 @@ class InboxPage(BasePage):
 
         for selector in row_selectors:
             rows = self.page.locator(selector)
-            row_count = rows.count()
-            if row_count == 0:
-                continue
+            if rows.count() > 0:
+                return rows
 
-            for index in range(row_count):
-                row = rows.nth(index)
-                row_text = row.inner_text(timeout=500).strip()
-                if not row_text:
-                    continue
-
-                recipient_match = self.__row_contains_recipient_email(row=row, recipient=recipient)
-                subject_match = self.__row_contains_subject(row=row, subject=subject)
-                if recipient_match and subject_match:
-                    row.click()
-                    return True
-
-        return False
+        return self.page.locator("__no_such_selector__")
 
     @staticmethod
     def __row_contains_recipient_email(*, row: Locator, recipient: str) -> bool:
@@ -181,6 +216,24 @@ class InboxPage(BasePage):
                 return True
 
         return False
+
+    @staticmethod
+    def __row_contains_subject_text(*, row: Locator, text: str) -> bool:
+        needle = text.strip().casefold()
+        if not needle:
+            return False
+
+        subject_locators = ("span.subject", ".subject")
+        for selector in subject_locators:
+            subjects = row.locator(selector)
+            subject_count = subjects.count()
+            for index in range(subject_count):
+                subject_text = subjects.nth(index).inner_text(timeout=300).strip().casefold()
+                if needle in subject_text:
+                    return True
+
+        row_text = row.inner_text(timeout=500).strip().casefold()
+        return needle in row_text
 
     def __collect_links(self) -> list[str]:
         links: list[str] = []

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Self
 
 from playwright.sync_api import Locator, Page, expect
@@ -33,6 +34,10 @@ class HeroComponent(BaseComponent):
         self.__hero_slider = self.find("[data-name='heroSlider']")
         self.__banner_pagination = self.find("#pagination-hero-banner")
         self.__daily_deal = self.find("[data-name='dailyDeal']")
+        self.__daily_deal_widget = self.find("[data-name='DailyDealWidget']")
+        self.__daily_deal_name = self.find("[data-name='DailyDealWidgetName']")
+        self.__daily_deal_final_price = self.find("[data-name='DailyDealWidgetFinalPrice']")
+        self.__deal_progress_bar = self.find("[data-name='dealProgressBar']")
 
     # actions
     @step("Klikam 'Konfiguruj PC'")
@@ -93,3 +98,38 @@ class HeroComponent(BaseComponent):
     def expect_products_section_visible(self, timeout_ms: int = 10_000) -> Self:
         expect(self.__daily_deal).to_be_visible(timeout=timeout_ms)
         return self
+
+    @step("Sprawdzam widoczność widgetu OZO")
+    def expect_ozo_widget_visible(self, timeout_ms: int = 10_000) -> Self:
+        expect(self.__daily_deal_widget).to_be_visible(timeout=timeout_ms)
+        return self
+
+    def is_ozo_widget_present(self, timeout_ms: int = 5_000) -> bool:
+        """Return True if the OZO widget is currently visible."""
+        return self.__daily_deal_widget.is_visible(timeout=timeout_ms)
+
+    @step("Sprawdzam komplet danych widgetu OZO")
+    def expect_ozo_widget_has_core_data(self, timeout_ms: int = 10_000) -> Self:
+        expect(self.__daily_deal_name).to_be_visible(timeout=timeout_ms)
+        expect(self.__daily_deal_final_price).to_be_visible(timeout=timeout_ms)
+        expect(self.__deal_progress_bar).to_be_visible(timeout=timeout_ms)
+        return self
+
+    @step("Pobieram dane widgetu OZO (sprzedano / pozostało)")
+    def get_ozo_details(self, timeout_ms: int = 10_000) -> dict[str, int]:
+        """Return sold_amount and remaining_amount from the OZO progress bar.
+
+        Returns:
+            {"sold_amount": int, "remaining_amount": int}
+        """
+        expect(self.__deal_progress_bar).to_be_visible(timeout=timeout_ms)
+        bar_text = self.__deal_progress_bar.inner_text()
+        sold_match = re.search(r"Sprzedano[:\s]*(\d+)", bar_text)
+        remaining_match = re.search(r"Pozostało[:\s]*(\d+)", bar_text)
+        sold = int(sold_match.group(1)) if sold_match else 0
+        remaining = int(remaining_match.group(1)) if remaining_match else 0
+        return {"sold_amount": sold, "remaining_amount": remaining}
+
+    @step("Klikam w widget OZO (link do produktu)")
+    def click_ozo_widget(self) -> None:
+        self.pointer_click(self.__daily_deal_widget.locator("a").first)

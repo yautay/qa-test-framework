@@ -29,13 +29,31 @@ class DeliveryCourierReceiverDataBuilder:
         self._company_name = f"Odbiorca {unique} Sp. z o.o."
         self._is_company = False
         self._delivery_type = DeliveryTypes.COURIER_SERVICE
+        self._preferred_delivery_method_text: str | None = None
+        self._enable_lift_service = False
 
     def with_company(self) -> DeliveryCourierReceiverDataBuilder:
         self._is_company = True
         return self
 
+    def with_postal_code(self, postal_code: str) -> DeliveryCourierReceiverDataBuilder:
+        self._postal_code = postal_code
+        return self
+
+    def with_city(self, city: str) -> DeliveryCourierReceiverDataBuilder:
+        self._city = city
+        return self
+
     def with_delivery_type(self, delivery_type: DeliveryTypes) -> DeliveryCourierReceiverDataBuilder:
         self._delivery_type = delivery_type
+        return self
+
+    def with_preferred_delivery_method_text(self, text: str) -> DeliveryCourierReceiverDataBuilder:
+        self._preferred_delivery_method_text = text
+        return self
+
+    def with_lift_service(self, enabled: bool = True) -> DeliveryCourierReceiverDataBuilder:
+        self._enable_lift_service = enabled
         return self
 
     def build(self) -> DeliveryCourierReceiverData:
@@ -51,6 +69,8 @@ class DeliveryCourierReceiverDataBuilder:
             company_name=self._company_name,
             is_company=self._is_company,
             delivery_type=self._delivery_type,
+            preferred_delivery_method_text=self._preferred_delivery_method_text,
+            enable_lift_service=self._enable_lift_service,
         )
 
 
@@ -303,11 +323,18 @@ def company_checkout_purchaser() -> CheckoutPurchaserData:
 class CheckoutPaymentDataBuilder:
     def __init__(self) -> None:
         self._payment_method: PaymentMethods | None = None
+        self._payment_method_label_contains: str | None = None
         self._comment: str | None = None
         self._required_consent: bool = False
 
     def with_payment_method(self, payment_method: PaymentMethods) -> CheckoutPaymentDataBuilder:
         self._payment_method = payment_method
+        self._payment_method_label_contains = None
+        return self
+
+    def with_payment_method_label_contains(self, value: str) -> CheckoutPaymentDataBuilder:
+        self._payment_method = None
+        self._payment_method_label_contains = value
         return self
 
     def with_blik(self) -> CheckoutPaymentDataBuilder:
@@ -344,6 +371,7 @@ class CheckoutPaymentDataBuilder:
     def build(self) -> CheckoutPaymentData:
         return CheckoutPaymentData(
             payment_method=self._payment_method,
+            payment_method_label_contains=self._payment_method_label_contains,
             comment=self._comment,
             required_consent=self._required_consent,
         )

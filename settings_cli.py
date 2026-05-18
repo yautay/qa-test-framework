@@ -11,4 +11,4 @@ is_session_headless = True
 server_name = "galak.test"
 reference_host = ""
 base_url_override = ""
-is_grid_available = True
+is_grid_available = False

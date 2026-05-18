@@ -53,6 +53,16 @@ class ListingFiltersComponent(BaseComponent):
         self.__click_all_show_all_features_buttons()
         return self
 
+    @step("Aplikuję filtr: {name}")
+    def apply_filter_by_name(self, name: str) -> Self:
+        filter_label = self.root.get_by_text(name, exact=True).first
+        expect(filter_label).to_be_visible(
+            timeout=self.DEFAULT_TIMEOUT
+        ), f"Filtr '{name}' nie istnieje na listingu — sprawdź URL lub dostępność filtra na środowisku."
+        self.pointer_click(filter_label)
+        self.root.page.wait_for_load_state("networkidle", timeout=15_000)
+        return self
+
 
 class SortOptions(StrEnum):
     DEFAULT = "Domyślnie"
@@ -240,6 +250,17 @@ class ListingContentComponent(BaseComponent):
             name_el = self.__tiles.nth(i).locator("a[title] h2").first
             names.append((name_el.text_content() or "").strip().lower())
         return names
+
+    @step("Pobieram kody systemowe wszystkich produktów na listingu")
+    def get_all_system_codes(self) -> list[str]:
+        count = self.__tiles.count()
+        codes: list[str] = []
+        for i in range(count):
+            tile = ListingProductTileComponent(self.__tiles.nth(i))
+            code = tile.get_system_code().strip()
+            if code:
+                codes.append(code)
+        return codes
 
     @step("Wyszukuję pierwszy produkt o statusie dostępności: {shipping_status}")
     def find_first_product_by_shipping_status(

@@ -2,7 +2,8 @@
 type: debt
 priority: critical
 created: 2026-05-12T00:00:00+02:00
-status: open
+status: done
+resolved: 2026-05-14
 tags: [admin, page-objects, playwright, e2e, migration, orders, blocker]
 keywords: [admin panel, order verification, admin page objects, AdminWrappers, order detail admin, status change admin]
 patterns: [admin login, order detail page, status change, promo code admin, cart offer admin, OZO reset]
@@ -30,10 +31,70 @@ Testy blokowane przez ten dług (z `migration_todo.md`):
 
 | Faza | Testy |
 |---|---|
-| Faza 4 | TestOrderBigSizeWithLift, TestOrderBigSizeWithoutLift, TestOrderDimensionModule, TestOrderCompanyData (TODO domknięcie), TestOrderPrices (TODO domknięcie), TestSplitPayment, TestAggregator, TestAggregatorPromoCode, CartRestrictionTestsNUXT (29 testów) |
-| Faza 5 | TestOrderStatuses, TestOrderPartnerStorehouse, TestOrderCartOffer, TestOrderOzo, TestPromotions* (4), TestEmployeeProgram* (6), SmokeTestsNUXT/TestOrders |
+| Faza 4 | TestOrderBigSizeWithLift, TestOrderBigSizeWithoutLift, TestOrderDimensionModule, TestOrderCompanyData (TODO domknięcie), TestOrderPrices (TODO domknięcie), TestSplitPayment, TestAggregator, TestAggregatorPromoCode |
+| Faza 5 | TestOrderStatuses, TestOrderPartnerStorehouse, TestOrderCartOffer, TestOrderOzo, TestEmployeeProgram* (6), SmokeTestsNUXT/TestOrders |
+| Faza 6 | TestPromotions* (4) |
+| Faza 7 | CartRestrictionTestsNUXT (29 testów) |
 
-## Requirements
+## Implementation (2026-05-14)
+
+Zaimplementowano jako `qa/e2e/netcorner/admin/` — nowy moduł analogiczny do `mailhog/`,
+współdzielony między wszystkimi suitami netcorner (nie wewnątrz `nuxt/pl/`).
+
+### Dostarczone pliki
+
+```
+qa/e2e/netcorner/admin/
+├── __init__.py
+└── lib/
+    ├── __init__.py
+    ├── config.py                          # resolve_admin_env(), AdminEnv, credentials
+    ├── flows/
+    │   ├── __init__.py
+    │   └── admin_wrappers.py              # AdminWrappers — open_admin, get_order_data, assert_order_details, change_order_status
+    ├── page_objects/
+    │   ├── __init__.py
+    │   └── pages/
+    │       ├── __init__.py
+    │       ├── admin_login_page.py        # login form (confirmed live)
+    │       ├── admin_context_page.py      # sales channel selector (confirmed live)
+    │       ├── admin_orders_page.py       # orders list + open_order()
+    │       └── admin_order_detail_page.py # get_all_data(), change_status()
+    └── test_data/
+        ├── __init__.py
+        └── admin_order_models.py          # AdminOrderData, AdminOrderProduct
+```
+
+### Fixture
+
+`admin_panel` fixture dodany do `qa/e2e/netcorner/conftest.py`:
+```python
+@pytest.fixture(scope="function")
+def admin_panel(page, runtime_env) -> AdminWrappers
+```
+
+### URL admina
+
+- Pattern: `https://admin-{host}.netcorner.pl/admin.php`
+- Dla `komputronik-galak`: `https://admin-galak.test.netcorner.pl/admin.php`
+- Lokatory potwierdzone live na środowisku testowym (2026-05-14).
+
+### Zakres minimum (Faza 4) — DONE ✅
+
+- [x] Login + obsługa context selector
+- [x] Wyszukanie zamówienia po numerze (`AdminOrdersPage.open_order`)
+- [x] Odczyt danych zamówienia: nabywca, odbiorca, NIP, ceny, status, produkty
+- [x] `AdminWrappers.assert_order_details` z asercjami NIP / ceny / statusu / nabywcy
+- [x] Zmiana statusu zamówienia (`AdminOrderDetailPage.change_status`)
+
+### Zakres rozszerzony (Fazy 5-6) — TODO
+
+- [ ] `AdminCartOfferPage` — tworzenie oferty koszykowej
+- [ ] `AdminOzoPage` — reset liczników OZO
+- [ ] `AdminPromoCodePage` — kody promocyjne
+- [ ] `AdminEmployeeProgramPage` — program pracowniczy
+
+## Success Criteria
 
 ### Funkcjonalny zakres minimum (odblokowanie Fazy 4)
 
@@ -55,7 +116,7 @@ Testy blokowane przez ten dług (z `migration_todo.md`):
 - Porównanie danych z TYP z danymi w adminie
 - Metoda: `AdminWrappers.assert_order_details(order_number, expected_data)`
 
-### Funkcjonalny zakres rozszerzony (odblokowanie Fazy 5)
+### Funkcjonalny zakres rozszerzony (odblokowanie Faz 5-6)
 
 #### Zmiana statusu zamówienia
 - Wybór statusu z listy → zapis → `AdminOrderDetailPage.change_status(status_id)`

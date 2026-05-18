@@ -8,7 +8,12 @@ from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data import AuthSessionCase, ClientDataBuilder, auth_session_not_registered
 
-pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.configurator]
+pytestmark = [
+    pytest.mark.e2e,
+    pytest.mark.smoke,
+    pytest.mark.configurator,
+    pytest.mark.skip(reason="Konfigurator chwilowo wyłączony na tym środowisku."),
+]
 
 
 @allure.feature("Konfigurator zestawów")

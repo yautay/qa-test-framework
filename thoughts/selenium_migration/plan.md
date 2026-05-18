@@ -5,10 +5,65 @@ branch: feature/NN-24016-ai-w-pisaniu-testow-e2e
 repository: qa-test-netquarner
 topic: "Plan implementacji migracji OrdersTestsNUXT: Selenium → Playwright"
 tags: [plan, migration, orders, e2e, playwright, sprints, mailhog]
-last_updated: 2026-05-12
+last_updated: 2026-05-14
 ---
 
 # Plan migracji OrdersTestsNUXT
+
+## Checkpoint (2026-05-13)
+
+- Równolegle do planu Orders uruchomiono Fazę 2 (Products) z `migration_todo.md`.
+- Dostarczono 8 testów produktowych (Wave 1 + część Wave 2), które budują brakującą bazę PO pod dalszą migrację.
+- Dostarczono `test_product_ozo.py` oraz rozpoczęto Faza 2-alfa dla forms/CRUD (wariant checkout: kurier + BLIK).
+- Wydzielono Faza 2-beta dla hardeningu danych produktowych:
+  - `test_products_list_sezam_filter.py` — stabilny Sezam bez `skip`
+  - `test_adhoc_product.py` — stabilny ad-hoc bez `skip`
+- Następny krok po wznowieniu: domknięcie Fazy 2-beta i przejście do Fazy 3 (Orders bez admina).
+
+## Checkpoint (2026-05-14)
+
+- Faza 3 została domknięta:
+  - `test_orders_cancel.py`
+  - `test_orders_min_qty.py`
+  - `test_monitoring_checkout.py`
+- Krytyczny blocker admina (`DEBT-001`) został zdjęty.
+- Dostarczono współdzielony moduł `qa/e2e/netcorner/admin/` z:
+  - loginem do admina
+  - wyborem kontekstu sprzedaży
+  - listą zamówień
+  - szczegółami zamówienia
+  - zmianą statusu zamówienia
+  - wrapperem `AdminWrappers`
+  - fixture `admin_panel`
+- Faza 4 została odblokowana infrastrukturalnie i weszła w realizację.
+- Pierwszy test Fazy 4 jest domknięty: `test_orders_company_data.py` (2 warianty PASSED).
+- Faza 4-alfa została domknięta:
+  - `test_orders_company_data.py`
+  - `test_orders_prices.py`
+- Faza 4-beta i 4-gamma zostały wdrożone:
+  - `test_orders_matrix_vs_list.py`
+  - `test_orders_big_size_with_lift.py`
+  - `test_orders_big_size_without_lift.py`
+  - `test_orders_dimension_module.py`
+  - `test_split_payment.py`
+  - `test_aggregator.py`
+  - `test_aggregator_promo_code.py`
+- Weryfikacja live zakresu beta+gamma: `8 passed, 3 skipped`.
+- Skipy środowiskowe:
+  - `test_orders_matrix_vs_list.py` — drift checkoutu / kodów pocztowych na env
+  - `test_aggregator_promo_code.py` — produkt z agregatora nie dochodzi stabilnie do koszyka na env
+- Główny blocker przesunął się z admin page objects na backlog implementacyjny Fazy 4 oraz brakujące rozszerzenia Mailhog potrzebne dla Fazy 5.
+
+## Next Up
+
+1. Domknąć istniejące skipy / drift env w Fazie 4-beta/gamma:
+   - `test_orders_matrix_vs_list.py`
+   - `test_aggregator_promo_code.py`
+2. Zrealizować nową, zawężoną Fazę 4-delta:
+   - `AdminTestsNUXT`
+   - `SearchTestsNUXT` zależne od admina
+3. Wejść w Fazę 5 po rozszerzeniu Mailhog (`count_mails_matching`, `has_mail_with_subject_containing`, nowe subjecty).
+4. Wydzielić `PromotionsTestsNUXT` do osobnej Fazy 6 oraz przesunąć `CartRestrictionTestsNUXT` do Fazy 7.
 
 ## Cel
 
@@ -28,10 +83,10 @@ Istniejący test bazowy `test_basic_orders.py` pokrywa już:
 - 4 typy dostawy × 2 typy klienta = 16 kombinacji
 - Inpost i DHL Pop są de facto przetestowane
 
-Brakująca infrastruktura zidentyfikowana w `research.md`:
-- Admin panel page objects (bloker krytyczny dla 10/15 testów)
-- Mailhog integration (bloker dla 3 testów)
-- OrderDetailPage — strona szczegółów zamówienia (dla cancel, statuses)
+Pierwotnie brakująca infrastruktura zidentyfikowana w `research.md`:
+- Admin panel page objects (bloker krytyczny dla 10/15 testów) — DONE
+- Mailhog integration (bloker dla 3 testów) — nadal otwarte rozszerzenia Sprint 4
+- OrderDetailPage — strona szczegółów zamówienia (dla cancel, statuses) — baza dla cancel DONE
 
 ---
 
@@ -117,11 +172,13 @@ wymagany jest oddzielny marker/raportowanie.
 
 ---
 
-## Sprint 3 — Admin panel page objects (KRYTYCZNY)
+## Sprint 3 — Admin panel page objects (DONE)
 
-**Scope:** Budowa page objects panelu admina — odblokuje 10/15 testów.
+**Scope:** Budowa page objects panelu admina — odblokowuje Fazę 4 i część Fazy 5.
 **Nakład:** ~5–8 dni
 **Lokalizacja proponowana:** `qa/e2e/netcorner/nuxt/pl/lib/page_objects/pages/admin/`
+
+**Status:** DONE (2026-05-14)
 
 ### 3.1 Zakres admin page objects (minimalny do odblokowania testów)
 
@@ -157,6 +214,11 @@ Po zbudowaniu admin page objects można domknąć TODO w:
 - `test_orders_company_data.py` — weryfikacja NIP
 - `test_orders_prices.py` — porównanie cen
 - Nowe: `test_orders_big_size.py`, `test_orders_statuses.py` (częściowo)
+
+Status po wdrożeniu:
+- `test_orders_company_data.py` — DONE
+- `test_orders_prices.py` — DONE
+- Faza 4 wymaga już głównie implementacji scenariuszy, nie budowy fundamentu admina
 
 ---
 

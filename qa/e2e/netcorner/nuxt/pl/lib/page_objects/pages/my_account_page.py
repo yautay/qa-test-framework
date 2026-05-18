@@ -5,6 +5,7 @@ from playwright.sync_api import Page
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_page import BasePage, LoadState
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.wishlist_components import WishlistListItem
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages import home_page
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.orders_list_page import OrdersListPage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import (
     MyAccountContentSection,
     WishlistContentSection,
@@ -65,6 +66,10 @@ class MyAccountPage(BasePage):
     def open_account_page(self) -> MyAccountPage:
         self.header.actions.open_account()
         return MyAccountPage(self.page, self.base_url).wait_loaded()
+
+    def open_orders_page(self) -> OrdersListPage:
+        self.content.menu_root.open_orders()
+        return OrdersListPage(self.page, self.base_url).wait_loaded()
 
     def open_password_change_page(self) -> MyAccountChangePasswordPage:
         self.content.menu_root.open_password_change()
@@ -137,4 +142,3 @@ class MyAccountWishlistPage(MyAccountPage):
         if wishlist is None:
             return None
         return wishlist.get_product_name()
-

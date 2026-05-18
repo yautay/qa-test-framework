@@ -125,6 +125,12 @@ class CartComponent(BaseComponent):
         super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Cart Products Component")
         self.__product_groups = self.find("[data-name='cartProductGroup']")
 
+    @step("Czekam na załadowanie produktów w koszyku")
+    def wait_products_loaded(self, timeout: int = 15_000) -> Self:
+        self.root.wait_for(state="visible", timeout=timeout)
+        self.__product_groups.first.wait_for(state="visible", timeout=timeout)
+        return self
+
     def count(self) -> int:
         return self.__product_groups.count()
 

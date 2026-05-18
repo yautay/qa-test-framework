@@ -133,6 +133,19 @@ class CheckoutPaymentMethodsComponent(BaseComponent):
         self.pointer_click(tile)
         return surcharge
 
+    @step("Wybieram metodę płatności zawierającą tekst: {text}")
+    def choose_method_containing(self, text: str) -> Decimal:
+        normalized_expected = self.__normalize_label(text)
+        for tile in self.__visible_tiles():
+            tile_name = self.__method_name_from_tile(tile)
+            normalized_actual = self.__normalize_label(tile_name)
+            if normalized_expected in normalized_actual:
+                surcharge = self.__parse_surcharge(self.__normalize_tile_text(tile))
+                self.pointer_click(tile)
+                return surcharge
+
+        raise RuntimeError(f"Nie znaleziono dostępnej metody płatności zawierającej tekst: '{text}'.")
+
     @step("Ustawiam checkbox komentarza do zamówienia na {enabled}")
     def set_order_comment_enabled(self, enabled: bool = True) -> Self:
         self.__set_checkbox(self.__comment_checkbox, enabled)

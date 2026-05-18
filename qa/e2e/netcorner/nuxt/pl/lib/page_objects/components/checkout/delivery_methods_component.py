@@ -135,3 +135,15 @@ class CheckoutDeliveryMethodsComponent(BaseComponent):
 
         self.pointer_click(random.choice(available_tiles))
         return layout
+
+    @step("Wybieram metodę transportu zawierającą tekst: {text}")
+    def choose_method_containing(self, text: str) -> DeliveryMethodsLayout:
+        normalized_expected = " ".join(text.split()).casefold()
+        layout, _ = self.get_methods_layout()
+        for tile in self.__available_tiles_for_layout(layout):
+            normalized_actual = self.__normalize_tile_text(tile).casefold()
+            if normalized_expected in normalized_actual:
+                self.pointer_click(tile)
+                return layout
+
+        raise RuntimeError(f"Nie znaleziono metody transportu zawierającej tekst: '{text}'.")

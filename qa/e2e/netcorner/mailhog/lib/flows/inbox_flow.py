@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import json
+import ssl
 import time
+import urllib.parse
+import urllib.request
 
 from playwright.sync_api import BrowserContext
 
 from framework.env import RuntimeEnv
 from qa.e2e.netcorner.mailhog.lib.allure_decorators import step
-from qa.e2e.netcorner.mailhog.lib.config import MailInboxEnv, resolve_mail_inbox_env
+from qa.e2e.netcorner.mailhog.lib.config import MailInboxEnv, MailInboxProvider, resolve_mail_inbox_env
 from qa.e2e.netcorner.mailhog.lib.mail_subjects import MailSubjectPattern, MailSubjects
 from qa.e2e.netcorner.mailhog.lib.page_objects.pages.inbox_page import InboxPage
 
@@ -146,6 +150,73 @@ class MailInboxService:
             timeout_ms=timeout_ms,
         )
 
+    @step("Zliczam wiadomości pasujące do filtra")
+    def count_mails_matching(
+        self,
+        *,
+        context: BrowserContext,
+        recipient: str | None,
+        subject: MailSubjectPattern,
+        timeout_ms: int = _MAILHOG_LOOKUP_TIMEOUT_MS,
+    ) -> int:
+        return self.__with_inbox_page(
+            context=context,
+            action=lambda inbox_page: self.__count_messages(
+                inbox_page,
+                recipient=recipient,
+                subject=subject,
+                timeout_ms=timeout_ms,
+            ),
+        )
+
+    @step("Sprawdzam obecność maila z fragmentem tematu")
+    def has_mail_with_subject_containing(
+        self,
+        *,
+        context: BrowserContext,
+        recipient: str | None,
+        text: str,
+        timeout_ms: int = _MAILHOG_LOOKUP_TIMEOUT_MS,
+    ) -> bool:
+        return self.__with_inbox_page(
+            context=context,
+            action=lambda inbox_page: self.__has_message_with_subject_containing(
+                inbox_page,
+                recipient=recipient,
+                text=text,
+                timeout_ms=timeout_ms,
+            ),
+        )
+
+    @step("Pobieram link z maila oferty koszykowej")
+    def get_cart_offer_link(
+        self,
+        *,
+        context: BrowserContext,
+        recipient: str,
+        timeout_ms: int = _MAILHOG_LOOKUP_TIMEOUT_MS,
+        link_regex: str = _ORDER_LINK_REGEX,
+    ) -> str:
+        return self.get_link_from_subject(
+            context=context,
+            recipient=recipient,
+            subject=MailSubjects.CART_OFFER,
+            link_regex=link_regex,
+            timeout_ms=timeout_ms,
+        )
+
+    @step("Zliczam wiadomości zawierające wskazany tekst")
+    def count_mails_containing_text(self, *, text: str, recipient: str | None = None) -> int:
+        items = self.__search_mailhog_messages(text)
+        if recipient is None:
+            return len(items)
+        recipient_normalized = recipient.strip().casefold()
+        return sum(
+            1
+            for item in items
+            if any(str(raw_to).strip().casefold() == recipient_normalized for raw_to in item.get("Raw", {}).get("To", []))
+        )
+
     @step("Loguję się do skrzynki mailowej")
     def __authenticate_if_required(self, inbox_page: InboxPage) -> None:
         if not self.__mail_env.requires_auth:
@@ -155,6 +226,81 @@ class MailInboxService:
             return
 
         inbox_page.login(self.__mail_env.login, self.__mail_env.password)
+
+    def __with_inbox_page(self, *, context: BrowserContext, action):
+        previous_pages = tuple(context.pages)
+        open_pages_before = len(context.pages)
+        mail_page = context.new_page()
+        open_pages_after = len(context.pages)
+        if open_pages_after <= open_pages_before:
+            raise AssertionError("Nie udało się otworzyć nowej karty dla skrzynki mailowej")
+        mail_page.bring_to_front()
+        try:
+            inbox_page = InboxPage(mail_page, self.__mail_env.base_url, self.__mail_env.provider)
+            inbox_page.open_inbox()
+            self.__authenticate_if_required(inbox_page)
+            return action(inbox_page)
+        finally:
+            mail_page.close()
+            if previous_pages:
+                previous_pages[-1].bring_to_front()
+
+    def __count_messages(
+        self,
+        inbox_page: InboxPage,
+        *,
+        recipient: str | None,
+        subject: MailSubjectPattern,
+        timeout_ms: int,
+    ) -> int:
+        started_at = time.monotonic()
+        deadline = started_at + (timeout_ms / 1000)
+        last_count = 0
+        while time.monotonic() < deadline:
+            inbox_page.refresh_messages()
+            last_count = inbox_page.count_messages(recipient=recipient, subject=subject)
+            if last_count > 0:
+                return last_count
+            remaining_ms = max(0, int((deadline - time.monotonic()) * 1000))
+            elapsed_ms = max(0, int((time.monotonic() - started_at) * 1000))
+            wait_ms = self.__refresh_wait_ms(timeout_ms=timeout_ms, elapsed_ms=elapsed_ms, remaining_ms=remaining_ms)
+            if wait_ms == 0:
+                break
+            inbox_page.page.wait_for_timeout(wait_ms)
+        return last_count
+
+    def __has_message_with_subject_containing(
+        self,
+        inbox_page: InboxPage,
+        *,
+        recipient: str | None,
+        text: str,
+        timeout_ms: int,
+    ) -> bool:
+        started_at = time.monotonic()
+        deadline = started_at + (timeout_ms / 1000)
+        while time.monotonic() < deadline:
+            inbox_page.refresh_messages()
+            if inbox_page.has_message_with_subject_containing(recipient=recipient, text=text):
+                return True
+            remaining_ms = max(0, int((deadline - time.monotonic()) * 1000))
+            elapsed_ms = max(0, int((time.monotonic() - started_at) * 1000))
+            wait_ms = self.__refresh_wait_ms(timeout_ms=timeout_ms, elapsed_ms=elapsed_ms, remaining_ms=remaining_ms)
+            if wait_ms == 0:
+                break
+            inbox_page.page.wait_for_timeout(wait_ms)
+        return False
+
+    def __search_mailhog_messages(self, text: str) -> list[dict]:
+        if self.__mail_env.provider != MailInboxProvider.MAILHOG:
+            raise AssertionError("Wyszukiwanie przez Mailhog API jest dostępne tylko dla providera MAILHOG.")
+
+        query = urllib.parse.quote(text, safe="")
+        url = f"{self.__mail_env.base_url}/api/v2/search?kind=containing&query={query}"
+        ssl_context = ssl._create_unverified_context()
+        with urllib.request.urlopen(url, context=ssl_context, timeout=30) as response:
+            payload = json.loads(response.read().decode())
+        return payload.get("items", [])
 
     @step("Wyszukuję wiadomość: {subject}")
     def __open_message(
