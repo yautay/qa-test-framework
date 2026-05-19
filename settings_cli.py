@@ -12,3 +12,6 @@ server_name = "selenium.alfa"
 reference_host = ""
 base_url_override = ""
 is_grid_available = True
+
+# Up (wdrozenia produkcyjne)
+production_test_email = "up_YYYY_MM_DD_1@niepodam.pl"
