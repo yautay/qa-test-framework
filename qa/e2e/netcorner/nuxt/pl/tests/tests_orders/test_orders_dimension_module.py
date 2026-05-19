@@ -16,7 +16,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import
 )
 from qa.e2e.netcorner.nuxt.pl.tests.helpers import add_products_to_cart_from_paths, open_home_and_accept_cookies
 
-pytestmark = [pytest.mark.e2e, pytest.mark.e2e_orders]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_core, pytest.mark.e2e_orders]
 
 
 @dataclass(frozen=True)

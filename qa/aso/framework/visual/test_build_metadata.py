@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import pytest
+
 from framework.visual.build_metadata import build_visual_build_metadata
 from framework.visual.models import VisualResult
+
+pytestmark = [pytest.mark.aso]
 
 
 def test_build_visual_build_metadata_collects_failed_visual_exclusions() -> None:

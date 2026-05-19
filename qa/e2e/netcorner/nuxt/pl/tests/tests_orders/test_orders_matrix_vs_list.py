@@ -18,7 +18,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listings_data_models import
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.products.products_data_models import AvailabilityStatuses
 from qa.e2e.netcorner.nuxt.pl.tests.helpers import open_home_and_accept_cookies
 
-pytestmark = [pytest.mark.e2e, pytest.mark.e2e_orders]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_core, pytest.mark.e2e_orders]
 
 _CATEGORY_URL = "category/2954/myszki-komputerowe.html"
 

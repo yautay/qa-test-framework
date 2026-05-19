@@ -26,7 +26,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import (
 )
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.products.products_data_models import AvailabilityStatuses
 
-pytestmark = [pytest.mark.e2e, pytest.mark.e2e_smoke, pytest.mark.e2e_orders]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_smoke]
 
 _SEARCH_PHRASE = "kabel sata"
 _KNOWN_MIN_QTY_SYSTEM_CODES = {"500000510", "500000511"}

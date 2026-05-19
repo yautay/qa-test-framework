@@ -5,7 +5,7 @@ import allure
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.product_page import ProductPage
 
-pytestmark = [pytest.mark.e2e]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_core]
 
 # Stałe produkty testowe ad-hoc na środowisku galak.test.
 # Zestaw Alfa i Delta mają pełny status dostępności; Bravo i Charlie nie mają statusu (NO_STATUS).

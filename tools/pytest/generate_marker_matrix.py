@@ -61,6 +61,10 @@ def build_marker_to_tests_map() -> dict[str, list[str]]:
                     test_markers.add(marker)
 
             test_id = f"{rel_path}::{node.name}"
+            if rel_path.startswith("qa/e2e/netcorner/nuxt/pl/"):
+                test_markers.add("e2e_pl")
+            if rel_path.startswith("qa/e2e/netcorner/nuxt/b2b/"):
+                test_markers.add("e2e_b2b")
             for marker in sorted(test_markers):
                 if marker in _IGNORE_MARKERS:
                     continue

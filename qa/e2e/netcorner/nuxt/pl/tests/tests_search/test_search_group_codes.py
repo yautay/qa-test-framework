@@ -8,7 +8,7 @@ import pytest
 
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_delta_pages import AdminSearchCodeGroupPage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
-pytestmark = [pytest.mark.e2e, pytest.mark.e2e_search]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_core, pytest.mark.e2e_search]
 
 _GROUP_CODES = [
     "TEST-FRONT-001---30-CHARACTERS",

@@ -15,7 +15,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import
 )
 from qa.e2e.netcorner.nuxt.pl.tests.helpers import add_products_to_cart_from_paths, open_home_and_accept_cookies
 
-pytestmark = [pytest.mark.e2e, pytest.mark.e2e_orders]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_core, pytest.mark.e2e_orders]
 
 _PRODUCT_PATH = "/product/1004422/apple-macbook-pro-m5-max-18-40-16-2-128gb-8tb-mac-os-gwiezdna-czern-140w-nano-textured.html"
 

@@ -76,8 +76,6 @@ Sortowanie: `marker`
   - `qa/aso/framework/test_e2e_suite_runtime_env.py::test_b2b_runtime_env_fixture_resolves_b2b_base_url_without_global_mutation`
   - `qa/aso/framework/test_e2e_suite_runtime_env.py::test_pl_runtime_env_fixture_resolves_pl_base_url_without_global_mutation`
   - `qa/aso/framework/test_e2e_suite_runtime_env.py::test_suite_runtime_env_fixtures_preserve_explicit_base_url`
-  - `qa/aso/framework/test_extended_timeout_fixture.py::test_apply_extended_timeout_marker_requests_fixture_when_marker_present`
-  - `qa/aso/framework/test_extended_timeout_fixture.py::test_apply_extended_timeout_marker_skips_when_marker_absent`
   - `qa/aso/framework/test_extended_timeout_fixture.py::test_extended_timeout_sets_playwright_timeouts_to_60_seconds`
   - `qa/aso/framework/test_logger_redaction.py::test_redact_text_masks_common_secret_patterns`
   - `qa/aso/framework/test_logger_redaction.py::test_redact_value_masks_sensitive_keys_recursively`
@@ -126,6 +124,8 @@ Sortowanie: `marker`
   - `qa/aso/framework/visual/test_baseline_store_local_write.py::test_resolve_baseline_prefers_cache_over_local_fallback`
   - `qa/aso/framework/visual/test_baseline_store_local_write.py::test_store_local_baseline_allows_version_override_for_candidates`
   - `qa/aso/framework/visual/test_baseline_store_local_write.py::test_store_local_baseline_writes_to_local_provider_and_cache`
+  - `qa/aso/framework/visual/test_build_metadata.py::test_build_visual_build_metadata_collects_failed_visual_exclusions`
+  - `qa/aso/framework/visual/test_build_metadata.py::test_build_visual_build_metadata_sanitizes_fixture_request_noise`
   - `qa/aso/framework/visual/test_compare_pixel_shift.py::test_compare_images_keeps_shift_zero_when_compensation_disabled`
   - `qa/aso/framework/visual/test_compare_pixel_shift.py::test_compare_images_reduces_false_diff_when_shift_compensation_enabled`
   - `qa/aso/framework/visual/test_compare_pixel_shift.py::test_find_best_vertical_shift_avoids_boundary_escape`
@@ -342,6 +342,9 @@ Sortowanie: `marker`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_account/test_password_modifications.py::test_password_change`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_account/test_password_modifications.py::test_password_recovery`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_account/test_wishlist.py::test_add_product_to_wishlist`
+- `e2e_b2b`
+  - `qa/e2e/netcorner/nuxt/b2b/tests/test_orders_smoke.py::test_b2b_orders_smoke_placeholder`
+  - `qa/e2e/netcorner/nuxt/b2b/tests/test_orders_smoke_full_process.py::test_b2b_orders_full_process_placeholder`
 - `e2e_configurator`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_configurator/test_configurator_basic_flow.py::test_configurator_basic_flow`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_configurator/test_configurator_entry.py::test_configurator_entry_from_banner`
@@ -350,6 +353,8 @@ Sortowanie: `marker`
 - `e2e_core`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_account/test_create_account.py::test_create_account`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_account/test_create_account.py::test_create_account_forbidden`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_account/test_crud_purchaser_receiver_account.py::test_crud_purchaser_receiver_account`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_account/test_crud_purchaser_receiver_checkout.py::test_crud_purchaser_receiver_checkout`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_account/test_password_modifications.py::test_password_change`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_account/test_password_modifications.py::test_password_recovery`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_account/test_wishlist.py::test_add_product_to_wishlist`
@@ -359,6 +364,47 @@ Sortowanie: `marker`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_configurator/test_configurator_entry.py::test_configurator_entry_from_url`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_layout/test_homepage_elements.py::test_homepage_elements`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_monitoring_checkout.py::test_monitoring_checkout`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_big_size_with_lift.py::test_orders_big_size_with_lift`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_big_size_with_lift.py::test_orders_big_size_without_lift`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_cancel.py::test_orders_cancel`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_cart_offer.py::test_orders_cart_offer_dynamic_price`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_cart_offer.py::test_orders_cart_offer_static_price`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_company_data.py::test_orders_company_data`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_digital_license.py::test_orders_digital_license_admin_verify`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_digital_license.py::test_orders_digital_license_guest`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_digital_license.py::test_orders_digital_license_registered`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_dimension_module.py::test_orders_dimension_module`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_matrix_vs_list.py::test_orders_matrix_vs_list`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_min_qty.py::test_orders_min_qty`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_ozo.py::test_orders_ozo_limited_sale`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_ozo.py::test_orders_ozo_limited_sale_per_customer_guest`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_ozo.py::test_orders_ozo_limited_sale_per_customer_logged`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_partner_storehouse.py::test_orders_partner_storehouse`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_prices.py::test_orders_prices`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_statuses.py::test_orders_statuses`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_split_payment.py::test_split_payment`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_add_product_opinion.py::test_add_product_opinion`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_add_product_to_cart.py::test_add_product_to_cart`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_adhoc_product.py::test_adhoc_product_page_loads`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_omnibus_prices.py::test_omnibus_prices`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_product_availability.py::test_product_availability`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_product_comparison.py::test_product_comparison`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_product_labels.py::test_product_labels`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_product_ozo.py::test_product_ozo`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_product_ozo.py::test_product_ozo_limited_sale_component`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_products_list_filtering.py::test_products_list_filtering`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_products_list_sezam_filter.py::test_products_list_sezam_filter`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_temporarily_unavailable_products.py::test_temporarily_unavailable_products`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_search/test_search_group_codes.py::test_search_group_codes`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_search/test_search_listings.py::test_search_category_listing`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_search/test_search_listings.py::test_search_category_listing_disabled_html_cache`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_search/test_search_listings.py::test_search_producer_listing`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_search/test_search_listings.py::test_search_producer_listing_disabled_html_cache`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_search/test_search_listings_exceptions.py::test_search_listings_exceptions`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_search/test_search_suggestions.py::test_search_suggestions`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_search/test_simple_search.py::test_simple_search`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_search/test_simple_search_exceptions.py::test_simple_search_exceptions`
 - `e2e_employee_program`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_employee_program/test_employee_program_crud.py::test_employee_program_crud_qr`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_employee_program/test_employee_program_crud.py::test_employee_program_crud_sms`
@@ -399,6 +445,83 @@ Sortowanie: `marker`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_prices.py::test_orders_prices`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_statuses.py::test_orders_statuses`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_split_payment.py::test_split_payment`
+- `e2e_pl`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_account/test_create_account.py::test_create_account`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_account/test_create_account.py::test_create_account_forbidden`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_account/test_crud_purchaser_receiver_account.py::test_crud_purchaser_receiver_account`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_account/test_crud_purchaser_receiver_checkout.py::test_crud_purchaser_receiver_checkout`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_account/test_password_modifications.py::test_password_change`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_account/test_password_modifications.py::test_password_recovery`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_account/test_wishlist.py::test_add_product_to_wishlist`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_admin/test_admin_reports.py::test_admin_reports`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_admin/test_error_pages.py::test_error_pages_404`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_admin/test_error_pages.py::test_error_pages_410`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_aggregator/test_aggregator.py::test_aggregator`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_aggregator/test_aggregator_promo_code.py::test_aggregator_promo_code`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_configurator/test_configurator_basic_flow.py::test_configurator_basic_flow`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_configurator/test_configurator_entry.py::test_configurator_entry_from_banner`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_configurator/test_configurator_entry.py::test_configurator_entry_from_swipe`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_configurator/test_configurator_entry.py::test_configurator_entry_from_url`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_employee_program/test_employee_program_crud.py::test_employee_program_crud_qr`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_employee_program/test_employee_program_crud.py::test_employee_program_crud_sms`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_employee_program/test_employee_program_order.py::test_employee_program_order_qr`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_employee_program/test_employee_program_order.py::test_employee_program_order_sms`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_employee_program/test_employee_program_register.py::test_employee_program_register_qr`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_employee_program/test_employee_program_register.py::test_employee_program_register_sms`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_forms/test_forms_account.py::test_forms_account`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_forms/test_forms_checkout.py::test_forms_checkout`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_layout/test_footer_elements.py::test_footer_elements`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_layout/test_header_elements.py::test_header_elements`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_layout/test_header_elements.py::test_search_where_dropdown`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_layout/test_homepage_elements.py::test_homepage_elements`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_layout/test_register_page_elements.py::test_register_page_elements`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_listing/test_sorting_product_list.py::test_sorting_product_list`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_listing/test_sorting_product_search.py::test_sorting_product_search`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_navigation/test_category_tree.py::test_category_tree_one_level`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_navigation/test_category_tree.py::test_category_tree_three_levels`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_navigation/test_category_tree.py::test_category_tree_two_levels`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_basic_orders.py::test_basic_orders`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_monitoring_checkout.py::test_monitoring_checkout`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_big_size_with_lift.py::test_orders_big_size_with_lift`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_big_size_with_lift.py::test_orders_big_size_without_lift`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_cancel.py::test_orders_cancel`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_cart_offer.py::test_orders_cart_offer_dynamic_price`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_cart_offer.py::test_orders_cart_offer_static_price`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_company_data.py::test_orders_company_data`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_digital_license.py::test_orders_digital_license_admin_verify`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_digital_license.py::test_orders_digital_license_guest`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_digital_license.py::test_orders_digital_license_registered`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_dimension_module.py::test_orders_dimension_module`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_matrix_vs_list.py::test_orders_matrix_vs_list`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_min_qty.py::test_orders_min_qty`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_ozo.py::test_orders_ozo_limited_sale`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_ozo.py::test_orders_ozo_limited_sale_per_customer_guest`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_ozo.py::test_orders_ozo_limited_sale_per_customer_logged`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_partner_storehouse.py::test_orders_partner_storehouse`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_prices.py::test_orders_prices`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_statuses.py::test_orders_statuses`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_split_payment.py::test_split_payment`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_add_product_opinion.py::test_add_product_opinion`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_add_product_to_cart.py::test_add_product_to_cart`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_adhoc_product.py::test_adhoc_product_page_loads`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_omnibus_prices.py::test_omnibus_prices`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_product_availability.py::test_product_availability`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_product_comparison.py::test_product_comparison`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_product_labels.py::test_product_labels`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_product_ozo.py::test_product_ozo`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_product_ozo.py::test_product_ozo_limited_sale_component`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_products_list_filtering.py::test_products_list_filtering`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_products_list_sezam_filter.py::test_products_list_sezam_filter`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_temporarily_unavailable_products.py::test_temporarily_unavailable_products`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_search/test_search_group_codes.py::test_search_group_codes`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_search/test_search_listings.py::test_search_category_listing`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_search/test_search_listings.py::test_search_category_listing_disabled_html_cache`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_search/test_search_listings.py::test_search_producer_listing`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_search/test_search_listings.py::test_search_producer_listing_disabled_html_cache`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_search/test_search_listings_exceptions.py::test_search_listings_exceptions`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_search/test_search_suggestions.py::test_search_suggestions`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_search/test_simple_search.py::test_simple_search`
+  - `qa/e2e/netcorner/nuxt/pl/tests/tests_search/test_simple_search_exceptions.py::test_simple_search_exceptions`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_smoke/test_smoke_basic_orders.py::test_smoke_basic_orders`
 - `e2e_search`
   - `qa/e2e/netcorner/nuxt/pl/tests/tests_listing/test_sorting_product_list.py::test_sorting_product_list`
@@ -431,10 +554,6 @@ Sortowanie: `marker`
   - `qa/visual/netcorner/nuxt/pl/wp/info/test_wp_info_visual.py::test_wp_info_visual`
   - `qa/visual/netcorner/nuxt/pl/wp/lp/test_wp_lp_visual.py::test_wp_lp_visual`
   - `qa/visual/netcorner/nuxt/pl/wp/promotion/test_wp_promotion_visual.py::test_wp_promotion_visual`
-  - `qa/visual/netcorner/wp/carrer/test_wp_carrer_visual.py::test_wp_carrer_visual`
-  - `qa/visual/netcorner/wp/gaming/test_wp_gaming_visual.py::test_wp_gaming_visual`
-  - `qa/visual/netcorner/wp/nano/test_wp_nano_visual.py::test_wp_nano_visual`
-- `visual_extended_timeout`
   - `qa/visual/netcorner/wp/carrer/test_wp_carrer_visual.py::test_wp_carrer_visual`
   - `qa/visual/netcorner/wp/gaming/test_wp_gaming_visual.py::test_wp_gaming_visual`
   - `qa/visual/netcorner/wp/nano/test_wp_nano_visual.py::test_wp_nano_visual`
