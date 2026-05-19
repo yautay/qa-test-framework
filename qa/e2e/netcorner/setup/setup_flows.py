@@ -102,6 +102,9 @@ class NetcornerSetupService:
                     f"{promotion_id}: {error_text}"
                 )
 
+        # Czekamy na aktywacje promocji w promotion-service po zapisaniu calej paczki setupowej.
+        self._page.wait_for_timeout(120_000)
+
     def _set_promotion_service_occurrence_window(self) -> None:
         if self._page is None:
             raise ValueError("Page jest wymagana dla setupu promotion-service.")
