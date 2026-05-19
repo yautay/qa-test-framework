@@ -28,4 +28,5 @@ logs/*
 /qa/visual/baselines/
 /.opencode/
 /tmp/
+/build/
 /tools/dbeaver/db_dump_config.json
