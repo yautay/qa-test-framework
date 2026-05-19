@@ -12,7 +12,7 @@ PYTEST ?= $(PYTHON) -m pytest
 
 .DEFAULT_GOAL := help
 
-.PHONY: help report-serve test test-api test-visual test-e2e test-aso test-smoke test-setup check collect lint format format-check typecheck security verify-discovery verify-scenarios clean clean-artifacts clean-artifacts-older debug-remote-grid-up debug-remote-grid-down debug-minio-up debug-minio-down
+.PHONY: help report-serve test test-api test-visual test-e2e test-aso test-smoke test-setup check collect lint format format-check typecheck security verify-discovery verify-scenarios clean clean-artifacts clean-artifacts-older debug-remote-grid-up debug-remote-grid-down debug-minio-up debug-minio-down local-settings-ignore local-settings-track
 
 help: ## Show this help
 	$(PYTHON) tools/make/make_help.py
@@ -98,4 +98,10 @@ debug-minio-up: ## Uruchom lokalne MinIO przez Docker Compose
 
 debug-minio-down: ## Zatrzymaj lokalne MinIO przez Docker Compose
 	docker compose -f tools/minio/docker-compose.yml down
+
+local-settings-ignore: ## Ustaw skip-worktree dla settings.py i settings_cli.py
+	git update-index --skip-worktree settings.py settings_cli.py
+
+local-settings-track: ## Cofnij skip-worktree dla settings.py i settings_cli.py
+	git update-index --no-skip-worktree settings.py settings_cli.py
 
