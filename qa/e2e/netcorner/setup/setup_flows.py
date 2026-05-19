@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from calendar import monthrange
+from datetime import datetime, timedelta
 
 from playwright.sync_api import Page
 
@@ -70,5 +72,57 @@ class NetcornerSetupService:
 
         for promotion_id in promotion_ids:
             self._page.goto(f"{promotions_base_url}/promotion/edit/{promotion_id}", wait_until="domcontentloaded")
+            self._set_promotion_service_occurrence_window()
+            self._page.wait_for_timeout(2_000)
             self._page.locator("#form-buttons button.btn-success, input[value='Zapisz'], input[type='submit'][name='save']").first.click()
             self._page.wait_for_load_state("domcontentloaded")
+            danger_alert = self._page.locator(".alert.alert-danger").first
+            if danger_alert.count() > 0 and danger_alert.is_visible():
+                raise AssertionError(
+                    f"Promotion service save failed for promotion_id={promotion_id}: widoczny komunikat alert-danger."
+                )
+
+    def _set_promotion_service_occurrence_window(self) -> None:
+        if self._page is None:
+            raise ValueError("Page jest wymagana dla setupu promotion-service.")
+
+        date_from, time_from, date_to, time_to = self._compute_promotion_window()
+        values = {
+            "occurrence_date_from": date_from,
+            "occurrence_time_from": time_from,
+            "occurrence_date_to": date_to,
+            "occurrence_time_to": time_to,
+        }
+
+        for field_name, field_value in values.items():
+            input_locator = self._page.locator(f"input[name='{field_name}']").first
+            input_locator.wait_for(state="attached")
+            input_locator.evaluate(
+                """
+                (el, value) => {
+                    el.value = value;
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                """,
+                field_value,
+            )
+
+    @staticmethod
+    def _compute_promotion_window() -> tuple[str, str, str, str]:
+        promotion_start = (datetime.now() + timedelta(minutes=1)).replace(microsecond=0)
+
+        promotion_end = NetcornerSetupService._add_calendar_month(promotion_start)
+        return (
+            promotion_start.strftime("%Y-%m-%d"),
+            promotion_start.strftime("%H:%M:%S"),
+            promotion_end.strftime("%Y-%m-%d"),
+            promotion_end.strftime("%H:%M:%S"),
+        )
+
+    @staticmethod
+    def _add_calendar_month(dt: datetime) -> datetime:
+        year = dt.year + (dt.month // 12)
+        month = (dt.month % 12) + 1
+        day = min(dt.day, monthrange(year, month)[1])
+        return dt.replace(year=year, month=month, day=day)
