@@ -49,24 +49,25 @@ Generate a fresh marker-to-test matrix:
 .venv/bin/python tools/pytest/generate_marker_matrix.py
 ```
 
+Generate marker tree sorted by markers (default):
+
+```bash
+.venv/bin/python tools/pytest/generate_marker_matrix.py --sort-by marker
+```
+
+Generate marker tree sorted by tests:
+
+```bash
+.venv/bin/python tools/pytest/generate_marker_matrix.py --sort-by test
+```
+
 Output file:
 
 - `docs/MARKER_TESTS_MATRIX.md`
+- `docs/MARKER_TESTS_TREE.md`
 
 When to update:
 
 - after adding/removing tests,
 - after changing `pytestmark` / `@pytest.mark.*`,
 - after introducing new marker names in `pytest.ini`.
-
-## Repository tree (HTML)
-
-Generate an HTML tree view for the whole repository:
-
-```bash
-.venv/bin/python tools/docs/generate_repo_tree_html.py
-```
-
-Output file:
-
-- `docs/REPO_TREE.html`

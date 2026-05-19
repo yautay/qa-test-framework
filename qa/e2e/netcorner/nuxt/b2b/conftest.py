@@ -19,3 +19,8 @@ def runtime_env(pytestconfig: pytest.Config) -> RuntimeEnv:
         raise pytest.UsageError(f"Cannot resolve base_url for env={env!r}: {e}") from e
 
     return replace(env, base_url=resolved)
+
+
+def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    for item in items:
+        item.add_marker(pytest.mark.e2e_b2b)

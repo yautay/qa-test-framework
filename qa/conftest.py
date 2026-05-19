@@ -965,7 +965,7 @@ def _resolve_run_profile(config: pytest.Config) -> str:
         return "aso"
     if markexpr == "e2e_orders":
         return "orders"
-    if markexpr in {"smoke", "e2e_smoke"}:
+    if markexpr == "e2e_smoke":
         return "smoke"
     if markexpr == "visual":
         return "visual"
