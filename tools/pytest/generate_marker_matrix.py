@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import argparse
 import ast
 from collections import defaultdict
 from pathlib import Path
@@ -8,7 +7,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 QA_ROOT = ROOT / "qa"
 OUTPUT_PATH = ROOT / "docs" / "MARKER_TESTS_MATRIX.md"
-TREE_OUTPUT_PATH = ROOT / "docs" / "MARKER_TESTS_TREE.md"
 
 _IGNORE_MARKERS = {"parametrize", "scenario", "target", "order", "skip"}
 
@@ -89,56 +87,10 @@ def render_table(marker_to_tests: dict[str, list[str]]) -> str:
     return "\n".join(lines)
 
 
-def _build_test_to_markers_map(marker_to_tests: dict[str, list[str]]) -> dict[str, list[str]]:
-    test_to_markers: dict[str, list[str]] = defaultdict(list)
-    for marker, tests in marker_to_tests.items():
-        for test_id in tests:
-            test_to_markers[test_id].append(marker)
-    return {test_id: sorted(markers) for test_id, markers in sorted(test_to_markers.items())}
-
-
-def render_tree(marker_to_tests: dict[str, list[str]], sort_by: str) -> str:
-    lines: list[str] = []
-    lines.append("# Marker/Test Tree")
-    lines.append("")
-    lines.append("Generowane automatycznie przez `tools/pytest/generate_marker_matrix.py`.")
-    lines.append(f"Sortowanie: `{sort_by}`")
-    lines.append("")
-
-    if sort_by == "marker":
-        for marker, tests in marker_to_tests.items():
-            lines.append(f"- `{marker}`")
-            for test_id in tests:
-                lines.append(f"  - `{test_id}`")
-    else:
-        test_to_markers = _build_test_to_markers_map(marker_to_tests)
-        for test_id, markers in test_to_markers.items():
-            lines.append(f"- `{test_id}`")
-            for marker in markers:
-                lines.append(f"  - `{marker}`")
-
-    lines.append("")
-    return "\n".join(lines)
-
-
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generuj mapowanie markerow i testow.")
-    parser.add_argument(
-        "--sort-by",
-        choices=("marker", "test"),
-        default="marker",
-        help="Sortowanie drzewa: po markerach albo po testach.",
-    )
-    return parser.parse_args()
-
-
 def main() -> None:
-    args = parse_args()
     marker_to_tests = build_marker_to_tests_map()
     OUTPUT_PATH.write_text(render_table(marker_to_tests), encoding="utf-8")
-    TREE_OUTPUT_PATH.write_text(render_tree(marker_to_tests, sort_by=args.sort_by), encoding="utf-8")
     print(f"Wygenerowano: {OUTPUT_PATH}")
-    print(f"Wygenerowano: {TREE_OUTPUT_PATH} (sort_by={args.sort_by})")
     print(f"Liczba markerow: {len(marker_to_tests)}")
 
 

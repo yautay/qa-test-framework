@@ -11,7 +11,6 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.client import AuthSessionCase, Clien
 
 pytestmark = [
     pytest.mark.e2e,
-    pytest.mark.e2e_core,
     pytest.mark.e2e_configurator,
     pytest.mark.skip(reason="Konfigurator chwilowo wyłączony na tym środowisku."),
 ]
