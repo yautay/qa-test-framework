@@ -7,11 +7,14 @@ from qa.e2e.netcorner.lib.data_dump_to_logs import dump_data
 from qa.e2e.netcorner.nuxt.pl.lib.flows.cart_and_checkout_wrappers import CartAndCheckoutWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.flows.select_product_wrappers import SelectProductWrappers
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.overlays import Overlays
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkout_data_models import CheckoutDeliveryCase
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import checkout_delivery_cases
-from qa.e2e.netcorner.nuxt.pl.lib.test_data.client import auth_session_cases
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_data_models import AuthSessionCase
-from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
+from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import (
+    ClientDataBuilder,
+    auth_session_cases_basic_orders,
+)
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listing_data_generators import first_available_laptop_case
 
 pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.orders]
@@ -19,7 +22,7 @@ pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.orders]
 
 @allure.feature("Proces zakupowy")
 @allure.severity(allure.severity_level.BLOCKER)
-@pytest.mark.parametrize("auth_case", auth_session_cases(), ids=lambda case: case.case_id)
+@pytest.mark.parametrize("auth_case", auth_session_cases_basic_orders(), ids=lambda case: case.case_id)
 @pytest.mark.parametrize("delivery_case", checkout_delivery_cases(), ids=lambda case: case.case_id)
 @pytest.mark.scenario("Podstawowy proces zakupowy - typy dostawy")
 def test_basic_orders(page, context, runtime_env, auth_case: AuthSessionCase, delivery_case: CheckoutDeliveryCase):
@@ -49,7 +52,11 @@ def test_basic_orders(page, context, runtime_env, auth_case: AuthSessionCase, de
         f"różni się od tej wyświetlanej na stronie '{product_page_data.final_price}'."
     )
     checkout_wrappers = CartAndCheckoutWrappers(page, context, runtime_env)
-    checkout_wrappers.process_cart()
+    checkout_wrappers.process_cart(continue_without_login=not auth_case.login_in_cart_overlay)
+    if auth_case.login_in_cart_overlay:
+        assert user_data is not None, "Brak danych zarejestrowanego klienta do logowania w koszyku."
+        Overlays(page).login.wait_visible().log_client(user_data.email, user_data.password)
+
     checkout_process_data = checkout_wrappers.process_checkout(
         delivery_case.delivery_type,
         delivery_case.delivery_objects,
@@ -62,11 +69,14 @@ def test_basic_orders(page, context, runtime_env, auth_case: AuthSessionCase, de
 
 
 def _prepare_client_session(page, context, runtime_env, auth_case: AuthSessionCase):
-    if not auth_case.authenticated:
+    if not auth_case.authenticated and not auth_case.register_before_flow:
         return None
 
     user_data = ClientDataBuilder().with_required_terms().build()
-    assert ClientWrappers(page, context, runtime_env).register_new_client(
+    client_wrappers = ClientWrappers(page, context, runtime_env)
+    assert client_wrappers.register_new_client(
         user_data
     ), "Użytkownik nie został poprawnie zarejestrowany."
+    if auth_case.register_before_flow and not auth_case.authenticated:
+        client_wrappers.logout_client()
     return user_data

@@ -90,6 +90,19 @@ def auth_session_cases() -> list[AuthSessionCase]:
     ]
 
 
+def auth_session_cases_basic_orders() -> list[AuthSessionCase]:
+    return [
+        AuthSessionCase(case_id="logged_in", authenticated=True),
+        AuthSessionCase(case_id="anonymous", authenticated=False),
+        AuthSessionCase(
+            case_id="registered_login_in_cart_overlay",
+            authenticated=False,
+            register_before_flow=True,
+            login_in_cart_overlay=True,
+        ),
+    ]
+
+
 def auth_session_not_registered() -> list[AuthSessionCase]:
     return [
         AuthSessionCase(case_id="anonymous", authenticated=False),
