@@ -1,14 +1,14 @@
 # Run metadata
-nn_ticket = "NN-23902"
-run_note = "zmiana mechaniki liczenia kosztu transportu"
-tester = "Michal Pielaszkiewicz"
+nn_ticket = "NN-12345"
+run_note = "custom_run_note"
+tester = "Janusz Tester"
 
 # Execution
-browser = "firefox"
-is_session_headless = False
+browser = "chromium"
+is_session_headless = True
 
 # Environment
-server_name = "galak.test"
+server_name = "selenium.alfa"
 reference_host = ""
 base_url_override = ""
-is_grid_available = False
+is_grid_available = True
