@@ -35,7 +35,9 @@ class AdminCategorySearchKeywordsPage(AdminBasePage):
         self.page.goto(f"{self.base_url}{self.PATH}")
         return self.wait_loaded()
 
-    def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> AdminCategorySearchKeywordsPage:
+    def wait_loaded(
+        self, *, state: LoadState = "domcontentloaded", timeout: int | None = None
+    ) -> AdminCategorySearchKeywordsPage:
         super().wait_loaded(state=state, timeout=timeout)
         expect(self.__header).to_be_visible(timeout=timeout or self.DEFAULT_TIMEOUT)
         expect(self.__rows.first).to_be_visible(timeout=timeout or self.DEFAULT_TIMEOUT)
@@ -74,7 +76,9 @@ class AdminSettingsExceptionListPage(AdminBasePage):
         self.page.goto(f"{self.base_url}{self.PATH}")
         return self.wait_loaded()
 
-    def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> AdminSettingsExceptionListPage:
+    def wait_loaded(
+        self, *, state: LoadState = "domcontentloaded", timeout: int | None = None
+    ) -> AdminSettingsExceptionListPage:
         super().wait_loaded(state=state, timeout=timeout)
         expect(self.__header).to_be_visible(timeout=timeout or self.DEFAULT_TIMEOUT)
         expect(self.__rows.first).to_be_visible(timeout=timeout or self.DEFAULT_TIMEOUT)
@@ -109,7 +113,9 @@ class AdminSearchCodeGroupPage(AdminBasePage):
         self.page.goto(f"{self.base_url}{self.CREATE_PATH}")
         return self.wait_loaded()
 
-    def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> AdminSearchCodeGroupPage:
+    def wait_loaded(
+        self, *, state: LoadState = "domcontentloaded", timeout: int | None = None
+    ) -> AdminSearchCodeGroupPage:
         super().wait_loaded(state=state, timeout=timeout)
         expect(self.__code).to_be_visible(timeout=timeout or self.DEFAULT_TIMEOUT)
         expect(self.__max_codes).to_be_visible(timeout=timeout or self.DEFAULT_TIMEOUT)
@@ -136,7 +142,9 @@ class AdminOrdersReportsPage(AdminBasePage):
         self.page.goto(f"{self.base_url}{self.PATH}")
         return self.wait_loaded()
 
-    def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> AdminOrdersReportsPage:
+    def wait_loaded(
+        self, *, state: LoadState = "domcontentloaded", timeout: int | None = None
+    ) -> AdminOrdersReportsPage:
         super().wait_loaded(state=state, timeout=timeout)
         expect(self.__header).to_be_visible(timeout=timeout or self.DEFAULT_TIMEOUT)
         expect(self.__rows.first).to_be_visible(timeout=timeout or self.DEFAULT_TIMEOUT)
@@ -173,7 +181,9 @@ class AdminMissingLinksPage(AdminBasePage):
         self.page.goto(f"{self.base_url}{self.PATH}")
         return self.wait_loaded()
 
-    def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> AdminMissingLinksPage:
+    def wait_loaded(
+        self, *, state: LoadState = "domcontentloaded", timeout: int | None = None
+    ) -> AdminMissingLinksPage:
         super().wait_loaded(state=state, timeout=timeout)
         expect(self.__header).to_be_visible(timeout=timeout or self.DEFAULT_TIMEOUT)
         return self

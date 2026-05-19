@@ -110,7 +110,8 @@ class CartAndCheckoutWrappers:
                 elapsed_ms = int(max(0.0, time.monotonic() - stability_start) * 1000)
                 if consecutive_errors > self.DELIVERY_PROVIDER_STABILITY_MAX_CONSECUTIVE_ERRORS:
                     logger.error(
-                        "TEST_ERROR code=DELIVERY_PROVIDER_UNREADABLE_AFTER_PICKUP expected_provider={} actual_provider={} "
+                        "TEST_ERROR code=DELIVERY_PROVIDER_UNREADABLE_AFTER_PICKUP "
+                        "expected_provider={} actual_provider={} "
                         "delivery_type={} page_url={} elapsed_ms={} error={}",
                         expected_provider,
                         "<unknown>",

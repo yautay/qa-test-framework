@@ -24,7 +24,9 @@ class AdminAggregatorCreatePage(AdminBasePage):
         self.page.goto(f"{self.base_url}{self.PATH}")
         return self.wait_loaded()
 
-    def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> AdminAggregatorCreatePage:
+    def wait_loaded(
+        self, *, state: LoadState = "domcontentloaded", timeout: int | None = None
+    ) -> AdminAggregatorCreatePage:
         super().wait_loaded(state=state, timeout=timeout)
         expect(self.__name).to_be_visible(timeout=timeout or self.DEFAULT_TIMEOUT)
         return self
@@ -61,7 +63,9 @@ class AdminAggregatorEditPage(AdminBasePage):
         self.page.goto(f"{self.base_url}{self.path}")
         return self.wait_loaded()
 
-    def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> AdminAggregatorEditPage:
+    def wait_loaded(
+        self, *, state: LoadState = "domcontentloaded", timeout: int | None = None
+    ) -> AdminAggregatorEditPage:
         super().wait_loaded(state=state, timeout=timeout)
         expect(self.__add_element).to_be_visible(timeout=timeout or self.DEFAULT_TIMEOUT)
         return self
@@ -83,7 +87,9 @@ class AdminAggregatorItemCreatePage(AdminBasePage):
         self.__discount_code = page.locator("#ktr_promotion_aggregator_item_product_discount_code").first
         self.__save = page.locator("input.sf_admin_action_save").first
 
-    def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> AdminAggregatorItemCreatePage:
+    def wait_loaded(
+        self, *, state: LoadState = "domcontentloaded", timeout: int | None = None
+    ) -> AdminAggregatorItemCreatePage:
         super().wait_loaded(state=state, timeout=timeout)
         expect(self.__name).to_be_visible(timeout=timeout or self.DEFAULT_TIMEOUT)
         return self

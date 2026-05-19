@@ -38,13 +38,17 @@ def dimension_module_cases() -> list[DimensionModuleCase]:
         DimensionModuleCase(
             case_id="g6_inpost",
             product_paths=["/product/500000002/-test-product-produkt-g6.html"],
-            delivery_factory=lambda: DeliveryStorehouseReceiverDataBuilder().with_storehouse_name("Outlet Komorniki").build(),
+            delivery_factory=lambda: DeliveryStorehouseReceiverDataBuilder()
+            .with_storehouse_name("Outlet Komorniki")
+            .build(),
             payment_factory=checkout_payment_blik_required_terms,
         ),
         DimensionModuleCase(
             case_id="g1w_store_pickup",
             product_paths=["/product/500000003/-test-product-produkt-g1w.html"],
-            delivery_factory=lambda: DeliveryStorehouseReceiverDataBuilder().with_storehouse_name("Outlet Komorniki").build(),
+            delivery_factory=lambda: DeliveryStorehouseReceiverDataBuilder()
+            .with_storehouse_name("Outlet Komorniki")
+            .build(),
             payment_factory=checkout_payment_cash_on_pickup_required_terms,
         ),
     ]

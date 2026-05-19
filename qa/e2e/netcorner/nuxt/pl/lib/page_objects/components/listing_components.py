@@ -6,10 +6,15 @@ from typing import Self
 
 from playwright.sync_api import Locator, Page, expect
 
-from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.lib.dom_capture import capture_page_dom
+from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
-from qa.e2e.netcorner.nuxt.pl.lib.page_objects.utils import get_visible_text, normalize_price, strip_prefix, price_text_to_float
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.utils import (
+    get_visible_text,
+    normalize_price,
+    price_text_to_float,
+    strip_prefix,
+)
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.products.products_data_models import (
     AvailabilityStatus,
     AvailabilityStatuses,

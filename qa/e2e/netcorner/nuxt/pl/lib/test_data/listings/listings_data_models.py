@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from collections.abc import Callable
+from dataclasses import dataclass
 from typing import Any
 
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.products.products_data_models import AvailabilityStatus

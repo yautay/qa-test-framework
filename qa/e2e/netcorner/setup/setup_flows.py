@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+
 from playwright.sync_api import Page
 
 from qa.e2e.netcorner.admin.lib.flows.admin_wrappers import AdminWrappers
@@ -9,7 +10,9 @@ from qa.e2e.netcorner.setup.setup_data import DEFAULT_PROMO_CODES, PROMOTION_SER
 
 
 class NetcornerSetupService:
-    _PROMOTION_SAVE_SELECTOR = "#form-buttons button.btn-success, input[value='Zapisz'], input[type='submit'][name='save']"
+    _PROMOTION_SAVE_SELECTOR = (
+        "#form-buttons button.btn-success, input[value='Zapisz'], input[type='submit'][name='save']"
+    )
     _B2B_REQUIRED_ERROR = (
         "Występowanie promocji musi być zdefiniowane. Jeżeli wybrano kanał komputronik.pl, "
         "należy również wybrać b2b.komputronik.pl"

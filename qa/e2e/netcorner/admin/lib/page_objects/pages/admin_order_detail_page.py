@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass
+from decimal import Decimal
 
 from playwright.sync_api import Page
 

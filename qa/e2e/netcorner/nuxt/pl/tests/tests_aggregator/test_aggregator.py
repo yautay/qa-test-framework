@@ -37,7 +37,9 @@ def test_aggregator(page, context, runtime_env, admin_panel):
     accept_cookie_banner_if_visible(page)
 
     expect(page.locator("[data-name='aggregatorSlider']")).to_be_visible(timeout=15_000)
-    assert page.locator("[data-name='cardProduct']").count() > 0, "Agregator nie wyświetlił żadnych produktów na froncie."
+    assert page.locator("[data-name='cardProduct']").count() > 0, (
+        "Agregator nie wyświetlił żadnych produktów na froncie."
+    )
 
     page.get_by_role("button", name="Sprawdź").first.click()
     page.wait_for_load_state("domcontentloaded")

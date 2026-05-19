@@ -51,7 +51,9 @@ def matrix_vs_list_cases() -> list[MatrixVsListCase]:
 @allure.feature("Zamówienia")
 @allure.severity(allure.severity_level.CRITICAL)
 @pytest.mark.parametrize("case", matrix_vs_list_cases(), ids=lambda case: case.case_id)
-@pytest.mark.scenario("Checkout respektuje wymuszoną listę metod dostawy i zachowuje działający baseline dla innych kodów")
+@pytest.mark.scenario(
+    "Checkout respektuje wymuszoną listę metod dostawy i zachowuje działający baseline dla innych kodów"
+)
 def test_orders_matrix_vs_list(page, context, runtime_env, admin_panel, case: MatrixVsListCase):
     admin_panel.configure_enforced_shopping_path_postcodes(
         ensure_present=["62-030"],

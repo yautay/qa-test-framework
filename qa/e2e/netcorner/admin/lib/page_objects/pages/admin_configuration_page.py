@@ -21,7 +21,9 @@ class AdminConfigurationPage(AdminBasePage):
         self.page.goto(f"{self.base_url}{self.PATH}")
         return self.wait_loaded()
 
-    def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> AdminConfigurationPage:
+    def wait_loaded(
+        self, *, state: LoadState = "domcontentloaded", timeout: int | None = None
+    ) -> AdminConfigurationPage:
         super().wait_loaded(state=state, timeout=timeout)
         self.page.locator(self._LOC_CONTAINER).wait_for(state="visible", timeout=timeout or self.DEFAULT_TIMEOUT)
         return self

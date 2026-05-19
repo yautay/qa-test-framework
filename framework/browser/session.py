@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import base64
+import secrets
 import warnings
 from dataclasses import dataclass
-import secrets
 from urllib.parse import urlsplit, urlunsplit
 
 from playwright.sync_api import Browser, Playwright

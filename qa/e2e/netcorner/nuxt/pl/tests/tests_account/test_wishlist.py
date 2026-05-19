@@ -22,7 +22,9 @@ def test_add_product_to_wishlist(page, context, runtime_env):
     dump_data(user_data=user_data)
     ClientWrappers(page, context, runtime_env).register_new_client(user_data)
     listings_data = first_aviable_laptop_case()
-    selected_product_data = SelectProductWrappers(page, context, runtime_env).select_test_product(listings_data, add_to_cart=False)
+    selected_product_data = SelectProductWrappers(page, context, runtime_env).select_test_product(
+        listings_data, add_to_cart=False
+    )
     assert selected_product_data is not None, "Nie udało się otworzyć karty produktu."
     product_page = ProductPage(page, runtime_env.base_url)
     product_page.click_wishlist()
@@ -37,4 +39,4 @@ def test_add_product_to_wishlist(page, context, runtime_env):
     wishlist = my_account_page.find_wishlist_by_name(wishlist_name)
     assert wishlist is not None, f"Nie znaleziono wishlisty o nazwie: {wishlist_name}"
     assert my_account_page.get_product_name_for_wishlist(wishlist_name) == selected_product_data.product.product_name
-    
+

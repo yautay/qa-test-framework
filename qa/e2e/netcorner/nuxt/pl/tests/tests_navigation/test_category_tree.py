@@ -18,9 +18,9 @@ pytestmark = [pytest.mark.e2e, pytest.mark.e2e_layout]
 #     not preserved in ASCII slugs.
 # ---------------------------------------------------------------------------
 _ONE_LEVEL_CASES = [
-    pytest.param("RTV",                    "Telewizory",              None,          None, id="one_level_rtv_telewizory"),
-    pytest.param("Laptopy i komputery",    "Laptopy",                 None,          None, id="one_level_laptopy"),
-    pytest.param("Telefony i Smartwatche", "Telefony i Smartfony",    None,          None, id="one_level_telefony"),
+    pytest.param("RTV",                    "Telewizory",              None, None, id="one_level_rtv_telewizory"),
+    pytest.param("Laptopy i komputery",    "Laptopy",                 None, None, id="one_level_laptopy"),
+    pytest.param("Telefony i Smartwatche", "Telefony i Smartfony",    None, None, id="one_level_telefony"),
 ]
 
 _TWO_LEVEL_CASES = [

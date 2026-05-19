@@ -1,0 +1,13 @@
+FAILED qa/e2e/netcorner/nuxt/pl/tests/tests_aggregator/test_aggregator.py::test_aggregator - AssertionError: Locator expected to be visible
+FAILED qa/e2e/netcorner/nuxt/pl/tests/tests_listing/test_sorting_product_search.py::test_sorting_product_search[price_ascending] - AssertionError: Sortowanie 'Po cenie rosnąco' nieprawidłowe. Pierwsze naruszenie kolejności: (28499.0, 77.7), lista: [28499.0, 77.7, 99.0, 107.0, 109....
+FAILED qa/e2e/netcorner/nuxt/pl/tests/tests_aggregator/test_aggregator_promo_code.py::test_aggregator_promo_code - AssertionError: Locator expected to be visible
+FAILED qa/e2e/netcorner/nuxt/pl/tests/tests_account/test_password_modifications.py::test_password_recovery[pl_password_recovery] - AssertionError: Locator expected to be visible
+FAILED qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_monitoring_checkout.py::test_monitoring_checkout[inpost] - playwright._impl._errors.TimeoutError: Locator.click: Timeout 10000ms exceeded.
+FAILED qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_cart_offer.py::test_orders_cart_offer_static_price - AssertionError: Locator expected to be visible
+FAILED qa/e2e/netcorner/nuxt/pl/tests/tests_orders/test_orders_cart_offer.py::test_orders_cart_offer_dynamic_price - AssertionError: Locator expected to be visible
+FAILED qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_product_labels.py::test_product_labels - AssertionError: Nie znaleziono etykiety promocyjnej na żadnym z pierwszych kafelków listingu.
+FAILED qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_product_ozo.py::test_product_ozo - AssertionError: Locator expected to be visible
+FAILED qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_add_product_to_cart.py::test_add_product_to_cart[pl_products_laptops_one_day] - AssertionError: Nie znaleziono produktu 'Acer Nitro V 15 - i9-13900H | 15,6'' | 32GB | 1TB | W11H | RTX 5060' w koszyku.
+FAILED qa/e2e/netcorner/nuxt/pl/tests/tests_products/test_adhoc_product.py::test_adhoc_product_page_loads[adhoc_alfa] - AssertionError: Produkt ALFA: oczekiwano statusu dostępności, ale go nie znaleziono.
+FAILED qa/e2e/netcorner/nuxt/pl/tests/tests_smoke/test_smoke_basic_orders.py::test_smoke_basic_orders[logged_in__courier_service] - AssertionError: Użytkownik nie został poprawnie zarejestrowany.
+FAILED qa/e2e/netcorner/nuxt/pl/tests/tests_smoke/test_smoke_basic_orders.py::test_smoke_basic_orders[anonymous__inpost] - playwright._impl._errors.TimeoutError: Locator.is_checked: Timeout 30000ms exceeded.

@@ -143,7 +143,7 @@ def test_send_test_result_updates_preserves_failed_dom_artifacts_from_base_paylo
     heatmap_file = report_dir / heatmap_rel
     heatmap_file.parent.mkdir(parents=True, exist_ok=True)
     heatmap_file.write_bytes(b"heat")
-    
+
     base_payload = {
         "event_type": "test_result",
         "run_uid": "run-uid-3",
@@ -191,7 +191,7 @@ def test_send_test_result_updates_preserves_failed_dom_artifacts_from_base_paylo
     assert payload["attempt"] == 2
     assert payload["visual"]["verdict"] == "failed"
     artifacts = cast(list[dict[str, Any]], payload["artifacts"])
-    
+
     # Verify that failed_dom artifact from base payload is preserved
     failed_dom_artifacts = [item for item in artifacts if item.get("kind") == "failed_dom"]
     assert len(failed_dom_artifacts) == 1
@@ -199,10 +199,10 @@ def test_send_test_result_updates_preserves_failed_dom_artifacts_from_base_paylo
     assert failed_dom["path"] == "failed-dom/case-failed.html"
     assert failed_dom["available"] is True
     assert failed_dom["size_bytes"] == 156
-    
+
     # Verify that other base artifacts are also preserved
     assert any(item.get("kind") == "trace" for item in artifacts)
     assert any(item.get("kind") == "screenshot_raw" for item in artifacts)
-    
+
     # Verify that visual heatmap is added
     assert any(item.get("kind") == "visual_heatmap" for item in artifacts)
