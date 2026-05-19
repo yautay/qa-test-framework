@@ -11,7 +11,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data import AuthSessionCase, ClientDataBu
 pytestmark = [
     pytest.mark.e2e,
     pytest.mark.e2e_configurator,
-    pytest.mark.skip(reason="Konfigurator chwilowo wyłączony na tym środowisku."),
+    pytest.mark.skip(reason="Wszedł NOWY Konfigurator - testy wymagają aktualizacji."),
 ]
 
 
