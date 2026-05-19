@@ -71,6 +71,7 @@
 ## Workflow Traps
 - Exclude `.opencode/node_modules/` from searches; it is local OpenCode plugin noise, not product code.
 - README files mention targets such as `debug-minio-up`, `debug-remote-grid-up`, and `clean-visual-baselines`, but those targets are not defined in the checked-in root `Makefile`.
+- **Never commit `settings.py` or `settings_cli.py`** — these are local run-configuration files (environment, browser, server_name, credentials overrides). Changes to them are per-developer and must stay unstaged.
 
 ## E2E Page Object Contract
 - For `qa/e2e/**`, follow `docs/E2E_PAGE_OBJECT_CONTRACT.md`.
