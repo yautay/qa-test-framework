@@ -35,6 +35,8 @@ fi
 
 ensure_repo_environment "$repo_root"
 
+git update-index --skip-worktree settings.py settings_cli.py
+
 if [[ "$skip_playwright" -eq 0 ]]; then
     install_playwright_chromium "$repo_root"
 fi
