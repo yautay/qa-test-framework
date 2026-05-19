@@ -22,5 +22,13 @@ def runtime_env(pytestconfig: pytest.Config) -> RuntimeEnv:
 
 
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
+    from pathlib import Path
+
+    suite_root = Path(__file__).parent.resolve()
     for item in items:
-        item.add_marker(pytest.mark.e2e_b2b)
+        try:
+            item_path = Path(item.fspath).resolve()
+        except Exception:
+            continue
+        if suite_root in item_path.parents:
+            item.add_marker(pytest.mark.e2e_b2b)
