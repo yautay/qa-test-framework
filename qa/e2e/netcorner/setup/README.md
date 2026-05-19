@@ -13,6 +13,10 @@ Implementacja:
 - `setup_data.py` — dane setupowe (promo IDs, domyślne kody promo),
 - `setup_flows.py` — serwis `NetcornerSetupService` i obiektowe flow setupowe.
 
+Uwagi dot. zakresu produktów:
+- `test_setup_tests_promotions_sezam` obejmuje dedykowane produkty Sezam (`SEZAM_PRODUCT_CASES`),
+- `test_setup_index_products` obejmuje pełny zbiór produktów setupowych (`RECOMPUTING_PRODUCT_PURCHASE_ELIGIBILITY_IDS`).
+
 ## Uruchamianie
 
 Zbiorczy target setupów:
