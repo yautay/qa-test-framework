@@ -9,6 +9,7 @@ pytestmark = [pytest.mark.setup, pytest.mark.target("netcorner-nuxt-pl")]
 
 
 @pytest.mark.scenario("SetUpNUXT: TestSetUpTestsPromotionsSezam")
+@pytest.mark.order(1)
 @pytest.mark.parametrize("case", SEZAM_PRODUCT_CASES, ids=lambda case: case.case_id)
 def test_setup_tests_promotions_sezam(admin_panel, case):
     NetcornerSetupService(admin_panel).save_existing_sezam_promotions(case.product_ids)
