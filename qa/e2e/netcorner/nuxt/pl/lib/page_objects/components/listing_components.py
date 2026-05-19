@@ -242,9 +242,31 @@ class ListingContentComponent(BaseComponent):
         """
         expect(self.__tiles.first).to_be_visible(timeout=timeout)
 
+    def wait_for_tiles_stable(self, timeout: int = 15_000, interval_ms: int = 500) -> None:
+        """Wait until the tile count is stable across two consecutive reads.
+
+        After a SPA sort/filter change Vue briefly shows stale SSR tiles while
+        fetching new data.  Simply waiting for networkidle or tile visibility is
+        not enough — the tile locator resolves to old nodes that are still in the
+        DOM.  This method polls until the count stays the same twice in a row,
+        which reliably signals that the re-render cycle is complete.
+        """
+        import time as _time
+        deadline = _time.monotonic() + timeout / 1000
+        prev = self.__tiles.count()
+        while _time.monotonic() < deadline:
+            _time.sleep(interval_ms / 1000)
+            current = self.__tiles.count()
+            if current > 0 and current == prev:
+                return
+            prev = current
+        # Final check — at least one tile must be visible
+        expect(self.__tiles.first).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+
     @step("Pobieram ceny finalne wszystkich produktów na listingu")
     def get_all_final_prices(self) -> list[float]:
         """Returns final prices of all visible listing tiles as floats for sort comparison."""
+        self.wait_for_tiles_stable()
         count = self.__tiles.count()
         prices: list[float] = []
         for i in range(count):
@@ -256,6 +278,7 @@ class ListingContentComponent(BaseComponent):
     @step("Pobieram nazwy wszystkich produktów na listingu")
     def get_all_product_names(self) -> list[str]:
         """Returns product names (h2) of all visible listing tiles for sort comparison."""
+        self.wait_for_tiles_stable()
         count = self.__tiles.count()
         names: list[str] = []
         for i in range(count):
