@@ -17,7 +17,7 @@ import pytest
 from qa.e2e.netcorner.admin.lib.flows.admin_wrappers import AdminWrappers
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_delta_pages import EmployeeProgramGroupData
 
-pytestmark = [pytest.mark.e2e, pytest.mark.employee_program]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_employee_program]
 
 # Pracownicza kategoria cenowa (id=68 na galak.test)
 _PRICE_CATEGORY_EMPLOYEE = "68"

@@ -43,6 +43,7 @@
 - `BASE_URL` / `BASE_URL_OVERRIDE` come from env or `.env`, but `server_name` comes from `settings_cli.py` unless you pass `--server-name`.
 - Collection is strict for `qa/e2e/netcorner/**` and `qa/visual/**`: if target resolution cannot be inferred from path mapping, collection fails. Add `@pytest.mark.target("<id>")` or extend `framework.targeting.registry`.
 - `make verify-discovery` is a real guard, not a no-op: it shells out to `pytest --collect-only -q` and fails on collection errors, timeouts, zero tests, or `MIN_EXPECTED_TESTS` underflow.
+- Marker inventory helper: run `.venv/bin/python tools/pytest/generate_marker_matrix.py` to regenerate `docs/MARKER_TESTS_MATRIX.md` (marker -> test mapping). Refresh after marker/test taxonomy changes.
 
 ## Visual And Artifacts
 - Visual outputs live under `artifacts/<run_id>/visual/`; the report server default port is `4173`.

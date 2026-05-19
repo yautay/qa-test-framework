@@ -6,7 +6,7 @@ import pytest
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.listing_components import SortOptions
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.listing_page import ListingPage
 
-pytestmark = [pytest.mark.e2e, pytest.mark.search]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_search]
 
 # Category listing with price filter (no variants, cheap items) — equivalent to Selenium start_page
 _LISTING_PATH = (

@@ -296,10 +296,10 @@ class CartAndCheckoutWrappers:
 
         return delivery_methods_layout, available_delivery_methods
 
-    def process_cart(self) -> dict[str, CartProductData]:
+    def process_cart(self, *, continue_without_login: bool = True) -> dict[str, CartProductData]:
         cart = CartPage(self.__page, self.__runtime_env.base_url).wait_loaded()
         cart_data = cart.content.cart.get_data()
-        cart.proceed_to_checkout()
+        cart.proceed_to_checkout(continue_without_login=continue_without_login)
         return cart_data
 
     def process_checkout(

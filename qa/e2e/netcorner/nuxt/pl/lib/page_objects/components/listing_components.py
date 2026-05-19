@@ -157,6 +157,7 @@ class ListingProductData:
     final_price: str
     promotion_message: bool
     shipping_status: AvailabilityStatus | None
+    min_qty: int | None
 
 
 class ListingProductTileComponent(BaseComponent):
@@ -207,7 +208,18 @@ class ListingProductTileComponent(BaseComponent):
             final_price=self.get_final_price(),
             promotion_message=self.get_promotion_message(),
             shipping_status=self.get_shipping_status(),
+            min_qty=self.get_min_qty(),
         )
+
+    def get_min_qty(self) -> int | None:
+        min_qty_el = self.root.locator("[data-min-qty]").first
+        if min_qty_el.count() == 0 or not min_qty_el.is_visible():
+            return None
+        raw = min_qty_el.get_attribute("data-min-qty")
+        try:
+            return int(raw) if raw is not None else None
+        except ValueError:
+            return None
 
 
 class ListingContentComponent(BaseComponent):
@@ -271,6 +283,27 @@ class ListingContentComponent(BaseComponent):
             product_tile = ListingProductTileComponent(self.__tiles.nth(index))
             if product_tile.get_shipping_status() == shipping_status:
                 return product_tile
+        return None
+
+    @step("Wyszukuję pierwszy produkt o statusie dostępności z pominięciem kodów systemowych")
+    def find_first_product_by_shipping_status_excluding_system_codes(
+        self,
+        shipping_status: AvailabilityStatus,
+        excluded_system_codes: set[str],
+        skip_min_qty_gt_one: bool = False,
+    ) -> ListingProductTileComponent | None:
+        tile_count = self.count()
+        for index in range(tile_count):
+            product_tile = ListingProductTileComponent(self.__tiles.nth(index))
+            if product_tile.get_shipping_status() != shipping_status:
+                continue
+            if product_tile.get_system_code() in excluded_system_codes:
+                continue
+            if skip_min_qty_gt_one:
+                min_qty = product_tile.get_min_qty()
+                if min_qty is not None and min_qty > 1:
+                    continue
+            return product_tile
         return None
 
     @step("Przechodzę do kolejnej strony listingu")

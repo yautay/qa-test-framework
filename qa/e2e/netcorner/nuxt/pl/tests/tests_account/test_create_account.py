@@ -7,7 +7,7 @@ from qa.e2e.netcorner.lib.data_dump_to_logs import dump_data
 from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client import invalid_client_cases, valid_client_cases
 
-pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_core, pytest.mark.e2e_account]
 
 
 @allure.feature("Konto użytkownika")

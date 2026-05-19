@@ -46,9 +46,10 @@ class CartPage(BasePage):
             self.__footer = CartFooterSection(self.page)
         return self.__footer
 
-    def proceed_to_checkout(self) -> CheckoutPage:
+    def proceed_to_checkout(self, *, continue_without_login: bool = True) -> CheckoutPage:
         self.footer.click_continue()
-        Overlays(self.page).login.continue_without_login_if_visible()
+        if continue_without_login:
+            Overlays(self.page).login.continue_without_login_if_visible()
 
         checkout_page = CheckoutPage(self.page, self.base_url)
         return checkout_page.wait_loaded()

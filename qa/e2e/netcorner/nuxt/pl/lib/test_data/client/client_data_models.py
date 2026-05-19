@@ -26,6 +26,8 @@ class ClientCase:
 class AuthSessionCase:
     case_id: str
     authenticated: bool
+    register_before_flow: bool = False
+    login_in_cart_overlay: bool = False
 
 
 @dataclass(frozen=True)

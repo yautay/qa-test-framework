@@ -90,3 +90,23 @@ class ListingPage(BasePage):
 
             if not self.content.content.go_to_next_page():
                 return None
+
+    def open_first_product_by_shipping_status_excluding_system_codes(
+        self,
+        shipping_status: AvailabilityStatus,
+        excluded_system_codes: set[str],
+        skip_min_qty_gt_one: bool = False,
+    ) -> tuple[ListingProductData, product_page.ProductPage] | None:
+        while True:
+            product_tile = self.content.content.find_first_product_by_shipping_status_excluding_system_codes(
+                shipping_status,
+                excluded_system_codes,
+                skip_min_qty_gt_one=skip_min_qty_gt_one,
+            )
+            if product_tile is not None:
+                product_data = product_tile.get_data()
+                product_tile.click_see_more()
+                return product_data, product_page.ProductPage(self.page, self.base_url).wait_loaded()
+
+            if not self.content.content.go_to_next_page():
+                return None

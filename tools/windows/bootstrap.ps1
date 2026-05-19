@@ -17,6 +17,8 @@ if ($Reinstall -and (Test-Path (Get-RepoPath ".venv"))) {
 
 Ensure-RepoEnvironment
 
+git update-index --skip-worktree settings.py settings_cli.py
+
 if (-not $SkipPlaywright) {
     $pythonVersion = Get-RequiredPythonVersion
     Invoke-Uv -Arguments @(

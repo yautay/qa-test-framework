@@ -5,7 +5,7 @@ import pytest
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.listing_page import ListingPage
 
-pytestmark = [pytest.mark.e2e]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_core]
 
 # Listing laptopów z przedziałem cenowym 2000–6000 zł i filtrem dostępności (sh[]=205000).
 # Ten URL jest punktem wejścia dla testów weryfikujących promocje "Produkty w niższej cenie"

@@ -7,6 +7,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_data_models import (
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import (
     ClientDataBuilder,
     auth_session_cases,
+    auth_session_cases_basic_orders,
     auth_session_logged,
     auth_session_not_registered,
     invalid_client_cases,
@@ -23,6 +24,7 @@ __all__ = [
     "PasswordFlowCase",
     "ClientDataBuilder",
     "auth_session_cases",
+    "auth_session_cases_basic_orders",
     "auth_session_not_registered",
     "auth_session_logged",
     "invalid_client_cases",

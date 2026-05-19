@@ -5,7 +5,7 @@ import pytest
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 
-pytestmark = [pytest.mark.e2e, pytest.mark.layout]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_layout]
 
 
 @allure.feature("Layout")

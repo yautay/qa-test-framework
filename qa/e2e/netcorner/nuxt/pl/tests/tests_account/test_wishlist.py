@@ -11,7 +11,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.product_page import Product
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listing_data_generators import first_aviable_laptop_case
 
-pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_core, pytest.mark.e2e_account]
 
 
 @allure.feature("Konto użytkownika")
@@ -38,4 +38,3 @@ def test_add_product_to_wishlist(page, context, runtime_env):
     assert wishlist is not None, f"Nie znaleziono wishlisty o nazwie: {wishlist_name}"
     assert my_account_page.get_product_name_for_wishlist(wishlist_name) == selected_product_data.product.product_name
     
-

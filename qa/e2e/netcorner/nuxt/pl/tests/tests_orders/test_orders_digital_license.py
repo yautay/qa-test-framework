@@ -27,7 +27,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import
 )
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
 
-pytestmark = [pytest.mark.e2e, pytest.mark.orders]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_core, pytest.mark.e2e_orders]
 
 # Produkt cyfrowy (licencja) — do weryfikacji na środowisku galak.test
 # Ścieżka produktu do uzupełnienia przy pierwszym uruchomieniu na env.

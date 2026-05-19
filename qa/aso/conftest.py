@@ -20,13 +20,6 @@ def _aso_autouse(aso) -> None:
     _ = aso
 
 
-@pytest.fixture(scope="function", autouse=True)
-def _apply_extended_timeout_marker(request: pytest.FixtureRequest) -> None:
-    if request.node.get_closest_marker("extended_timeout") is None:
-        return
-    request.getfixturevalue("extended_timeout")
-
-
 @pytest.fixture(scope="function")
 def extended_timeout(request: pytest.FixtureRequest) -> None:
     try:

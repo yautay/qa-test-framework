@@ -29,7 +29,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
 from qa.e2e.netcorner.nuxt.pl.tests.helpers import add_products_to_cart_from_paths
 
-pytestmark = [pytest.mark.e2e, pytest.mark.employee_program]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_employee_program]
 
 _PRICE_CATEGORY_EMPLOYEE = "68"
 

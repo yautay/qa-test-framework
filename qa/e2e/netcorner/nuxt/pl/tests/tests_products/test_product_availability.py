@@ -7,7 +7,7 @@ from qa.e2e.netcorner.lib.data_dump_to_logs import dump_data
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.listing_page import ListingPage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listing_data_generators import phase2_listing_cases
 
-pytestmark = [pytest.mark.e2e]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_core]
 
 
 @allure.feature("Produkty")
