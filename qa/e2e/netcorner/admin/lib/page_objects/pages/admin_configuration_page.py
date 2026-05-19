@@ -41,8 +41,6 @@ class AdminConfigurationPage(AdminBasePage):
         self.open_enforced_postcodes_section()
         normalized = ",".join(dict.fromkeys(value.strip() for value in postcodes if value.strip()))
         textarea = self.page.locator(self._LOC_POSTCODES_TEXTAREA)
-        if (textarea.input_value() or "").strip() == normalized:
-            return
         textarea.fill(normalized)
         self.page.locator(self._LOC_POSTCODES_SAVE).click()
         expect(textarea).to_have_value(normalized, timeout=10_000)

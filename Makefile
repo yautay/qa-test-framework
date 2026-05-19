@@ -12,7 +12,7 @@ PYTEST ?= $(PYTHON) -m pytest
 
 .DEFAULT_GOAL := help
 
-.PHONY: help report-serve test test-api test-visual test-e2e test-aso test-smoke check collect lint format format-check typecheck security verify-discovery verify-scenarios clean clean-artifacts clean-artifacts-older debug-remote-grid-up debug-remote-grid-down debug-minio-up debug-minio-down
+.PHONY: help report-serve test test-api test-visual test-e2e test-aso test-smoke test-setup check collect lint format format-check typecheck security verify-discovery verify-scenarios clean clean-artifacts clean-artifacts-older debug-remote-grid-up debug-remote-grid-down debug-minio-up debug-minio-down
 
 help: ## Show this help
 	$(PYTHON) tools/make/make_help.py
@@ -40,6 +40,9 @@ test-aso: ## Testy oznaczone markerem aso
 
 test-smoke: ## Testy dymne
 	$(PYTEST) -m smoke -q
+
+test-setup: ## Setupy środowiskowe Netcorner NUxT
+	$(PYTEST) qa/e2e/netcorner/setup/tests -q
 
 
 ##@ Development

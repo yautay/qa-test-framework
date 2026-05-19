@@ -15,6 +15,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import
     private_person_delivery_courier_receiver,
 )
 from qa.e2e.netcorner.nuxt.pl.tests.helpers import accept_cookie_banner_if_visible, open_home_and_accept_cookies
+from qa.e2e.netcorner.setup.setup_flows import NetcornerSetupService
 
 pytestmark = [pytest.mark.e2e, pytest.mark.orders]
 
@@ -26,13 +27,14 @@ _PROMO_CODE = "TECHAGGREGATORBRUTTO"
 @pytest.mark.scenario("Produkt z agregatora pozwala przejść do koszyka z kodem promocyjnym")
 def test_aggregator_promo_code(page, context, runtime_env, admin_panel):
     suffix = uuid.uuid4().hex[:8]
+    NetcornerSetupService(admin_panel).ensure_promo_codes()
     frontend_url = admin_panel.create_products_aggregator(
         name=f"Agregator promo {suffix}",
         work_name=f"Agregator promo {suffix}",
         url_slug=f"agregator-promo-{suffix}",
         item_name="Klawiatury promo",
         section_code="Agregator",
-        product_codes="KL-LOG-094",
+        product_codes="KL-NAT-038,KL-LOG-094,LT-STD-I15-DEL-1300",
         discount_code=_PROMO_CODE,
     )
 
@@ -41,19 +43,17 @@ def test_aggregator_promo_code(page, context, runtime_env, admin_panel):
     accept_cookie_banner_if_visible(page)
 
     expect(page.locator("[data-name='aggregatorSlider']")).to_be_visible(timeout=15_000)
+    assert page.locator("[data-name='cardProduct']").count() > 0, "Agregator promo nie wyświetlił żadnych produktów."
+
     page.get_by_role("button", name="Sprawdź").first.click()
     page.wait_for_load_state("domcontentloaded")
     accept_cookie_banner_if_visible(page)
 
-    page.get_by_role("button", name="Dodaj do koszyka").first.click()
-    page.wait_for_load_state("domcontentloaded")
-    accept_cookie_banner_if_visible(page)
-    page.goto(page.url, wait_until="domcontentloaded")
-    accept_cookie_banner_if_visible(page)
     product_page = ProductPage(page, runtime_env.base_url).wait_loaded()
     product_page.add_to_cart()
-    page.goto(f"{runtime_env.base_url}/cart", wait_until="networkidle")
-    accept_cookie_banner_if_visible(page)
+    product_page.overlays.promotions.click_buy_only_product()
+    product_page.overlays.go_to_cart.click_go_to_cart()
+
     cart_page = CartPage(page, runtime_env.base_url).wait_loaded()
 
     cart_page.content.summary.enter_coupon_code(_PROMO_CODE)

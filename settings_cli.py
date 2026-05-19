@@ -4,8 +4,8 @@ run_note = "zmiana mechaniki liczenia kosztu transportu"
 tester = "Michal Pielaszkiewicz"
 
 # Execution
-browser = "chromium"
-is_session_headless = True
+browser = "firefox"
+is_session_headless = False
 
 # Environment
 server_name = "galak.test"

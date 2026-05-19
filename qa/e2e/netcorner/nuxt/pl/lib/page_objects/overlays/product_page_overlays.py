@@ -48,7 +48,9 @@ class ProductPagePromotionsOverlay(BaseComponent):
         )
 
         self.__promotion_names = self.find(".swiper-slide-visible .pagination-text")
-        self.__button_buy_only_product = self.find("role=button[name='Nie, dziękuję - chcę kupić tylko produkt']")
+        self.__button_buy_only_product = self.find(
+            "role=button[name=/^(Nie, dziękuję - chcę kupić tylko produkt|Przejdź dalej)$/]"
+        )
 
     def get_proposed_promotions(self, overlay_timeout: int = 7_500) -> list[str]:
         if not _wait_until_visible(self, overlay_timeout):
@@ -65,8 +67,6 @@ class ProductPagePromotionsOverlay(BaseComponent):
     @step("Klikam 'Nie, dziękuję - chcę kupić tylko produkt' na warstwie promocji i zwracam listę promocji")
     def click_buy_only_product(self, overlay_timeout: int = 7_500) -> list[str]:
         promotions = self.get_proposed_promotions(overlay_timeout=overlay_timeout)
-        if not promotions and not _wait_until_visible(self, timeout=0):
-            return promotions
         self.pointer_click(self.__button_buy_only_product)
         return promotions
 
@@ -134,5 +134,4 @@ class ProductPageWishlistOverlay(BaseComponent):
         if not _wait_until_visible(self, overlay_timeout):
             return
         self.pointer_click(self.__go_to_wishlist_button)
-
 

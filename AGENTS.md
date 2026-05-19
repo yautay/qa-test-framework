@@ -5,6 +5,24 @@
 - The only separate Node project is `framework/visual/ui` (CI uses Node 22 there). Run `npm ci` inside that directory; the repo root is not a Node workspace.
 - `qa/aso/framework/**` is the main framework regression/unit-style suite for `framework/`; most backend tests are there, not under a top-level `tests/` directory.
 
+## Nested AGENTS Guides
+- `qa/e2e/netcorner/nuxt/pl/tests/AGENTS.md`
+- `qa/e2e/netcorner/nuxt/pl/lib/page_objects/AGENTS.md`
+- `qa/e2e/netcorner/nuxt/pl/lib/page_objects/components/AGENTS.md`
+- `qa/e2e/netcorner/nuxt/pl/lib/page_objects/overlays/AGENTS.md`
+- `qa/e2e/netcorner/nuxt/pl/lib/page_objects/pages/AGENTS.md`
+- `qa/e2e/netcorner/nuxt/pl/lib/page_objects/sections/AGENTS.md`
+- `qa/e2e/netcorner/nuxt/pl/lib/test_data/AGENTS.md`
+- `qa/e2e/netcorner/mailhog/lib/AGENTS.md`
+- `qa/e2e/netcorner/mailhog/lib/page_objects/AGENTS.md`
+- `qa/e2e/netcorner/mailhog/lib/page_objects/pages/AGENTS.md`
+- `qa/e2e/netcorner/mailhog/lib/flows/AGENTS.md`
+- `qa/e2e/netcorner/admin/lib/AGENTS.md`
+- `qa/e2e/netcorner/admin/lib/page_objects/AGENTS.md`
+- `qa/e2e/netcorner/admin/lib/page_objects/pages/AGENTS.md`
+- `qa/e2e/netcorner/admin/lib/flows/AGENTS.md`
+- `qa/e2e/netcorner/admin/lib/test_data/AGENTS.md`
+
 ## Verified Commands
 - Root `Makefile` is the source of truth for Python commands. Check `make help` before trusting README command lists.
 - Prefer `make ...` targets or `.venv/bin/python -m ...` for all Python test/lint commands. Do not use plain `python`, `pytest`, or `pip` from the system shell, because that can silently pick the wrong interpreter.
@@ -12,6 +30,7 @@
 - If you need a direct pytest invocation for a focused file, use `.venv/bin/python -m pytest <path> -q` from repo root.
 - Full Python verification is `make check`, in this order: `test-aso -> lint -> format-check -> typecheck -> security -> verify-discovery -> verify-scenarios -> collect`.
 - Focused suites: `make test-aso`, `make test-e2e`, `make test-api`, `make test-visual`, `make test-smoke`.
+- Setup suite: `make test-setup` (Netcorner SetUpNUXT parity for environment/data seeding).
 - `make check` does not cover the Vue report UI. If you touch `framework/visual/ui`, also run `npm run test:unit` and `npm run build:fast` in `framework/visual/ui` to match CI.
 - `make report-serve` only starts the Python report server. It fails if `framework/visual/ui/dist` is missing; build the UI first with `npm run build` or `npm run build:fast` in `framework/visual/ui`.
 - CI ASO parity env: `HEADLESS=1 IS_GRID_AVAILABLE=0 REPORTING_ENABLED=0 ALLURE_ENABLED=0 PYTEST_HTML_ENABLED=0 RECORD_VIDEO=0` before `make verify-discovery`, `make verify-scenarios`, `make test-aso`.
@@ -39,6 +58,7 @@
 - Admin credentials: login `at.tester`, password `p3yEna8GfA7GdMR8TBKTm4myT7` (base64-decoded from `nc-functional-tests-py/settings.py`). Do not use `root`/komercja credentials.
 - Admin sales channel for PL tests: `id=1` (komputronik.pl). Selected via `AdminContextPage.select_context(1)`.
 - Mailhog URL: `https://mail-galak.test.netcorner.pl` — resolved via `resolve_mail_inbox_env("galak.test")`.
+- On every new test environment, run `make test-setup` before running dependent Netcorner E2E suites.
 - Connectivity check: `curl -skL -o /dev/null -w "%{http_code}" <url>` — expect `200` or `302` when VPN is active.
 - To verify admin access from scripts: use `playwright.sync_api` with `ignore_https_errors=True` in browser context — the standard test setup already sets this via `RuntimeEnv.ignore_https_errors`.
 - **Admin HTML quirks confirmed live (2026-05-14):**
@@ -54,5 +74,14 @@
 ## E2E Page Object Contract
 - For `qa/e2e/**`, follow `docs/E2E_PAGE_OBJECT_CONTRACT.md`.
 - Do not introduce new silent fallback chains in page objects or wrappers.
+- Do not introduce forced fallback/retry ladders in E2E tests ("try a few alternative paths until one passes") unless a documented, deterministic UI contract explicitly requires variants.
 - Prefer root-scoped locators and semantic Playwright locators over global page lookups.
 - When touching legacy E2E page objects, migrate the touched area toward the contract instead of preserving ambiguous fallback behavior.
+
+## E2E Test Authoring Best Practices
+- Domain split must stay strict: **assertions belong to tests**, while page objects/wrappers expose intent-driven actions and typed reads only.
+- Do not move business assertions into POM methods (no hidden `expect(...)` / `assert` in page object action APIs).
+- Keep test structure aligned with existing suites (arrange data/setup -> execute flow via wrappers/POM -> assert explicit business outcomes).
+- Use semantic scenario naming and markers (`@pytest.mark.scenario(...)`, `pytestmark`) consistent with neighboring tests.
+- Prefer explicit, typed test data from generators/builders in `lib/test_data/**` over inline ad-hoc dicts.
+- Parameterize behavior variants with `pytest.mark.parametrize(..., ids=lambda case: case.case_id)` and stable case objects (`case_id`, factory/data model) instead of branching logic inside one test.
