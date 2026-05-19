@@ -16,7 +16,7 @@ pytestmark = [
 
 
 @allure.feature("Konfigurator zestawów")
-@allure.severity(allure.severity_level.CRITICAL)
+@allure.severity(allure.severity_level.NORMAL)
 @pytest.mark.parametrize("auth_case", auth_session_not_registered(), ids=lambda case: case.case_id)
 @pytest.mark.scenario("Podstawowy proces budowy zestawu")
 def test_configurator_basic_flow(page, context, runtime_env, auth_case: AuthSessionCase):
