@@ -25,7 +25,7 @@ from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_delta_pages import (
 from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
 
-pytestmark = [pytest.mark.e2e, pytest.mark.employee_program]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_employee_program]
 
 _PRICE_CATEGORY_EMPLOYEE = "68"
 # Frontend URL do rejestracji w programie pracowniczym — do weryfikacji na env

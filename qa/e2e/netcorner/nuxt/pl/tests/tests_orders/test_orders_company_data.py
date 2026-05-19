@@ -17,7 +17,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_data_models import Aut
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listing_data_generators import first_available_laptop_case
 
-pytestmark = [pytest.mark.e2e, pytest.mark.orders]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_orders]
 
 _COMPANY_NIP = "7770020640"
 

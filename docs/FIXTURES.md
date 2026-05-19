@@ -40,3 +40,33 @@ python -m pytest qa/e2e/netcorner/nuxt/pl/tests/test_orders_smoke.py::test_order
 - `qa/e2e/netcorner/conftest.py`: Playwright lifecycle (`playwright_instance`, `browser`, `context`, `page`)
 - `qa/api/conftest.py`: API client (`api_client`)
 - `qa/aso/conftest.py`: technical suite fixture (`aso`)
+
+## Marker matrix (marker -> tests)
+
+Generate a fresh marker-to-test matrix:
+
+```bash
+.venv/bin/python tools/pytest/generate_marker_matrix.py
+```
+
+Output file:
+
+- `docs/MARKER_TESTS_MATRIX.md`
+
+When to update:
+
+- after adding/removing tests,
+- after changing `pytestmark` / `@pytest.mark.*`,
+- after introducing new marker names in `pytest.ini`.
+
+## Repository tree (HTML)
+
+Generate an HTML tree view for the whole repository:
+
+```bash
+.venv/bin/python tools/docs/generate_repo_tree_html.py
+```
+
+Output file:
+
+- `docs/REPO_TREE.html`

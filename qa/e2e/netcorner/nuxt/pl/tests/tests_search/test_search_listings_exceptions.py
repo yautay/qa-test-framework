@@ -6,7 +6,7 @@ import pytest
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_delta_pages import AdminSettingsExceptionListPage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.listing_page import ListingPage
 
-pytestmark = [pytest.mark.e2e, pytest.mark.search]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_search]
 
 
 @allure.feature("Wyszukiwanie")

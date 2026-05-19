@@ -15,7 +15,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import
 )
 from qa.e2e.netcorner.nuxt.pl.tests.helpers import accept_cookie_banner_if_visible, open_home_and_accept_cookies
 
-pytestmark = [pytest.mark.e2e, pytest.mark.orders]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_orders]
 
 
 @allure.feature("Agregator")

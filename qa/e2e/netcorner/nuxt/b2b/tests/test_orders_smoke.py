@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-pytestmark = [pytest.mark.e2e, pytest.mark.smoke]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_core]
 
 
 @pytest.mark.skip(reason="B2B suite template placeholder")

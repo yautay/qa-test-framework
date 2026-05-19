@@ -15,7 +15,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import
 )
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
 
-pytestmark = [pytest.mark.e2e, pytest.mark.orders]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_orders]
 
 # Stałe produkty testowe z minimalną ilością zamówieniową na środowisku galak.test.
 # 500000510 = "ZESTAW PRODUKTOWY"        — min_qty=3

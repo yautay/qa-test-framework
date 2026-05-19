@@ -11,7 +11,7 @@ from framework.visual.visual_suite import apply_parametrization, execute_visual_
 
 SCENARIOS_DIR = Path(__file__).resolve().parent
 
-pytestmark = [pytest.mark.visual, pytest.mark.wp]
+pytestmark = [pytest.mark.visual, pytest.mark.visual_wp]
 
 
 def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:

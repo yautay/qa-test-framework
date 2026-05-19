@@ -7,7 +7,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
 
-pytestmark = [pytest.mark.e2e, pytest.mark.account]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_account]
 
 
 @allure.feature("Konto użytkownika")

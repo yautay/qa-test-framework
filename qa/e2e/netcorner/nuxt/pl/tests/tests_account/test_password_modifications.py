@@ -10,7 +10,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.password_recovery_page import PasswordRecoveryPage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client import password_change_cases, password_recovery_cases
 
-pytestmark = [pytest.mark.e2e, pytest.mark.smoke, pytest.mark.account]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_core, pytest.mark.e2e_account]
 
 
 @allure.feature("Konto użytkownika")

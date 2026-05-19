@@ -33,7 +33,7 @@ def test_extended_timeout_sets_playwright_timeouts_to_60_seconds() -> None:
 
 def test_apply_extended_timeout_marker_requests_fixture_when_marker_present() -> None:
     calls: list[str] = []
-    node = SimpleNamespace(get_closest_marker=lambda name: object() if name == "extended_timeout" else None)
+    node = SimpleNamespace(get_closest_marker=lambda name: object() if name == "aso_extended_timeout" else None)
 
     def _getfixturevalue(name: str):
         calls.append(name)

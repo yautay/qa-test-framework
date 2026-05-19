@@ -39,7 +39,7 @@ test-aso: ## Testy oznaczone markerem aso
 	$(PYTEST) -m aso -q
 
 test-smoke: ## Testy dymne
-	$(PYTEST) -m smoke -q
+	$(PYTEST) qa/e2e/netcorner/nuxt/pl/tests/tests_smoke/test_smoke_basic_orders.py -q
 
 test-setup: ## Setupy środowiskowe Netcorner NUxT
 	$(PYTEST) qa/e2e/netcorner/setup/tests -q

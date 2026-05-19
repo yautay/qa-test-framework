@@ -22,7 +22,7 @@ def _aso_autouse(aso) -> None:
 
 @pytest.fixture(scope="function", autouse=True)
 def _apply_extended_timeout_marker(request: pytest.FixtureRequest) -> None:
-    if request.node.get_closest_marker("extended_timeout") is None:
+    if request.node.get_closest_marker("aso_extended_timeout") is None:
         return
     request.getfixturevalue("extended_timeout")
 

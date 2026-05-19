@@ -26,7 +26,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import
 )
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
 
-pytestmark = [pytest.mark.e2e, pytest.mark.orders]
+pytestmark = [pytest.mark.e2e, pytest.mark.e2e_orders]
 
 # Produkt testowy dla oferty koszykowej (product_price_tests_products_ids[1])
 _CART_OFFER_PRODUCT_ID = 500000001  # fallback — zastąpione produktem z env

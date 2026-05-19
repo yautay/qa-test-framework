@@ -963,9 +963,9 @@ def _resolve_run_profile(config: pytest.Config) -> str:
     markexpr = str(getattr(config.option, "markexpr", "") or "").strip()
     if markexpr == "aso":
         return "aso"
-    if markexpr == "orders":
+    if markexpr == "e2e_orders":
         return "orders"
-    if markexpr == "smoke":
+    if markexpr in {"smoke", "e2e_smoke"}:
         return "smoke"
     if markexpr == "visual":
         return "visual"
