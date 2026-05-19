@@ -9,5 +9,6 @@ pytestmark = [pytest.mark.setup, pytest.mark.target("netcorner-nuxt-pl")]
 
 
 @pytest.mark.scenario("SetUpNUXT: TestSetUpTestsProducts")
+@pytest.mark.order(4)
 def test_setup_tests_products(admin_panel):
     NetcornerSetupService(admin_panel).recompute_product_purchase_eligibility(RECOMPUTING_PRODUCT_PURCHASE_ELIGIBILITY_IDS)

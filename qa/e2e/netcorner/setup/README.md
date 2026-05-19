@@ -31,8 +31,10 @@ Setup `test-setup` powinien być odpalony **na każdej nowej testówce** (świe�
 zanim uruchomione zostaną testy E2E zależne od danych promocyjnych, indeksu i kupowalności produktów.
 
 Rekomendowana kolejność logiczna (pokrycie SetUpNUXT):
-1. promotions service,
-2. promo codes,
-3. recompute products,
-4. promotions sezam,
+1. promotions sezam,
+2. promotions service,
+3. promo codes,
+4. recompute products,
 5. index products.
+
+Kolejność wymuszana jest markerami `@pytest.mark.order(...)` (plugin `pytest-order`).

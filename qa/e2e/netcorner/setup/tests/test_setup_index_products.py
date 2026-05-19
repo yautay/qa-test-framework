@@ -9,6 +9,7 @@ pytestmark = [pytest.mark.setup, pytest.mark.target("netcorner-nuxt-pl")]
 
 
 @pytest.mark.scenario("SetUpNUXT: TestSetUpIndexProducts")
+@pytest.mark.order(5)
 def test_setup_index_products(admin_panel):
     erp_codes = NetcornerSetupService(admin_panel).reindex_products(RECOMPUTING_PRODUCT_PURCHASE_ELIGIBILITY_IDS)
     assert erp_codes, "Nie zebrano żadnych kodów ERP do indeksowania produktów."
