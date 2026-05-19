@@ -6,8 +6,8 @@ from pathlib import Path
 
 import allure
 import pytest
-import settings_cli
 
+import settings_cli
 from framework.artifacts import RunArtifacts
 from qa.e2e.netcorner.lib.data_dump_to_logs import dump_data
 from qa.e2e.netcorner.nuxt.pl.lib.flows.cart_and_checkout_wrappers import CartAndCheckoutWrappers
@@ -62,8 +62,10 @@ def test_smoke_basic_orders(
     auth_case: AuthSessionCase,
     delivery_case: CheckoutDeliveryCase,
 ):
-    use_production_email = _use_production_email_for_case(auth_case, delivery_case)
-    user_data = _prepare_client_session(page, context, runtime_env, auth_case, use_production_email=use_production_email)
+    use_production_email = _use_production_email_for_case(auth_case, delivery_case, runtime_env)
+    user_data = _prepare_client_session(
+        page, context, runtime_env, auth_case, use_production_email=use_production_email
+    )
     selected_product_data = _select_search_product_for_smoke(page, runtime_env)
     assert selected_product_data.product_page_data is not None, "Produkt nie został dodany do koszyka."
 
@@ -198,8 +200,13 @@ def _prepare_checkout_case(
     )
 
 
-def _use_production_email_for_case(auth_case: AuthSessionCase, delivery_case: CheckoutDeliveryCase) -> bool:
-    return auth_case.case_id == "logged_in" and delivery_case.case_id == "courier_service"
+def _use_production_email_for_case(
+    auth_case: AuthSessionCase,
+    delivery_case: CheckoutDeliveryCase,
+    runtime_env,
+) -> bool:
+    is_prod = runtime_env.server_name == "prod"
+    return is_prod and auth_case.case_id == "logged_in" and delivery_case.case_id == "courier_service"
 
 
 def _append_production_order_log(

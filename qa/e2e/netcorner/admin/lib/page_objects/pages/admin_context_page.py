@@ -42,8 +42,14 @@ class AdminContextPage(AdminBasePage):
         return self
 
     def is_context_selection_required(self) -> bool:
-        """Returns True if the context selector is displayed (not yet chosen)."""
-        return self.page.locator(self._LOC_CONTEXT_HEADER).is_visible(timeout=3_000)
+        """Returns True if the context selector is displayed (not yet chosen).
+
+        Uses the select element as the primary signal — it is more reliably
+        present than the H1 which may not yet be in the DOM when this is called
+        immediately after login completes (domcontentloaded fires before the
+        server-rendered H1 is stable in some environments).
+        """
+        return self.page.locator(self._LOC_SALES_CHANNEL_SELECT).is_visible(timeout=10_000)
 
     def select_context(self, sales_channel_id: int) -> None:
         """Choose a sales channel and save. After this the admin main page is loaded."""

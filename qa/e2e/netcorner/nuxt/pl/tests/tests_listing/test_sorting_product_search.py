@@ -46,7 +46,7 @@ def test_sorting_product_search(page, runtime_env, sort_option):
     if is_price_sort:
         data = listing.content.content.get_all_final_prices()
         descending = sort_option == SortOptions.PRICE_DESC
-        pairs = list(zip(data, data[1:]))
+        pairs = list(zip(data, data[1:], strict=False))
         if descending:
             out_of_order = [(a, b) for a, b in pairs if a < b]
         else:

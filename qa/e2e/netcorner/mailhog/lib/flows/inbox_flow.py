@@ -214,7 +214,10 @@ class MailInboxService:
         return sum(
             1
             for item in items
-            if any(str(raw_to).strip().casefold() == recipient_normalized for raw_to in item.get("Raw", {}).get("To", []))
+            if any(
+                str(raw_to).strip().casefold() == recipient_normalized
+                for raw_to in item.get("Raw", {}).get("To", [])
+            )
         )
 
     @step("Loguję się do skrzynki mailowej")

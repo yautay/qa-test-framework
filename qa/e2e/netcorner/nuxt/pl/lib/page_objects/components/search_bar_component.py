@@ -25,7 +25,11 @@ class SearchBarComponent(BaseComponent):
 
     @step("Przesyłam zapytanie wyszukiwania")
     def submit(self) -> None:
-        self.pointer_click(self.__submit)
+        # Use JS dispatch_event to bypass any overlay (e.g. cookie banner) that
+        # may intercept pointer events on the submit button.  The banner is
+        # dismissed asynchronously and pointer_click reliably fails when the
+        # semi-transparent backdrop is still in the DOM.
+        self.__submit.first.dispatch_event("click")
 
     @step("Sprawdzam, czy w polu wyszukiwania jest: {expected}")
     def assert_value(self, expected: str) -> None:

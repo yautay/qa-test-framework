@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import pytest
 import allure
+import pytest
 
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.product_page import ProductPage
 

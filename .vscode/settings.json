@@ -18,7 +18,8 @@
         "tmp/**": true,
         "logs/**": true,
         "log/**": true,
-        "Screenshots/**": true
+        "Screenshots/**": true,
+        "build/**": true
     },
     "search.exclude": {
         "artifacts/**": true,
@@ -34,7 +35,8 @@
         "tmp/**": true,
         "logs/**": true,
         "log/**": true,
-        "Screenshots/**": true
+        "Screenshots/**": true,
+        "build/**": true
     },
     "python.analysis.exclude": [
         "artifacts/**",
@@ -47,15 +49,21 @@
         "framework/visual/ui/coverage/**",
         "framework/visual/ui/dist/**",
         "qa/visual/baselines/**",
+        "tmp/**",
+        "logs/**",
+        "log/**",
+        "Screenshots/**",
+        "build/**",
         "**/node_modules"
     ],
     "files.exclude": {
-    "**/__pycache__": true,
-    "**/.pytest_cache": true,
-    "**/.mypy_cache": true,
-    "**/.ruff_cache": true,
-    "**/.coverage": true,
-    "**/htmlcov": true,
-    "**/.venv": true
-}
+        "**/__pycache__": true,
+        "**/.pytest_cache": true,
+        "**/.mypy_cache": true,
+        "**/.ruff_cache": true,
+        "**/.coverage": true,
+        "**/htmlcov": true,
+        "**/.venv": true,
+        "build": true
+    }
 }

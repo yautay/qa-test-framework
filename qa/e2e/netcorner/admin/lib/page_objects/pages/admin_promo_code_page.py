@@ -66,7 +66,7 @@ class AdminPromoCodePage(AdminBasePage):
                 for text in self.page.locator(".vue-treeselect__menu label").all_inner_texts()
                 if text.strip()
             ]
-            assert False, (
+            raise AssertionError(
                 f"Nie znaleziono promocji '{promotion_name}' potrzebnej do utworzenia kodu '{code}'. "
                 f"Dostępne opcje: {available[:5]}"
             )

@@ -65,7 +65,9 @@ def test_orders_statuses(page, context, runtime_env, admin_panel, mail_inbox: Ma
 
         orders_page = OrdersListPage(page, runtime_env.base_url).open_and_wait_orders()
         row = orders_page.find_order(order_number)
-        assert row is not None, f"Zamówienie {order_number} nie zostało znalezione na liście klienta po zmianie statusu."
+        assert row is not None, (
+            f"Zamówienie {order_number} nie zostało znalezione na liście klienta po zmianie statusu."
+        )
 
         account_status = row.get_status()
         assert _statuses_match(account_status, option.label), (
@@ -76,7 +78,8 @@ def test_orders_statuses(page, context, runtime_env, admin_panel, mail_inbox: Ma
         mails_count_after = mail_inbox.count_mails_containing_text(text=order_number)
         if mails_count_after <= mails_count_before:
             pytest.skip(
-                f"Env nie wygenerował dodatkowego maila po zmianie statusu '{option.label}' dla zamówienia '{order_number}'. "
+                f"Env nie wygenerował dodatkowego maila po zmianie statusu '{option.label}' "
+                f"dla zamówienia '{order_number}'. "
                 f"Licznik przed={mails_count_before}, po={mails_count_after}."
             )
         mails_count_before = mails_count_after

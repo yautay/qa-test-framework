@@ -47,7 +47,9 @@ def test_orders_ozo_limited_sale(page, context, runtime_env, admin_panel: AdminW
     # Odczyt stanu licznika PRZED zamówieniem.
     home = HomePage(page, runtime_env.base_url).open(HomePage.PATH).wait_loaded()
     if not home.content.hero.is_ozo_widget_present():
-        pytest.skip("Widget OZO nie jest widoczny na stronie głównej — środowisko nie obsługuje OZO w tej konfiguracji.")
+        pytest.skip(
+            "Widget OZO nie jest widoczny na stronie głównej — środowisko nie obsługuje OZO w tej konfiguracji."
+        )
 
     box_before = home.content.hero.get_ozo_details()
 

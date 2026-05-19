@@ -17,7 +17,9 @@ from qa.e2e.netcorner.nuxt.pl.tests.helpers import add_products_to_cart_from_pat
 
 pytestmark = [pytest.mark.e2e, pytest.mark.e2e_core, pytest.mark.e2e_orders]
 
-_PRODUCT_PATH = "/product/1004422/apple-macbook-pro-m5-max-18-40-16-2-128gb-8tb-mac-os-gwiezdna-czern-140w-nano-textured.html"
+_PRODUCT_PATH = (
+    "/product/1004422/apple-macbook-pro-m5-max-18-40-16-2-128gb-8tb-mac-os-gwiezdna-czern-140w-nano-textured.html"
+)
 
 
 @dataclass(frozen=True)
@@ -34,7 +36,9 @@ def split_payment_cases() -> list[SplitPaymentCase]:
         ),
         SplitPaymentCase(
             case_id="store_pickup_split_payment",
-            delivery_factory=lambda: DeliveryStorehouseReceiverDataBuilder().with_storehouse_name("Outlet Komorniki").build(),
+            delivery_factory=lambda: DeliveryStorehouseReceiverDataBuilder()
+            .with_storehouse_name("Outlet Komorniki")
+            .build(),
         ),
     ]
 
@@ -51,7 +55,12 @@ def test_split_payment(page, context, runtime_env, admin_panel, case: SplitPayme
 
     receiver = case.delivery_factory()
     purchaser = company_checkout_purchaser()
-    payment = CheckoutPaymentDataBuilder().with_payment_method_label_contains("splitpayment").with_required_terms().build()
+    payment = (
+        CheckoutPaymentDataBuilder()
+        .with_payment_method_label_contains("splitpayment")
+        .with_required_terms()
+        .build()
+    )
 
     checkout_wrappers = CartAndCheckoutWrappers(page, context, runtime_env)
     checkout_wrappers.process_cart()
@@ -62,7 +71,10 @@ def test_split_payment(page, context, runtime_env, admin_panel, case: SplitPayme
         payment,
     )
 
-    assert any("splitpayment" in method.name.replace(" ", "").casefold() for method in checkout_process_data.available_payment_methods), (
+    assert any(
+        "splitpayment" in method.name.replace(" ", "").casefold()
+        for method in checkout_process_data.available_payment_methods
+    ), (
         f"Dla przypadku '{case.case_id}' nie wykryto metody Split Payment na checkoutcie."
     )
     order_number = checkout_process_data.typ_summary_data.order_number.strip()

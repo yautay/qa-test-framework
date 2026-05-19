@@ -12,7 +12,7 @@ PYTEST ?= $(PYTHON) -m pytest
 
 .DEFAULT_GOAL := help
 
-.PHONY: help report-serve test test-api test-visual test-e2e test-aso test-smoke test-smoke-prod-pl test-setup check collect lint format format-check typecheck security verify-discovery verify-scenarios clean clean-artifacts clean-artifacts-older debug-remote-grid-up debug-remote-grid-down debug-minio-up debug-minio-down local-settings-ignore local-settings-track
+.PHONY: help report-serve test test-api test-visual test-e2e test-aso test-smoke test-smoke-prod-pl test-setup test-flaky check collect lint format format-check typecheck security verify-discovery verify-scenarios clean clean-artifacts clean-artifacts-older debug-remote-grid-up debug-remote-grid-down debug-minio-up debug-minio-down local-settings-ignore local-settings-track
 
 help: ## Show this help
 	$(PYTHON) tools/make/make_help.py
@@ -46,6 +46,13 @@ test-smoke-prod-pl: ## Smoke PL basic orders na prod (grid/headless off)
 
 test-setup: ## Setupy środowiskowe Netcorner NUxT
 	$(PYTEST) qa/e2e/netcorner/setup/tests -q
+
+test-flaky: ## Wykrywanie niestabilnych testów e2e_pl (flake-finder)
+	$(PYTEST) \
+	-m e2e_pl \
+	--randomly-seed=$(shell date +%s) \
+	--flake-finder \
+	--flake-runs=10
 
 
 ##@ Development

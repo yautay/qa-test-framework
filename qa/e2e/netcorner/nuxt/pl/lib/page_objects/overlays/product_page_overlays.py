@@ -66,9 +66,9 @@ class ProductPagePromotionsOverlay(BaseComponent):
 
     @step("Klikam 'Nie, dziękuję - chcę kupić tylko produkt' na warstwie promocji i zwracam listę promocji")
     def click_buy_only_product(self, overlay_timeout: int = 7_500) -> list[str]:
-        promotions = self.get_proposed_promotions(overlay_timeout=overlay_timeout)
-        if not promotions:
+        if not _wait_until_visible(self, overlay_timeout):
             return []
+        promotions = self.get_proposed_promotions(overlay_timeout=overlay_timeout)
         self.pointer_click(self.__button_buy_only_product)
         return promotions
 
