@@ -12,7 +12,7 @@ PYTEST ?= $(PYTHON) -m pytest
 
 .DEFAULT_GOAL := help
 
-.PHONY: help report-serve test test-api test-visual test-e2e test-aso test-smoke test-setup check collect lint format format-check typecheck security verify-discovery verify-scenarios clean clean-artifacts clean-artifacts-older debug-remote-grid-up debug-remote-grid-down debug-minio-up debug-minio-down local-settings-ignore local-settings-track
+.PHONY: help report-serve test test-api test-visual test-e2e test-aso test-smoke test-smoke-prod-pl test-setup check collect lint format format-check typecheck security verify-discovery verify-scenarios clean clean-artifacts clean-artifacts-older debug-remote-grid-up debug-remote-grid-down debug-minio-up debug-minio-down local-settings-ignore local-settings-track
 
 help: ## Show this help
 	$(PYTHON) tools/make/make_help.py
@@ -40,6 +40,9 @@ test-aso: ## Testy oznaczone markerem aso
 
 test-smoke: ## Testy dymne
 	$(PYTEST) qa/e2e/netcorner/nuxt/pl/tests/tests_smoke/test_smoke_basic_orders.py -m e2e_smoke -q
+
+test-smoke-prod-pl: ## Smoke PL basic orders na prod (grid/headless off)
+	IS_GRID_AVAILABLE=0 HEADLESS=0 $(PYTEST) qa/e2e/netcorner/nuxt/pl/tests/tests_smoke/test_smoke_basic_orders.py --server-name=prod -q
 
 test-setup: ## Setupy środowiskowe Netcorner NUxT
 	$(PYTEST) qa/e2e/netcorner/setup/tests -q
