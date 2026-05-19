@@ -13,6 +13,15 @@
 - `qa/e2e/netcorner/nuxt/pl/lib/page_objects/pages/AGENTS.md`
 - `qa/e2e/netcorner/nuxt/pl/lib/page_objects/sections/AGENTS.md`
 - `qa/e2e/netcorner/nuxt/pl/lib/test_data/AGENTS.md`
+- `qa/e2e/netcorner/mailhog/lib/AGENTS.md`
+- `qa/e2e/netcorner/mailhog/lib/page_objects/AGENTS.md`
+- `qa/e2e/netcorner/mailhog/lib/page_objects/pages/AGENTS.md`
+- `qa/e2e/netcorner/mailhog/lib/flows/AGENTS.md`
+- `qa/e2e/netcorner/admin/lib/AGENTS.md`
+- `qa/e2e/netcorner/admin/lib/page_objects/AGENTS.md`
+- `qa/e2e/netcorner/admin/lib/page_objects/pages/AGENTS.md`
+- `qa/e2e/netcorner/admin/lib/flows/AGENTS.md`
+- `qa/e2e/netcorner/admin/lib/test_data/AGENTS.md`
 
 ## Verified Commands
 - Root `Makefile` is the source of truth for Python commands. Check `make help` before trusting README command lists.
