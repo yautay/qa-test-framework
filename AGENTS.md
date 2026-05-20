@@ -76,6 +76,7 @@
 ## E2E Page Object Contract
 - For `qa/e2e/**`, follow `docs/E2E_PAGE_OBJECT_CONTRACT.md`.
 - Do not introduce new silent fallback chains in page objects or wrappers.
+- Do not implement click/wait retry fallbacks in page objects (e.g. `try open+wait, except: open+wait`). Fix the underlying locator/readiness contract instead.
 - Do not introduce forced fallback/retry ladders in E2E tests ("try a few alternative paths until one passes") unless a documented, deterministic UI contract explicitly requires variants.
 - Prefer root-scoped locators and semantic Playwright locators over global page lookups.
 - When touching legacy E2E page objects, migrate the touched area toward the contract instead of preserving ambiguous fallback behavior.

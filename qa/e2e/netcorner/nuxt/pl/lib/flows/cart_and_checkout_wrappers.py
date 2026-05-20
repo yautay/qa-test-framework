@@ -281,9 +281,7 @@ class CartAndCheckoutWrappers:
                 courier_overlay.fill_receiver_data(delivery_objects)
                 courier_overlay.click_add_details()
                 courier_overlay.wait_hidden(timeout=10_000)
-                delivery_methods = checkout.content.delivery_methods.wait_visible().wait_for_available_methods(
-                    timeout=10_000
-                )
+                delivery_methods = checkout.content.delivery_methods.wait_visible()
                 delivery_methods_layout, available_delivery_methods = delivery_methods.get_methods_layout()
                 if delivery_objects.preferred_delivery_method_text:
                     delivery_methods.choose_method_containing(delivery_objects.preferred_delivery_method_text)
