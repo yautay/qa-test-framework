@@ -67,18 +67,18 @@ def test_product_ozo_parameters_consistency(page, runtime_env, ozo_reset, admin_
 
     date_to = datetime.strptime(str(settings["date_to"]), "%Y-%m-%d %H:%M")
     days_left_expected = (date_to - datetime.now()).days
-    assert abs(box_data["days_left"] - days_left_expected) <= 1, (
+    assert abs(box_data.days_left - days_left_expected) <= 1, (
         "Liczba dni do końca promocji OZO na homepage jest niezgodna z ustawieniami admin. "
-        f"Homepage={box_data['days_left']}, admin={days_left_expected}."
+        f"Homepage={box_data.days_left}, admin={days_left_expected}."
     )
 
     product = ProductPage(page, runtime_env.base_url).open(_OZO_TEST_PRODUCT_PATH).wait_loaded()
     limited_sale = product.content.price.get_limited_sale_status()
     assert limited_sale is not None, "Brak komponentu limitowanej sprzedaży na karcie produktu OZO."
-    assert box_data["sold_amount"] == limited_sale["limited_sale_sold"], (
+    assert box_data.sold_amount == limited_sale["limited_sale_sold"], (
         "Licznik sprzedanych sztuk OZO jest niespójny między homepage i kartą produktu."
     )
-    assert box_data["remaining_amount"] == limited_sale["limited_sale_left"], (
+    assert box_data.remaining_amount == limited_sale["limited_sale_left"], (
         "Licznik pozostałych sztuk OZO jest niespójny między homepage i kartą produktu."
     )
 

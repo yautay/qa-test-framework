@@ -183,7 +183,9 @@ def _prepare_client_session(
     cached_user = reusable_smoke_user_cache.get(cache_key)
     if cached_user is not None:
         user_data = cached_user
-        if auth_case.register_before_flow and not auth_case.authenticated:
+        if auth_case.authenticated:
+            _login_with_cached_user(page, runtime_env, user_data)
+        elif auth_case.register_before_flow:
             _logout_if_logged_in(page, runtime_env)
         return user_data
 
@@ -205,6 +207,14 @@ def _logout_if_logged_in(page, runtime_env) -> None:
     home.open(HomePage.PATH).wait_loaded()
     if home.header.actions.is_my_account_available():
         home.open_account_page().logout_to_home_page()
+
+
+def _login_with_cached_user(page, runtime_env, user_data) -> None:
+    """Loguje użytkownika z cache w aktualnym BrowserContext (scope=function)."""
+    home = HomePage(page, runtime_env.base_url)
+    home.open(HomePage.PATH).wait_loaded()
+    if not home.header.actions.is_my_account_available():
+        home.open_login_overlay().log_client(user_data.email, user_data.password)
 
 
 def _prepare_checkout_case(

@@ -34,6 +34,8 @@ _OZO_PRODUCT_PATH = "/product/500000513/tusz-do-drukarki--test-product-produkt-o
 
 # Czas oczekiwania na aktualizację licznika OZO po złożeniu zamówienia (sekundy)
 _OZO_COUNTER_SETTLE_SECS = 10
+_OZO_COUNTER_MAX_WAIT_SECS = 60
+_OZO_COUNTER_POLL_SECS = 2
 
 
 @allure.feature("Zamówienia")
@@ -81,21 +83,17 @@ def test_orders_ozo_limited_sale(page, context, runtime_env, admin_panel: AdminW
         checkout_payment_blik_required_terms(),
     )
 
-    # Poczekaj na propagację licznika.
-    time.sleep(_OZO_COUNTER_SETTLE_SECS)
-
-    # Odczyt stanu licznika PO zamówieniu — strona główna.
-    home2 = HomePage(page, runtime_env.base_url).open(HomePage.PATH).wait_loaded()
-    box_after = home2.content.hero.get_ozo_details()
+    # Odczyt stanu licznika PO zamówieniu — polling strony głównej do zmiany sold_amount.
+    box_after = _wait_for_ozo_counter_update(page, runtime_env, expected_sold_amount=box_before.sold_amount + 1)
 
     # Weryfikacja licznika — strona główna.
-    assert box_after["sold_amount"] == box_before["sold_amount"] + 1, (
+    assert box_after.sold_amount == box_before.sold_amount + 1, (
         f"Licznik sprzedanych OZO na stronie głównej nie wzrósł o 1. "
-        f"Przed={box_before['sold_amount']}, po={box_after['sold_amount']}."
+        f"Przed={box_before.sold_amount}, po={box_after.sold_amount}."
     )
-    assert box_after["remaining_amount"] == box_before["remaining_amount"] - 1, (
+    assert box_after.remaining_amount == box_before.remaining_amount - 1, (
         f"Licznik pozostałych OZO na stronie głównej nie zmniejszył się o 1. "
-        f"Przed={box_before['remaining_amount']}, po={box_after['remaining_amount']}."
+        f"Przed={box_before.remaining_amount}, po={box_after.remaining_amount}."
     )
 
     # Weryfikacja licznika — karta produktu.
@@ -104,9 +102,10 @@ def test_orders_ozo_limited_sale(page, context, runtime_env, admin_panel: AdminW
     if limited_sale is None:
         pytest.skip("Komponent limitowanej sprzedaży nie jest widoczny na karcie produktu po złożeniu zamówienia.")
 
-    assert limited_sale["limited_sale_left"] == box_after["remaining_amount"], (
+    assert limited_sale["limited_sale_left"] == box_after.remaining_amount, (
         f"Rozbieżność licznika pozostałych sztuk: "
-        f"strona główna={box_after['remaining_amount']}, karta produktu={limited_sale['limited_sale_left']}."
+        f"strona główna={box_after.remaining_amount}, karta produktu={limited_sale['limited_sale_left']}. "
+        f"URL karty produktu: {page.url}"
     )
 
 
@@ -184,9 +183,6 @@ def _verify_limited_sale_restriction(
     cart_before_checkout = CartPage(page, runtime_env.base_url).wait_loaded()
     cart_product_before_checkout = cart_before_checkout.content.cart.get_product(str(_OZO_PRODUCT_ID))
     assert cart_product_before_checkout is not None, "Brak produktu OZO w koszyku przed checkoutem."
-
-    cart_product_before_checkout = cart_before_checkout.content.cart.get_product(str(_OZO_PRODUCT_ID))
-    assert cart_product_before_checkout is not None, "Brak produktu OZO w koszyku po ustawianiu ilości."
     if per_customer_limit > 1:
         try:
             cart_product_before_checkout.enter_quantity(per_customer_limit)
@@ -204,12 +200,8 @@ def _verify_limited_sale_restriction(
         checkout_payment_blik_required_terms(),
     )
 
-    # Poczekaj na propagację.
-    time.sleep(_OZO_COUNTER_SETTLE_SECS)
-
-    # Spróbuj dodać do koszyka ponownie — po wykorzystaniu limitu per_customer.
-    product_page2 = ProductPage(page, runtime_env.base_url).open(_OZO_PRODUCT_PATH).wait_loaded()
-    limited_sale = product_page2.content.price.get_limited_sale_status()
+    # Polling karty produktu do pojawienia się komponentu limited_sale po propagacji backendu.
+    product_page2, limited_sale = _wait_for_limited_sale_status(page, runtime_env, _OZO_PRODUCT_PATH)
 
     if limited_sale is None:
         pytest.skip(
@@ -259,3 +251,52 @@ def _verify_limited_sale_restriction(
             f"Limit(admin)={per_customer_limit}, ilość początkowa={initial_order_quantity}, "
             f"ilość po ponownej próbie={cart_product.get_quantity()}."
         )
+
+
+def _wait_for_ozo_counter_update(
+    page,
+    runtime_env,
+    expected_sold_amount: int,
+    *,
+    max_wait_s: float = _OZO_COUNTER_MAX_WAIT_SECS,
+    poll_s: float = _OZO_COUNTER_POLL_SECS,
+) -> "OzoDetails":
+    """Polluje stronę główną aż sold_amount osiągnie expected_sold_amount lub minie timeout.
+
+    Zwraca ostatnie odczytane OzoDetails (niezależnie od wyniku — asercja należy do testu).
+    """
+    from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.hero_component import OzoDetails
+
+    deadline = time.monotonic() + max_wait_s
+    last: OzoDetails | None = None
+    while time.monotonic() <= deadline:
+        home = HomePage(page, runtime_env.base_url).open(HomePage.PATH).wait_loaded()
+        last = home.content.hero.get_ozo_details()
+        if last.sold_amount == expected_sold_amount:
+            return last
+        time.sleep(poll_s)
+    assert last is not None
+    return last
+
+
+def _wait_for_limited_sale_status(
+    page,
+    runtime_env,
+    product_path: str,
+    *,
+    max_wait_s: float = _OZO_COUNTER_MAX_WAIT_SECS,
+    poll_s: float = _OZO_COUNTER_POLL_SECS,
+) -> tuple[ProductPage, dict | None]:
+    """Polluje kartę produktu aż komponent limited_sale stanie się widoczny lub minie timeout.
+
+    Zwraca krotkę (ProductPage, status) — ProductPage jest ostatnią otwartą instancją,
+    gotową do dalszych interakcji. Status może być None jeśli nie pojawił się w max_wait_s.
+    """
+    deadline = time.monotonic() + max_wait_s
+    last_page = ProductPage(page, runtime_env.base_url).open(product_path).wait_loaded()
+    last_status = last_page.content.price.get_limited_sale_status()
+    while last_status is None and time.monotonic() <= deadline:
+        time.sleep(poll_s)
+        last_page = ProductPage(page, runtime_env.base_url).open(product_path).wait_loaded()
+        last_status = last_page.content.price.get_limited_sale_status()
+    return last_page, last_status

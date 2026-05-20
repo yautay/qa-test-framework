@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import time
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -20,57 +21,79 @@ PROMO_CODES_MAX_WAIT_SECONDS = 30 * 60
 PROMO_CODES_POLL_SECONDS = 1.0
 
 
-def _sync_artifacts_dir(config: pytest.Config) -> Path:
+@dataclass
+class _SyncMarker:
+    """Obsługa pliku znacznika synchronizacji promotions_service → promo_codes.
+
+    Plik jest tworzony w katalogu per-run (opartym na run_id), aby uniknąć
+    kolizji między równoległymi uruchomieniami (-n 4) i pozostałości po
+    poprzednich runach w współdzielonym .pytest_cache.
+    """
+
+    path: Path
+
+    def write(self) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.path.write_text(str(time.time()), encoding="utf-8")
+
+    def read_finished_at(self) -> float | None:
+        """Zwraca znacznik czasu zakończenia lub None gdy plik nie istnieje."""
+        if not self.path.exists():
+            return None
+        raw = self.path.read_text(encoding="utf-8").strip()
+        try:
+            return float(raw)
+        except ValueError:
+            raise pytest.UsageError(
+                "Nieprawidlowy znacznik czasu setupu promotions_service: "
+                f"{self.path}. Oczekiwano liczby sekund UNIX."
+            ) from None
+
+    def wait_for_delay(self, delay_s: float, max_wait_s: float, poll_s: float) -> None:
+        """Blokuje do czasu aż minie `delay_s` sekund od zapisania znacznika."""
+        deadline = time.monotonic() + max_wait_s
+        while time.monotonic() <= deadline:
+            finished_at = self.read_finished_at()
+            if finished_at is not None:
+                remaining = (finished_at + delay_s) - time.time()
+                if remaining <= 0:
+                    return
+                time.sleep(min(poll_s, remaining))
+                continue
+            time.sleep(poll_s)
+
+        raise pytest.UsageError(
+            "Timeout oczekiwania na zakonczenie promotions_service przed promo_codes. "
+            f"Brak znacznika: {self.path}. "
+            f"Maksymalny czas oczekiwania: {max_wait_s}s."
+        )
+
+
+def _build_sync_marker(config: pytest.Config) -> _SyncMarker:
+    """Buduje _SyncMarker z ścieżką w katalogu per-run (run_artifacts.root lub .pytest_cache)."""
     run_artifacts = getattr(config, "_run_artifacts", None)
-    if run_artifacts is not None and hasattr(run_artifacts, "sync"):
-        return Path(run_artifacts.sync)
-    return Path(str(config.rootpath)) / ".pytest_cache"
-
-
-def _promotions_service_timestamp_path(config: pytest.Config) -> Path:
-    return _sync_artifacts_dir(config) / PROMOTIONS_SERVICE_DONE_FILE
-
-
-def _write_promotions_service_timestamp(config: pytest.Config) -> None:
-    marker_path = _promotions_service_timestamp_path(config)
-    marker_path.parent.mkdir(parents=True, exist_ok=True)
-    marker_path.write_text(str(time.time()), encoding="utf-8")
-
-
-def _wait_for_promotions_service_delay(config: pytest.Config) -> None:
-    marker_path = _promotions_service_timestamp_path(config)
-    deadline = time.monotonic() + PROMO_CODES_MAX_WAIT_SECONDS
-
-    while time.monotonic() <= deadline:
-        if marker_path.exists():
-            raw_value = marker_path.read_text(encoding="utf-8").strip()
-            try:
-                finished_at = float(raw_value)
-            except ValueError:
-                raise pytest.UsageError(
-                    "Nieprawidlowy znacznik czasu setupu promotions_service: "
-                    f"{marker_path}. Oczekiwano liczby sekund UNIX."
-                ) from None
-
-            remaining = (finished_at + PROMO_CODES_DELAY_SECONDS) - time.time()
-            if remaining <= 0:
-                return
-            time.sleep(min(PROMO_CODES_POLL_SECONDS, remaining))
-            continue
-
-        time.sleep(PROMO_CODES_POLL_SECONDS)
-
-    raise pytest.UsageError(
-        "Timeout oczekiwania na zakonczenie promotions_service przed promo_codes. "
-        f"Brak znacznika: {marker_path}. "
-        f"Maksymalny czas oczekiwania: {PROMO_CODES_MAX_WAIT_SECONDS}s."
-    )
+    if run_artifacts is not None and hasattr(run_artifacts, "root"):
+        base = Path(run_artifacts.root)
+    else:
+        # Fallback: unikaj kolizji między runami — użyj run_id z env lub rootpath.
+        import os
+        run_id = os.getenv("PYTEST_XDIST_TESTRUNUID", "").strip()
+        if run_id:
+            base = Path(str(config.rootpath)) / ".pytest_cache" / run_id
+        else:
+            base = Path(str(config.rootpath)) / ".pytest_cache"
+    return _SyncMarker(path=base / PROMOTIONS_SERVICE_DONE_FILE)
 
 
 @pytest.hookimpl(tryfirst=True)
 def pytest_runtest_setup(item: pytest.Item) -> None:
     if item.nodeid == PROMO_CODES_NODEID:
-        _wait_for_promotions_service_delay(item.config)
+        marker = _build_sync_marker(item.config)
+        marker.wait_for_delay(
+            delay_s=PROMO_CODES_DELAY_SECONDS,
+            max_wait_s=PROMO_CODES_MAX_WAIT_SECONDS,
+            poll_s=PROMO_CODES_POLL_SECONDS,
+        )
 
 
 @pytest.hookimpl(hookwrapper=True)
@@ -80,7 +103,7 @@ def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo[None]):
     setattr(item, f"rep_{result.when}", result)
 
     if item.nodeid == PROMOTIONS_SERVICE_NODEID and call.when == "call" and call.excinfo is None:
-        _write_promotions_service_timestamp(item.config)
+        _build_sync_marker(item.config).write()
 
 
 @pytest.fixture(scope="function")
