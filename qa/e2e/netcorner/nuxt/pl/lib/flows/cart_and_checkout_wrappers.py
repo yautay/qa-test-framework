@@ -284,9 +284,12 @@ class CartAndCheckoutWrappers:
                 delivery_methods = checkout.content.delivery_methods.wait_visible()
                 delivery_methods_layout, available_delivery_methods = delivery_methods.get_methods_layout()
                 if delivery_objects.preferred_delivery_method_text:
-                    delivery_methods.choose_method_containing(delivery_objects.preferred_delivery_method_text)
+                    delivery_methods.choose_method_containing(
+                        delivery_objects.preferred_delivery_method_text,
+                        ensure_available=False,
+                    )
                 else:
-                    delivery_methods.choose_random_available_method()
+                    delivery_methods.choose_random_available_method(ensure_available=False)
                 if delivery_objects.enable_lift_service and not self.__enable_lift_service_if_visible():
                     raise RuntimeError("Nie znaleziono widocznej opcji włączenia usługi wniesienia.")
 

@@ -115,6 +115,14 @@ class HeroComponent(BaseComponent):
         expect(self.__deal_progress_bar).to_be_visible(timeout=timeout_ms)
         return self
 
+    @step("Sprawdzam widoczność poprzedniej ceny w widgetcie OZO")
+    def expect_ozo_previous_price_visible(self, timeout_ms: int = 10_000) -> Self:
+        expect(self.__daily_deal_widget).to_be_visible(timeout=timeout_ms)
+        widget_text = self.__daily_deal_widget.inner_text()
+        has_previous_price = bool(re.search(r"Cena bez promocji:\s*\d+", widget_text))
+        assert has_previous_price, "Brak poprzedniej ceny ('Cena bez promocji') w widgetcie OZO."
+        return self
+
     @step("Pobieram dane widgetu OZO (sprzedano / pozostało)")
     def get_ozo_details(self, timeout_ms: int = 10_000) -> dict[str, int]:
         """Return sold_amount and remaining_amount from the OZO progress bar.
@@ -124,11 +132,14 @@ class HeroComponent(BaseComponent):
         """
         expect(self.__deal_progress_bar).to_be_visible(timeout=timeout_ms)
         bar_text = self.__deal_progress_bar.inner_text()
-        sold_match = re.search(r"Sprzedano[:\s]*(\d+)", bar_text)
-        remaining_match = re.search(r"Pozostało[:\s]*(\d+)", bar_text)
+        widget_text = self.__daily_deal_widget.inner_text() or ""
+        sold_match = re.search(r"Sprzedano[:\s]*(\d+)", bar_text) or re.search(r"Sprzedano[:\s]*(\d+)", widget_text)
+        remaining_match = re.search(r"Pozostało[:\s]*(\d+)", bar_text) or re.search(r"Pozostało[:\s]*(\d+)", widget_text)
+        days_match = re.search(r"(\d+)\s*dni", widget_text, re.IGNORECASE)
         sold = int(sold_match.group(1)) if sold_match else 0
         remaining = int(remaining_match.group(1)) if remaining_match else 0
-        return {"sold_amount": sold, "remaining_amount": remaining}
+        days_left = int(days_match.group(1)) if days_match else -1
+        return {"sold_amount": sold, "remaining_amount": remaining, "days_left": days_left}
 
     @step("Klikam w widget OZO (link do produktu)")
     def click_ozo_widget(self) -> None:

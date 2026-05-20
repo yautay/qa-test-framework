@@ -418,7 +418,7 @@ class AdminWrappers:
         emp_page.generate_new_qr_code()
         logger.debug("Admin: QR code regenerated for employee group id={}", group_id)
 
-    def reset_ozo_for_product(self, product_id: int) -> None:
+    def reset_ozo_for_product(self, product_id: int, *, per_customer: int = 5) -> None:
         """Reset OZO (limited-sale) counters for a product to a clean test state.
 
         Deactivates all currently active promotions on the product and creates
@@ -430,8 +430,15 @@ class AdminWrappers:
         self.open_admin()
         ozo_page = AdminProductOzoPage(self.__page, self.__admin_env.base_url, product_id)
         ozo_page.navigate_to()
-        ozo_page.reset_ozo_promotion()
-        logger.debug("Admin: OZO promotion reset for product_id={}", product_id)
+        ozo_page.reset_ozo_promotion(per_customer=per_customer)
+        logger.debug("Admin: OZO promotion reset for product_id={} per_customer={}", product_id, per_customer)
+
+    def get_ozo_limited_sale_settings(self, product_id: int) -> dict[str, int | str]:
+        """Read active OZO limited-sale settings for product from admin promotions tab."""
+        self.open_admin()
+        ozo_page = AdminProductOzoPage(self.__page, self.__admin_env.base_url, product_id)
+        ozo_page.navigate_to()
+        return ozo_page.get_limited_sale_settings()
 
 
 __all__ = ["AdminWrappers"]

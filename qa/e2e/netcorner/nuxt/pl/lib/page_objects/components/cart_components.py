@@ -50,6 +50,10 @@ class CartProductComponent(BaseComponent):
         self.pointer_click(self.__increase_quantity_button)
         return self
 
+    def can_increase_quantity(self) -> bool:
+        button = self.__increase_quantity_button.first
+        return button.count() > 0 and button.is_visible() and button.is_enabled()
+
     @step("Klikam minus (zmniejszam ilość)")
     def click_decrease_quantity(self) -> Self:
         self.pointer_click(self.__decrease_quantity_button)
@@ -111,6 +115,9 @@ class CartProductComponent(BaseComponent):
     def is_limited_sale_visible(self, timeout: int = 5_000) -> bool:
         banner = self.__limited_sale_banner.first
         return banner.count() > 0 and banner.is_visible(timeout=timeout)
+
+    def get_limited_sale_text(self) -> str:
+        return get_visible_text(self.__limited_sale_banner)
 
     def get_data(self) -> CartProductData:
         return CartProductData(

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 
 import allure
 import pytest
@@ -50,16 +51,24 @@ def test_product_ozo_limited_sale_component(page, runtime_env, ozo_reset):
 @allure.feature("Produkty")
 @allure.severity(allure.severity_level.NORMAL)
 @pytest.mark.scenario("Produkt OZO ma spójne liczniki między homepage i kartą produktu")
-def test_product_ozo_parameters_consistency(page, runtime_env, ozo_reset):
+def test_product_ozo_parameters_consistency(page, runtime_env, ozo_reset, admin_panel: AdminWrappers):
+    settings = admin_panel.get_ozo_limited_sale_settings(_OZO_PRODUCT_ID)
     home = HomePage(page, runtime_env.base_url).open(HomePage.PATH).wait_loaded()
     if not home.content.hero.is_ozo_widget_present():
         pytest.skip("Widget OZO nie jest widoczny na stronie głównej na tym środowisku.")
 
     home.content.hero.expect_ozo_widget_has_core_data()
+    home.content.hero.expect_ozo_previous_price_visible()
     box_data = home.content.hero.get_ozo_details()
-    home.content.hero.click_ozo_widget()
 
-    product = ProductPage(page, runtime_env.base_url).wait_loaded()
+    date_to = datetime.strptime(str(settings["date_to"]), "%Y-%m-%d %H:%M")
+    days_left_expected = (date_to - datetime.now()).days
+    assert abs(box_data["days_left"] - days_left_expected) <= 1, (
+        "Liczba dni do końca promocji OZO na homepage jest niezgodna z ustawieniami admin. "
+        f"Homepage={box_data['days_left']}, admin={days_left_expected}."
+    )
+
+    product = ProductPage(page, runtime_env.base_url).open(_OZO_TEST_PRODUCT_PATH).wait_loaded()
     limited_sale = product.content.price.get_limited_sale_status()
     assert limited_sale is not None, "Brak komponentu limitowanej sprzedaży na karcie produktu OZO."
     assert box_data["sold_amount"] == limited_sale["limited_sale_sold"], (

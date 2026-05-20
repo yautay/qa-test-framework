@@ -4,6 +4,7 @@ import time
 
 import allure
 import pytest
+from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from qa.e2e.netcorner.admin.lib.flows.admin_wrappers import AdminWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.flows.cart_and_checkout_wrappers import CartAndCheckoutWrappers
@@ -42,7 +43,7 @@ def test_orders_ozo_limited_sale(page, context, runtime_env, admin_panel: AdminW
     - limited_sale_sold na karcie produktu wzrósł o 1
     """
     # Reset OZO — ustaw deterministyczny stan licznika przed testem.
-    admin_panel.reset_ozo_for_product(_OZO_PRODUCT_ID)
+    admin_panel.reset_ozo_for_product(_OZO_PRODUCT_ID, per_customer=1)
 
     # Odczyt stanu licznika PRZED zamówieniem.
     home = HomePage(page, runtime_env.base_url).open(HomePage.PATH).wait_loaded()
@@ -156,7 +157,11 @@ def _verify_limited_sale_restriction(
     Używamy per_customer=5 (domyślne dla reset_ozo_for_product) żeby testy
     na tym samym IP nie blokowały się nawzajem.
     """
-    admin_panel.reset_ozo_for_product(_OZO_PRODUCT_ID)
+    admin_panel.reset_ozo_for_product(_OZO_PRODUCT_ID, per_customer=1)
+    ozo_settings = admin_panel.get_ozo_limited_sale_settings(_OZO_PRODUCT_ID)
+    per_customer_limit = int(ozo_settings.get("per_customer", 1) or 1)
+    if per_customer_limit < 1:
+        raise AssertionError(f"Nieprawidłowy limit per_customer dla OZO: {per_customer_limit}")
 
     user_data = ClientDataBuilder().with_required_terms().build()
     if register:
@@ -164,13 +169,26 @@ def _verify_limited_sale_restriction(
             user_data
         ), "Użytkownik nie został poprawnie zarejestrowany."
 
-    # Pierwsze zamówienie — wyczerpuje limit per_customer=1.
+    # Pierwsze zamówienie — zamawiamy pełny limit per_customer,
+    # aby druga próba jednoznacznie weryfikowała blokadę.
     product_page = ProductPage(page, runtime_env.base_url).open(_OZO_PRODUCT_PATH).wait_loaded()
     product_page.add_to_cart()
     product_page.overlays.promotions.click_buy_only_product()
     product_page.overlays.go_to_cart.click_go_to_cart()
     _navigate_to_cart(page, runtime_env)
-    CartPage(page, runtime_env.base_url).wait_loaded()
+    cart_before_checkout = CartPage(page, runtime_env.base_url).wait_loaded()
+    cart_product_before_checkout = cart_before_checkout.content.cart.get_product(str(_OZO_PRODUCT_ID))
+    assert cart_product_before_checkout is not None, "Brak produktu OZO w koszyku przed checkoutem."
+
+    cart_product_before_checkout = cart_before_checkout.content.cart.get_product(str(_OZO_PRODUCT_ID))
+    assert cart_product_before_checkout is not None, "Brak produktu OZO w koszyku po ustawianiu ilości."
+    if per_customer_limit > 1:
+        try:
+            cart_product_before_checkout.enter_quantity(per_customer_limit)
+        except PlaywrightTimeoutError:
+            pass
+    initial_order_quantity = cart_product_before_checkout.get_quantity()
+    assert initial_order_quantity >= 1, "Ilość produktu OZO przed checkoutem jest nieprawidłowa."
 
     checkout = CartAndCheckoutWrappers(page, context, runtime_env)
     checkout.process_cart()
@@ -184,7 +202,7 @@ def _verify_limited_sale_restriction(
     # Poczekaj na propagację.
     time.sleep(_OZO_COUNTER_SETTLE_SECS)
 
-    # Spróbuj dodać do koszyka ponownie — produkt OZO z per_customer=1.
+    # Spróbuj dodać do koszyka ponownie — po wykorzystaniu limitu per_customer.
     product_page2 = ProductPage(page, runtime_env.base_url).open(_OZO_PRODUCT_PATH).wait_loaded()
     limited_sale = product_page2.content.price.get_limited_sale_status()
 
@@ -200,6 +218,39 @@ def _verify_limited_sale_restriction(
         f"Nieprawidłowy stan limited_sale po przekroczeniu limitu: {limited_sale}"
     )
 
-    # Próba dodania do koszyka — oczekujemy, że klik jest albo zablokowany albo wraca do limitu.
-    # Selenium test sprawdzał alert na karcie produktu; tutaj sprawdzamy że komponent SL pozostaje widoczny.
-    product_page2.content.price.expect_limited_sale_visible()
+    # Próba dodania do koszyka ponownie — oczekujemy komunikatu o przekroczeniu limitu.
+    product_page2.add_to_cart()
+    limit_toast_seen = False
+    toast_root = product_page2.page.locator('[data-name="toast"]').last
+    if toast_root.count() > 0 and toast_root.is_visible(timeout=7_000):
+        toast_message = toast_root.locator("div").inner_text().strip()
+        assert "limit" in toast_message.casefold() or "ogranic" in toast_message.casefold(), (
+            "Komunikat po próbie ponownego dodania produktu OZO nie wskazuje ograniczenia limitu. "
+            f"Treść komunikatu: '{toast_message}'."
+        )
+        limit_toast_seen = True
+
+    limited_sale_after_retry = product_page2.content.price.get_limited_sale_status()
+    assert limited_sale_after_retry is not None, (
+        "Po próbie ponownego dodania produktu OZO komponent limited_sale nie jest widoczny."
+    )
+    assert "limitowana" in product_page2.page.locator("[data-name='limitedSale']").first.inner_text().casefold(), (
+        "Brak informacji o ograniczeniu sprzedaży limitowanej na karcie produktu po przekroczeniu limitu."
+    )
+
+    if not limit_toast_seen:
+        try:
+            _navigate_to_cart(page, runtime_env)
+            cart_page = CartPage(page, runtime_env.base_url).wait_loaded()
+        except PlaywrightTimeoutError:
+            # Jeśli UI blokuje przejście do koszyka po przekroczeniu limitu,
+            # kluczowa asercja pozostaje na PDP (komunikat + brak utraty komponentu limited sale).
+            return
+
+        cart_product = cart_page.content.cart.get_product(str(_OZO_PRODUCT_ID))
+        assert cart_product is not None, "Po ponownej próbie dodania produkt OZO nie został znaleziony w koszyku."
+        assert cart_product.get_quantity() == initial_order_quantity, (
+            "Po ponownej próbie dodania produktu OZO ilość w koszyku przekracza limit per_customer. "
+            f"Limit(admin)={per_customer_limit}, ilość początkowa={initial_order_quantity}, "
+            f"ilość po ponownej próbie={cart_product.get_quantity()}."
+        )

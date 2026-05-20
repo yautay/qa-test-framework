@@ -277,6 +277,29 @@ class AdminProductOzoPage(AdminBasePage):
             promotion_value=promotion_value,
         )
 
+    def get_limited_sale_settings(self) -> dict[str, int | str]:
+        """Read active limited-sale settings from promotions tab edit form."""
+        self._enter_promotions_tab()
+        edit_active = self.page.locator(
+            "#ui-tabs-1 tr:has(td:nth-child(3) img[alt='Tick']) a:has(img[alt='Edit_icon'])"
+        ).first
+        expect(edit_active).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+        edit_active.click()
+        self._wait_ajax()
+        expect(self.page.locator(self._INPUT_DATE_TO)).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+
+        date_to = self.page.locator(self._INPUT_DATE_TO).input_value().strip()
+        sold_amount = int((self.page.locator(self._INPUT_SOLD_AMOUNT).input_value() or "0").strip())
+        total_amount = int((self.page.locator(self._INPUT_TOTAL_AMOUNT).input_value() or "0").strip())
+        per_customer = int((self.page.locator(self._INPUT_PER_CUSTOMER).input_value() or "0").strip())
+
+        return {
+            "date_to": date_to,
+            "sold_amount": sold_amount,
+            "total_amount": total_amount,
+            "per_customer": per_customer,
+        }
+
     # ------------------------------------------------------------------
     # private helpers
     # ------------------------------------------------------------------

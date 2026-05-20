@@ -129,8 +129,9 @@ class CheckoutDeliveryMethodsComponent(BaseComponent):
         return self.__visible_tiles(self.__matrix_tiles)
 
     @step("Wybieram losową dostępną metodę transportu i przechodzę dalej")
-    def choose_random_available_method(self) -> DeliveryMethodsLayout:
-        self.wait_for_available_methods()
+    def choose_random_available_method(self, *, ensure_available: bool = True) -> DeliveryMethodsLayout:
+        if ensure_available:
+            self.wait_for_available_methods()
         layout, _ = self._get_methods_layout_ready()
         available_tiles = self.__available_tiles_for_layout(layout)
 
@@ -141,9 +142,10 @@ class CheckoutDeliveryMethodsComponent(BaseComponent):
         return layout
 
     @step("Wybieram metodę transportu zawierającą tekst: {text}")
-    def choose_method_containing(self, text: str) -> DeliveryMethodsLayout:
+    def choose_method_containing(self, text: str, *, ensure_available: bool = True) -> DeliveryMethodsLayout:
         normalized_expected = " ".join(text.split()).casefold()
-        self.wait_for_available_methods()
+        if ensure_available:
+            self.wait_for_available_methods()
         layout, _ = self._get_methods_layout_ready()
         for tile in self.__available_tiles_for_layout(layout):
             normalized_actual = self.__normalize_tile_text(tile).casefold()
