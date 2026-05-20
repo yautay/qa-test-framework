@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import time
-
 import allure
 import pytest
 from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
@@ -12,14 +10,15 @@ from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.cart_page import CartPage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.product_page import ProductPage
-
-_CART_PATH = "/cart"
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import (
     checkout_payment_blik_required_terms,
     private_person_checkout_purchaser,
     private_person_delivery_courier_receiver,
 )
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
+from qa.e2e.netcorner.nuxt.pl.tests.helpers import poll_until
+
+_CART_PATH = "/cart"
 
 pytestmark = [
     pytest.mark.e2e,
@@ -267,16 +266,18 @@ def _wait_for_ozo_counter_update(
     """
     from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.hero_component import OzoDetails
 
-    deadline = time.monotonic() + max_wait_s
-    last: OzoDetails | None = None
-    while time.monotonic() <= deadline:
+    def fetch() -> OzoDetails:
         home = HomePage(page, runtime_env.base_url).open(HomePage.PATH).wait_loaded()
-        last = home.content.hero.get_ozo_details()
-        if last.sold_amount == expected_sold_amount:
-            return last
-        time.sleep(poll_s)
-    assert last is not None
-    return last
+        return home.content.hero.get_ozo_details()
+
+    sentinel = fetch()
+    return poll_until(
+        fetch,
+        condition=lambda d: d.sold_amount == expected_sold_amount,
+        timeout_s=max_wait_s,
+        poll_s=poll_s,
+        default=sentinel,
+    )
 
 
 def _wait_for_limited_sale_status(
@@ -292,14 +293,22 @@ def _wait_for_limited_sale_status(
     Zwraca krotkę (ProductPage, status) — ProductPage jest ostatnią otwartą instancją,
     gotową do dalszych interakcji. Status może być None jeśli nie pojawił się w max_wait_s.
     """
-    deadline = time.monotonic() + max_wait_s
-    last_page = ProductPage(page, runtime_env.base_url).open(product_path).wait_loaded()
-    last_status = last_page.content.price.get_limited_sale_status()
-    while last_status is None and time.monotonic() <= deadline:
-        time.sleep(poll_s)
-        last_page = ProductPage(page, runtime_env.base_url).open(product_path).wait_loaded()
-        last_status = last_page.content.price.get_limited_sale_status()
-    return last_page, last_status
+    last_page: list[ProductPage] = []
+
+    def fetch() -> dict | None:
+        p = ProductPage(page, runtime_env.base_url).open(product_path).wait_loaded()
+        last_page.clear()
+        last_page.append(p)
+        return p.content.price.get_limited_sale_status()
+
+    status = poll_until(
+        fetch,
+        condition=lambda s: s is not None,
+        timeout_s=max_wait_s,
+        poll_s=poll_s,
+        default=None,
+    )
+    return last_page[0], status
 
 
 def _wait_for_ozo_widget(
@@ -313,10 +322,11 @@ def _wait_for_ozo_widget(
 
     Zwraca True gdy widget jest widoczny, False gdy upłynął max_wait_s.
     """
-    deadline = time.monotonic() + max_wait_s
-    while time.monotonic() <= deadline:
-        home = HomePage(page, runtime_env.base_url).open(HomePage.PATH).wait_loaded()
-        if home.content.hero.is_ozo_widget_present():
-            return True
-        time.sleep(poll_s)
-    return False
+    result = poll_until(
+        lambda: HomePage(page, runtime_env.base_url).open(HomePage.PATH).wait_loaded(),
+        condition=lambda home: home.content.hero.is_ozo_widget_present(),
+        timeout_s=max_wait_s,
+        poll_s=poll_s,
+        default=None,
+    )
+    return result is not None and result.content.hero.is_ozo_widget_present()
