@@ -39,7 +39,7 @@ class CartProductComponent(BaseComponent):
         self.__total_price_gross = self.find("[data-name='cartProductTotal'] [data-price-type='gross']")
         self.__remove_product = self.find("[data-name='deleteProduct']")
         self.__unit_price_gross = self.find("[data-name='cartProductPrice'] [data-price-type='gross']")
-        self.__product_name_link = self.find("[data-name='cartProductMain'] a")
+        self.__product_name_link = self.find("[data-name='cartProductMain'] .ml-4 a")
         self.__availability_status_text = self.find("[data-name='statusAvailable'] .font-semibold")
         self.__hide_addons_button = self.find("button:has-text('Ukryj dodatki')")
         self.__show_addons_button = self.find("button:has-text('Sprawdź dodatki')")
