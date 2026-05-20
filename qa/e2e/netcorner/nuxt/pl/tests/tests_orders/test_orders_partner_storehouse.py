@@ -42,12 +42,11 @@ def test_orders_partner_storehouse(page, context, runtime_env, mail_inbox: MailI
     order_number = result.typ_summary_data.order_number.strip()
     assert order_number, "Nie udało się złożyć zamówienia do salonu partnerskiego."
 
-    mail_count = 0
-    for _ in range(6):
-        mail_count = mail_inbox.count_mails_containing_text(text=order_number)
-        if mail_count in {2, 3}:
-            break
-        page.wait_for_timeout(10_000)
+    mail_count = mail_inbox.wait_for_mails_containing_text(
+        text=order_number,
+        min_count=2,
+        timeout_ms=60_000,
+    )
 
     if mail_count not in {2, 3}:
         pytest.skip(
