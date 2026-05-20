@@ -12,7 +12,11 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.cart_page import CartPage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.product_page import ProductPage
 
-pytestmark = [pytest.mark.e2e, pytest.mark.e2e_core]
+pytestmark = [
+    pytest.mark.e2e,
+    pytest.mark.e2e_core,
+    pytest.mark.xdist_group("orders_ozo_serial"),
+]
 
 # Produkt testowy OZO (Okazje z Odliczaniem) — stały produkt testowy na środowisku galak.test.
 _OZO_TEST_PRODUCT_PATH = "/product/500000513/tusz-do-drukarki--test-product-produkt-ozo.html"
