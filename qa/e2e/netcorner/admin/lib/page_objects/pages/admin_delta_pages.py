@@ -390,31 +390,40 @@ class CartOfferData:
 class AdminCartOfferPage(AdminBasePage):
     """Admin cart offer create/edit page.
 
-    URL create: <admin_base_url>/admin.php/cartOffer/create/pl
-    URL edit:   <admin_base_url>/admin.php/cartOffer/edit/pl/id/{id}
+    URL create: <admin_base_url>/admin.php/cartOfferAdmin/create/pl
+    URL edit:   <admin_base_url>/admin.php/cartOfferAdmin/edit/pl/cart_offer_id/{id}
 
     Locators confirmed from Selenium CartOfferLocators.py + CartOfferObjects.py.
     """
 
     PAGE_ID = "netcorner.admin.cart_offer.form"
-    CREATE_PATH = "/admin.php/cartOffer/create/pl"
-    LIST_PATH = "/admin.php/cartOffer/list/pl"
+    CREATE_PATH = "/admin.php/cartOfferAdmin/create/pl"
+    LIST_PATH = "/admin.php/cartOfferAdmin/list/pl"
 
     # Form selectors
     _SEL_CHANNEL = "#ktr_cart_offer_cart_offer_sales_channel_id"
     _SEL_ACTIVE = "#ktr_cart_offer_cart_offer_active"
-    _SEL_PRICE_TYPE = "#ktr_cart_offer_cart_offer_price_type_1"
+    _SEL_PRICE_TYPE_FIXED = "#ktr_cart_offer_cart_offer_price_type_1"
+    _SEL_PRICE_TYPE_DYNAMIC = "#ktr_cart_offer_cart_offer_price_type_2"
     _SEL_PRICE_CATEGORY = "#priceCategory"
-    _INPUT_EXPIRATION = "#ktr_cart_offer_cart_offer_expiration_date"
-    _INPUT_EMAIL = "#ktr_cart_offer_cart_offer_email"
+    _INPUT_EXPIRATION = "#ktr_cart_offer_cart_offer_expires_at"
+    _INPUT_EMAIL = "#ktr_cart_offer_cart_offer_customer_email"
     _INPUT_SUBJECT = "#ktr_cart_offer_cart_offer_email_subject"
     _BTN_SAVE = "input[name='save'][type='submit']"
     # Product row: product ID used in selector
     _INPUT_PRODUCT_PRICE_TMPL = "#cartOfferProducts_{product_id}_priceGross"
+    _INPUT_PRODUCT_ROW_ID_TMPL = "#cartOfferProducts_{product_id}_id"
+    _ROW_RECALC_LINK_TMPL = "#cartOfferProductRow_{product_id} a:has(img[alt='dodaj'])"
+    _PRODUCT_ROW_SEL = "tr[id^='cartOfferProductRow_']"
     # Row with add-product button
     _BTN_SEND_EMAIL = "input[value='Wyślij e-mail']"
+    _LINK_SEND_TO_CUSTOMER = "a[onclick*='cartOfferAdmin/sendToCustomer']"
+    _INPUT_SEND_TO_CUSTOMER_MAIL = "#cart_offer_send_to_customer_mail"
     # Product section
-    _SELECT_PRODUCT_ID = "#ktr_cart_offer_cart_offer_products"
+    _INPUT_PRODUCT_SEARCH = "#addProductToOfferForm_searchField"
+    _SELECT_PRODUCT_SEARCH_TYPE = "#addProductToOfferForm_searchType"
+    _INPUT_PRODUCT_QTY = "#search_field"
+    _LINK_ADD_PRODUCT = "a[onclick*='addProductToOffer']"
 
     def __init__(self, page: Page, base_url: str) -> None:
         super().__init__(page, base_url)
@@ -430,14 +439,26 @@ class AdminCartOfferPage(AdminBasePage):
 
     def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> AdminCartOfferPage:
         super().wait_loaded(state=state, timeout=timeout)
-        from playwright.sync_api import expect as pw_expect
-        pw_expect(self.page.locator(self._SEL_CHANNEL)).to_be_visible(timeout=timeout or self.DEFAULT_TIMEOUT)
+        form_timeout = timeout or self.DEFAULT_TIMEOUT
+        expect(self.page.locator(self._SEL_CHANNEL)).to_be_visible(timeout=form_timeout)
+        expect(self.page.locator(self._INPUT_PRODUCT_SEARCH)).to_be_visible(timeout=form_timeout)
+        expect(self.page.locator(self._BTN_SAVE).first).to_be_visible(timeout=form_timeout)
         return self
+
+    def _wait_product_row_loaded(self, *, timeout: int = 10_000) -> None:
+        expect(self.page.locator(self._PRODUCT_ROW_SEL).first).to_be_visible(timeout=timeout)
+
+    def _first_product_row_id(self) -> str:
+        row_id_attr = self.page.locator(self._PRODUCT_ROW_SEL).first.get_attribute("id") or ""
+        prefix = "cartOfferProductRow_"
+        if not row_id_attr.startswith(prefix):
+            raise RuntimeError(f"Unexpected cart offer product row id: '{row_id_attr}'")
+        return row_id_attr.removeprefix(prefix)
 
     def create_cart_offer(
         self,
         *,
-        product_id: int,
+        product_id: int | str,
         qty: int = 1,
         recipient_email: str,
         channel_id: str = "1",
@@ -449,7 +470,7 @@ class AdminCartOfferPage(AdminBasePage):
         """Fill and save the cart offer form. Returns the offer URL extracted from the list.
 
         Args:
-            product_id: Admin product ID to add to the offer.
+            product_id: Product identifier entered in search field.
             qty: Quantity.
             recipient_email: Email to send the cart offer to.
             channel_id: Sales channel option value (default '1' = komputronik.pl).
@@ -462,6 +483,7 @@ class AdminCartOfferPage(AdminBasePage):
         """
         expiration_date = (datetime.now() + timedelta(days=expiration_days)).strftime("%Y-%m-%d")
 
+        self.wait_loaded()
         self.page.locator(self._SEL_CHANNEL).select_option(value=channel_id)
 
         # Active checkbox
@@ -475,53 +497,76 @@ class AdminCartOfferPage(AdminBasePage):
         )
 
         # Email recipient
-        email_inp = self.page.locator(self._INPUT_EMAIL)
-        if email_inp.count():
-            email_inp.fill(recipient_email)
+        email_inp = self.page.locator(self._INPUT_EMAIL).first
+        expect(email_inp).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+        email_inp.fill(recipient_email)
 
         # Price type
-        price_type_sel = self.page.locator(self._SEL_PRICE_TYPE)
-        if price_type_sel.count():
-            price_type_sel.select_option(value=price_type_id)
+        if price_type_id == "1":
+            self.page.locator(self._SEL_PRICE_TYPE_FIXED).first.check()
+        else:
+            self.page.locator(self._SEL_PRICE_TYPE_DYNAMIC).first.check()
 
         # Price category
         if price_category_id is not None:
             price_cat_sel = self.page.locator(self._SEL_PRICE_CATEGORY)
-            if price_cat_sel.count():
-                price_cat_sel.select_option(value=price_category_id)
+            if price_cat_sel.count() > 0:
+                price_cat_sel.first.select_option(value=price_category_id)
 
-        # Add product — admin uses a product search / select field
-        product_sel = self.page.locator(self._SELECT_PRODUCT_ID)
-        if product_sel.count():
-            product_sel.fill(str(product_id))
-            # Trigger keyup/change to load product row
-            product_sel.press("Enter")
-            self.page.wait_for_timeout(1_500)
+        # Add product via cartOfferAdmin AJAX product form
+        self.page.locator(self._SELECT_PRODUCT_SEARCH_TYPE).first.select_option(value="ktr_product.PRODUCT_CODE_MAX")
+        self.page.locator(self._INPUT_PRODUCT_SEARCH).first.fill(str(product_id))
+        self.page.locator(self._INPUT_PRODUCT_QTY).first.fill(str(qty))
+        self.page.locator(self._LINK_ADD_PRODUCT).first.click()
+        self._wait_product_row_loaded()
 
         # Fixed price per product (only when price_type is fixed)
         if fixed_price is not None:
-            price_input_sel = self._INPUT_PRODUCT_PRICE_TMPL.format(product_id=product_id)
-            price_inp = self.page.locator(price_input_sel)
-            if price_inp.count():
-                price_inp.fill(fixed_price)
+            row_product_id = self._first_product_row_id()
+            price_input_sel = self._INPUT_PRODUCT_PRICE_TMPL.format(product_id=row_product_id)
+            price_inp = self.page.locator(price_input_sel).first
+            expect(price_inp).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+            price_inp.fill(fixed_price)
+            price_inp.press("Enter")
+            recalc = self.page.locator(self._ROW_RECALC_LINK_TMPL.format(product_id=row_product_id))
+            if recalc.count() > 0:
+                recalc.first.click()
+            row_id_input = self.page.locator(self._INPUT_PRODUCT_ROW_ID_TMPL.format(product_id=row_product_id)).first
+            if row_id_input.count() == 0:
+                raise RuntimeError(f"Brak pola ID dla produktu oferty: {row_product_id}")
 
         self.page.locator(self._BTN_SAVE).first.click()
         self.page.wait_for_load_state("domcontentloaded")
+        if self.page.locator(self._BTN_SEND_EMAIL).count() == 0:
+            expect(self.page.locator(self._LINK_SEND_TO_CUSTOMER).first).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
 
         # Return current URL — it redirects to the edit page with id in path
         return self.page.url
 
     def send_offer_email(self) -> None:
         """Click 'Wyślij e-mail' to dispatch the cart offer email to the recipient."""
-        btn = self.page.locator(self._BTN_SEND_EMAIL)
-        if btn.count():
-            btn.first.click()
+        legacy_btn = self.page.locator(self._BTN_SEND_EMAIL)
+        if legacy_btn.count() > 0:
+            btn = legacy_btn.first
+            expect(btn).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+            btn.click()
             self.page.wait_for_load_state("domcontentloaded")
+            return
+
+        send_link = self.page.locator(self._LINK_SEND_TO_CUSTOMER).first
+        expect(send_link).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
+        send_mail = self.page.locator(self._INPUT_SEND_TO_CUSTOMER_MAIL).first
+        if (send_mail.input_value() or "").strip() == "":
+            customer_email = (self.page.locator(self._INPUT_EMAIL).first.input_value() or "").strip()
+            if customer_email:
+                send_mail.fill(customer_email)
+        send_link.click()
+        self.page.wait_for_timeout(1_000)
 
     def get_offer_id_from_url(self) -> str | None:
         """Extract the offer id from the current admin URL (edit page)."""
         url = self.page.url
-        match = re.search(r"/cartOffer/edit/pl/id/(\d+)", url)
+        match = re.search(r"/cartOfferAdmin/edit/pl/cart_offer_id/(\d+)", url)
         return match.group(1) if match else None
 
 

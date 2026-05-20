@@ -23,7 +23,9 @@ class CartPage(BasePage):
     def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> CartPage:
         super().wait_loaded(state=state, timeout=timeout)
         self.content.wait_visible()
-        self.navigation.wait_visible()
+        order_stepper = self.page.locator("[data-role='order-stepper']")
+        if order_stepper.count() > 0:
+            self.navigation.wait_visible()
         self.content.cart.wait_products_loaded()
         self.capture_dom_snapshot(event="page_loaded")
         return self

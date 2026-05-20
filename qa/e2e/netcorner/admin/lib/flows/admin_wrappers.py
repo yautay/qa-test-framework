@@ -319,7 +319,8 @@ class AdminWrappers:
     def create_cart_offer_and_send_email(
         self,
         *,
-        product_id: int,
+        product_id: int | str,
+        qty: int = 1,
         recipient_email: str,
         channel_id: str = "1",
         price_type_id: str = "1",
@@ -330,7 +331,8 @@ class AdminWrappers:
         """Create a cart offer in admin and send it via email.
 
         Args:
-            product_id: Admin product ID.
+            product_id: Admin product identifier (ID/ERP depending on page search mode).
+            qty: Product quantity in offer.
             recipient_email: Email to send the offer to.
             channel_id: Sales channel value (default '1').
             price_type_id: '1' = fixed price, other = dynamic.
@@ -346,6 +348,7 @@ class AdminWrappers:
         cart_offer_page.navigate_to_create()
         offer_url = cart_offer_page.create_cart_offer(
             product_id=product_id,
+            qty=qty,
             recipient_email=recipient_email,
             channel_id=channel_id,
             price_type_id=price_type_id,
