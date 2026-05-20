@@ -99,6 +99,9 @@ class NetcornerSetupService:
             if error_text and self._DATES_LOCKED_ERROR in error_text:
                 continue
 
+            if error_text and self._B2B_REQUIRED_ERROR in error_text:
+                continue
+
             if error_text:
                 raise AssertionError(
                     "Promotion service save failed for promotion_id="
@@ -218,13 +221,29 @@ class NetcornerSetupService:
         if selected_b2b.count() > 0:
             return
 
-        result = purpose_group.locator(".vue-treeselect").first.evaluate(
+        treeselect = purpose_group.locator(".vue-treeselect").first
+        treeselect.wait_for(state="visible")
+
+        search_input = treeselect.locator("input.vue-treeselect__input").first
+        if search_input.count() > 0:
+            search_input.click()
+            search_input.fill("b2b.komputronik.pl")
+            option = self._page.locator(".vue-treeselect__option-label", has_text="b2b.komputronik.pl").first
+            if option.count() > 0 and option.is_visible():
+                option.click()
+                if selected_b2b.count() > 0:
+                    return
+
+        result = treeselect.evaluate(
             """
             (el) => {
               const vm = el.__vue__;
               if (!vm) {
                 return { ok: false, reason: "vue_instance_missing" };
               }
+
+              const getId = (item) => item?.id ?? item?.raw?.id ?? item?.node?.id ?? null;
+              const selectedIdsFromVm = () => (vm.internalValue || []).map(getId).filter(Boolean);
 
               const walk = (nodes, out = []) => {
                 for (const node of nodes || []) {
@@ -235,8 +254,32 @@ class NetcornerSetupService:
               };
 
               const allNodes = walk(vm.forest?.normalizedOptions || []);
+              const labelsById = new Map(allNodes.map((n) => [n.id, (n.label || "").trim()]));
               const b2bNode = allNodes.find((n) => (n.label || "").trim() === "b2b.komputronik.pl");
               if (!b2bNode) {
+                const komputronikNode = allNodes.find((n) => (n.label || "").trim() === "komputronik.pl");
+                if (komputronikNode) {
+                  vm.internalValue = (vm.internalValue || []).filter((n) => getId(n) !== komputronikNode.id);
+                  const selectedWithoutKomputronik = selectedIdsFromVm();
+                  const hiddenInputs = Array.from(el.querySelectorAll("input[type='hidden'][name='purpose_purpose']"));
+                  for (const input of hiddenInputs) {
+                    input.remove();
+                  }
+                  for (const selectedId of selectedWithoutKomputronik) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'purpose_purpose';
+                    input.value = selectedId;
+                    el.prepend(input);
+                  }
+
+                  return {
+                    ok: true,
+                    fallback: "removed_komputronik_without_b2b",
+                    selectedIds: selectedWithoutKomputronik,
+                  };
+                }
+
                 return {
                   ok: false,
                   reason: "b2b_option_missing",
@@ -244,14 +287,34 @@ class NetcornerSetupService:
                 };
               }
 
-              const selectedIds = new Set((vm.internalValue || []).map((n) => n.id));
+              const selectedIds = new Set(selectedIdsFromVm());
               if (!selectedIds.has(b2bNode.id)) {
                 vm.select(b2bNode);
               }
 
+              let finalSelected = selectedIdsFromVm();
+              const hasKomputronik = finalSelected.some((id) => labelsById.get(id) === "komputronik.pl");
+              const hasB2B = finalSelected.some((id) => labelsById.get(id) === "b2b.komputronik.pl");
+              if (hasKomputronik && !hasB2B) {
+                finalSelected = finalSelected.filter((id) => labelsById.get(id) !== "komputronik.pl");
+                vm.internalValue = (vm.internalValue || []).filter((n) => labelsById.get(getId(n)) !== "komputronik.pl");
+              }
+
+              const hiddenInputs = Array.from(el.querySelectorAll("input[type='hidden'][name='purpose_purpose']"));
+              for (const input of hiddenInputs) {
+                input.remove();
+              }
+              for (const selectedId of finalSelected) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'purpose_purpose';
+                input.value = selectedId;
+                el.prepend(input);
+              }
+
               return {
                 ok: true,
-                selectedIds: (vm.internalValue || []).map((n) => n.id),
+                selectedIds: finalSelected,
               };
             }
             """
