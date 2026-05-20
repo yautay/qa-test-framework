@@ -26,3 +26,9 @@
 - Do not add forced fallback/retry ladders in tests ("try many paths until one works") unless the UI contract explicitly defines deterministic variants.
 - Avoid `time.sleep(...)`; use existing waits from page objects/wrappers and explicit UI conditions.
 - Keep failures explicit and diagnostic (clear assertion messages describing business expectation vs actual result).
+
+## Polling And Backend Waits
+- For backend/API polling (waiting for a mail, OZO counter update, admin state change) use `framework.polling.poll_until` imported via `qa.e2e.netcorner.nuxt.pl.tests.helpers`.
+- Do **not** write inline `while + time.sleep` or `for _ in range(n): ... wait_for_timeout(...)` polling loops in tests.
+- For Playwright UI readiness use `expect(...)`, `wait_loaded()`, `wait_visible()` — not `poll_until`.
+- For waiting on Mailhog mail delivery use `mail_inbox.wait_for_mails_containing_text(...)` (HTTP API polling, no browser needed).

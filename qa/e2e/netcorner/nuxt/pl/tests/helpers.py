@@ -1,46 +1,8 @@
 from __future__ import annotations
 
-import time
-from typing import Callable, TypeVar
-
 from playwright.sync_api import Page
 
-_T = TypeVar("_T")
-
-
-def poll_until(
-    fn: Callable[[], _T],
-    *,
-    condition: Callable[[_T], bool],
-    timeout_s: float,
-    poll_s: float,
-    default: _T,
-) -> _T:
-    """Wywołuje fn() w pętli aż condition(wynik) == True lub upłynie timeout_s.
-
-    Zwraca ostatnią wartość zwróconą przez fn() (asercja należy do testu).
-    Używa time.sleep między próbami — przeznaczony do polling zasobów backendowych
-    (API, strona, widget), nie do oczekiwania na elementy Playwright (tam używaj expect).
-
-    Parametry:
-        fn         – callable bez argumentów, wywoływany przy każdej próbie
-        condition  – predykat na wyniku fn(); jeśli True, polling kończy się natychmiast
-        timeout_s  – maksymalny łączny czas oczekiwania w sekundach
-        poll_s     – przerwa między próbami w sekundach
-        default    – wartość zwracana gdy fn() nie zostało jeszcze wywołane (nie powinno wystąpić)
-    """
-    deadline = time.monotonic() + timeout_s
-    last: _T = default
-    while time.monotonic() <= deadline:
-        last = fn()
-        if condition(last):
-            return last
-        remaining = deadline - time.monotonic()
-        if remaining <= 0:
-            break
-        time.sleep(min(poll_s, remaining))
-    return last
-
+from framework.polling import poll_until as poll_until  # re-export for test modules
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.cart_page import CartPage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.product_page import ProductPage
