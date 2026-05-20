@@ -62,6 +62,10 @@ def test_smoke_basic_orders(
     auth_case: AuthSessionCase,
     delivery_case: CheckoutDeliveryCase,
 ):
+    page.goto(runtime_env.base_url, wait_until="domcontentloaded")
+    if runtime_env.server_name == "prod":
+        context.add_cookies([{"name": "recaptcha_test", "value": "on", "url": runtime_env.base_url}])
+        page.reload(wait_until="domcontentloaded")
     use_production_email = _use_production_email_for_case(auth_case, delivery_case, runtime_env)
     user_data = _prepare_client_session(
         page, context, runtime_env, auth_case, use_production_email=use_production_email

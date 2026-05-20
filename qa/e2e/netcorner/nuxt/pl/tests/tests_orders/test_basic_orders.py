@@ -26,6 +26,10 @@ pytestmark = [pytest.mark.e2e, pytest.mark.e2e_core, pytest.mark.e2e_orders]
 @pytest.mark.parametrize("delivery_case", checkout_delivery_cases(), ids=lambda case: case.case_id)
 @pytest.mark.scenario("Podstawowy proces zakupowy - typy dostawy")
 def test_basic_orders(page, context, runtime_env, auth_case: AuthSessionCase, delivery_case: CheckoutDeliveryCase):
+    page.goto(runtime_env.base_url, wait_until="domcontentloaded")
+    if runtime_env.server_name == "prod":
+        context.add_cookies([{"name": "recaptcha_test", "value": "on", "url": runtime_env.base_url}])
+        page.reload(wait_until="domcontentloaded")
     user_data = _prepare_client_session(page, context, runtime_env, auth_case)
     listings_data = first_available_laptop_case()
     selected_product_data = SelectProductWrappers(page, context, runtime_env).select_test_product(listings_data)
