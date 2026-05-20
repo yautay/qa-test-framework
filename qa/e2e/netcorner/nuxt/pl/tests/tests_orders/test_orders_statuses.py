@@ -48,7 +48,7 @@ def test_orders_statuses(page, context, runtime_env, admin_panel, mail_inbox: Ma
     order_number = result.typ_summary_data.order_number.strip()
     assert order_number, "Brak numeru zamówienia na stronie TYP."
 
-    mails_count_before = mail_inbox.count_mails_containing_text(text=order_number)
+    mails_count_before = mail_inbox.wait_for_mails_containing_text(text=order_number)
     assert mails_count_before > 0, f"Mailhog nie zwrócił żadnych maili powiązanych z zamówieniem '{order_number}'."
 
     current_status = admin_panel.get_order_data(order_number).status.strip()
