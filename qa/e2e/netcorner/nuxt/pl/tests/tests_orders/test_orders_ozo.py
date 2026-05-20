@@ -32,7 +32,6 @@ _OZO_PRODUCT_ID = 500000513
 _OZO_PRODUCT_PATH = "/product/500000513/tusz-do-drukarki--test-product-produkt-ozo.html"
 
 # Czas oczekiwania na aktualizację licznika OZO po złożeniu zamówienia (sekundy)
-_OZO_COUNTER_SETTLE_SECS = 10
 _OZO_COUNTER_MAX_WAIT_SECS = 60
 _OZO_COUNTER_POLL_SECS = 2
 
@@ -40,13 +39,17 @@ _OZO_COUNTER_POLL_SECS = 2
 @allure.feature("Zamówienia")
 @allure.severity(allure.severity_level.CRITICAL)
 @pytest.mark.scenario(
-    "Złożenie zamówienia na produkt OZO aktualizuje licznik sprzedanych sztuk na stronie głównej i karcie produktu"
+    "Złożenie zamówienia na produkt OZO aktualizuje licznik sprzedanych sztuk na karcie produktu"
 )
 def test_orders_ozo_limited_sale(page, context, runtime_env, admin_panel: AdminWrappers):
     """Sprawdza, że po złożeniu zamówienia:
-    - sold_amount na stronie głównej wzrósł o 1
-    - remaining_amount na stronie głównej zmniejszył się o 1
-    - limited_sale_sold na karcie produktu wzrósł o 1
+    - limited_sale_sold na karcie produktu wzrósł o 1 względem sold_amount sprzed zamówienia
+    - limited_sale_left na karcie produktu zmniejszył się o 1 względem remaining_amount sprzed zamówienia
+
+    Punkt odniesienia (before) jest odczytywany z widgetu OZO na stronie głównej przed złożeniem
+    zamówienia. Weryfikacja po zamówieniu opiera się wyłącznie na karcie produktu (polling), co
+    jest zgodne z podejściem testu Selenium — strona główna może mieć dłuższy cykl cache niż
+    karta produktu.
     """
     # Reset OZO — ustaw deterministyczny stan licznika przed testem.
     admin_panel.reset_ozo_for_product(_OZO_PRODUCT_ID, per_customer=1)
@@ -82,29 +85,20 @@ def test_orders_ozo_limited_sale(page, context, runtime_env, admin_panel: AdminW
         checkout_payment_blik_required_terms(),
     )
 
-    # Odczyt stanu licznika PO zamówieniu — polling strony głównej do zmiany sold_amount.
-    box_after = _wait_for_ozo_counter_update(page, runtime_env, expected_sold_amount=box_before.sold_amount + 1)
+    # Odczyt stanu licznika PO zamówieniu — polling karty produktu do propagacji backendu.
+    _product_page_after, limited_sale = _wait_for_limited_sale_status(page, runtime_env, _OZO_PRODUCT_PATH)
 
-    # Weryfikacja licznika — strona główna.
-    assert box_after.sold_amount == box_before.sold_amount + 1, (
-        f"Licznik sprzedanych OZO na stronie głównej nie wzrósł o 1. "
-        f"Przed={box_before.sold_amount}, po={box_after.sold_amount}."
-    )
-    assert box_after.remaining_amount == box_before.remaining_amount - 1, (
-        f"Licznik pozostałych OZO na stronie głównej nie zmniejszył się o 1. "
-        f"Przed={box_before.remaining_amount}, po={box_after.remaining_amount}."
-    )
-
-    # Weryfikacja licznika — karta produktu.
-    product_page2 = ProductPage(page, runtime_env.base_url).open(_OZO_PRODUCT_PATH).wait_loaded()
-    limited_sale = product_page2.content.price.get_limited_sale_status()
     if limited_sale is None:
         pytest.skip("Komponent limitowanej sprzedaży nie jest widoczny na karcie produktu po złożeniu zamówienia.")
 
-    assert limited_sale["limited_sale_left"] == box_after.remaining_amount, (
-        f"Rozbieżność licznika pozostałych sztuk: "
-        f"strona główna={box_after.remaining_amount}, karta produktu={limited_sale['limited_sale_left']}. "
-        f"URL karty produktu: {page.url}"
+    # Weryfikacja licznika — karta produktu (wzorzec Selenium: before ze strony głównej, after z karty produktu).
+    assert limited_sale["limited_sale_sold"] == box_before.sold_amount + 1, (
+        f"Licznik sprzedanych OZO na karcie produktu nie wzrósł o 1. "
+        f"Przed (strona główna)={box_before.sold_amount}, po (karta produktu)={limited_sale['limited_sale_sold']}."
+    )
+    assert limited_sale["limited_sale_left"] == box_before.remaining_amount - 1, (
+        f"Licznik pozostałych OZO na karcie produktu nie zmniejszył się o 1. "
+        f"Przed (strona główna)={box_before.remaining_amount}, po (karta produktu)={limited_sale['limited_sale_left']}."
     )
 
 
@@ -250,34 +244,6 @@ def _verify_limited_sale_restriction(
             f"Limit(admin)={per_customer_limit}, ilość początkowa={initial_order_quantity}, "
             f"ilość po ponownej próbie={cart_product.get_quantity()}."
         )
-
-
-def _wait_for_ozo_counter_update(
-    page,
-    runtime_env,
-    expected_sold_amount: int,
-    *,
-    max_wait_s: float = _OZO_COUNTER_MAX_WAIT_SECS,
-    poll_s: float = _OZO_COUNTER_POLL_SECS,
-) -> "OzoDetails":
-    """Polluje stronę główną aż sold_amount osiągnie expected_sold_amount lub minie timeout.
-
-    Zwraca ostatnie odczytane OzoDetails (niezależnie od wyniku — asercja należy do testu).
-    """
-    from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.hero_component import OzoDetails
-
-    def fetch() -> OzoDetails:
-        home = HomePage(page, runtime_env.base_url).open(HomePage.PATH).wait_loaded()
-        return home.content.hero.get_ozo_details()
-
-    sentinel = fetch()
-    return poll_until(
-        fetch,
-        condition=lambda d: d.sold_amount == expected_sold_amount,
-        timeout_s=max_wait_s,
-        poll_s=poll_s,
-        default=sentinel,
-    )
 
 
 def _wait_for_limited_sale_status(

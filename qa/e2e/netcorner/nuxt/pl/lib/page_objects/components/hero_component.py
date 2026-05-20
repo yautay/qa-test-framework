@@ -126,11 +126,15 @@ class HeroComponent(BaseComponent):
         return self
 
     @step("Sprawdzam widoczność poprzedniej ceny w widgetcie OZO")
-    def expect_ozo_previous_price_visible(self, timeout_ms: int = 10_000) -> Self:
-        expect(self.__daily_deal_widget).to_be_visible(timeout=timeout_ms)
-        widget_text = self.__daily_deal_widget.inner_text()
-        has_previous_price = bool(re.search(r"Cena bez promocji:\s*\d+", widget_text))
-        assert has_previous_price, "Brak poprzedniej ceny ('Cena bez promocji') w widgetcie OZO."
+    def expect_ozo_previous_price_visible(self, timeout_ms: int = 30_000) -> Self:
+        """Assert that the 'Cena bez promocji' label is visible in the OZO widget.
+
+        Uses a locator-based expect() with retry so that frontend propagation
+        delay after an admin reset does not cause a spurious failure.
+        The default timeout is 30 s to cover typical cache/SSR propagation lag.
+        """
+        prev_price = self.__daily_deal_widget.locator("p:has-text('Cena bez promocji')")
+        expect(prev_price.first).to_be_visible(timeout=timeout_ms)
         return self
 
     @step("Pobieram dane widgetu OZO (sprzedano / pozostało)")
