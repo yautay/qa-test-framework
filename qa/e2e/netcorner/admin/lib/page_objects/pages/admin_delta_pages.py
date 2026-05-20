@@ -233,6 +233,7 @@ class AdminProductOzoPage(AdminBasePage):
     _INPUT_VALUE = "#ktr_promotion_promotion_value"
     _CB_PL = "#associated_promotion_price_category_10"
     _CB_PL_MOBILE = "#associated_promotion_price_category_71"
+    _CB_CURRENCY_PLN = "#associated_promotion_price_currency_country_id_1"
     _BTN_SAVE = "#ui-tabs-1 input[name='submit_promotion']"
 
     def __init__(self, page: Page, base_url: str, product_id: int) -> None:
@@ -373,7 +374,7 @@ class AdminProductOzoPage(AdminBasePage):
         self.page.locator(self._INPUT_TOTAL_AMOUNT).fill(str(total_amount))
         self.page.locator(self._INPUT_PER_CUSTOMER).fill(str(per_customer))
         # Price categories (may be off-screen — force=True)
-        for cb_sel in (self._CB_PL, self._CB_PL_MOBILE):
+        for cb_sel in (self._CB_PL, self._CB_PL_MOBILE, self._CB_CURRENCY_PLN):
             cb_el = self.page.locator(cb_sel)
             if cb_el.count() and not cb_el.is_checked():
                 cb_el.check(force=True)
