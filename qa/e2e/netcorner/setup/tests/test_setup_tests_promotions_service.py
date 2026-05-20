@@ -11,7 +11,6 @@ pytestmark = [pytest.mark.e2e_setup, pytest.mark.target("netcorner-nuxt-pl")]
 
 
 @pytest.mark.scenario("SetUpNUXT: TestSetUpTestsPromotionsService")
-@pytest.mark.order(2)
 def test_setup_tests_promotions_service(page, runtime_env, setup_action_logger):
     promotion_ids = list(PROMOTION_SERVICE_PROMOTION_IDS.values())
     promotions_base_url = os.getenv("PROMOTIONS_BASE_URL") or f"https://promotion-{runtime_env.server_name}.netcorner.pl/"

@@ -9,7 +9,6 @@ pytestmark = [pytest.mark.e2e_setup, pytest.mark.target("netcorner-nuxt-pl")]
 
 
 @pytest.mark.scenario("SetUpNUXT: TestSetUpIndexProducts")
-@pytest.mark.order(6)
 def test_setup_index_products(admin_panel, setup_action_logger):
     erp_codes = NetcornerSetupService(admin_panel, setup_logger=setup_action_logger).reindex_products(
         RECOMPUTING_PRODUCT_PURCHASE_ELIGIBILITY_IDS

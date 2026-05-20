@@ -38,4 +38,7 @@ Rekomendowana kolejność logiczna (pokrycie SetUpNUXT):
 5. recompute products,
 6. index products.
 
-Kolejność wymuszana jest markerami `@pytest.mark.order(...)` (plugin `pytest-order`).
+Kolejnosc nie jest wymuszana globalnie przez pluginy kolejkowania.
+Wymagana zaleznosc dla setupu jest realizowana technicznie:
+- `test_setup_tests_promotions_service` zapisuje timestamp zakonczenia,
+- `test_setup_tests_promo_codes` czeka minimum 120 sekund od tego momentu.
