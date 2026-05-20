@@ -182,6 +182,7 @@ python tools/visual/retention_baselines.py --with-minio --apply --ask-release-cr
 ```
 
 Scenario JSON reference and authoring guide: `qa/visual/README.md`
+Visual JSON full template guide (layers): `qa/visual/docs/README.md`
 
 ## Artifacts and troubleshooting
 

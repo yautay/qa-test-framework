@@ -1,0 +1,102 @@
+{
+  "id": "vrt-netcorner-nuxt-pl-layers-template",
+  "scenario_id": "vrt-netcorner-nuxt-pl-layers-template-alias-optional",
+  "name": "Template visual scenario",
+  "suite_id": "netcorner/nuxt/pl/layers",
+  "target_url": "/example-path-or-full-url",
+  "compare_mode": "hybrid",
+  "viewport": ["mobile", "tablet", "fhd"],
+  "capture": {
+    "type": "element",
+    "locator": "[data-name='replace-with-target-element']",
+    "full_page": false
+  },
+  "mask": {
+    "locators": [
+      ".cookie-banner",
+      "[data-testid='dynamic-banner']",
+      "[data-name='replace-dynamic-element']"
+    ],
+    "color": "#DDF527"
+  },
+  "thresholds": {
+    "pixel_max": 0.01,
+    "lpips_max": 0.12,
+    "dists_max": 0.12,
+    "pixel_uncertain_delta": 0.02,
+    "lpips_uncertain_delta": 0.02,
+    "dists_uncertain_delta": 0.02,
+    "shift_compensation_y_px": 100
+  },
+  "steps": [
+    {
+      "action": "click",
+      "selector": "[data-name='open-layer']",
+      "value": "",
+      "url": "",
+      "timeout_ms": 5000
+    },
+    {
+      "action": "fill",
+      "selector": "#email",
+      "value": "user@example.com",
+      "url": "",
+      "timeout_ms": 5000
+    },
+    {
+      "action": "wait_for_selector",
+      "selector": "[data-name='layer-content']",
+      "value": "",
+      "url": "",
+      "timeout_ms": 10000
+    },
+    {
+      "action": "wait_for",
+      "selector": "[data-name='layer-content']",
+      "value": "",
+      "url": "",
+      "timeout_ms": 10000
+    },
+    {
+      "action": "wait",
+      "selector": "",
+      "value": "",
+      "url": "",
+      "timeout_ms": 500
+    },
+    {
+      "action": "wait_for_timeout",
+      "selector": "",
+      "value": "",
+      "url": "",
+      "timeout_ms": 500
+    },
+    {
+      "action": "goto",
+      "selector": "",
+      "value": "https://example.com/other-page",
+      "url": "",
+      "timeout_ms": 5000
+    },
+    {
+      "action": "goto",
+      "selector": "",
+      "value": "",
+      "url": "https://example.com/other-page",
+      "timeout_ms": 5000
+    }
+  ],
+  "cookies": [
+    {
+      "name": "kt-color-mode",
+      "value": "yellow-black"
+    },
+    {
+      "name": "example-cookie",
+      "value": "example-value"
+    }
+  ],
+  "perceptual_required": false
+}
+
+
