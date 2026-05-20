@@ -52,13 +52,13 @@ def test_orders_ozo_limited_sale(page, context, runtime_env, admin_panel: AdminW
     # Reset OZO — ustaw deterministyczny stan licznika przed testem.
     admin_panel.reset_ozo_for_product(_OZO_PRODUCT_ID, per_customer=1)
 
-    # Odczyt stanu licznika PRZED zamówieniem.
-    home = HomePage(page, runtime_env.base_url).open(HomePage.PATH).wait_loaded()
-    if not home.content.hero.is_ozo_widget_present():
+    # Odczyt stanu licznika PRZED zamówieniem — polling do pojawienia się widgetu po resecie.
+    if not _wait_for_ozo_widget(page, runtime_env):
         pytest.skip(
-            "Widget OZO nie jest widoczny na stronie głównej — środowisko nie obsługuje OZO w tej konfiguracji."
+            "Widget OZO nie jest widoczny na stronie głównej po resecie — środowisko nie obsługuje OZO w tej konfiguracji."
         )
 
+    home = HomePage(page, runtime_env.base_url).open(HomePage.PATH).wait_loaded()
     box_before = home.content.hero.get_ozo_details()
 
     # Złóż zamówienie na produkt OZO.
@@ -300,3 +300,23 @@ def _wait_for_limited_sale_status(
         last_page = ProductPage(page, runtime_env.base_url).open(product_path).wait_loaded()
         last_status = last_page.content.price.get_limited_sale_status()
     return last_page, last_status
+
+
+def _wait_for_ozo_widget(
+    page,
+    runtime_env,
+    *,
+    max_wait_s: float = 30,
+    poll_s: float = _OZO_COUNTER_POLL_SECS,
+) -> bool:
+    """Polluje stronę główną aż widget OZO stanie się widoczny po resecie w adminie lub minie timeout.
+
+    Zwraca True gdy widget jest widoczny, False gdy upłynął max_wait_s.
+    """
+    deadline = time.monotonic() + max_wait_s
+    while time.monotonic() <= deadline:
+        home = HomePage(page, runtime_env.base_url).open(HomePage.PATH).wait_loaded()
+        if home.content.hero.is_ozo_widget_present():
+            return True
+        time.sleep(poll_s)
+    return False
