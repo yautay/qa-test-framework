@@ -34,7 +34,8 @@ Rekomendowana kolejność logiczna (pokrycie SetUpNUXT):
 1. promotions sezam,
 2. promotions service,
 3. promo codes,
-4. recompute products,
-5. index products.
+4. OZO (reset promocji + walidacja widgetu homepage),
+5. recompute products,
+6. index products.
 
 Kolejność wymuszana jest markerami `@pytest.mark.order(...)` (plugin `pytest-order`).

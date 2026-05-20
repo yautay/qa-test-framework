@@ -88,3 +88,4 @@
 - Use semantic scenario naming and markers (`@pytest.mark.scenario(...)`, `pytestmark`) consistent with neighboring tests.
 - Prefer explicit, typed test data from generators/builders in `lib/test_data/**` over inline ad-hoc dicts.
 - Parameterize behavior variants with `pytest.mark.parametrize(..., ids=lambda case: case.case_id)` and stable case objects (`case_id`, factory/data model) instead of branching logic inside one test.
+- Do not add `sleep(...)` / `wait_for_timeout(...)` as environment-level stabilizers in tests; they mask readiness/contract issues. Temporary sleeps are allowed only for a test currently being debugged and must be removed before finalizing changes.
