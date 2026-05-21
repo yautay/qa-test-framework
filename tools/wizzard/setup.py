@@ -299,6 +299,9 @@ def print_execution_plan(args: argparse.Namespace, server_name: str, vm_name: st
     print(f"front-branch: {selected_front_branch}")
     print(f"backend-branch: {selected_backend_branch}")
 
+    full_flow_enabled = os.environ.get("TEST_SETUP_FULL_FLOW") == "1"
+    full_flow_stage = os.environ.get("TEST_SETUP_FLOW_STAGE", "")
+
     if args.index_only:
         print("kroki: backend verify_connection -> backend indexer")
     else:
@@ -308,6 +311,14 @@ def print_execution_plan(args: argparse.Namespace, server_name: str, vm_name: st
             else "backend setup + indexer"
         )
         print(f"kroki: backend verify_connection -> front verify_connection -> front setup -> {backend_step}")
+
+    if full_flow_enabled and full_flow_stage == "1" and args.skip_indexer:
+        print(
+            "plan FULL=1: po tym kroku poleca testy qa/e2e/netcorner/setup/tests, "
+            "a potem osobny krok indeksacji backend (index-only)"
+        )
+    if full_flow_enabled and full_flow_stage == "3" and args.index_only:
+        print("plan FULL=1: to jest finalny krok indeksacji po testach qa/e2e/netcorner/setup/tests")
 
     if full_setup_mode:
         print("uwaga: front/backend branch beda checkoutowane i pullowane podczas setupu")
