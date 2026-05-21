@@ -188,6 +188,48 @@ def run_ssh(ssh_host: str, ssh_port: str, command: str, timeout_s: int = 60) -> 
     return subprocess.run(ssh_command, timeout=timeout_s, capture_output=True, text=True)
 
 
+def run_ssh_stream(ssh_host: str, ssh_port: str, command: str, prefix: str, timeout_s: int = 60) -> int:
+    ssh_command: list[str] = [
+        "sshpass",
+        "-p",
+        NC_CONTAINER_PASS,
+        "ssh",
+        "-o",
+        "StrictHostKeyChecking=no",
+        "-o",
+        "UserKnownHostsFile=/dev/null",
+        "-o",
+        "GlobalKnownHostsFile=/dev/null",
+        "-p",
+        ssh_port,
+        f"nc@{ssh_host}",
+        command,
+    ]
+
+    if os.name == "nt":
+        cmd = " ".join(ssh_command)
+        ssh_command = ["wsl", "bash", "-lc", cmd]
+
+    process = subprocess.Popen(
+        ssh_command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
+
+    try:
+        assert process.stdout is not None
+        for line in process.stdout:
+            print(f"[{prefix}] {line.rstrip()}", flush=True)
+        return process.wait(timeout=timeout_s)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait()
+        print(f"[{prefix}] TIMEOUT po {timeout_s}s", flush=True)
+        return 124
+
+
 def verify_connection(name: str, host: str, port: str) -> None:
     result = run_ssh(host, port, "echo ok")
     output = result.stdout.strip()
@@ -205,13 +247,9 @@ def run_front_setup(host: str, port: str, branch: str) -> None:
         "&& rm -rf ~/.cache/node && ./scripts/bin/build.sh'"
     )
     print(f"[front] uruchamiam: {front_command}")
-    result = run_ssh(host, port, front_command, timeout_s=3600)
-    if result.stdout.strip():
-        print(result.stdout.strip())
-    if result.stderr.strip():
-        print(result.stderr.strip())
-    if result.returncode != 0:
-        raise RuntimeError(f"Front setup zakonczyl sie bledem (kod={result.returncode})")
+    returncode = run_ssh_stream(host, port, front_command, prefix="front", timeout_s=3600)
+    if returncode != 0:
+        raise RuntimeError(f"Front setup zakonczyl sie bledem (kod={returncode})")
 
 
 def run_backend_setup(host: str, port: str, branch: str) -> None:
@@ -220,13 +258,9 @@ def run_backend_setup(host: str, port: str, branch: str) -> None:
         "&& ./symfony crontab:cron:solr-product-indexer'"
     )
     print(f"[backend] uruchamiam: {backend_command}")
-    result = run_ssh(host, port, backend_command, timeout_s=5400)
-    if result.stdout.strip():
-        print(result.stdout.strip())
-    if result.stderr.strip():
-        print(result.stderr.strip())
-    if result.returncode != 0:
-        raise RuntimeError(f"Backend setup zakonczyl sie bledem (kod={result.returncode})")
+    returncode = run_ssh_stream(host, port, backend_command, prefix="backend", timeout_s=5400)
+    if returncode != 0:
+        raise RuntimeError(f"Backend setup zakonczyl sie bledem (kod={returncode})")
 
 
 if __name__ == "__main__":
