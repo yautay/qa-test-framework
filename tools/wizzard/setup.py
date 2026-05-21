@@ -27,6 +27,7 @@ import argparse
 import importlib.util
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -135,6 +136,16 @@ def parse_args() -> argparse.Namespace:
         "--backend-branch",
         default="develop",
         help="Branch dla backendu (domyslnie: develop)",
+    )
+    parser.add_argument(
+        "--front-base-branch",
+        default="auto",
+        help="Branch bazowy dla frontu (domyslnie: auto; wykrywanie z develop/main/master)",
+    )
+    parser.add_argument(
+        "--backend-base-branch",
+        default="auto",
+        help="Branch bazowy dla backendu (domyslnie: auto; wykrywanie z develop/main/master)",
     )
     mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument(
@@ -256,19 +267,53 @@ def verify_connection(name: str, host: str, port: str) -> None:
         print(result.stderr.strip())
 
 
-def run_front_setup(host: str, port: str, branch: str) -> None:
-    front_command = (
-        f"bash -ic 'ktr && git checkout {branch} && git pull "
-        "&& rm -rf ~/.cache/node && ./scripts/bin/build.sh'"
+def _build_branch_sync_script(target_branch: str, base_branch_input: str) -> str:
+    target_q = shlex.quote(target_branch)
+    base_input_q = shlex.quote(base_branch_input)
+    return (
+        "TARGET_BRANCH="
+        + target_q
+        + " && BASE_INPUT="
+        + base_input_q
+        + " && BASE_BRANCH='' && DETECTION_METHOD='manual'"
+        + " && if [ \"$BASE_INPUT\" = \"auto\" ]; then DETECTION_METHOD='auto'; fi"
+        + " && if [ \"$BASE_INPUT\" = \"auto\" ]; then "
+        + "for CANDIDATE in develop main master; do "
+        + "if git show-ref --verify --quiet \"refs/remotes/origin/$CANDIDATE\" && git merge-base --fork-point \"origin/$CANDIDATE\" \"$TARGET_BRANCH\" >/dev/null 2>&1; then "
+        + "BASE_BRANCH=\"$CANDIDATE\"; DETECTION_METHOD='fork-point'; break; "
+        + "fi; "
+        + "done; "
+        + "fi"
+        + " && if [ -z \"$BASE_BRANCH\" ] && [ \"$BASE_INPUT\" = \"auto\" ]; then "
+        + "ORIGIN_HEAD=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || true); "
+        + "if [ -n \"$ORIGIN_HEAD\" ]; then BASE_BRANCH=\"${ORIGIN_HEAD#origin/}\"; DETECTION_METHOD='origin-head'; fi; "
+        + "fi"
+        + " && if [ -z \"$BASE_BRANCH\" ] && [ \"$BASE_INPUT\" = \"auto\" ]; then "
+        + "for CANDIDATE in develop main master; do "
+        + "if git show-ref --verify --quiet \"refs/remotes/origin/$CANDIDATE\"; then BASE_BRANCH=\"$CANDIDATE\"; DETECTION_METHOD='fallback-existing'; break; fi; "
+        + "done; "
+        + "fi"
+        + " && if [ \"$BASE_INPUT\" != \"auto\" ]; then BASE_BRANCH=\"$BASE_INPUT\"; fi"
+        + " && if [ -z \"$BASE_BRANCH\" ]; then BASE_BRANCH=\"$TARGET_BRANCH\"; DETECTION_METHOD='target-fallback'; fi"
+        + " && printf 'branch-sync: target=%s, base=%s, method=%s\\n' \"$TARGET_BRANCH\" \"$BASE_BRANCH\" \"$DETECTION_METHOD\""
+        + " && git checkout \"$TARGET_BRANCH\""
+        + " && git pull origin \"$TARGET_BRANCH\""
+        + " && git pull origin \"$BASE_BRANCH\""
     )
+
+
+def run_front_setup(host: str, port: str, branch: str, base_branch: str) -> None:
+    sync_script = _build_branch_sync_script(branch, base_branch)
+    front_command = f"bash -ic '{sync_script} && rm -rf ~/.cache/node && ./scripts/bin/build.sh'"
     print(f"[front] uruchamiam: {front_command}")
     returncode = run_ssh_stream(host, port, front_command, prefix="front", timeout_s=3600)
     if returncode != 0:
         raise RuntimeError(f"Front setup zakonczyl sie bledem (kod={returncode})")
 
 
-def run_backend_setup(host: str, port: str, branch: str, run_indexer: bool = True) -> None:
-    backend_command = f"bash -ic 'ktr && git checkout {branch} && git pull && gulp deploy-local"
+def run_backend_setup(host: str, port: str, branch: str, base_branch: str, run_indexer: bool = True) -> None:
+    sync_script = _build_branch_sync_script(branch, base_branch)
+    backend_command = f"bash -ic 'ktr && {sync_script} && gulp deploy-local"
     if run_indexer:
         backend_command += " && ./symfony crontab:cron:solr-product-indexer"
     backend_command += "'"
@@ -290,6 +335,8 @@ def print_execution_plan(args: argparse.Namespace, server_name: str, vm_name: st
     full_setup_mode = not args.index_only
     selected_front_branch = args.front_branch
     selected_backend_branch = args.backend_branch
+    selected_front_base_branch = args.front_base_branch
+    selected_backend_base_branch = args.backend_base_branch
 
     print("--- Plan wykonania ---")
     print(f"host/server_name: {server_name}")
@@ -298,6 +345,8 @@ def print_execution_plan(args: argparse.Namespace, server_name: str, vm_name: st
     print(f"skip-indexer: {'tak' if args.skip_indexer else 'nie'}")
     print(f"front-branch: {selected_front_branch}")
     print(f"backend-branch: {selected_backend_branch}")
+    print(f"front-base-branch: {selected_front_base_branch}")
+    print(f"backend-base-branch: {selected_backend_base_branch}")
 
     full_flow_enabled = os.environ.get("TEST_SETUP_FULL_FLOW") == "1"
     full_flow_stage = os.environ.get("TEST_SETUP_FLOW_STAGE", "")
@@ -353,7 +402,13 @@ if __name__ == "__main__":
     print("[setup] Krok: weryfikacja polaczenia front")
     verify_connection("front", front_host, front_port)
     print("[setup] Krok: setup front")
-    run_front_setup(front_host, front_port, args.front_branch)
+    run_front_setup(front_host, front_port, args.front_branch, args.front_base_branch)
     print("[setup] Krok: setup backend")
-    run_backend_setup(backend_host, backend_port, args.backend_branch, run_indexer=not args.skip_indexer)
+    run_backend_setup(
+        backend_host,
+        backend_port,
+        args.backend_branch,
+        args.backend_base_branch,
+        run_indexer=not args.skip_indexer,
+    )
     print("Setup zakonczony pomyslnie.")
