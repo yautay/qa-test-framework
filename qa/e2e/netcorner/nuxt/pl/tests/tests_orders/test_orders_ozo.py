@@ -17,6 +17,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import
 )
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
 from qa.e2e.netcorner.nuxt.pl.tests.helpers import poll_until
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import ELEMENT_VISIBLE_MS, UI_ACTION_MS
 
 _CART_PATH = "/cart"
 
@@ -132,7 +133,7 @@ def _navigate_to_cart(page, runtime_env) -> None:
     """Navigate to cart page after add-to-cart, handling overlay or direct URL fallback."""
     from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
     try:
-        page.wait_for_url(f"**{_CART_PATH}", timeout=8_000)
+        page.wait_for_url(f"**{_CART_PATH}", timeout=UI_ACTION_MS)
     except PlaywrightTimeoutError:
         # Overlay may not have fired — navigate directly.
         page.goto(f"{runtime_env.base_url}{_CART_PATH}")
@@ -219,7 +220,7 @@ def _verify_limited_sale_restriction(
     product_page2.add_to_cart()
     limit_toast_seen = False
     toast_root = product_page2.page.locator('[data-name="toast"]').last
-    if toast_root.count() > 0 and toast_root.is_visible(timeout=7_000):
+    if toast_root.count() > 0 and toast_root.is_visible(timeout=ELEMENT_VISIBLE_MS):
         toast_message = toast_root.locator("div").inner_text().strip()
         assert "limit" in toast_message.casefold() or "ogranic" in toast_message.casefold(), (
             "Komunikat po próbie ponownego dodania produktu OZO nie wskazuje ograniczenia limitu. "

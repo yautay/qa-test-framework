@@ -8,6 +8,7 @@ from playwright.sync_api import Locator, Page, expect
 
 from qa.e2e.netcorner.lib.dom_capture import capture_page_dom
 from qa.e2e.netcorner.lib.step_api import step
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import UI_ACTION_MS
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.utils import (
     get_visible_text,
@@ -65,7 +66,7 @@ class ListingFiltersComponent(BaseComponent):
             timeout=self.DEFAULT_TIMEOUT
         ), f"Filtr '{name}' nie istnieje na listingu — sprawdź URL lub dostępność filtra na środowisku."
         self.pointer_click(filter_label)
-        self.root.page.wait_for_load_state("networkidle", timeout=15_000)
+        self.root.page.wait_for_load_state("networkidle", timeout=UI_ACTION_MS)
         return self
 
 
@@ -127,7 +128,7 @@ class ListingSortingComponent(BaseComponent):
         # route change has settled.
         option_locator = self.__sort_options_container.get_by_text(option_label, exact=True).first
         self.pointer_click(option_locator)
-        page.wait_for_load_state("networkidle", timeout=15_000)
+        page.wait_for_load_state("networkidle", timeout=UI_ACTION_MS)
         # Confirm listing content and at least one tile are visible.
         listing_content = page.locator("[data-name='listingContent']")
         expect(listing_content).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
@@ -138,7 +139,7 @@ class ListingSortingComponent(BaseComponent):
     def select_availability_option(self, option: ListingSortingComponent.AvailabilityOption) -> Self:
         option_label = option.value
         self.__select_from_custom_dropdown(self.__availability_input, self.__availability_results, option_label)
-        expect(self.__availability_input).to_have_value(option_label, timeout=15_000)
+        expect(self.__availability_input).to_have_value(option_label, timeout=UI_ACTION_MS)
         return self
 
     @step("Ustawiam checkbox 'Pokaż produkty niedostępne' na: {checked}")

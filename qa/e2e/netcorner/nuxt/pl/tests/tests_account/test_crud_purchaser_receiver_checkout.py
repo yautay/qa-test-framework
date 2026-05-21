@@ -13,6 +13,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import
     private_person_delivery_courier_receiver,
 )
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import UI_ACTION_MS
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listing_data_generators import first_available_laptop_case
 
 pytestmark = [pytest.mark.e2e, pytest.mark.e2e_core, pytest.mark.e2e_account]
@@ -40,7 +41,7 @@ def test_crud_purchaser_receiver_checkout(page, context, runtime_env):
     receiver_overlay = Overlays(page).checkout_courier_receiver.wait_visible()
     receiver_overlay.fill_receiver_data(private_person_delivery_courier_receiver())
     receiver_overlay.click_add_details()
-    receiver_overlay.wait_hidden(timeout=10_000)
+    receiver_overlay.wait_hidden(timeout=UI_ACTION_MS)
 
     # Krok 3: sekcja formy dostawy widoczna
     delivery_section = page.locator("[data-picker='delivery']").first

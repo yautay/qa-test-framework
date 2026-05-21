@@ -10,6 +10,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.overlays import Overlays
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.checkout_page import CheckoutPage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listing_data_generators import first_available_laptop_case
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import UI_ACTION_MS
 
 pytestmark = [pytest.mark.e2e]
 
@@ -38,7 +39,7 @@ def test_forms_checkout(page, context, runtime_env):
     receiver_overlay.click_add_details()
     receiver_overlay.wait_visible()
     receiver_overlay.click_cancel()
-    receiver_overlay.wait_hidden(timeout=10_000)
+    receiver_overlay.wait_hidden(timeout=UI_ACTION_MS)
 
     # Krok 3: sekcja formy dostawy jest widoczna (nawet przy błędzie API delivery methods)
     delivery_section = page.locator("[data-picker='delivery']").first

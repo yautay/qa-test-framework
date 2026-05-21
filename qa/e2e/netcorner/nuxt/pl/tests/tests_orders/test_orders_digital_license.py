@@ -26,6 +26,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import
     private_person_delivery_courier_receiver,
 )
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import UI_ACTION_MS
 
 pytestmark = [pytest.mark.e2e, pytest.mark.e2e_core, pytest.mark.e2e_orders]
 
@@ -48,7 +49,7 @@ def _skip_if_no_digital_product() -> None:
 def _navigate_to_cart(page, runtime_env) -> None:
     """Navigate to cart after add-to-cart, with URL-wait fallback."""
     try:
-        page.wait_for_url(f"**{_CART_PATH}", timeout=8_000)
+        page.wait_for_url(f"**{_CART_PATH}", timeout=UI_ACTION_MS)
     except PlaywrightTimeoutError:
         page.goto(f"{runtime_env.base_url}{_CART_PATH}")
         page.wait_for_load_state("domcontentloaded")

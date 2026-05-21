@@ -8,6 +8,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.flows.cart_and_checkout_wrappers import CartAn
 from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.flows.select_product_wrappers import SelectProductWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.orders_list_page import OrdersListPage
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import ELEMENT_VISIBLE_MS
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import (
     checkout_payment_blik_required_terms,
     private_person_checkout_purchaser,
@@ -87,7 +88,7 @@ def test_orders_cancel(page, context, runtime_env):
     ).filter(has_text="nie powiodło")
 
     try:
-        toast_failure.first.wait_for(state="visible", timeout=5_000)
+        toast_failure.first.wait_for(state="visible", timeout=ELEMENT_VISIBLE_MS)
         # Anulowanie zablokowane przez system — akceptowalny wynik
         return
     except Exception:  # noqa: BLE001

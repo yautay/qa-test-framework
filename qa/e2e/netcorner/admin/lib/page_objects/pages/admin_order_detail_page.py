@@ -9,6 +9,7 @@ from playwright.sync_api import Page
 
 from qa.e2e.netcorner.admin.lib.page_objects.base_page import AdminBasePage, LoadState
 from qa.e2e.netcorner.admin.lib.test_data.admin_order_models import AdminOrderData, AdminOrderProduct
+from qa.e2e.netcorner.admin.lib.timeouts import ELEMENT_VISIBLE_MS, QUICK_PROBE_MS, UI_ACTION_MS
 from qa.e2e.netcorner.lib.price_utils import parse_price
 
 logger = logging.getLogger(__name__)
@@ -88,7 +89,7 @@ class AdminOrderDetailPage(AdminBasePage):
 
     def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> AdminOrderDetailPage:
         super().wait_loaded(state=state, timeout=timeout)
-        self.page.locator(self._LOC_PAGE_HEADER).wait_for(state="visible", timeout=10_000)
+        self.page.locator(self._LOC_PAGE_HEADER).wait_for(state="visible", timeout=UI_ACTION_MS)
         return self
 
     # ------------------------------------------------------------------
@@ -97,58 +98,58 @@ class AdminOrderDetailPage(AdminBasePage):
 
     def get_order_number(self) -> str:
         """Return the order number from the page header text (e.g. '181255/2026')."""
-        header_text = self.page.locator(self._LOC_PAGE_HEADER).inner_text(timeout=5_000)
+        header_text = self.page.locator(self._LOC_PAGE_HEADER).inner_text(timeout=ELEMENT_VISIBLE_MS)
         # Header: "Edycja zamówienia" — order number is displayed in the fieldset header below
         # Fall back to reading from page title or URL
         match = re.search(r"\d+/\d{4}", header_text)
         if match:
             return match.group(0)
         # Try the content header section
-        content_header = self.page.locator("#sf_admin_header").inner_text(timeout=3_000)
+        content_header = self.page.locator("#sf_admin_header").inner_text(timeout=QUICK_PROBE_MS)
         match = re.search(r"\d+/\d{4}", content_header)
         return match.group(0) if match else ""
 
     def get_status(self) -> str:
         """Return current order status text."""
-        return self.page.locator(self._LOC_ORDER_STATUS).inner_text(timeout=5_000).strip()
+        return self.page.locator(self._LOC_ORDER_STATUS).inner_text(timeout=ELEMENT_VISIBLE_MS).strip()
 
     def get_summary_price_gross(self) -> Decimal:
         # NOTE: the admin HTML has a bug — both "Suma brutto" and "Suma netto" use
         # id="productBruttoSum". We always want the first (brutto) occurrence.
-        raw = self.page.locator(self._LOC_SUMMARY_PRICE).first.inner_text(timeout=5_000)
+        raw = self.page.locator(self._LOC_SUMMARY_PRICE).first.inner_text(timeout=ELEMENT_VISIBLE_MS)
         return _parse_price_nonnull(raw)
 
     def get_shipping_price(self) -> Decimal:
-        raw_shipping = self.page.locator(self._LOC_SHIPPING_PRICE).inner_text(timeout=5_000)
-        raw_param = self.page.locator(self._LOC_SHIPPING_PRICE_PARAM).inner_text(timeout=3_000)
+        raw_shipping = self.page.locator(self._LOC_SHIPPING_PRICE).inner_text(timeout=ELEMENT_VISIBLE_MS)
+        raw_param = self.page.locator(self._LOC_SHIPPING_PRICE_PARAM).inner_text(timeout=QUICK_PROBE_MS)
         return _parse_price_nonnull(raw_shipping) + _parse_price_nonnull(raw_param)
 
     def get_purchaser_raw_lines(self) -> list[str]:
         """Return purchaser block text split into non-empty lines."""
-        text = self.page.locator(self._LOC_PURCHASER_DATA).inner_text(timeout=5_000)
+        text = self.page.locator(self._LOC_PURCHASER_DATA).inner_text(timeout=ELEMENT_VISIBLE_MS)
         return [line.strip() for line in text.splitlines() if line.strip()]
 
     def get_receiver_raw_lines(self) -> list[str]:
         """Return receiver block text split into non-empty lines."""
-        text = self.page.locator(self._LOC_RECEIVER_DATA).inner_text(timeout=5_000)
+        text = self.page.locator(self._LOC_RECEIVER_DATA).inner_text(timeout=ELEMENT_VISIBLE_MS)
         return [line.strip() for line in text.splitlines() if line.strip()]
 
     def get_nip(self) -> str:
         """Extract NIP value from the purchaser block (format 'NIP : XXXXXXXXXX')."""
-        purchaser_text = self.page.locator(self._LOC_PURCHASER_DATA).inner_text(timeout=5_000)
+        purchaser_text = self.page.locator(self._LOC_PURCHASER_DATA).inner_text(timeout=ELEMENT_VISIBLE_MS)
         match = re.search(r"NIP\s*[:\-]\s*(\d[\d\s\-]+)", purchaser_text)
         return re.sub(r"[\s\-]", "", match.group(1)) if match else ""
 
     def get_parameter_card(self) -> str:
         loc = self.page.locator(self._LOC_PARAMETER_CARD)
         if loc.count() > 0:
-            return loc.first.inner_text(timeout=3_000).strip()
+            return loc.first.inner_text(timeout=QUICK_PROBE_MS).strip()
         return ""
 
     def get_order_comment(self) -> str:
         loc = self.page.locator(self._LOC_ORDER_COMMENT)
         if loc.count() > 0:
-            return loc.inner_text(timeout=3_000).strip()
+            return loc.inner_text(timeout=QUICK_PROBE_MS).strip()
         return ""
 
     def get_all_data(self, order_number: str = "") -> AdminOrderData:
@@ -183,9 +184,9 @@ class AdminOrderDetailPage(AdminBasePage):
             if cell_count < 6:
                 continue
             try:
-                name = cells.nth(0).inner_text(timeout=2_000).strip()
-                qty_text = cells.nth(2).inner_text(timeout=2_000).strip()
-                price_text = cells.nth(5).inner_text(timeout=2_000).strip()
+                name = cells.nth(0).inner_text(timeout=QUICK_PROBE_MS).strip()
+                qty_text = cells.nth(2).inner_text(timeout=QUICK_PROBE_MS).strip()
+                price_text = cells.nth(5).inner_text(timeout=QUICK_PROBE_MS).strip()
                 qty = int(re.sub(r"[^\d]", "", qty_text) or "0")
                 price = _parse_price_nonnull(price_text)
                 if name:
@@ -209,7 +210,7 @@ class AdminOrderDetailPage(AdminBasePage):
         self.page.locator(self._LOC_ORDER_STATUS).click()
 
         status_select = self.page.locator(self._LOC_STATUS_SELECT)
-        status_select.wait_for(state="visible", timeout=8_000)
+        status_select.wait_for(state="visible", timeout=UI_ACTION_MS)
 
         order_id_match = re.search(r"/order_id/(\d+)", self.page.url)
         assert order_id_match is not None, f"Nie udało się odczytać order_id z URL admina: '{self.page.url}'."
@@ -219,20 +220,20 @@ class AdminOrderDetailPage(AdminBasePage):
         )
         self.page.goto(change_status_url, wait_until="domcontentloaded")
 
-        self.page.wait_for_load_state("domcontentloaded", timeout=15_000)
-        self.page.locator(self._LOC_PAGE_HEADER).wait_for(state="visible", timeout=10_000)
+        self.page.wait_for_load_state("domcontentloaded", timeout=UI_ACTION_MS)
+        self.page.locator(self._LOC_PAGE_HEADER).wait_for(state="visible", timeout=UI_ACTION_MS)
 
     def get_status_options(self) -> list[AdminStatusOption]:
         self.page.locator(self._LOC_ORDER_STATUS).click()
         status_select = self.page.locator(self._LOC_STATUS_SELECT)
-        status_select.wait_for(state="visible", timeout=8_000)
+        status_select.wait_for(state="visible", timeout=UI_ACTION_MS)
 
         options = status_select.locator("option")
         result: list[AdminStatusOption] = []
         for index in range(options.count()):
             option = options.nth(index)
             value = (option.get_attribute("value") or "").strip()
-            label = option.inner_text(timeout=1_000).strip()
+            label = option.inner_text(timeout=QUICK_PROBE_MS).strip()
             if not value or not label:
                 continue
             result.append(AdminStatusOption(value=value, label=label))

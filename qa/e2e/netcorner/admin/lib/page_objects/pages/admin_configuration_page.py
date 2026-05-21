@@ -3,6 +3,7 @@ from __future__ import annotations
 from playwright.sync_api import Page, expect
 
 from qa.e2e.netcorner.admin.lib.page_objects.base_page import AdminBasePage, LoadState
+from qa.e2e.netcorner.admin.lib.timeouts import UI_ACTION_MS
 
 
 class AdminConfigurationPage(AdminBasePage):
@@ -30,7 +31,7 @@ class AdminConfigurationPage(AdminBasePage):
 
     def open_enforced_postcodes_section(self) -> None:
         self.page.locator(self._LOC_POSTCODES_SECTION).click()
-        expect(self.page.locator(self._LOC_POSTCODES_TEXTAREA)).to_be_visible(timeout=10_000)
+        expect(self.page.locator(self._LOC_POSTCODES_TEXTAREA)).to_be_visible(timeout=UI_ACTION_MS)
 
     def get_enforced_postcodes(self) -> list[str]:
         self.open_enforced_postcodes_section()
@@ -45,7 +46,7 @@ class AdminConfigurationPage(AdminBasePage):
         textarea = self.page.locator(self._LOC_POSTCODES_TEXTAREA)
         textarea.fill(normalized)
         self.page.locator(self._LOC_POSTCODES_SAVE).click()
-        expect(textarea).to_have_value(normalized, timeout=10_000)
+        expect(textarea).to_have_value(normalized, timeout=UI_ACTION_MS)
 
 
 __all__ = ["AdminConfigurationPage"]

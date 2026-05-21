@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from playwright.sync_api import Page, expect
 
 from qa.e2e.netcorner.admin.lib.page_objects.base_page import AdminBasePage, LoadState
+from qa.e2e.netcorner.admin.lib.timeouts import ELEMENT_VISIBLE_MS, QUICK_PROBE_MS
 
 
 @dataclass(frozen=True)
@@ -190,7 +191,7 @@ class AdminMissingLinksPage(AdminBasePage):
 
     def has_link_entry(self, link_fragment: str) -> bool:
         row = self.page.locator("table tbody tr").filter(has_text=link_fragment).first
-        return row.count() > 0 and row.is_visible(timeout=5_000)
+        return row.count() > 0 and row.is_visible(timeout=ELEMENT_VISIBLE_MS)
 
 
 # ---------------------------------------------------------------------------
@@ -335,7 +336,7 @@ class AdminProductOzoPage(AdminBasePage):
             self._wait_ajax()
             # Wait for form to appear
             name_inp = self.page.locator(self._INPUT_NAME)
-            if not name_inp.is_visible(timeout=5_000):
+            if not name_inp.is_visible(timeout=ELEMENT_VISIBLE_MS):
                 break
             # Uncheck both active flags
             activated = self.page.locator(self._INPUT_ACTIVATED)
@@ -349,7 +350,7 @@ class AdminProductOzoPage(AdminBasePage):
                 self._wait_ajax()
             # Back to list — wait for table to re-appear
             list_btn = self.page.locator(self._BTN_LIST)
-            if list_btn.is_visible(timeout=3_000):
+            if list_btn.is_visible(timeout=QUICK_PROBE_MS):
                 list_btn.click()
                 self._wait_ajax()
                 expect(self.page.locator("#ui-tabs-1 table")).to_be_visible(
@@ -585,7 +586,7 @@ class AdminCartOfferPage(AdminBasePage):
             if customer_email:
                 send_mail.fill(customer_email)
         send_link.click()
-        self.page.wait_for_timeout(1_000)
+        self.page.wait_for_timeout(QUICK_PROBE_MS)
 
     def get_offer_id_from_url(self) -> str | None:
         """Extract the offer id from the current admin URL (edit page)."""
@@ -694,7 +695,7 @@ class AdminEmployeeProgramPage(AdminBasePage):
         btn = self.page.locator(self._BTN_SHOW_HASHES)
         if btn.count():
             btn.first.click()
-            self.page.wait_for_timeout(1_000)
+            self.page.wait_for_timeout(QUICK_PROBE_MS)
         hashes_el = self.page.locator(self._ELEMENTS_HASHES)
         return [
             hashes_el.nth(i).inner_text().strip()

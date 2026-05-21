@@ -8,6 +8,8 @@ from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
 
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import ELEMENT_VISIBLE_MS
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import QUICK_PROBE_MS
 
 
 class ToastType(StrEnum):
@@ -36,14 +38,14 @@ class ToastOverlay(BaseComponent):
 
     @step("Sprawdzam czy pojawił się toast {expected_instance}")
     def get_toast(
-        self, expected_instance: ToastInstance = ToastInstance.UNKNOWN, timeout: int = 7000
+        self, expected_instance: ToastInstance = ToastInstance.UNKNOWN, timeout: int = ELEMENT_VISIBLE_MS
     ) -> ToastObject | None:
         toast = self.root.last
 
         try:
             expect(toast).to_be_visible(timeout=timeout)
             message = toast.locator("div").inner_text().strip()
-            classes = toast.get_attribute("class", timeout=1_000) or ""
+            classes = toast.get_attribute("class", timeout=QUICK_PROBE_MS) or ""
             toast_type = self.__resolve_type(classes)
             instance = self.__resolve_instance(message)
             if expected_instance != ToastInstance.UNKNOWN and instance != expected_instance:

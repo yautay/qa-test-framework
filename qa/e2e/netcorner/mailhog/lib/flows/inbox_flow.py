@@ -13,6 +13,7 @@ from qa.e2e.netcorner.mailhog.lib.allure_decorators import step
 from qa.e2e.netcorner.mailhog.lib.config import MailInboxEnv, MailInboxProvider, resolve_mail_inbox_env
 from qa.e2e.netcorner.mailhog.lib.mail_subjects import MailSubjectPattern, MailSubjects
 from qa.e2e.netcorner.mailhog.lib.page_objects.pages.inbox_page import InboxPage
+from qa.e2e.netcorner.mailhog.lib.timeouts import HTTP_REQUEST_TIMEOUT_S
 
 _PASSWORD_RESET_LINK_REGEX = r"(?i)https?://[^\s\"'<>]*(reset|odzysk|hasl|password)[^\s\"'<>]*"
 _ORDER_LINK_REGEX = r"(?i)https?://[^\s\"'<>]*(zamow|order|checkout|status|details)[^\s\"'<>]*"
@@ -325,7 +326,7 @@ class MailInboxService:
         query = urllib.parse.quote(text, safe="")
         url = f"{self.__mail_env.base_url}/api/v2/search?kind=containing&query={query}"
         ssl_context = ssl._create_unverified_context()
-        with urllib.request.urlopen(url, context=ssl_context, timeout=30) as response:
+        with urllib.request.urlopen(url, context=ssl_context, timeout=HTTP_REQUEST_TIMEOUT_S) as response:
             payload = json.loads(response.read().decode())
         return payload.get("items", [])
 

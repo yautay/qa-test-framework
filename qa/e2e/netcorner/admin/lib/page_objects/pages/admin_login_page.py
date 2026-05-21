@@ -3,6 +3,7 @@ from __future__ import annotations
 from playwright.sync_api import Page
 
 from qa.e2e.netcorner.admin.lib.page_objects.base_page import AdminBasePage, LoadState
+from qa.e2e.netcorner.admin.lib.timeouts import QUICK_PROBE_MS
 
 
 class AdminLoginPage(AdminBasePage):
@@ -49,18 +50,18 @@ class AdminLoginPage(AdminBasePage):
 
         # Dismiss password-expiry reminder if present
         reminder = self.page.locator(self._LOC_PWD_REMINDER)
-        if reminder.is_visible(timeout=3_000):
+        if reminder.is_visible(timeout=QUICK_PROBE_MS):
             close = self.page.locator(self._LOC_PWD_REMINDER_CLOSE)
             if close.count() > 0:
                 close.first.click()
                 self.page.wait_for_load_state("domcontentloaded")
 
     def is_login_form_visible(self) -> bool:
-        return self.page.locator(self._LOC_LOGIN_FORM).is_visible(timeout=3_000)
+        return self.page.locator(self._LOC_LOGIN_FORM).is_visible(timeout=QUICK_PROBE_MS)
 
     def is_logged_in(self) -> bool:
         """Returns True if we are past the login form (admin container is present)."""
-        return self.page.locator(self._LOC_ADMIN_CONTAINER).is_visible(timeout=3_000)
+        return self.page.locator(self._LOC_ADMIN_CONTAINER).is_visible(timeout=QUICK_PROBE_MS)
 
 
 __all__ = ["AdminLoginPage"]

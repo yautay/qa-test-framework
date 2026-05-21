@@ -8,6 +8,7 @@ from playwright.sync_api import Page
 
 from framework.env import RuntimeEnv
 from qa.e2e.netcorner.admin.lib.config import AdminEnv, resolve_admin_env
+from qa.e2e.netcorner.admin.lib.timeouts import SLOW_OPERATION_MS
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_aggregator_pages import (
     AdminAggregatorCreatePage,
     AdminAggregatorEditPage,
@@ -261,7 +262,7 @@ class AdminWrappers:
         self.navigate_to(f"product/edit/pl/product_id/{product_id}")
         promotions_tab = self.__page.locator("a[href='#ui-tabs-1']").first
         promotions_tab.click()
-        self.__page.locator("#ui-tabs-1 table").first.wait_for(state="visible", timeout=30_000)
+        self.__page.locator("#ui-tabs-1 table").first.wait_for(state="visible", timeout=SLOW_OPERATION_MS)
         edit_button = self.__page.locator("#ui-tabs-1 a:has(img[alt='Edit_icon'])").first
         if edit_button.count() == 0:
             return

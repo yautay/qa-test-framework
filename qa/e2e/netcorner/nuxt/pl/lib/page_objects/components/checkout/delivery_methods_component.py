@@ -8,6 +8,7 @@ from playwright.sync_api import Locator, Page
 
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import QUICK_PROBE_MS
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.utils import get_visible_text
 
 
@@ -37,7 +38,7 @@ class CheckoutDeliveryMethodsComponent(BaseComponent):
                 return self
             if self.__matrix_container.first.is_visible() and self.__visible_tiles(self.__matrix_tiles):
                 return self
-            self.root.page.wait_for_timeout(250)
+            self.root.page.wait_for_timeout(QUICK_PROBE_MS)
 
         raise RuntimeError("Brak dostępnych metod transportu po uzupełnieniu danych odbiorcy.")
 

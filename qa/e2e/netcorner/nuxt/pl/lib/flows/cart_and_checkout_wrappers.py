@@ -8,6 +8,7 @@ from decimal import Decimal
 from loguru import logger
 from playwright.sync_api import BrowserContext, Page
 
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import QUICK_PROBE_MS, UI_ACTION_MS
 from framework.env import RuntimeEnv
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.cart_components import CartProductData
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.components.checkout import (
@@ -78,7 +79,7 @@ class CartAndCheckoutWrappers:
         actual_provider = ""
         provider_error = ""
         try:
-            actual_provider = delivery_type_component.get_selected_delivery_provider(timeout=8_000)
+            actual_provider = delivery_type_component.get_selected_delivery_provider(timeout=UI_ACTION_MS)
         except RuntimeError as exc:
             provider_error = str(exc)
 
@@ -103,7 +104,7 @@ class CartAndCheckoutWrappers:
         consecutive_errors = 0
         while time.monotonic() < stability_deadline:
             try:
-                stable_provider = delivery_type_component.get_selected_delivery_provider(timeout=1_000)
+                stable_provider = delivery_type_component.get_selected_delivery_provider(timeout=QUICK_PROBE_MS)
                 consecutive_errors = 0
             except RuntimeError as exc:
                 consecutive_errors += 1
@@ -163,7 +164,7 @@ class CartAndCheckoutWrappers:
                 candidate = locator.nth(index)
                 if candidate.is_visible():
                     candidate.click(force=True)
-                    self.__page.wait_for_timeout(500)
+                    self.__page.wait_for_timeout(QUICK_PROBE_MS)
                     return True
         return False
 
@@ -280,7 +281,7 @@ class CartAndCheckoutWrappers:
                 courier_overlay = Overlays(self.__page).checkout_courier_receiver.wait_visible()
                 courier_overlay.fill_receiver_data(delivery_objects)
                 courier_overlay.click_add_details()
-                courier_overlay.wait_hidden(timeout=10_000)
+                courier_overlay.wait_hidden(timeout=UI_ACTION_MS)
                 delivery_methods = checkout.content.delivery_methods.wait_visible()
                 delivery_methods_layout, available_delivery_methods = delivery_methods.get_methods_layout()
                 if delivery_objects.preferred_delivery_method_text:
@@ -346,7 +347,7 @@ class CartAndCheckoutWrappers:
         purchaser_overlay = Overlays(self.__page).checkout_purchaser.wait_visible()
         purchaser_overlay.fill_purchaser_data(purchaser_objects)
         purchaser_overlay.click_add_details()
-        purchaser_overlay.wait_hidden(timeout=10_000)
+        purchaser_overlay.wait_hidden(timeout=UI_ACTION_MS)
 
         if not isinstance(payment_objects, CheckoutPaymentData):
             raise TypeError("Argument payment_objects musi być typu CheckoutPaymentData.")
