@@ -202,6 +202,16 @@ class AdminWrappers:
         detail_page.wait_loaded()
         return detail_page.get_status_options()
 
+    def get_order_products_raw_text(self, order_number: str) -> str:
+        self.open_admin()
+        orders_page = AdminOrdersPage(self.__page, self.__admin_env.base_url)
+        orders_page.navigate_to()
+        orders_page.open_order(order_number)
+
+        detail_page = AdminOrderDetailPage(self.__page, self.__admin_env.base_url)
+        detail_page.wait_loaded()
+        return detail_page.get_order_products_raw_text()
+
     def configure_enforced_shopping_path_postcodes(
         self,
         *,
@@ -418,6 +428,22 @@ class AdminWrappers:
         emp_page.navigate_to_edit(group_id)
         emp_page.generate_new_qr_code()
         logger.debug("Admin: QR code regenerated for employee group id={}", group_id)
+
+    def get_employee_group_qr_value(self, group_id: str) -> str:
+        """Navigate to the employee group edit page and read QR value.
+
+        Args:
+            group_id: The group ID string.
+
+        Returns:
+            QR registration value (URL or encoded payload source).
+        """
+        self.open_admin()
+        emp_page = AdminEmployeeProgramPage(self.__page, self.__admin_env.base_url)
+        emp_page.navigate_to_edit(group_id)
+        value = emp_page.get_qr_code_value()
+        logger.debug("Admin: QR value read for employee group id={} (len={})", group_id, len(value))
+        return value
 
     def reset_ozo_for_product(self, product_id: int, *, per_customer: int = 5) -> None:
         """Reset OZO (limited-sale) counters for a product to a clean test state.
