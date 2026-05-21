@@ -139,3 +139,30 @@ Agents changing `qa/e2e/**` must follow these rules:
 - when touching legacy code, migrate the touched area toward this contract
 - update `docs/PAGE_OBJECTS_PL.md` and `docs/PAGE_OBJECTS_EN.md` when the teaching examples drift from the real contract
 - prefer small, local refactors that tighten scope and remove ambiguity
+
+## Polling And Backend Waits
+
+Backend polling (waiting for a mail to arrive, a counter to update, an admin state to change) has a dedicated contract separate from Playwright UI waits.
+
+### Primitives
+
+- `framework.polling.poll_until(fn, *, condition, timeout_s, poll_s, default)` — generic backend poller. Calls `fn()` repeatedly until `condition(result)` is truthy or `timeout_s` elapses. Returns the last value; the caller owns the assertion.
+- `framework.polling.HttpPoller` — thin wrapper around `poll_until` for HTTP JSON endpoints. Uses `urllib.request` with unverified SSL (standard for internal test environments). Use `HttpPoller.poll(url, condition=...)` for endpoint polling.
+
+### Decision Table
+
+| Situation | Correct tool |
+|---|---|
+| Waiting for a DOM element to appear or become visible | `expect(locator).to_be_visible(...)` |
+| Waiting for a page to finish loading | `wait_loaded()` / `wait_for_load_state(...)` |
+| Waiting for a Mailhog mail to arrive (count check) | `MailhogApiClient.wait_for_mails_containing_text(...)` via `HttpPoller` |
+| Waiting for an OZO counter or admin state to change | `poll_until(fn, condition=..., ...)` |
+| Waiting for a mail link to be readable (content) | `MailInboxService.get_*_link(...)` — polling is inside the flow via `__open_message` |
+
+### Rules
+
+- Do **not** write `while + time.sleep` or `for _ in range(n): ... sleep(...)` loops in tests or flows. Use `poll_until` instead.
+- Do **not** call `urllib.request.urlopen` directly in test or flow code. Use `HttpPoller`.
+- `poll_until` / `HttpPoller` are for **backend resources only**. For Playwright UI readiness always use `expect(...)`, `wait_loaded()`, or `wait_visible()`.
+- Keep `timeout_s` and `poll_s` explicit at the call site or named constants — never hardcode magic numbers inline.
+

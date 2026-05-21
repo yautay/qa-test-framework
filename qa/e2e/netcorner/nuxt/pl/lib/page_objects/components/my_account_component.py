@@ -7,6 +7,7 @@ from playwright.sync_api import Locator, Page, expect
 
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import UI_ACTION_MS
 
 
 class MyAccountComponent(BaseComponent):
@@ -121,7 +122,7 @@ class MyAccountPasswordChangeComponent(BaseComponent):
         session_expired_message = self.root.page.get_by_text(
             re.compile(r"sesja\s+wygas.*ponowne\s+zalogowanie", re.IGNORECASE)
         )
-        expect(session_expired_message).to_be_visible(timeout=10_000)
+        expect(session_expired_message).to_be_visible(timeout=UI_ACTION_MS)
 
     @step("Zmiana hasła z {old_pwd} na {new_pwd}")
     def change_password(self, old_pwd: str, new_pwd: str) -> None:

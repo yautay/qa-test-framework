@@ -8,6 +8,7 @@ from framework.base.page_objects import BasePage
 from qa.e2e.netcorner.mailhog.lib.allure_decorators import step
 from qa.e2e.netcorner.mailhog.lib.config import MailInboxProvider
 from qa.e2e.netcorner.mailhog.lib.mail_subjects import MailSubjectPattern
+from qa.e2e.netcorner.mailhog.lib.timeouts import QUICK_PROBE_MS
 
 
 class InboxPage(BasePage):
@@ -24,7 +25,7 @@ class InboxPage(BasePage):
     def is_login_form_visible(self) -> bool:
         if self.__provider != MailInboxProvider.ROUNDCUBE:
             return False
-        return self.page.locator("#rcmloginuser").is_visible(timeout=3_000)
+        return self.page.locator("#rcmloginuser").is_visible(timeout=QUICK_PROBE_MS)
 
     @step("Wykonuję logowanie do skrzynki")
     def login(self, username: str, password: str) -> InboxPage:
@@ -71,7 +72,7 @@ class InboxPage(BasePage):
     @step("Otwieram wiadomość: {subject}")
     def open_message(self, *, recipient: str, subject: MailSubjectPattern) -> bool:
         if self.__open_message_from_rows(recipient=recipient, subject=subject):
-            self.page.wait_for_timeout(400)
+            self.page.wait_for_timeout(QUICK_PROBE_MS)
             return True
         return False
 
@@ -126,7 +127,7 @@ class InboxPage(BasePage):
         row_count = rows.count()
         for index in range(row_count):
             row = rows.nth(index)
-            row_text = row.inner_text(timeout=500).strip()
+            row_text = row.inner_text(timeout=QUICK_PROBE_MS).strip()
             if not row_text:
                 continue
 
@@ -168,13 +169,13 @@ class InboxPage(BasePage):
         if not recipient_normalized:
             return False
 
-        row_text = row.inner_text(timeout=500).strip()
+        row_text = row.inner_text(timeout=QUICK_PROBE_MS).strip()
         row_text_normalized = row_text.lower()
 
         to_recipients = row.locator("div[ng-if=\"message.Content.Headers['To']\"] div.ng-binding")
         to_count = to_recipients.count()
         for index in range(to_count):
-            recipient_text = to_recipients.nth(index).inner_text(timeout=300).strip().lower()
+            recipient_text = to_recipients.nth(index).inner_text(timeout=QUICK_PROBE_MS).strip().lower()
             if recipient_text == recipient_normalized:
                 return True
 
@@ -206,11 +207,11 @@ class InboxPage(BasePage):
             subjects = row.locator(selector)
             subject_count = subjects.count()
             for index in range(subject_count):
-                subject_text = subjects.nth(index).inner_text(timeout=300).strip()
+                subject_text = subjects.nth(index).inner_text(timeout=QUICK_PROBE_MS).strip()
                 if subject_text and compiled_subject.search(subject_text):
                     return True
 
-        row_text = row.inner_text(timeout=500).strip()
+        row_text = row.inner_text(timeout=QUICK_PROBE_MS).strip()
         for line in row_text.splitlines():
             if compiled_subject.search(line.strip()):
                 return True
@@ -228,11 +229,11 @@ class InboxPage(BasePage):
             subjects = row.locator(selector)
             subject_count = subjects.count()
             for index in range(subject_count):
-                subject_text = subjects.nth(index).inner_text(timeout=300).strip().casefold()
+                subject_text = subjects.nth(index).inner_text(timeout=QUICK_PROBE_MS).strip().casefold()
                 if needle in subject_text:
                     return True
 
-        row_text = row.inner_text(timeout=500).strip().casefold()
+        row_text = row.inner_text(timeout=QUICK_PROBE_MS).strip().casefold()
         return needle in row_text
 
     def __collect_links(self) -> list[str]:
@@ -252,7 +253,7 @@ class InboxPage(BasePage):
             body: Locator = container.locator("body")
             if body.count() == 0:
                 continue
-            text = body.inner_text(timeout=1_000).strip()
+            text = body.inner_text(timeout=QUICK_PROBE_MS).strip()
             if text:
                 fragments.append(text)
         return fragments

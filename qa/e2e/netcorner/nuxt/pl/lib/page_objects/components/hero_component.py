@@ -1,12 +1,22 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from typing import Self
 
 from playwright.sync_api import Locator, Page, expect
 
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
+
+
+@dataclass(frozen=True)
+class OzoDetails:
+    """Dane licznika widgetu OZO pobrane ze strony głównej."""
+
+    sold_amount: int
+    remaining_amount: int
+    days_left: int
 
 
 class HeroComponent(BaseComponent):
@@ -115,20 +125,32 @@ class HeroComponent(BaseComponent):
         expect(self.__deal_progress_bar).to_be_visible(timeout=timeout_ms)
         return self
 
-    @step("Pobieram dane widgetu OZO (sprzedano / pozostało)")
-    def get_ozo_details(self, timeout_ms: int = 10_000) -> dict[str, int]:
-        """Return sold_amount and remaining_amount from the OZO progress bar.
+    @step("Sprawdzam widoczność poprzedniej ceny w widgetcie OZO")
+    def expect_ozo_previous_price_visible(self, timeout_ms: int = 30_000) -> Self:
+        """Assert that the 'Cena bez promocji' label is visible in the OZO widget.
 
-        Returns:
-            {"sold_amount": int, "remaining_amount": int}
+        Uses a locator-based expect() with retry so that frontend propagation
+        delay after an admin reset does not cause a spurious failure.
+        The default timeout is 30 s to cover typical cache/SSR propagation lag.
         """
+        prev_price = self.__daily_deal_widget.locator("p:has-text('Cena bez promocji')")
+        expect(prev_price.first).to_be_visible(timeout=timeout_ms)
+        return self
+
+    @step("Pobieram dane widgetu OZO (sprzedano / pozostało)")
+    def get_ozo_details(self, timeout_ms: int = 10_000) -> OzoDetails:
+        """Return sold_amount, remaining_amount and days_left from the OZO widget."""
         expect(self.__deal_progress_bar).to_be_visible(timeout=timeout_ms)
         bar_text = self.__deal_progress_bar.inner_text()
-        sold_match = re.search(r"Sprzedano[:\s]*(\d+)", bar_text)
-        remaining_match = re.search(r"Pozostało[:\s]*(\d+)", bar_text)
-        sold = int(sold_match.group(1)) if sold_match else 0
-        remaining = int(remaining_match.group(1)) if remaining_match else 0
-        return {"sold_amount": sold, "remaining_amount": remaining}
+        widget_text = self.__daily_deal_widget.inner_text() or ""
+        sold_match = re.search(r"Sprzedano[:\s]*(\d+)", bar_text) or re.search(r"Sprzedano[:\s]*(\d+)", widget_text)
+        remaining_match = re.search(r"Pozostało[:\s]*(\d+)", bar_text) or re.search(r"Pozostało[:\s]*(\d+)", widget_text)
+        days_match = re.search(r"(\d+)\s*dni", widget_text, re.IGNORECASE)
+        return OzoDetails(
+            sold_amount=int(sold_match.group(1)) if sold_match else 0,
+            remaining_amount=int(remaining_match.group(1)) if remaining_match else 0,
+            days_left=int(days_match.group(1)) if days_match else -1,
+        )
 
     @step("Klikam w widget OZO (link do produktu)")
     def click_ozo_widget(self) -> None:

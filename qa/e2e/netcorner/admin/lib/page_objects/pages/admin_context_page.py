@@ -3,6 +3,7 @@ from __future__ import annotations
 from playwright.sync_api import Page
 
 from qa.e2e.netcorner.admin.lib.page_objects.base_page import AdminBasePage, LoadState
+from qa.e2e.netcorner.admin.lib.timeouts import UI_ACTION_MS
 
 
 class AdminContextPage(AdminBasePage):
@@ -49,7 +50,7 @@ class AdminContextPage(AdminBasePage):
         immediately after login completes (domcontentloaded fires before the
         server-rendered H1 is stable in some environments).
         """
-        return self.page.locator(self._LOC_SALES_CHANNEL_SELECT).is_visible(timeout=10_000)
+        return self.page.locator(self._LOC_SALES_CHANNEL_SELECT).is_visible(timeout=UI_ACTION_MS)
 
     def select_context(self, sales_channel_id: int) -> None:
         """Choose a sales channel and save. After this the admin main page is loaded."""
@@ -57,7 +58,7 @@ class AdminContextPage(AdminBasePage):
         select.select_option(value=str(sales_channel_id))
         self.page.locator(self._LOC_SAVE_BUTTON).click()
         self.page.wait_for_load_state("domcontentloaded")
-        self.page.locator(self._LOC_ADMIN_CONTAINER).wait_for(state="visible", timeout=10_000)
+        self.page.locator(self._LOC_ADMIN_CONTAINER).wait_for(state="visible", timeout=UI_ACTION_MS)
 
 
 __all__ = ["AdminContextPage"]

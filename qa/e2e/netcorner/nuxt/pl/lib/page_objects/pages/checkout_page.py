@@ -10,6 +10,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import (
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.navigation_section import (
     CheckoutNavigationSection,
 )
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import SLOW_OPERATION_MS
 
 
 class CheckoutPage(BasePage):
@@ -42,5 +43,5 @@ class CheckoutPage(BasePage):
 
     def submit_order(self) -> tuple[CheckoutSummaryData, TypSummaryData]:
         summary_data = self.content.summary.wait_visible().click_place_order()
-        typ_summary_data = self.content.typ_summary.wait_visible(timeout=20_000).get_summary_data()
+        typ_summary_data = self.content.typ_summary.wait_visible(timeout=SLOW_OPERATION_MS).get_summary_data()
         return summary_data, typ_summary_data

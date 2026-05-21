@@ -700,6 +700,38 @@ Najpierw spróbuj:
 - `expect(...)`
 - helperów typu `pointer_click`, `safe_fill`, `safe_type`
 
+Jeśli czekasz na zmianę stanu **backendowego** (mail w skrzynce, licznik OZO, status admina), użyj dedykowanych prymitywów:
+
+```python
+from framework.polling import poll_until, HttpPoller
+
+# Czekanie na pojawienie się elementu backendowego (np. widget OZO po resecie)
+result = poll_until(
+    lambda: HomePage(page, runtime_env.base_url).open(HomePage.PATH).wait_loaded(),
+    condition=lambda home: home.content.hero.is_ozo_widget_present(),
+    timeout_s=30,
+    poll_s=2,
+    default=None,
+)
+
+# Czekanie na mail w Mailhogu przez HTTP API (bez przeglądarki)
+mail_count = mail_inbox.wait_for_mails_containing_text(text=order_number, min_count=1)
+```
+
+Nie pisz ręcznie `while + time.sleep` ani `for _ in range(n): ... wait_for_timeout(...)` — zamiast tego zawsze używaj `poll_until` z `framework.polling`.
+
+## Dwie ścieżki dostępu do skrzynki Mailhog
+
+Mailhog ma dwie różne ścieżki dostępu z osobnymi kontraktami:
+
+| Ścieżka | Klasa | Kiedy używać |
+|---|---|---|
+| **HTTP API** | `MailhogApiClient` (`qa/e2e/netcorner/mailhog/lib/api/`) | Szybkie zliczanie i wyszukiwanie maili po tekście/numerze zamówienia — bez przeglądarki |
+| **Playwright UI** | `MailInboxService` (`qa/e2e/netcorner/mailhog/lib/flows/`) | Otwieranie wiadomości, wyciąganie linków z treści maila |
+
+Nie mieszaj obu ścieżek w jednej metodzie bez udokumentowanego powodu. Jeśli potrzebujesz tylko sprawdzić, czy mail dotarł — użyj `MailhogApiClient`. Jeśli potrzebujesz wyciągnąć link z maila — użyj `MailInboxService`.
+
+
 ## Kiedy dodać asercję do page objectu
 
 To częste pytanie.

@@ -8,6 +8,7 @@ from playwright.sync_api import Locator, Page, expect
 
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import QUICK_PROBE_MS
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.utils import get_visible_text
 
 
@@ -67,7 +68,7 @@ class OrderRowComponent(BaseComponent):
 
     def has_cancel_button(self) -> bool:
         try:
-            return self.__btn_cancel.is_visible(timeout=1_000)
+            return self.__btn_cancel.is_visible(timeout=QUICK_PROBE_MS)
         except Exception:  # noqa: BLE001
             return False
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 from playwright.sync_api import Page
 
 from qa.e2e.netcorner.admin.lib.page_objects.base_page import AdminBasePage, LoadState
+from qa.e2e.netcorner.admin.lib.timeouts import UI_ACTION_MS
 
 
 class AdminOrdersPage(AdminBasePage):
@@ -34,7 +35,7 @@ class AdminOrdersPage(AdminBasePage):
 
     def wait_loaded(self, *, state: LoadState = "domcontentloaded", timeout: int | None = None) -> AdminOrdersPage:
         super().wait_loaded(state=state, timeout=timeout)
-        self.page.locator(self._LOC_PAGE_HEADER).wait_for(state="visible", timeout=10_000)
+        self.page.locator(self._LOC_PAGE_HEADER).wait_for(state="visible", timeout=UI_ACTION_MS)
         return self
 
     def open_order(self, order_number: str) -> None:
@@ -46,14 +47,14 @@ class AdminOrdersPage(AdminBasePage):
         locator = self.page.locator(
             self._LOC_ORDER_LINK_BY_NUMBER.format(order_number=order_number)
         )
-        locator.wait_for(state="visible", timeout=10_000)
+        locator.wait_for(state="visible", timeout=UI_ACTION_MS)
         locator.click()
         self.page.wait_for_load_state("domcontentloaded")
 
     def open_first_order(self) -> None:
         """Click the first order in the list (for smoke checks)."""
         first = self.page.locator(self._LOC_ANY_ORDER_LINK).first
-        first.wait_for(state="visible", timeout=10_000)
+        first.wait_for(state="visible", timeout=UI_ACTION_MS)
         first.click()
         self.page.wait_for_load_state("domcontentloaded")
 

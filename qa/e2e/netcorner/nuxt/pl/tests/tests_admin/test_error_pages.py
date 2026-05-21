@@ -7,6 +7,7 @@ import pytest
 import requests
 
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_delta_pages import AdminMissingLinksPage
+from qa.e2e.netcorner.admin.lib.timeouts import HTTP_REQUEST_TIMEOUT_S
 
 pytestmark = [pytest.mark.e2e]
 
@@ -23,7 +24,7 @@ _ERROR_410_PATHS = [
 
 
 def _request_status(base_url: str, path: str) -> int:
-    response = requests.get(f"{base_url.rstrip('/')}/{path.lstrip('/')}", verify=False, timeout=20)
+    response = requests.get(f"{base_url.rstrip('/')}/{path.lstrip('/')}", verify=False, timeout=HTTP_REQUEST_TIMEOUT_S)
     return response.status_code
 
 

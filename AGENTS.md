@@ -76,6 +76,7 @@
 ## E2E Page Object Contract
 - For `qa/e2e/**`, follow `docs/E2E_PAGE_OBJECT_CONTRACT.md`.
 - Do not introduce new silent fallback chains in page objects or wrappers.
+- Do not implement click/wait retry fallbacks in page objects (e.g. `try open+wait, except: open+wait`). Fix the underlying locator/readiness contract instead.
 - Do not introduce forced fallback/retry ladders in E2E tests ("try a few alternative paths until one passes") unless a documented, deterministic UI contract explicitly requires variants.
 - Prefer root-scoped locators and semantic Playwright locators over global page lookups.
 - When touching legacy E2E page objects, migrate the touched area toward the contract instead of preserving ambiguous fallback behavior.
@@ -87,3 +88,35 @@
 - Use semantic scenario naming and markers (`@pytest.mark.scenario(...)`, `pytestmark`) consistent with neighboring tests.
 - Prefer explicit, typed test data from generators/builders in `lib/test_data/**` over inline ad-hoc dicts.
 - Parameterize behavior variants with `pytest.mark.parametrize(..., ids=lambda case: case.case_id)` and stable case objects (`case_id`, factory/data model) instead of branching logic inside one test.
+- Do not add `sleep(...)` / `wait_for_timeout(...)` as environment-level stabilizers in tests; they mask readiness/contract issues. Temporary sleeps are allowed only for a test currently being debugged and must be removed before finalizing changes.
+
+## Polling And Backend Waits
+- Use `framework.polling.poll_until` for all backend/API polling (Mailhog API, OZO counters, admin state changes). Do **not** write inline `while + time.sleep` loops in tests or flows.
+- Use `framework.polling.HttpPoller` for polling HTTP JSON endpoints (e.g. Mailhog `/api/v2/search`). Do **not** call `urllib.request.urlopen` directly in test or flow code.
+- `poll_until` / `HttpPoller` are for backend resources. For Playwright UI readiness use `expect(...)`, `wait_loaded()`, and `wait_visible()` — not `poll_until`.
+- Mailhog inbox has **two access paths** with different contracts:
+  - **HTTP API** (`MailhogApiClient` in `qa/e2e/netcorner/mailhog/lib/api/mailhog_api_client.py`): fast, no browser required, use for counting/searching mails by order number.
+  - **Playwright UI** (`MailInboxService` in `qa/e2e/netcorner/mailhog/lib/flows/inbox_flow.py`): browser-based, use for reading mail content and extracting links.
+- Do not mix HTTP API and Playwright UI access inside a single method without documenting the reason.
+
+## Timeout Constants
+- All Playwright and HTTP timeout values must use named constants from `framework/timeouts.py` (or per-project re-exports). Do **not** use raw integer literals for timeouts.
+- Per-project re-exports (import from these in project code):
+  - `qa.e2e.netcorner.nuxt.pl.lib.timeouts`
+  - `qa.e2e.netcorner.admin.lib.timeouts`
+  - `qa.e2e.netcorner.mailhog.lib.timeouts`
+  - `qa.e2e.netcorner.setup.timeouts`
+- Tier mapping:
+
+  | Constant                  | Value      | Use for                                               |
+  |---------------------------|------------|-------------------------------------------------------|
+  | `QUICK_PROBE_MS`          | 2 000 ms   | Short probes, animation settle, minor UI transitions  |
+  | `ELEMENT_VISIBLE_MS`      | 5 000 ms   | Element visibility checks, toast waits                |
+  | `UI_ACTION_MS`            | 15 000 ms  | Navigation, overlay open/close, URL waits             |
+  | `SLOW_OPERATION_MS`       | 30 000 ms  | Heavy page loads, AJAX-heavy operations               |
+  | `HTTP_REQUEST_TIMEOUT_S`  | 30 s       | `requests` / HTTP client calls (seconds, not ms)      |
+
+- Exceptions (keep as-is, do **not** replace with tier constants):
+  - `_REINDEX_TIMEOUT_MS = 120_000`
+  - `_PROMOTION_SERVICE_ACTIVATION_WAIT_MS = 120_000`
+  - `_MAILHOG_LOOKUP_TIMEOUT_MS = 45_000`

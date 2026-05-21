@@ -39,8 +39,9 @@ class CartProductComponent(BaseComponent):
         self.__total_price_gross = self.find("[data-name='cartProductTotal'] [data-price-type='gross']")
         self.__remove_product = self.find("[data-name='deleteProduct']")
         self.__unit_price_gross = self.find("[data-name='cartProductPrice'] [data-price-type='gross']")
-        self.__product_name_link = self.find("[data-name='cartProductMain'] a")
+        self.__product_name_link = self.find("[data-name='cartProductMain'] .ml-4 a")
         self.__availability_status_text = self.find("[data-name='statusAvailable'] .font-semibold")
+        self.__limited_sale_banner = self.find("p:has-text('Sprzedaż limitowana')")
         self.__hide_addons_button = self.find("button:has-text('Ukryj dodatki')")
         self.__show_addons_button = self.find("button:has-text('Sprawdź dodatki')")
 
@@ -48,6 +49,10 @@ class CartProductComponent(BaseComponent):
     def click_increase_quantity(self) -> Self:
         self.pointer_click(self.__increase_quantity_button)
         return self
+
+    def can_increase_quantity(self) -> bool:
+        button = self.__increase_quantity_button.first
+        return button.count() > 0 and button.is_visible() and button.is_enabled()
 
     @step("Klikam minus (zmniejszam ilość)")
     def click_decrease_quantity(self) -> Self:
@@ -106,6 +111,13 @@ class CartProductComponent(BaseComponent):
             return int(raw)
         except ValueError:
             return 0
+
+    def is_limited_sale_visible(self, timeout: int = 5_000) -> bool:
+        banner = self.__limited_sale_banner.first
+        return banner.count() > 0 and banner.is_visible(timeout=timeout)
+
+    def get_limited_sale_text(self) -> str:
+        return get_visible_text(self.__limited_sale_banner)
 
     def get_data(self) -> CartProductData:
         return CartProductData(

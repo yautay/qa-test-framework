@@ -8,6 +8,7 @@ from playwright.sync_api import expect
 
 from qa.e2e.netcorner.nuxt.pl.lib.flows.cart_and_checkout_wrappers import CartAndCheckoutWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.product_page import ProductPage
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import UI_ACTION_MS
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import (
     checkout_payment_blik_required_terms,
     private_person_checkout_purchaser,
@@ -36,7 +37,7 @@ def test_aggregator(page, context, runtime_env, admin_panel):
     page.goto(frontend_url, wait_until="domcontentloaded")
     accept_cookie_banner_if_visible(page)
 
-    expect(page.locator("[data-name='aggregatorSlider']")).to_be_visible(timeout=15_000)
+    expect(page.locator("[data-name='aggregatorSlider']")).to_be_visible(timeout=UI_ACTION_MS)
     assert page.locator("[data-name='cardProduct']").count() > 0, (
         "Agregator nie wyświetlił żadnych produktów na froncie."
     )

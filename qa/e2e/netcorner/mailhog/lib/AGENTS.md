@@ -4,12 +4,26 @@
 - Normative contract: `docs/E2E_PAGE_OBJECT_CONTRACT.md`.
 
 ## Layer Responsibilities
-- `page_objects/`: deterministic UI interactions and typed reads.
-- `flows/`: orchestration of inbox scenarios across page objects and runtime context.
+- `page_objects/`: deterministic UI interactions and typed reads (Playwright browser).
+- `flows/`: orchestration of inbox scenarios across page objects and runtime context (Playwright browser).
+- `api/`: HTTP-only access to Mailhog API — no browser, no Playwright. Entry point: `MailhogApiClient`.
 - `config.py` and `mail_subjects.py`: environment and subject contracts; keep them explicit and stable.
 
+## Two Access Paths — Keep Them Separate
+Mailhog inbox has two distinct access paths with different contracts:
+- **HTTP API** (`api/mailhog_api_client.py` → `MailhogApiClient`): fast, browserless, uses `framework.polling.HttpPoller`. Use for counting/searching mails by order number or text fragment.
+- **Playwright UI** (`flows/inbox_flow.py` → `MailInboxService`): browser-based, uses `page_objects/`. Use for reading mail content and extracting links.
+
+Do not mix HTTP API and Playwright UI inside a single public method without an explicit, documented reason.
+
+## Polling Contract
+- Use `framework.polling.poll_until` for all retry loops over backend state.
+- Use `framework.polling.HttpPoller` for HTTP endpoint polling (Mailhog `/api/v2/search`).
+- Do **not** write inline `while + time.sleep` or `for _ in range(n): ... sleep(...)` loops.
+- `poll_until` / `HttpPoller` are for backend resources. For Playwright UI readiness use `expect(...)`, `wait_loaded()`, `wait_visible()`.
+
 ## Non-Negotiable Rules
-- Keep domain split strict: assertions belong to tests, not page objects.
+- Keep domain split strict: assertions belong to tests, not page objects or flows.
 - Keep APIs intent-driven; do not expose raw locators to tests.
 - Prefer explicit waits and deterministic timeout behavior over hidden retries.
 - Do not add silent fallback chains or broad exception swallowing.

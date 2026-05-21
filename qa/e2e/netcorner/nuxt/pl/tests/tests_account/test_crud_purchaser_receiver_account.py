@@ -6,6 +6,7 @@ import pytest
 from qa.e2e.netcorner.nuxt.pl.lib.flows.client_wrappers import ClientWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import UI_ACTION_MS
 
 pytestmark = [pytest.mark.e2e, pytest.mark.e2e_core, pytest.mark.e2e_account]
 
@@ -23,7 +24,7 @@ def test_crud_purchaser_receiver_account(page, context, runtime_env):
 
     # Purchasers — nawigacja + weryfikacja dostępności sekcji
     account.content.menu_root.open_purchasers()
-    page.wait_for_url("**/customer/account/purchasers", timeout=10_000)
+    page.wait_for_url("**/customer/account/purchasers", timeout=UI_ACTION_MS)
     assert "/customer/account/purchasers" in page.url, (
         "Sekcja nabywców nie jest dostępna — strona nie załadowała się po kliknięciu linku menu."
     )
@@ -33,7 +34,7 @@ def test_crud_purchaser_receiver_account(page, context, runtime_env):
 
     # Receivers — wróć do konta i nawiguj do odbiorców
     HomePage(page, runtime_env.base_url).open_account_page().content.menu_root.open_receivers()
-    page.wait_for_url("**/customer/account/receivers", timeout=10_000)
+    page.wait_for_url("**/customer/account/receivers", timeout=UI_ACTION_MS)
     assert "/customer/account/receivers" in page.url, (
         "Sekcja odbiorców nie jest dostępna — strona nie załadowała się po kliknięciu linku menu."
     )

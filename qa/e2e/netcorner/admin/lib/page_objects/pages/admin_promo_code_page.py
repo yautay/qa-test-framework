@@ -5,6 +5,7 @@ from urllib.parse import quote_plus
 from playwright.sync_api import Page, expect
 
 from qa.e2e.netcorner.admin.lib.page_objects.base_page import AdminBasePage, LoadState
+from qa.e2e.netcorner.admin.lib.timeouts import QUICK_PROBE_MS
 
 
 class AdminPromoCodePage(AdminBasePage):
@@ -75,8 +76,8 @@ class AdminPromoCodePage(AdminBasePage):
         self.__save_button.click()
         self.page.wait_for_load_state("domcontentloaded")
 
-        if self.__duplicate_warning.count() > 0 and self.__duplicate_warning.is_visible(timeout=2_000):
-            if self.__list_button.is_visible(timeout=2_000):
+        if self.__duplicate_warning.count() > 0 and self.__duplicate_warning.is_visible(timeout=QUICK_PROBE_MS):
+            if self.__list_button.is_visible(timeout=QUICK_PROBE_MS):
                 self.__list_button.click()
                 self.page.wait_for_load_state("domcontentloaded")
 

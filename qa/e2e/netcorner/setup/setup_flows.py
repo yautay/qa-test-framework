@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from typing import Any, Callable
 
 from playwright.sync_api import Page
 
@@ -13,20 +14,44 @@ class NetcornerSetupService:
     _PROMOTION_SAVE_SELECTOR = (
         "#form-buttons button.btn-success, input[value='Zapisz'], input[type='submit'][name='save']"
     )
+    # Czas oczekiwania na propagację aktywacji promocji w promotion-service po zapisaniu konfiguracji.
+    # Jest to znane ograniczenie architektoniczne: promotion-service przetwarza zmiany asynchronicznie
+    # i nie udostępnia sygnału gotowości backendowej. test_setup_tests_promo_codes jawnie zależy
+    # od tego opóźnienia (czeka min. 120 s od zapisu przed uruchomieniem).
+    # Docelowo zastąpić pollingiem warunku UI-side gdy pojawi się sygnał gotowości.
+    _PROMOTION_SERVICE_ACTIVATION_WAIT_MS = 120_000
+
     _B2B_REQUIRED_ERROR = (
         "Występowanie promocji musi być zdefiniowane. Jeżeli wybrano kanał komputronik.pl, "
         "należy również wybrać b2b.komputronik.pl"
     )
     _DATES_LOCKED_ERROR = "Nie możesz zmienić daty rozpoczęcia i zakończenia istniejącej promocji"
 
-    def __init__(self, admin_panel: AdminWrappers | None, page: Page | None = None) -> None:
+    def __init__(
+        self,
+        admin_panel: AdminWrappers | None,
+        page: Page | None = None,
+        setup_logger: Callable[[str, dict[str, Any]], None] | None = None,
+    ) -> None:
         self._admin = admin_panel
         self._page = page
+        self._setup_logger = setup_logger
+
+    def _log_action(self, action: str, **params: Any) -> None:
+        if self._setup_logger is None:
+            return
+        self._setup_logger(action, params)
 
     def ensure_promo_codes(self, promo_codes: Iterable[PromoCodeSeed] = DEFAULT_PROMO_CODES) -> None:
         if self._admin is None:
             raise ValueError("AdminWrappers jest wymagany dla setupu kodów promocyjnych.")
         for promo in promo_codes:
+            self._log_action(
+                "ensure_promo_code",
+                code=promo.code,
+                promotion_name=promo.promotion_name,
+                type_label=promo.type_label,
+            )
             self._admin.ensure_promo_code(
                 code=promo.code,
                 promotion_name=promo.promotion_name,
@@ -37,12 +62,14 @@ class NetcornerSetupService:
         if self._admin is None:
             raise ValueError("AdminWrappers jest wymagany dla setupu produktów.")
         for product_id in sorted(product_ids):
+            self._log_action("recompute_product_purchase_eligibility", product_id=product_id)
             self._admin.save_product(product_id)
 
     def save_existing_sezam_promotions(self, product_ids: Iterable[int]) -> None:
         if self._admin is None:
             raise ValueError("AdminWrappers jest wymagany dla setupu promocji Sezam.")
         for product_id in sorted(product_ids):
+            self._log_action("save_existing_sezam_promotion", product_id=product_id)
             self._admin.save_existing_product_promotion(product_id)
 
     def reindex_products(self, product_ids: Iterable[int]) -> list[str]:
@@ -53,7 +80,11 @@ class NetcornerSetupService:
             codes = self._admin.get_product_codes(product_id)
             erp_code = codes.get("erp_code")
             if erp_code:
+                self._log_action("collect_erp_code", product_id=product_id, erp_code=erp_code)
                 erp_codes.append(erp_code)
+            else:
+                self._log_action("skip_missing_erp_code", product_id=product_id)
+        self._log_action("reindex_products", erp_codes=erp_codes)
         self._admin.reindex_products_by_erp_codes(erp_codes)
         return erp_codes
 
@@ -74,39 +105,50 @@ class NetcornerSetupService:
         submit = self._page.locator("button[type='submit'], input[type='submit']").first
 
         if login.count() > 0 and password.count() > 0:
+            self._log_action("promotion_service_login", base_url=normalized_base_url, login=credentials.login)
             login.fill(credentials.login)
             password.fill(credentials.password)
             submit.click()
             self._page.wait_for_load_state("domcontentloaded")
 
         for promotion_id in promotion_ids:
+            self._log_action("promotion_edit_start", promotion_id=promotion_id)
             self._page.goto(f"{normalized_base_url}/promotion/edit/{promotion_id}", wait_until="domcontentloaded")
             self._set_promotion_service_occurrence_window()
-            self._scroll_to_promotion_occurrence_section()
-            self._page.wait_for_timeout(2_000)
-            self._page.locator(self._PROMOTION_SAVE_SELECTOR).first.click()
-            self._page.wait_for_timeout(2_000)
-            self._page.wait_for_load_state("domcontentloaded")
-            error_text = self._get_danger_alert_text()
+            error_text = self._save_promotion_service_form()
+
             if error_text and self._B2B_REQUIRED_ERROR in error_text:
+                self._log_action("promotion_retry_with_b2b", promotion_id=promotion_id, error=error_text)
                 self._ensure_b2b_sales_channel_in_purpose()
-                self._scroll_to_promotion_occurrence_section()
-                self._page.locator(self._PROMOTION_SAVE_SELECTOR).first.click()
-                self._page.wait_for_timeout(2_000)
-                self._page.wait_for_load_state("domcontentloaded")
-                error_text = self._get_danger_alert_text()
+                self._set_promotion_service_occurrence_window()
+                error_text = self._save_promotion_service_form()
 
             if error_text and self._DATES_LOCKED_ERROR in error_text:
+                self._log_action("promotion_skip_dates_locked", promotion_id=promotion_id, error=error_text)
                 continue
 
             if error_text:
+                self._log_action("promotion_save_failed", promotion_id=promotion_id, error=error_text)
                 raise AssertionError(
                     "Promotion service save failed for promotion_id="
                     f"{promotion_id}: {error_text}"
                 )
 
+            self._log_action("promotion_saved", promotion_id=promotion_id)
+
         # Czekamy na aktywacje promocji w promotion-service po zapisaniu calej paczki setupowej.
-        self._page.wait_for_timeout(120_000)
+        self._page.wait_for_timeout(self._PROMOTION_SERVICE_ACTIVATION_WAIT_MS)
+
+    def _save_promotion_service_form(self) -> str | None:
+        if self._page is None:
+            raise ValueError("Page jest wymagana dla setupu promotion-service.")
+
+        self._scroll_to_promotion_occurrence_section()
+        save_button = self._page.locator(self._PROMOTION_SAVE_SELECTOR).first
+        save_button.wait_for(state="visible")
+        save_button.click()
+        self._page.wait_for_load_state("domcontentloaded")
+        return self._get_danger_alert_text()
 
     def _set_promotion_service_occurrence_window(self) -> None:
         if self._page is None:
@@ -218,13 +260,29 @@ class NetcornerSetupService:
         if selected_b2b.count() > 0:
             return
 
-        result = purpose_group.locator(".vue-treeselect").first.evaluate(
+        treeselect = purpose_group.locator(".vue-treeselect").first
+        treeselect.wait_for(state="visible")
+
+        search_input = treeselect.locator("input.vue-treeselect__input").first
+        if search_input.count() > 0:
+            search_input.click()
+            search_input.fill("b2b.komputronik.pl")
+            option = self._page.locator(".vue-treeselect__option-label", has_text="b2b.komputronik.pl").first
+            if option.count() > 0 and option.is_visible():
+                option.click()
+                if selected_b2b.count() > 0:
+                    return
+
+        result = treeselect.evaluate(
             """
             (el) => {
               const vm = el.__vue__;
               if (!vm) {
                 return { ok: false, reason: "vue_instance_missing" };
               }
+
+              const getId = (item) => item?.id ?? item?.raw?.id ?? item?.node?.id ?? null;
+              const selectedIdsFromVm = () => (vm.internalValue || []).map(getId).filter(Boolean);
 
               const walk = (nodes, out = []) => {
                 for (const node of nodes || []) {
@@ -235,8 +293,32 @@ class NetcornerSetupService:
               };
 
               const allNodes = walk(vm.forest?.normalizedOptions || []);
+              const labelsById = new Map(allNodes.map((n) => [n.id, (n.label || "").trim()]));
               const b2bNode = allNodes.find((n) => (n.label || "").trim() === "b2b.komputronik.pl");
               if (!b2bNode) {
+                const komputronikNode = allNodes.find((n) => (n.label || "").trim() === "komputronik.pl");
+                if (komputronikNode) {
+                  vm.internalValue = (vm.internalValue || []).filter((n) => getId(n) !== komputronikNode.id);
+                  const selectedWithoutKomputronik = selectedIdsFromVm();
+                  const hiddenInputs = Array.from(el.querySelectorAll("input[type='hidden'][name='purpose_purpose']"));
+                  for (const input of hiddenInputs) {
+                    input.remove();
+                  }
+                  for (const selectedId of selectedWithoutKomputronik) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'purpose_purpose';
+                    input.value = selectedId;
+                    el.prepend(input);
+                  }
+
+                  return {
+                    ok: true,
+                    fallback: "removed_komputronik_without_b2b",
+                    selectedIds: selectedWithoutKomputronik,
+                  };
+                }
+
                 return {
                   ok: false,
                   reason: "b2b_option_missing",
@@ -244,14 +326,34 @@ class NetcornerSetupService:
                 };
               }
 
-              const selectedIds = new Set((vm.internalValue || []).map((n) => n.id));
+              const selectedIds = new Set(selectedIdsFromVm());
               if (!selectedIds.has(b2bNode.id)) {
                 vm.select(b2bNode);
               }
 
+              let finalSelected = selectedIdsFromVm();
+              const hasKomputronik = finalSelected.some((id) => labelsById.get(id) === "komputronik.pl");
+              const hasB2B = finalSelected.some((id) => labelsById.get(id) === "b2b.komputronik.pl");
+              if (hasKomputronik && !hasB2B) {
+                finalSelected = finalSelected.filter((id) => labelsById.get(id) !== "komputronik.pl");
+                vm.internalValue = (vm.internalValue || []).filter((n) => labelsById.get(getId(n)) !== "komputronik.pl");
+              }
+
+              const hiddenInputs = Array.from(el.querySelectorAll("input[type='hidden'][name='purpose_purpose']"));
+              for (const input of hiddenInputs) {
+                input.remove();
+              }
+              for (const selectedId of finalSelected) {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'purpose_purpose';
+                input.value = selectedId;
+                el.prepend(input);
+              }
+
               return {
                 ok: true,
-                selectedIds: (vm.internalValue || []).map((n) => n.id),
+                selectedIds: finalSelected,
               };
             }
             """

@@ -8,6 +8,7 @@ from playwright.sync_api import Locator, Page
 
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import QUICK_PROBE_MS
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.utils import get_visible_text
 
 
@@ -37,7 +38,7 @@ class CheckoutDeliveryMethodsComponent(BaseComponent):
                 return self
             if self.__matrix_container.first.is_visible() and self.__visible_tiles(self.__matrix_tiles):
                 return self
-            self.root.page.wait_for_timeout(250)
+            self.root.page.wait_for_timeout(QUICK_PROBE_MS)
 
         raise RuntimeError("Brak dostępnych metod transportu po uzupełnieniu danych odbiorcy.")
 
@@ -112,13 +113,16 @@ class CheckoutDeliveryMethodsComponent(BaseComponent):
 
         return matrix
 
-    def get_methods_layout(self) -> tuple[DeliveryMethodsLayout, list[str] | list[list[str]]]:
-        self.wait_for_available_methods()
+    def _get_methods_layout_ready(self) -> tuple[DeliveryMethodsLayout, list[str] | list[list[str]]]:
         if self.__list_container.first.is_visible():
             return DeliveryMethodsLayout.LIST, self.__get_available_methods_list()
         if self.__matrix_container.first.is_visible():
             return DeliveryMethodsLayout.MATRIX, self.__get_available_methods_matrix()
         raise RuntimeError("Nie udało się rozpoznać układu metod transportu.")
+
+    def get_methods_layout(self) -> tuple[DeliveryMethodsLayout, list[str] | list[list[str]]]:
+        self.wait_for_available_methods()
+        return self._get_methods_layout_ready()
 
     def __available_tiles_for_layout(self, layout: DeliveryMethodsLayout) -> list[Locator]:
         if layout == DeliveryMethodsLayout.LIST:
@@ -126,8 +130,10 @@ class CheckoutDeliveryMethodsComponent(BaseComponent):
         return self.__visible_tiles(self.__matrix_tiles)
 
     @step("Wybieram losową dostępną metodę transportu i przechodzę dalej")
-    def choose_random_available_method(self) -> DeliveryMethodsLayout:
-        layout, _ = self.get_methods_layout()
+    def choose_random_available_method(self, *, ensure_available: bool = True) -> DeliveryMethodsLayout:
+        if ensure_available:
+            self.wait_for_available_methods()
+        layout, _ = self._get_methods_layout_ready()
         available_tiles = self.__available_tiles_for_layout(layout)
 
         if not available_tiles:
@@ -137,9 +143,11 @@ class CheckoutDeliveryMethodsComponent(BaseComponent):
         return layout
 
     @step("Wybieram metodę transportu zawierającą tekst: {text}")
-    def choose_method_containing(self, text: str) -> DeliveryMethodsLayout:
+    def choose_method_containing(self, text: str, *, ensure_available: bool = True) -> DeliveryMethodsLayout:
         normalized_expected = " ".join(text.split()).casefold()
-        layout, _ = self.get_methods_layout()
+        if ensure_available:
+            self.wait_for_available_methods()
+        layout, _ = self._get_methods_layout_ready()
         for tile in self.__available_tiles_for_layout(layout):
             normalized_actual = self.__normalize_tile_text(tile).casefold()
             if normalized_expected in normalized_actual:

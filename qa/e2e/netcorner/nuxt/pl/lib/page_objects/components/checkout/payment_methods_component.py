@@ -8,6 +8,7 @@ from typing import Self
 
 from playwright.sync_api import Locator, Page, expect
 
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import QUICK_PROBE_MS
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.utils import get_visible_text
@@ -91,7 +92,7 @@ class CheckoutPaymentMethodsComponent(BaseComponent):
 
     def __resolve_comment_field(self) -> Locator:
         field = self.find("textarea").first
-        expect(field).to_be_visible(timeout=2_000)
+        expect(field).to_be_visible(timeout=QUICK_PROBE_MS)
         return field
 
     def __set_checkbox(self, checkbox: Locator, enabled: bool) -> None:

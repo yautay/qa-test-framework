@@ -13,6 +13,7 @@ from qa.e2e.netcorner.mailhog.lib.allure_decorators import step
 from qa.e2e.netcorner.mailhog.lib.config import MailInboxEnv, MailInboxProvider, resolve_mail_inbox_env
 from qa.e2e.netcorner.mailhog.lib.mail_subjects import MailSubjectPattern, MailSubjects
 from qa.e2e.netcorner.mailhog.lib.page_objects.pages.inbox_page import InboxPage
+from qa.e2e.netcorner.mailhog.lib.timeouts import HTTP_REQUEST_TIMEOUT_S
 
 _PASSWORD_RESET_LINK_REGEX = r"(?i)https?://[^\s\"'<>]*(reset|odzysk|hasl|password)[^\s\"'<>]*"
 _ORDER_LINK_REGEX = r"(?i)https?://[^\s\"'<>]*(zamow|order|checkout|status|details)[^\s\"'<>]*"
@@ -220,6 +221,30 @@ class MailInboxService:
             )
         )
 
+    @step("Czekam na wiadomości zawierające wskazany tekst")
+    def wait_for_mails_containing_text(
+        self,
+        *,
+        text: str,
+        recipient: str | None = None,
+        min_count: int = 1,
+        timeout_ms: int = _MAILHOG_LOOKUP_TIMEOUT_MS,
+    ) -> int:
+        started_at = time.monotonic()
+        deadline = started_at + (timeout_ms / 1000)
+        last_count = 0
+        while time.monotonic() < deadline:
+            last_count = self.count_mails_containing_text(text=text, recipient=recipient)
+            if last_count >= min_count:
+                return last_count
+            elapsed_ms = max(0, int((time.monotonic() - started_at) * 1000))
+            remaining_ms = max(0, int((deadline - time.monotonic()) * 1000))
+            wait_ms = self.__refresh_wait_ms(timeout_ms=timeout_ms, elapsed_ms=elapsed_ms, remaining_ms=remaining_ms)
+            if wait_ms == 0:
+                break
+            time.sleep(wait_ms / 1000)
+        return last_count
+
     @step("Loguję się do skrzynki mailowej")
     def __authenticate_if_required(self, inbox_page: InboxPage) -> None:
         if not self.__mail_env.requires_auth:
@@ -301,7 +326,7 @@ class MailInboxService:
         query = urllib.parse.quote(text, safe="")
         url = f"{self.__mail_env.base_url}/api/v2/search?kind=containing&query={query}"
         ssl_context = ssl._create_unverified_context()
-        with urllib.request.urlopen(url, context=ssl_context, timeout=30) as response:
+        with urllib.request.urlopen(url, context=ssl_context, timeout=HTTP_REQUEST_TIMEOUT_S) as response:
             payload = json.loads(response.read().decode())
         return payload.get("items", [])
 

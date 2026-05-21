@@ -6,6 +6,7 @@ from framework.env import RuntimeEnv
 from qa.e2e.netcorner.lib.step_api import step_context
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client import ClientData
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import ELEMENT_VISIBLE_MS
 
 
 class ClientWrappers:
@@ -44,7 +45,7 @@ class ClientWrappers:
 
         with step_context("Weryfikuję poprawną rejestrację"):
             home_after_submit = HomePage(self.__page, self.__runtime_env.base_url)
-            home_after_submit.overlays.toast.get_toast(timeout=5_000)
+            home_after_submit.overlays.toast.get_toast(timeout=ELEMENT_VISIBLE_MS)
             my_account_visible = home_after_submit.header.actions.is_my_account_available()
             if my_account_visible:
                 logged_as = home_after_submit.open_account_page().content.menu_root.get_logged_as()

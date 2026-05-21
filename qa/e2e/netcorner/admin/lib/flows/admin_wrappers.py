@@ -8,6 +8,7 @@ from playwright.sync_api import Page
 
 from framework.env import RuntimeEnv
 from qa.e2e.netcorner.admin.lib.config import AdminEnv, resolve_admin_env
+from qa.e2e.netcorner.admin.lib.timeouts import SLOW_OPERATION_MS
 from qa.e2e.netcorner.admin.lib.page_objects.pages.admin_aggregator_pages import (
     AdminAggregatorCreatePage,
     AdminAggregatorEditPage,
@@ -261,7 +262,7 @@ class AdminWrappers:
         self.navigate_to(f"product/edit/pl/product_id/{product_id}")
         promotions_tab = self.__page.locator("a[href='#ui-tabs-1']").first
         promotions_tab.click()
-        self.__page.locator("#ui-tabs-1 table").first.wait_for(state="visible", timeout=30_000)
+        self.__page.locator("#ui-tabs-1 table").first.wait_for(state="visible", timeout=SLOW_OPERATION_MS)
         edit_button = self.__page.locator("#ui-tabs-1 a:has(img[alt='Edit_icon'])").first
         if edit_button.count() == 0:
             return
@@ -319,7 +320,8 @@ class AdminWrappers:
     def create_cart_offer_and_send_email(
         self,
         *,
-        product_id: int,
+        product_id: int | str,
+        qty: int = 1,
         recipient_email: str,
         channel_id: str = "1",
         price_type_id: str = "1",
@@ -330,7 +332,8 @@ class AdminWrappers:
         """Create a cart offer in admin and send it via email.
 
         Args:
-            product_id: Admin product ID.
+            product_id: Admin product identifier (ID/ERP depending on page search mode).
+            qty: Product quantity in offer.
             recipient_email: Email to send the offer to.
             channel_id: Sales channel value (default '1').
             price_type_id: '1' = fixed price, other = dynamic.
@@ -346,6 +349,7 @@ class AdminWrappers:
         cart_offer_page.navigate_to_create()
         offer_url = cart_offer_page.create_cart_offer(
             product_id=product_id,
+            qty=qty,
             recipient_email=recipient_email,
             channel_id=channel_id,
             price_type_id=price_type_id,
@@ -415,7 +419,7 @@ class AdminWrappers:
         emp_page.generate_new_qr_code()
         logger.debug("Admin: QR code regenerated for employee group id={}", group_id)
 
-    def reset_ozo_for_product(self, product_id: int) -> None:
+    def reset_ozo_for_product(self, product_id: int, *, per_customer: int = 5) -> None:
         """Reset OZO (limited-sale) counters for a product to a clean test state.
 
         Deactivates all currently active promotions on the product and creates
@@ -427,8 +431,15 @@ class AdminWrappers:
         self.open_admin()
         ozo_page = AdminProductOzoPage(self.__page, self.__admin_env.base_url, product_id)
         ozo_page.navigate_to()
-        ozo_page.reset_ozo_promotion()
-        logger.debug("Admin: OZO promotion reset for product_id={}", product_id)
+        ozo_page.reset_ozo_promotion(per_customer=per_customer)
+        logger.debug("Admin: OZO promotion reset for product_id={} per_customer={}", product_id, per_customer)
+
+    def get_ozo_limited_sale_settings(self, product_id: int) -> dict[str, int | str]:
+        """Read active OZO limited-sale settings for product from admin promotions tab."""
+        self.open_admin()
+        ozo_page = AdminProductOzoPage(self.__page, self.__admin_env.base_url, product_id)
+        ozo_page.navigate_to()
+        return ozo_page.get_limited_sale_settings()
 
 
 __all__ = ["AdminWrappers"]

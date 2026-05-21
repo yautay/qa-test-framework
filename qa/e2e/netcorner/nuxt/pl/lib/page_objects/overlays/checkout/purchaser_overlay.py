@@ -8,6 +8,7 @@ from playwright.sync_api import Locator, Page, expect
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkout_data_models import CheckoutPurchaserData
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import ELEMENT_VISIBLE_MS, QUICK_PROBE_MS
 
 from .common import _is_visible, _order_address_dialog_root
 
@@ -82,10 +83,10 @@ class CheckoutPurchaserOverlay(BaseComponent):
     def _enter_city_via_select(self, value: str) -> Self:
         self.sleep(1_500)
         self.pointer_click(self._city_select_input_area)
-        expect(self._city_select_options_container).to_be_visible(timeout=5_000)
+        expect(self._city_select_options_container).to_be_visible(timeout=ELEMENT_VISIBLE_MS)
         option = self._city_select_options_container.get_by_text(value, exact=True).first
         expect(option).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
-        self.pointer_click(option, timeout=1_500)
+        self.pointer_click(option, timeout=QUICK_PROBE_MS)
         return self
 
     def _enter_city(self, value: str) -> Self:

@@ -11,12 +11,14 @@ pytestmark = [pytest.mark.e2e_setup, pytest.mark.target("netcorner-nuxt-pl")]
 
 
 @pytest.mark.scenario("SetUpNUXT: TestSetUpTestsPromotionsService")
-@pytest.mark.order(2)
-def test_setup_tests_promotions_service(page, runtime_env):
+def test_setup_tests_promotions_service(page, runtime_env, setup_action_logger):
     promotion_ids = list(PROMOTION_SERVICE_PROMOTION_IDS.values())
     promotions_base_url = os.getenv("PROMOTIONS_BASE_URL") or f"https://promotion-{runtime_env.server_name}.netcorner.pl/"
     assert promotions_base_url, (
         "Brak URL promotion-service. Ustaw PROMOTIONS_BASE_URL, "
         "np. PROMOTIONS_BASE_URL='https://<host-promotions>' przed uruchomieniem setupu."
     )
-    NetcornerSetupService(admin_panel=None, page=page).save_promotions_service(promotions_base_url, promotion_ids)
+    NetcornerSetupService(admin_panel=None, page=page, setup_logger=setup_action_logger).save_promotions_service(
+        promotions_base_url,
+        promotion_ids,
+    )

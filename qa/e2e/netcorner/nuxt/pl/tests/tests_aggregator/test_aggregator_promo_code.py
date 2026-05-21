@@ -9,6 +9,7 @@ from playwright.sync_api import expect
 from qa.e2e.netcorner.nuxt.pl.lib.flows.cart_and_checkout_wrappers import CartAndCheckoutWrappers
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.cart_page import CartPage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.product_page import ProductPage
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import UI_ACTION_MS
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import (
     checkout_payment_blik_required_terms,
     private_person_checkout_purchaser,
@@ -42,7 +43,7 @@ def test_aggregator_promo_code(page, context, runtime_env, admin_panel):
     page.goto(frontend_url, wait_until="domcontentloaded")
     accept_cookie_banner_if_visible(page)
 
-    expect(page.locator("[data-name='aggregatorSlider']")).to_be_visible(timeout=15_000)
+    expect(page.locator("[data-name='aggregatorSlider']")).to_be_visible(timeout=UI_ACTION_MS)
     assert page.locator("[data-name='cardProduct']").count() > 0, "Agregator promo nie wyświetlił żadnych produktów."
 
     page.get_by_role("button", name="Sprawdź").first.click()
@@ -58,7 +59,7 @@ def test_aggregator_promo_code(page, context, runtime_env, admin_panel):
 
     cart_page.content.summary.enter_coupon_code(_PROMO_CODE)
     cart_page.content.summary.click_add_coupon_code()
-    expect(page.locator("#couponCode")).to_have_value(_PROMO_CODE, timeout=10_000)
+    expect(page.locator("#couponCode")).to_have_value(_PROMO_CODE, timeout=UI_ACTION_MS)
 
     receiver = private_person_delivery_courier_receiver()
     purchaser = private_person_checkout_purchaser()

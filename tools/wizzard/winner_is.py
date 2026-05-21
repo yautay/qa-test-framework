@@ -4,7 +4,10 @@ from collections import Counter, defaultdict
 
 from playwright.sync_api import Browser, Page, Playwright, sync_playwright
 
-from tools.wizzard.locators import CONTAINERS_all, ELEMENTS_test_owners, ELEMENTS_test_vms
+try:
+    from tools.wizzard.locators import CONTAINERS_all, ELEMENTS_test_owners, ELEMENTS_test_vms
+except ModuleNotFoundError:
+    from locators import CONTAINERS_all, ELEMENTS_test_owners, ELEMENTS_test_vms
 
 WIZARD_AUTH = "Basic bmMtdGVjaC11c2VyOnlnQldYYzBObVNqS3ZnQlZlbkl4SHRoVg=="
 

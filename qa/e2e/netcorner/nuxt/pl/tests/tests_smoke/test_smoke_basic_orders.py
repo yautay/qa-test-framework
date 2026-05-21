@@ -33,6 +33,11 @@ _KNOWN_MIN_QTY_SYSTEM_CODES = {"500000510", "500000511"}
 _PRODUCTION_ORDER_COMMENT = "Zamówienie testowe PiRO, proszę o anulowanie i nierealizowanie"
 
 
+@pytest.fixture(scope="session")
+def reusable_smoke_user_cache() -> dict[str, object]:
+    return {}
+
+
 def _smoke_order_cases() -> list[tuple[AuthSessionCase, CheckoutDeliveryCase]]:
     auth_cases = {case.case_id: case for case in auth_session_cases_basic_orders()}
     delivery_cases = {case.case_id: case for case in checkout_delivery_cases()}
@@ -61,10 +66,20 @@ def test_smoke_basic_orders(
     run_artifacts: RunArtifacts,
     auth_case: AuthSessionCase,
     delivery_case: CheckoutDeliveryCase,
+    reusable_smoke_user_cache: dict[str, object],
 ):
+    page.goto(runtime_env.base_url, wait_until="domcontentloaded")
+    if runtime_env.server_name == "prod":
+        context.add_cookies([{"name": "recaptcha_test", "value": "on", "url": runtime_env.base_url}])
+        page.reload(wait_until="domcontentloaded")
     use_production_email = _use_production_email_for_case(auth_case, delivery_case, runtime_env)
     user_data = _prepare_client_session(
-        page, context, runtime_env, auth_case, use_production_email=use_production_email
+        page,
+        context,
+        runtime_env,
+        auth_case,
+        use_production_email=use_production_email,
+        reusable_smoke_user_cache=reusable_smoke_user_cache,
     )
     selected_product_data = _select_search_product_for_smoke(page, runtime_env)
     assert selected_product_data.product_page_data is not None, "Produkt nie został dodany do koszyka."
@@ -159,9 +174,20 @@ def _prepare_client_session(
     auth_case: AuthSessionCase,
     *,
     use_production_email: bool,
+    reusable_smoke_user_cache: dict[str, object],
 ):
     if not auth_case.authenticated and not auth_case.register_before_flow:
         return None
+
+    cache_key = settings_cli.production_test_email if use_production_email else "default"
+    cached_user = reusable_smoke_user_cache.get(cache_key)
+    if cached_user is not None:
+        user_data = cached_user
+        if auth_case.authenticated:
+            _login_with_cached_user(page, runtime_env, user_data)
+        elif auth_case.register_before_flow:
+            _logout_if_logged_in(page, runtime_env)
+        return user_data
 
     user_data = ClientDataBuilder().with_required_terms().build()
     if use_production_email:
@@ -172,7 +198,23 @@ def _prepare_client_session(
     ), "Użytkownik nie został poprawnie zarejestrowany."
     if auth_case.register_before_flow and not auth_case.authenticated:
         client_wrappers.logout_client()
+    reusable_smoke_user_cache[cache_key] = user_data
     return user_data
+
+
+def _logout_if_logged_in(page, runtime_env) -> None:
+    home = HomePage(page, runtime_env.base_url)
+    home.open(HomePage.PATH).wait_loaded()
+    if home.header.actions.is_my_account_available():
+        home.open_account_page().logout_to_home_page()
+
+
+def _login_with_cached_user(page, runtime_env, user_data) -> None:
+    """Loguje użytkownika z cache w aktualnym BrowserContext (scope=function)."""
+    home = HomePage(page, runtime_env.base_url)
+    home.open(HomePage.PATH).wait_loaded()
+    if not home.header.actions.is_my_account_available():
+        home.open_login_overlay().log_client(user_data.email, user_data.password)
 
 
 def _prepare_checkout_case(

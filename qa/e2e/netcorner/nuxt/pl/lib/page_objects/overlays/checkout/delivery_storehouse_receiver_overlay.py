@@ -8,6 +8,7 @@ from typing import Self
 from playwright.sync_api import Locator, Page, expect
 
 from qa.e2e.netcorner.lib.step_api import step
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import UI_ACTION_MS
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
 
 from .common import _order_pickup_dialog_root
@@ -107,7 +108,7 @@ class DeliveryStorehouseReceiverOverlay(BaseComponent):
         if not self.__is_zoom_button_enabled(button):
             return False
         self.pointer_click(button)
-        self.__wait_for_storehouses(timeout=8_000)
+        self.__wait_for_storehouses(timeout=UI_ACTION_MS)
         return True
 
     def __close_picker_modal_after_selection(self) -> None:
@@ -119,7 +120,7 @@ class DeliveryStorehouseReceiverOverlay(BaseComponent):
             raise RuntimeError("Nie znaleziono przycisku zamknięcia okna wyboru punktu odbioru.")
 
         self.pointer_click(self.__close_button)
-        self.wait_hidden(timeout=10_000)
+        self.wait_hidden(timeout=UI_ACTION_MS)
 
     def __select_storehouse_tile(self, tile: Locator) -> None:
         self.pointer_click(tile)

@@ -9,6 +9,7 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseCompone
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkout_data_models import (
     DeliveryCourierReceiverData,
 )
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import ELEMENT_VISIBLE_MS
 
 from .common import _order_address_dialog_root
 
@@ -74,7 +75,7 @@ class DeliveryCourierReceiverOverlay(BaseComponent):
     def _enter_city(self, value: str) -> Self:
         self.sleep(1_500)
         self.pointer_click(self._city_select_input_area)
-        expect(self._city_select_options_container).to_be_visible(timeout=5_000)
+        expect(self._city_select_options_container).to_be_visible(timeout=ELEMENT_VISIBLE_MS)
         option = self._city_select_options_container.get_by_text(value, exact=True).first
         expect(option).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
         self.pointer_click(option)
