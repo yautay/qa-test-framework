@@ -14,8 +14,8 @@ Opcje:
 Przebieg:
   1) Odczytuje host/port SSH frontu i backendu z test-wizard.netcorner.pl.
   2) Weryfikuje polaczenie SSH (echo ok).
-  3) Front: ktr -> git checkout develop -> ./scripts/bin/build.sh
-  4) Backend: ktr -> git checkout develop -> gulp deploy-local
+  3) Front: ktr -> git checkout develop -> git pull -> ./scripts/bin/build.sh
+  4) Backend: ktr -> git checkout develop -> git pull -> gulp deploy-local
      -> ./symfony crontab:cron:solr-product-indexer
 """
 
@@ -196,7 +196,7 @@ def verify_connection(name: str, host: str, port: str) -> None:
 
 
 def run_front_setup(host: str, port: str, branch: str) -> None:
-    front_command = f"bash -ic 'ktr && git checkout {branch} && ./scripts/bin/build.sh'"
+    front_command = f"bash -ic 'ktr && git checkout {branch} && git pull && ./scripts/bin/build.sh'"
     print(f"[front] uruchamiam: {front_command}")
     result = run_ssh(host, port, front_command, timeout_s=3600)
     if result.stdout.strip():
@@ -209,7 +209,7 @@ def run_front_setup(host: str, port: str, branch: str) -> None:
 
 def run_backend_setup(host: str, port: str, branch: str) -> None:
     backend_command = (
-        f"bash -ic 'ktr && git checkout {branch} && gulp deploy-local "
+        f"bash -ic 'ktr && git checkout {branch} && git pull && gulp deploy-local "
         "&& ./symfony crontab:cron:solr-product-indexer'"
     )
     print(f"[backend] uruchamiam: {backend_command}")
