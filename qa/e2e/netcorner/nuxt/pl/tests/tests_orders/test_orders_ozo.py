@@ -180,9 +180,16 @@ def _verify_limited_sale_restriction(
         try:
             cart_product_before_checkout.enter_quantity(per_customer_limit)
         except PlaywrightTimeoutError:
-            pass
+            pytest.fail(
+                f"Timeout podczas ustawiania ilości {per_customer_limit} dla produktu OZO "
+                f"(id={_OZO_PRODUCT_ID}) w koszyku — interakcja UI nie powiodła się. "
+                "Nie można zweryfikować limitu per_customer."
+            )
     initial_order_quantity = cart_product_before_checkout.get_quantity()
-    assert initial_order_quantity >= 1, "Ilość produktu OZO przed checkoutem jest nieprawidłowa."
+    assert initial_order_quantity == per_customer_limit, (
+        f"Ilość produktu OZO w koszyku ({initial_order_quantity}) różni się od oczekiwanego "
+        f"limitu per_customer ({per_customer_limit})."
+    )
 
     checkout = CartAndCheckoutWrappers(page, context, runtime_env)
     checkout.process_cart()

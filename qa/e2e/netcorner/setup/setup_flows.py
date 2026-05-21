@@ -14,6 +14,13 @@ class NetcornerSetupService:
     _PROMOTION_SAVE_SELECTOR = (
         "#form-buttons button.btn-success, input[value='Zapisz'], input[type='submit'][name='save']"
     )
+    # Czas oczekiwania na propagację aktywacji promocji w promotion-service po zapisaniu konfiguracji.
+    # Jest to znane ograniczenie architektoniczne: promotion-service przetwarza zmiany asynchronicznie
+    # i nie udostępnia sygnału gotowości backendowej. test_setup_tests_promo_codes jawnie zależy
+    # od tego opóźnienia (czeka min. 120 s od zapisu przed uruchomieniem).
+    # Docelowo zastąpić pollingiem warunku UI-side gdy pojawi się sygnał gotowości.
+    _PROMOTION_SERVICE_ACTIVATION_WAIT_MS = 120_000
+
     _B2B_REQUIRED_ERROR = (
         "Występowanie promocji musi być zdefiniowane. Jeżeli wybrano kanał komputronik.pl, "
         "należy również wybrać b2b.komputronik.pl"
@@ -130,16 +137,16 @@ class NetcornerSetupService:
             self._log_action("promotion_saved", promotion_id=promotion_id)
 
         # Czekamy na aktywacje promocji w promotion-service po zapisaniu calej paczki setupowej.
-        self._page.wait_for_timeout(120_000)
+        self._page.wait_for_timeout(self._PROMOTION_SERVICE_ACTIVATION_WAIT_MS)
 
     def _save_promotion_service_form(self) -> str | None:
         if self._page is None:
             raise ValueError("Page jest wymagana dla setupu promotion-service.")
 
         self._scroll_to_promotion_occurrence_section()
-        self._page.wait_for_timeout(2_000)
-        self._page.locator(self._PROMOTION_SAVE_SELECTOR).first.click()
-        self._page.wait_for_timeout(2_000)
+        save_button = self._page.locator(self._PROMOTION_SAVE_SELECTOR).first
+        save_button.wait_for(state="visible")
+        save_button.click()
         self._page.wait_for_load_state("domcontentloaded")
         return self._get_danger_alert_text()
 

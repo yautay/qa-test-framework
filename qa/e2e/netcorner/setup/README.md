@@ -42,3 +42,21 @@ Kolejnosc nie jest wymuszana globalnie przez pluginy kolejkowania.
 Wymagana zaleznosc dla setupu jest realizowana technicznie:
 - `test_setup_tests_promotions_service` zapisuje timestamp zakonczenia,
 - `test_setup_tests_promo_codes` czeka minimum 120 sekund od tego momentu.
+
+## Synchronizacja i opóźnienia
+
+### Opóźnienie po zapisie promotion-service (120 s)
+
+Po zapisaniu wszystkich promocji w promotion-service flow wykonuje stałe oczekiwanie
+`_PROMOTION_SERVICE_ACTIVATION_WAIT_MS = 120_000` ms (`setup_flows.py`).
+
+**Jest to celowe ograniczenie architektoniczne**, nie kompensacja flakiness:
+promotion-service propaguje zmiany asynchronicznie i nie udostępnia sygnału gotowości
+backendowej. `test_setup_tests_promo_codes` jawnie zależy od tego okna (czeka min. 120 s
+od zakończenia zapisu promocji przed weryfikacją kodów).
+
+Docelowa ścieżka poprawy: zastąpić stały sleep pollingiem warunku UI-side
+(np. brak `.alert-danger` + widoczność zapisanej promocji na stronie sklepu)
+przez `framework.polling.poll_until`, gdy pojawi się deterministyczny sygnał gotowości.
+Do tego czasu stała musi pozostać bez zmian, a jej wartość nie powinna być skracana
+bez weryfikacji zależności w `test_setup_tests_promo_codes`.
