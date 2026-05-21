@@ -300,8 +300,8 @@ def _build_branch_sync_script(target_branch: str, base_branch_input: str) -> str
         + " && if [ -z \"$BASE_BRANCH\" ]; then BASE_BRANCH=\"$TARGET_BRANCH\"; DETECTION_METHOD=\"target-fallback\"; fi"
         + " && printf \"branch-sync: target=%s, base=%s, method=%s\\n\" \"$TARGET_BRANCH\" \"$BASE_BRANCH\" \"$DETECTION_METHOD\""
         + " && git checkout \"$TARGET_BRANCH\""
-        + " && git pull origin \"$TARGET_BRANCH\""
-        + " && git pull origin \"$BASE_BRANCH\""
+        + " && git pull --ff-only origin \"$TARGET_BRANCH\""
+        + " && git pull --no-rebase origin \"$BASE_BRANCH\""
     )
 
 
