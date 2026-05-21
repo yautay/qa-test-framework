@@ -286,10 +286,37 @@ def run_backend_indexer(host: str, port: str) -> None:
         raise RuntimeError(f"Backend indeksacja zakonczona bledem (kod={returncode})")
 
 
+def print_execution_plan(args: argparse.Namespace, server_name: str, vm_name: str) -> None:
+    full_setup_mode = not args.index_only
+    selected_front_branch = args.front_branch
+    selected_backend_branch = args.backend_branch
+
+    print("--- Plan wykonania ---")
+    print(f"host/server_name: {server_name}")
+    print(f"vm_name: {vm_name}")
+    print(f"tryb: {'index-only' if args.index_only else 'full-setup'}")
+    print(f"skip-indexer: {'tak' if args.skip_indexer else 'nie'}")
+    print(f"front-branch: {selected_front_branch}")
+    print(f"backend-branch: {selected_backend_branch}")
+
+    if args.index_only:
+        print("kroki: backend verify_connection -> backend indexer")
+    else:
+        backend_step = "backend setup (bez indexera)" if args.skip_indexer else "backend setup + indexer"
+        print(f"kroki: backend verify_connection -> front verify_connection -> front setup -> {backend_step}")
+
+    if full_setup_mode:
+        print("uwaga: front/backend branch beda checkoutowane i pullowane podczas setupu")
+    else:
+        print("uwaga: w trybie index-only branche nie sa checkoutowane")
+    print("----------------------")
+
+
 if __name__ == "__main__":
     args = parse_args()
     resolved_server_name = args.server_name.strip() if args.server_name else load_server_name()
     resolved_vm_name = vm_name_from_server_name(resolved_server_name)
+    print_execution_plan(args, resolved_server_name, resolved_vm_name)
     print(f"server_name={resolved_server_name}")
     print(f"vm_name={resolved_vm_name}")
 
