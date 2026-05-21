@@ -327,13 +327,18 @@ if __name__ == "__main__":
     print(f"backend ssh: nc@{backend_host}:{backend_port}")
     print(f"front ssh:   nc@{front_host}:{front_port}")
 
+    print("[setup] Krok: weryfikacja polaczenia backend")
     verify_connection("backend", backend_host, backend_port)
     if args.index_only:
+        print("[setup] Krok: uruchomienie indeksacji backend (index-only)")
         run_backend_indexer(backend_host, backend_port)
         print("Indeksacja zakonczona pomyslnie.")
         raise SystemExit(0)
 
+    print("[setup] Krok: weryfikacja polaczenia front")
     verify_connection("front", front_host, front_port)
+    print("[setup] Krok: setup front")
     run_front_setup(front_host, front_port, args.front_branch)
+    print("[setup] Krok: setup backend")
     run_backend_setup(backend_host, backend_port, args.backend_branch, run_indexer=not args.skip_indexer)
     print("Setup zakonczony pomyslnie.")

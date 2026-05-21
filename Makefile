@@ -46,15 +46,21 @@ test-smoke-prod-pl: ## Smoke PL basic orders na prod (grid/headless off)
 
 test-setup: ## Setupy środowiskowe Netcorner NUxT
 	@if [ "$(FULL)" = "1" ] || [ "$(FULL)" = "true" ] || [ "$(FULL)" = "yes" ]; then \
+		echo "[test-setup] FULL mode: wizard setup (skip indexer) -> setup tests -> final indexer"; \
 		set -e; \
+		echo "[test-setup] Etap 1/3: wizard setup --skip-indexer"; \
 		$(PYTHON) tools/wizzard/setup.py $(if $(SERVER_NAME),--host $(SERVER_NAME),) $(if $(FRONT_BRANCH),--front-branch $(FRONT_BRANCH),) $(if $(BACKEND_BRANCH),--backend-branch $(BACKEND_BRANCH),) --skip-indexer; \
 		set +e; \
+		echo "[test-setup] Etap 2/3: pytest setup tests"; \
 		$(PYTEST) qa/e2e/netcorner/setup/tests -n 4 --reruns=1 -q $(if $(SERVER_NAME),--server-name=$(SERVER_NAME),); \
 		pytest_status=$$?; \
 		set -e; \
+		echo "[test-setup] Etap 3/3: finalna indeksacja (uruchamiam zawsze)"; \
 		$(PYTHON) tools/wizzard/setup.py $(if $(SERVER_NAME),--host $(SERVER_NAME),) --index-only; \
+		echo "[test-setup] Zakonczono. Kod testow setup: $$pytest_status"; \
 		exit $$pytest_status; \
 	else \
+		echo "[test-setup] Standard mode: tylko setup tests"; \
 		$(PYTEST) qa/e2e/netcorner/setup/tests -n 4 --reruns=1 -q $(if $(SERVER_NAME),--server-name=$(SERVER_NAME),); \
 	fi
 
