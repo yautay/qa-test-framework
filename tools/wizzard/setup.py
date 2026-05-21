@@ -243,7 +243,7 @@ def verify_connection(name: str, host: str, port: str) -> None:
 
 def run_front_setup(host: str, port: str, branch: str) -> None:
     front_command = (
-        f"bash -lc 'ktr && git checkout {branch} && git pull "
+        f"bash -ic 'ktr && git checkout {branch} && git pull "
         "&& rm -rf ~/.cache/node && ./scripts/bin/build.sh'"
     )
     print(f"[front] uruchamiam: {front_command}")
@@ -254,7 +254,7 @@ def run_front_setup(host: str, port: str, branch: str) -> None:
 
 def run_backend_setup(host: str, port: str, branch: str) -> None:
     backend_command = (
-        f"bash -lc 'ktr && git checkout {branch} && git pull && gulp deploy-local "
+        f"bash -ic 'ktr && git checkout {branch} && git pull && gulp deploy-local "
         "&& ./symfony crontab:cron:solr-product-indexer'"
     )
     print(f"[backend] uruchamiam: {backend_command}")
