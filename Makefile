@@ -46,9 +46,14 @@ test-smoke-prod-pl: ## Smoke PL basic orders na prod (grid/headless off)
 
 test-setup: ## Setupy środowiskowe Netcorner NUxT
 	@if [ "$(FULL)" = "1" ] || [ "$(FULL)" = "true" ] || [ "$(FULL)" = "yes" ]; then \
-		$(PYTHON) tools/wizzard/setup.py $(if $(SERVER_NAME),--host $(SERVER_NAME),) $(if $(FRONT_BRANCH),--front-branch $(FRONT_BRANCH),) $(if $(BACKEND_BRANCH),--backend-branch $(BACKEND_BRANCH),) --skip-indexer && \
-		$(PYTEST) qa/e2e/netcorner/setup/tests -n 4 --reruns=1 -q $(if $(SERVER_NAME),--server-name=$(SERVER_NAME),) && \
+		set -e; \
+		$(PYTHON) tools/wizzard/setup.py $(if $(SERVER_NAME),--host $(SERVER_NAME),) $(if $(FRONT_BRANCH),--front-branch $(FRONT_BRANCH),) $(if $(BACKEND_BRANCH),--backend-branch $(BACKEND_BRANCH),) --skip-indexer; \
+		set +e; \
+		$(PYTEST) qa/e2e/netcorner/setup/tests -n 4 --reruns=1 -q $(if $(SERVER_NAME),--server-name=$(SERVER_NAME),); \
+		pytest_status=$$?; \
+		set -e; \
 		$(PYTHON) tools/wizzard/setup.py $(if $(SERVER_NAME),--host $(SERVER_NAME),) --index-only; \
+		exit $$pytest_status; \
 	else \
 		$(PYTEST) qa/e2e/netcorner/setup/tests -n 4 --reruns=1 -q $(if $(SERVER_NAME),--server-name=$(SERVER_NAME),); \
 	fi
