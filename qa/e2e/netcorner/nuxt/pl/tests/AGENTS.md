@@ -32,3 +32,9 @@
 - Do **not** write inline `while + time.sleep` or `for _ in range(n): ... wait_for_timeout(...)` polling loops in tests.
 - For Playwright UI readiness use `expect(...)`, `wait_loaded()`, `wait_visible()` — not `poll_until`.
 - For waiting on Mailhog mail delivery use `mail_inbox.wait_for_mails_containing_text(...)` (HTTP API polling, no browser needed).
+
+## Timeout Constants
+- Import timeout constants from `qa.e2e.netcorner.nuxt.pl.lib.timeouts` (re-export of `framework/timeouts.py`).
+- Do **not** use raw integer literals for `timeout=` arguments; always reference a named constant.
+- Common constants: `QUICK_PROBE_MS`, `ELEMENT_VISIBLE_MS`, `UI_ACTION_MS`, `SLOW_OPERATION_MS`, `HTTP_REQUEST_TIMEOUT_S`.
+- See root `AGENTS.md` for the full tier table and exception list.

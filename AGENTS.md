@@ -98,3 +98,25 @@
   - **HTTP API** (`MailhogApiClient` in `qa/e2e/netcorner/mailhog/lib/api/mailhog_api_client.py`): fast, no browser required, use for counting/searching mails by order number.
   - **Playwright UI** (`MailInboxService` in `qa/e2e/netcorner/mailhog/lib/flows/inbox_flow.py`): browser-based, use for reading mail content and extracting links.
 - Do not mix HTTP API and Playwright UI access inside a single method without documenting the reason.
+
+## Timeout Constants
+- All Playwright and HTTP timeout values must use named constants from `framework/timeouts.py` (or per-project re-exports). Do **not** use raw integer literals for timeouts.
+- Per-project re-exports (import from these in project code):
+  - `qa.e2e.netcorner.nuxt.pl.lib.timeouts`
+  - `qa.e2e.netcorner.admin.lib.timeouts`
+  - `qa.e2e.netcorner.mailhog.lib.timeouts`
+  - `qa.e2e.netcorner.setup.timeouts`
+- Tier mapping:
+
+  | Constant                  | Value      | Use for                                               |
+  |---------------------------|------------|-------------------------------------------------------|
+  | `QUICK_PROBE_MS`          | 2 000 ms   | Short probes, animation settle, minor UI transitions  |
+  | `ELEMENT_VISIBLE_MS`      | 5 000 ms   | Element visibility checks, toast waits                |
+  | `UI_ACTION_MS`            | 15 000 ms  | Navigation, overlay open/close, URL waits             |
+  | `SLOW_OPERATION_MS`       | 30 000 ms  | Heavy page loads, AJAX-heavy operations               |
+  | `HTTP_REQUEST_TIMEOUT_S`  | 30 s       | `requests` / HTTP client calls (seconds, not ms)      |
+
+- Exceptions (keep as-is, do **not** replace with tier constants):
+  - `_REINDEX_TIMEOUT_MS = 120_000`
+  - `_PROMOTION_SERVICE_ACTIVATION_WAIT_MS = 120_000`
+  - `_MAILHOG_LOOKUP_TIMEOUT_MS = 45_000`

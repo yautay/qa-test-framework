@@ -33,3 +33,9 @@
 ## Verification
 - Minimum after changes:
   - `python -m compileall qa/e2e/netcorner/admin/lib`
+
+## Timeout Constants
+- Import timeout constants from `qa.e2e.netcorner.admin.lib.timeouts` (re-export of `framework/timeouts.py`).
+- Do **not** use raw integer literals for `timeout=` arguments; always reference a named constant.
+- Common constants: `QUICK_PROBE_MS`, `ELEMENT_VISIBLE_MS`, `UI_ACTION_MS`, `SLOW_OPERATION_MS`, `HTTP_REQUEST_TIMEOUT_S`.
+- See root `AGENTS.md` for the full tier table and exception list.
