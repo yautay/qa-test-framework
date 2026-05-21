@@ -27,7 +27,6 @@ import argparse
 import importlib.util
 import os
 import re
-import shlex
 import shutil
 import subprocess
 import sys
@@ -267,35 +266,39 @@ def verify_connection(name: str, host: str, port: str) -> None:
         print(result.stderr.strip())
 
 
+def _double_quote_shell(value: str) -> str:
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+
 def _build_branch_sync_script(target_branch: str, base_branch_input: str) -> str:
-    target_q = shlex.quote(target_branch)
-    base_input_q = shlex.quote(base_branch_input)
+    target_q = _double_quote_shell(target_branch)
+    base_input_q = _double_quote_shell(base_branch_input)
     return (
         "TARGET_BRANCH="
         + target_q
         + " && BASE_INPUT="
         + base_input_q
-        + " && BASE_BRANCH='' && DETECTION_METHOD='manual'"
-        + " && if [ \"$BASE_INPUT\" = \"auto\" ]; then DETECTION_METHOD='auto'; fi"
+        + " && BASE_BRANCH=\"\" && DETECTION_METHOD=\"manual\""
+        + " && if [ \"$BASE_INPUT\" = \"auto\" ]; then DETECTION_METHOD=\"auto\"; fi"
         + " && if [ \"$BASE_INPUT\" = \"auto\" ]; then "
         + "for CANDIDATE in develop main master; do "
         + "if git show-ref --verify --quiet \"refs/remotes/origin/$CANDIDATE\" && git merge-base --fork-point \"origin/$CANDIDATE\" \"$TARGET_BRANCH\" >/dev/null 2>&1; then "
-        + "BASE_BRANCH=\"$CANDIDATE\"; DETECTION_METHOD='fork-point'; break; "
+        + "BASE_BRANCH=\"$CANDIDATE\"; DETECTION_METHOD=\"fork-point\"; break; "
         + "fi; "
         + "done; "
         + "fi"
         + " && if [ -z \"$BASE_BRANCH\" ] && [ \"$BASE_INPUT\" = \"auto\" ]; then "
         + "ORIGIN_HEAD=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || true); "
-        + "if [ -n \"$ORIGIN_HEAD\" ]; then BASE_BRANCH=\"${ORIGIN_HEAD#origin/}\"; DETECTION_METHOD='origin-head'; fi; "
+        + "if [ -n \"$ORIGIN_HEAD\" ]; then BASE_BRANCH=\"${ORIGIN_HEAD#origin/}\"; DETECTION_METHOD=\"origin-head\"; fi; "
         + "fi"
         + " && if [ -z \"$BASE_BRANCH\" ] && [ \"$BASE_INPUT\" = \"auto\" ]; then "
         + "for CANDIDATE in develop main master; do "
-        + "if git show-ref --verify --quiet \"refs/remotes/origin/$CANDIDATE\"; then BASE_BRANCH=\"$CANDIDATE\"; DETECTION_METHOD='fallback-existing'; break; fi; "
+        + "if git show-ref --verify --quiet \"refs/remotes/origin/$CANDIDATE\"; then BASE_BRANCH=\"$CANDIDATE\"; DETECTION_METHOD=\"fallback-existing\"; break; fi; "
         + "done; "
         + "fi"
         + " && if [ \"$BASE_INPUT\" != \"auto\" ]; then BASE_BRANCH=\"$BASE_INPUT\"; fi"
-        + " && if [ -z \"$BASE_BRANCH\" ]; then BASE_BRANCH=\"$TARGET_BRANCH\"; DETECTION_METHOD='target-fallback'; fi"
-        + " && printf 'branch-sync: target=%s, base=%s, method=%s\\n' \"$TARGET_BRANCH\" \"$BASE_BRANCH\" \"$DETECTION_METHOD\""
+        + " && if [ -z \"$BASE_BRANCH\" ]; then BASE_BRANCH=\"$TARGET_BRANCH\"; DETECTION_METHOD=\"target-fallback\"; fi"
+        + " && printf \"branch-sync: target=%s, base=%s, method=%s\\n\" \"$TARGET_BRANCH\" \"$BASE_BRANCH\" \"$DETECTION_METHOD\""
         + " && git checkout \"$TARGET_BRANCH\""
         + " && git pull origin \"$TARGET_BRANCH\""
         + " && git pull origin \"$BASE_BRANCH\""
@@ -304,7 +307,7 @@ def _build_branch_sync_script(target_branch: str, base_branch_input: str) -> str
 
 def run_front_setup(host: str, port: str, branch: str, base_branch: str) -> None:
     sync_script = _build_branch_sync_script(branch, base_branch)
-    front_command = f"bash -ic '{sync_script} && rm -rf ~/.cache/node && ./scripts/bin/build.sh'"
+    front_command = f"bash -ic 'ktr && {sync_script} && rm -rf ~/.cache/node && ./scripts/bin/build.sh'"
     print(f"[front] uruchamiam: {front_command}")
     returncode = run_ssh_stream(host, port, front_command, prefix="front", timeout_s=3600)
     if returncode != 0:
