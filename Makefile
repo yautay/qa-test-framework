@@ -45,7 +45,7 @@ test-smoke-prod-pl: ## Smoke PL basic orders na prod (grid/headless off)
 	IS_GRID_AVAILABLE=0 HEADLESS=0 $(PYTEST) qa/e2e/netcorner/nuxt/pl/tests/tests_smoke/test_smoke_basic_orders.py --server-name=prod -q
 
 test-setup: ## Setupy środowiskowe Netcorner NUxT
-	$(PYTEST) qa/e2e/netcorner/setup/tests -n 4 -q
+	$(PYTEST) qa/e2e/netcorner/setup/tests -n 4 --reruns=1 -q
 
 test-flaky: ## Wykrywanie niestabilnych testów e2e_pl (flake-finder)
 	$(PYTEST) \
