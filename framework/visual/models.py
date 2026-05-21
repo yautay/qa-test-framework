@@ -14,6 +14,7 @@ from typing import Any, Literal, cast
 
 CaptureType = Literal["page", "viewport", "element"]
 CompareMode = Literal["pixel", "hybrid"]
+NavigationMode = Literal["auto", "prepared"]
 ResultStatus = Literal["passed", "failed", "skipped", "new", "uncertain", "analysis"]
 DEFAULT_MASK_COLOR = "#DDF527"
 
@@ -370,6 +371,7 @@ class VisualScenario:
     mask: VisualMask = field(default_factory=VisualMask)
     steps: tuple[VisualStep, ...] = ()
     perceptual_required: bool = False
+    navigation_mode: NavigationMode = "auto"
     raw_definition: dict[str, Any] = field(default_factory=dict)
     source_file: str = ""
 
@@ -380,6 +382,8 @@ class VisualScenario:
             raise ValueError("suite_id must be non-empty")
         if not self.target_url.strip():
             raise ValueError("target_url must be non-empty")
+        if self.navigation_mode not in {"auto", "prepared"}:
+            raise ValueError(f"Invalid navigation_mode: {self.navigation_mode!r}")
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> VisualScenario:
@@ -395,6 +399,9 @@ class VisualScenario:
 
         steps_raw = _as_tuple_dict(d.get("steps"), "steps")
         steps = tuple(VisualStep.from_dict(s) for s in steps_raw)
+        navigation_mode = _opt_str(d, "navigation_mode", "auto").strip().lower()
+        if navigation_mode not in {"auto", "prepared"}:
+            raise ValueError(f"Invalid navigation_mode: {navigation_mode!r}")
 
         return cls(
             scenario_id=scenario_id,
@@ -408,6 +415,7 @@ class VisualScenario:
             mask=VisualMask.from_dict(d.get("mask")),
             steps=steps,
             perceptual_required=_opt_bool(d, "perceptual_required", False),
+            navigation_mode=cast(NavigationMode, navigation_mode),
             raw_definition=deepcopy(d),
         )
 

@@ -2,22 +2,42 @@
   "id": "vrt-netcorner-nuxt-pl-layers-login",
   "name": "Login page visual",
   "suite_id": "netcorner/nuxt/pl/layers",
-  "target_url": "/login",
+  "target_url": "/",
   "compare_mode": "hybrid",
   "capture": {
-    "type": "page",
-    "full_page": true
-  },
-  "mask": {
-    "locators": [
-      ".cookie-banner",
-      "[data-testid='dynamic-banner']"
-    ]
-  },
+      "type": "element",
+      "locator": "[data-name='dialogContent']"
+    },
   "thresholds": {
     "pixel_max": 0.01,
     "lpips_max": 0.12,
     "dists_max": 0.12
   },
-  "steps": []
+  "steps": [
+    {
+      "action": "wait_for_selector",
+      "selector": "[data-name='headerActions']:visible",
+      "timeout_ms": 10000
+    },
+    {
+      "action": "wait_for_selector",
+      "selector": "[data-name='loginDialogTrigger']:visible",
+      "timeout_ms": 10000
+    },
+    {
+      "action": "click",
+      "selector": "[data-name='loginDialogTrigger']:visible",
+      "timeout_ms": 10000
+    },
+    {
+      "action": "wait_for_selector",
+      "selector": "[data-name='dialogContent']:visible",
+      "timeout_ms": 10000
+    },
+    {
+      "action": "wait_for_selector",
+      "selector": "[data-name='loginForm']:visible",
+      "timeout_ms": 10000
+    }
+  ]
 }

@@ -184,7 +184,7 @@ class VisualRunner:
 
     def _navigate(self, page: Page, scenario: VisualScenario) -> None:
         """Navigate to the scenario URL and execute all preparatory steps."""
-        if scenario.target_url:
+        if scenario.navigation_mode == "auto" and scenario.target_url:
             if scenario.target_url.startswith(("http://", "https://")):
                 response = page.goto(scenario.target_url)
                 self._assert_navigation_response(response, scenario.target_url)

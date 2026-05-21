@@ -1,0 +1,24 @@
+{
+  "id": "vrt-netcorner-nuxt-pl-layers-register",
+  "name": "Register layer visual",
+  "suite_id": "netcorner/nuxt/pl/layers",
+  "target_url": "/register",
+  "compare_mode": "hybrid",
+  "navigation_mode": "prepared",
+  "capture": {
+    "type": "page",
+    "full_page": true
+  },
+  "mask": {
+    "locators": [
+      ".cookie-banner",
+      "[data-testid='dynamic-banner']"
+    ]
+  },
+  "thresholds": {
+    "pixel_max": 0.01,
+    "lpips_max": 0.12,
+    "dists_max": 0.12
+  },
+  "steps": []
+}
