@@ -47,22 +47,24 @@ test-smoke-prod-pl: ## Smoke PL basic orders na prod (grid/headless off)
 test-setup: ## Setupy środowiskowe Netcorner NUxT
 	@if [ "$(FULL)" = "1" ] || [ "$(FULL)" = "true" ] || [ "$(FULL)" = "yes" ]; then \
 		echo "[test-setup] FULL mode: wizard setup (skip indexer) -> setup tests -> final indexer"; \
+		echo "[test-setup] Wymuszam IS_GRID_AVAILABLE=0 (bez grid)"; \
 		set -e; \
 		echo "[test-setup] Etap 1/3: wizard setup --skip-indexer"; \
-		TEST_SETUP_FULL_FLOW=1 TEST_SETUP_FLOW_STAGE=1 $(PYTHON) tools/wizzard/setup.py $(if $(SERVER_NAME),--host $(SERVER_NAME),) $(if $(FRONT_BRANCH),--front-branch $(FRONT_BRANCH),) $(if $(BACKEND_BRANCH),--backend-branch $(BACKEND_BRANCH),) --skip-indexer; \
+		IS_GRID_AVAILABLE=0 TEST_SETUP_FULL_FLOW=1 TEST_SETUP_FLOW_STAGE=1 $(PYTHON) tools/wizzard/setup.py $(if $(SERVER_NAME),--host $(SERVER_NAME),) $(if $(FRONT_BRANCH),--front-branch $(FRONT_BRANCH),) $(if $(BACKEND_BRANCH),--backend-branch $(BACKEND_BRANCH),) --skip-indexer; \
 		set +e; \
 		echo "[test-setup] Etap 2/3: pytest setup tests"; \
-		$(PYTEST) qa/e2e/netcorner/setup/tests -n 4 --reruns=1 -q $(if $(SERVER_NAME),--server-name=$(SERVER_NAME),); \
+		IS_GRID_AVAILABLE=0 $(PYTEST) qa/e2e/netcorner/setup/tests -n 4 --reruns=1 -q $(if $(SERVER_NAME),--server-name=$(SERVER_NAME),); \
 		pytest_status=$$?; \
 		set -e; \
 		echo "[test-setup] Etap 3/3: finalna indeksacja (uruchamiam zawsze)"; \
-		TEST_SETUP_FULL_FLOW=1 TEST_SETUP_FLOW_STAGE=3 $(PYTHON) tools/wizzard/setup.py $(if $(SERVER_NAME),--host $(SERVER_NAME),) --index-only; \
+		IS_GRID_AVAILABLE=0 TEST_SETUP_FULL_FLOW=1 TEST_SETUP_FLOW_STAGE=3 $(PYTHON) tools/wizzard/setup.py $(if $(SERVER_NAME),--host $(SERVER_NAME),) --index-only; \
 		echo "[test-setup] Zakonczono. Kod testow setup: $$pytest_status"; \
 		exit $$pytest_status; \
 	else \
 		echo "[test-setup] Standard mode: tylko testy qa/e2e/netcorner/setup/tests"; \
+		echo "[test-setup] Wymuszam IS_GRID_AVAILABLE=0 (bez grid)"; \
 		echo "[test-setup] W tym trybie NIE uruchamiam tools/wizzard/setup.py ani finalnej indeksacji backend"; \
-		$(PYTEST) qa/e2e/netcorner/setup/tests -n 4 --reruns=1 -q $(if $(SERVER_NAME),--server-name=$(SERVER_NAME),); \
+		IS_GRID_AVAILABLE=0 $(PYTEST) qa/e2e/netcorner/setup/tests -n 4 --reruns=1 -q $(if $(SERVER_NAME),--server-name=$(SERVER_NAME),); \
 	fi
 
 test-setup-help: ## Pomoc i przyklady dla make test-setup
