@@ -12,7 +12,7 @@ PYTEST ?= $(PYTHON) -m pytest
 
 .DEFAULT_GOAL := help
 
-.PHONY: help report-serve test test-api test-visual test-e2e test-aso test-smoke test-smoke-prod-pl test-setup test-flaky check collect lint format format-check typecheck security verify-discovery verify-scenarios clean clean-artifacts clean-artifacts-older debug-remote-grid-up debug-remote-grid-down debug-minio-up debug-minio-down local-settings-ignore local-settings-track
+.PHONY: help report-serve test test-api test-visual test-e2e test-aso test-smoke test-smoke-prod-pl test-setup test-setup-help test-flaky check collect lint format format-check typecheck security verify-discovery verify-scenarios clean clean-artifacts clean-artifacts-older debug-remote-grid-up debug-remote-grid-down debug-minio-up debug-minio-down local-settings-ignore local-settings-track
 
 help: ## Show this help
 	$(PYTHON) tools/make/make_help.py
@@ -45,7 +45,28 @@ test-smoke-prod-pl: ## Smoke PL basic orders na prod (grid/headless off)
 	IS_GRID_AVAILABLE=0 HEADLESS=0 $(PYTEST) qa/e2e/netcorner/nuxt/pl/tests/tests_smoke/test_smoke_basic_orders.py --server-name=prod -q
 
 test-setup: ## Setupy środowiskowe Netcorner NUxT
-	$(PYTEST) qa/e2e/netcorner/setup/tests -n 4 --reruns=1 -q $(if $(SERVER_NAME),--server-name=$(SERVER_NAME),)
+	@if [ "$(FULL)" = "1" ] || [ "$(FULL)" = "true" ] || [ "$(FULL)" = "yes" ]; then \
+		$(PYTHON) tools/wizzard/setup.py $(if $(SERVER_NAME),--host $(SERVER_NAME),) $(if $(FRONT_BRANCH),--front-branch $(FRONT_BRANCH),) $(if $(BACKEND_BRANCH),--backend-branch $(BACKEND_BRANCH),) --skip-indexer && \
+		$(PYTEST) qa/e2e/netcorner/setup/tests -n 4 --reruns=1 -q $(if $(SERVER_NAME),--server-name=$(SERVER_NAME),) && \
+		$(PYTHON) tools/wizzard/setup.py $(if $(SERVER_NAME),--host $(SERVER_NAME),) --index-only; \
+	else \
+		$(PYTEST) qa/e2e/netcorner/setup/tests -n 4 --reruns=1 -q $(if $(SERVER_NAME),--server-name=$(SERVER_NAME),); \
+	fi
+
+test-setup-help: ## Pomoc i przyklady dla make test-setup
+	@printf "%s\n" \
+	"Uzycie: make test-setup [FULL=1] [SERVER_NAME=<env>] [FRONT_BRANCH=<branch>] [BACKEND_BRANCH=<branch>]" \
+	"" \
+	"Tryb domyslny (tylko setup tests):" \
+	"  make test-setup" \
+	"  make test-setup SERVER_NAME=alfa.test" \
+	"" \
+	"Tryb pelny (wizard setup -> setup tests -> indexacja):" \
+	"  make test-setup FULL=1" \
+	"  make test-setup FULL=1 SERVER_NAME=alfa.test FRONT_BRANCH=feature/front BACKEND_BRANCH=feature/back" \
+	"" \
+	"Szczegoly opcji skryptu wizard:" \
+	"  $(PYTHON) tools/wizzard/setup.py --help"
 
 test-flaky: ## Wykrywanie niestabilnych testów e2e_pl (flake-finder)
 	$(PYTEST) \

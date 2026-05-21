@@ -3,12 +3,16 @@
 Uzycie:
   .venv/bin/python tools/wizzard/setup.py
   .venv/bin/python tools/wizzard/setup.py --host kocopoly.test
+  .venv/bin/python tools/wizzard/setup.py --host kocopoly.test --skip-indexer
+  .venv/bin/python tools/wizzard/setup.py --host kocopoly.test --index-only
   .venv/bin/python tools/wizzard/setup.py --help
 
 Opcje:
   --host <nazwa.env>  Nadpisuje server_name z settings_cli.py.
   --front-branch <nazwa>   Branch dla frontu (domyslnie: develop).
   --backend-branch <nazwa> Branch dla backendu (domyslnie: develop).
+  --skip-indexer           Pomija koncowa indeksacje Solr na backendzie.
+  --index-only             Wykonuje tylko polaczenie backend + indeksacje Solr.
   --help, --hellp     Pokazuje pomoc.
 
 Przebieg:
@@ -16,7 +20,7 @@ Przebieg:
   2) Weryfikuje polaczenie SSH (echo ok).
   3) Front: ktr -> git checkout develop -> git pull -> ./scripts/bin/build.sh
   4) Backend: ktr -> git checkout develop -> git pull -> gulp deploy-local
-     -> ./symfony crontab:cron:solr-product-indexer
+     -> ./symfony crontab:cron:solr-product-indexer (chyba ze --skip-indexer)
 """
 
 import argparse
@@ -131,6 +135,17 @@ def parse_args() -> argparse.Namespace:
         "--backend-branch",
         default="develop",
         help="Branch dla backendu (domyslnie: develop)",
+    )
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument(
+        "--skip-indexer",
+        action="store_true",
+        help="Pomija koncowa indeksacje Solr na backendzie",
+    )
+    mode_group.add_argument(
+        "--index-only",
+        action="store_true",
+        help="Wykonuje tylko backendowy krok indeksacji Solr",
     )
     parser.add_argument(
         "--hellp",
@@ -252,15 +267,23 @@ def run_front_setup(host: str, port: str, branch: str) -> None:
         raise RuntimeError(f"Front setup zakonczyl sie bledem (kod={returncode})")
 
 
-def run_backend_setup(host: str, port: str, branch: str) -> None:
-    backend_command = (
-        f"bash -ic 'ktr && git checkout {branch} && git pull && gulp deploy-local "
-        "&& ./symfony crontab:cron:solr-product-indexer'"
-    )
+def run_backend_setup(host: str, port: str, branch: str, run_indexer: bool = True) -> None:
+    backend_command = f"bash -ic 'ktr && git checkout {branch} && git pull && gulp deploy-local"
+    if run_indexer:
+        backend_command += " && ./symfony crontab:cron:solr-product-indexer"
+    backend_command += "'"
     print(f"[backend] uruchamiam: {backend_command}")
     returncode = run_ssh_stream(host, port, backend_command, prefix="backend", timeout_s=5400)
     if returncode != 0:
         raise RuntimeError(f"Backend setup zakonczyl sie bledem (kod={returncode})")
+
+
+def run_backend_indexer(host: str, port: str) -> None:
+    indexer_command = "bash -ic 'ktr && ./symfony crontab:cron:solr-product-indexer'"
+    print(f"[backend] uruchamiam: {indexer_command}")
+    returncode = run_ssh_stream(host, port, indexer_command, prefix="backend-indexer", timeout_s=3600)
+    if returncode != 0:
+        raise RuntimeError(f"Backend indeksacja zakonczona bledem (kod={returncode})")
 
 
 if __name__ == "__main__":
@@ -278,7 +301,12 @@ if __name__ == "__main__":
     print(f"front ssh:   nc@{front_host}:{front_port}")
 
     verify_connection("backend", backend_host, backend_port)
+    if args.index_only:
+        run_backend_indexer(backend_host, backend_port)
+        print("Indeksacja zakonczona pomyslnie.")
+        raise SystemExit(0)
+
     verify_connection("front", front_host, front_port)
     run_front_setup(front_host, front_port, args.front_branch)
-    run_backend_setup(backend_host, backend_port, args.backend_branch)
+    run_backend_setup(backend_host, backend_port, args.backend_branch, run_indexer=not args.skip_indexer)
     print("Setup zakonczony pomyslnie.")
