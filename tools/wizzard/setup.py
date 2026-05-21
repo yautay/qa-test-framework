@@ -302,7 +302,11 @@ def print_execution_plan(args: argparse.Namespace, server_name: str, vm_name: st
     if args.index_only:
         print("kroki: backend verify_connection -> backend indexer")
     else:
-        backend_step = "backend setup (bez indexera)" if args.skip_indexer else "backend setup + indexer"
+        backend_step = (
+            "backend setup (bez indexera w tym kroku; indeksacja moze byc odpalona pozniej)"
+            if args.skip_indexer
+            else "backend setup + indexer"
+        )
         print(f"kroki: backend verify_connection -> front verify_connection -> front setup -> {backend_step}")
 
     if full_setup_mode:
