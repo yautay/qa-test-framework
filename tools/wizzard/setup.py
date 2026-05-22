@@ -3,20 +3,24 @@
 Uzycie:
   .venv/bin/python tools/wizzard/setup.py
   .venv/bin/python tools/wizzard/setup.py --host kocopoly.test
+  .venv/bin/python tools/wizzard/setup.py --host kocopoly.test --skip-indexer
+  .venv/bin/python tools/wizzard/setup.py --host kocopoly.test --index-only
   .venv/bin/python tools/wizzard/setup.py --help
 
 Opcje:
   --host <nazwa.env>  Nadpisuje server_name z settings_cli.py.
   --front-branch <nazwa>   Branch dla frontu (domyslnie: develop).
   --backend-branch <nazwa> Branch dla backendu (domyslnie: develop).
+  --skip-indexer           Pomija koncowa indeksacje Solr na backendzie.
+  --index-only             Wykonuje tylko polaczenie backend + indeksacje Solr.
   --help, --hellp     Pokazuje pomoc.
 
 Przebieg:
   1) Odczytuje host/port SSH frontu i backendu z test-wizard.netcorner.pl.
   2) Weryfikuje polaczenie SSH (echo ok).
-  3) Front: ktr -> git checkout develop -> ./scripts/bin/build.sh
-  4) Backend: ktr -> git checkout develop -> gulp deploy-local
-     -> ./symfony crontab:cron:solr-product-indexer
+  3) Front: ktr -> git checkout develop -> git pull -> ./scripts/bin/build.sh
+  4) Backend: ktr -> git checkout develop -> git pull -> gulp deploy-local
+     -> ./symfony crontab:cron:solr-product-indexer (chyba ze --skip-indexer)
 """
 
 import argparse
@@ -133,6 +137,27 @@ def parse_args() -> argparse.Namespace:
         help="Branch dla backendu (domyslnie: develop)",
     )
     parser.add_argument(
+        "--front-base-branch",
+        default="auto",
+        help="Branch bazowy dla frontu (domyslnie: auto; wykrywanie z develop/main/master)",
+    )
+    parser.add_argument(
+        "--backend-base-branch",
+        default="auto",
+        help="Branch bazowy dla backendu (domyslnie: auto; wykrywanie z develop/main/master)",
+    )
+    mode_group = parser.add_mutually_exclusive_group()
+    mode_group.add_argument(
+        "--skip-indexer",
+        action="store_true",
+        help="Pomija koncowa indeksacje Solr na backendzie",
+    )
+    mode_group.add_argument(
+        "--index-only",
+        action="store_true",
+        help="Wykonuje tylko backendowy krok indeksacji Solr",
+    )
+    parser.add_argument(
         "--hellp",
         action="help",
         help="Alias literowki dla --help",
@@ -171,6 +196,10 @@ def run_ssh(ssh_host: str, ssh_port: str, command: str, timeout_s: int = 60) -> 
         "ssh",
         "-o",
         "StrictHostKeyChecking=no",
+        "-o",
+        "UserKnownHostsFile=/dev/null",
+        "-o",
+        "GlobalKnownHostsFile=/dev/null",
         "-p",
         ssh_port,
         f"nc@{ssh_host}",
@@ -184,6 +213,48 @@ def run_ssh(ssh_host: str, ssh_port: str, command: str, timeout_s: int = 60) -> 
     return subprocess.run(ssh_command, timeout=timeout_s, capture_output=True, text=True)
 
 
+def run_ssh_stream(ssh_host: str, ssh_port: str, command: str, prefix: str, timeout_s: int = 60) -> int:
+    ssh_command: list[str] = [
+        "sshpass",
+        "-p",
+        NC_CONTAINER_PASS,
+        "ssh",
+        "-o",
+        "StrictHostKeyChecking=no",
+        "-o",
+        "UserKnownHostsFile=/dev/null",
+        "-o",
+        "GlobalKnownHostsFile=/dev/null",
+        "-p",
+        ssh_port,
+        f"nc@{ssh_host}",
+        command,
+    ]
+
+    if os.name == "nt":
+        cmd = " ".join(ssh_command)
+        ssh_command = ["wsl", "bash", "-lc", cmd]
+
+    process = subprocess.Popen(
+        ssh_command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    )
+
+    try:
+        assert process.stdout is not None
+        for line in process.stdout:
+            print(f"[{prefix}] {line.rstrip()}", flush=True)
+        return process.wait(timeout=timeout_s)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait()
+        print(f"[{prefix}] TIMEOUT po {timeout_s}s", flush=True)
+        return 124
+
+
 def verify_connection(name: str, host: str, port: str) -> None:
     result = run_ssh(host, port, "echo ok")
     output = result.stdout.strip()
@@ -195,37 +266,124 @@ def verify_connection(name: str, host: str, port: str) -> None:
         print(result.stderr.strip())
 
 
-def run_front_setup(host: str, port: str, branch: str) -> None:
-    front_command = f"bash -ic 'ktr && git checkout {branch} && ./scripts/bin/build.sh'"
-    print(f"[front] uruchamiam: {front_command}")
-    result = run_ssh(host, port, front_command, timeout_s=3600)
-    if result.stdout.strip():
-        print(result.stdout.strip())
-    if result.stderr.strip():
-        print(result.stderr.strip())
-    if result.returncode != 0:
-        raise RuntimeError(f"Front setup zakonczyl sie bledem (kod={result.returncode})")
+def _double_quote_shell(value: str) -> str:
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
-def run_backend_setup(host: str, port: str, branch: str) -> None:
-    backend_command = (
-        f"bash -ic 'ktr && git checkout {branch} && gulp deploy-local "
-        "&& ./symfony crontab:cron:solr-product-indexer'"
+def _build_branch_sync_script(target_branch: str, base_branch_input: str) -> str:
+    target_q = _double_quote_shell(target_branch)
+    base_input_q = _double_quote_shell(base_branch_input)
+    return (
+        "TARGET_BRANCH="
+        + target_q
+        + " && BASE_INPUT="
+        + base_input_q
+        + " && BASE_BRANCH=\"\" && DETECTION_METHOD=\"manual\""
+        + " && if [ \"$BASE_INPUT\" = \"auto\" ]; then DETECTION_METHOD=\"auto\"; fi"
+        + " && if [ \"$BASE_INPUT\" = \"auto\" ]; then "
+        + "for CANDIDATE in develop main master; do "
+        + "if git show-ref --verify --quiet \"refs/remotes/origin/$CANDIDATE\" && git merge-base --fork-point \"origin/$CANDIDATE\" \"$TARGET_BRANCH\" >/dev/null 2>&1; then "
+        + "BASE_BRANCH=\"$CANDIDATE\"; DETECTION_METHOD=\"fork-point\"; break; "
+        + "fi; "
+        + "done; "
+        + "fi"
+        + " && if [ -z \"$BASE_BRANCH\" ] && [ \"$BASE_INPUT\" = \"auto\" ]; then "
+        + "ORIGIN_HEAD=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || true); "
+        + "if [ -n \"$ORIGIN_HEAD\" ]; then BASE_BRANCH=\"${ORIGIN_HEAD#origin/}\"; DETECTION_METHOD=\"origin-head\"; fi; "
+        + "fi"
+        + " && if [ -z \"$BASE_BRANCH\" ] && [ \"$BASE_INPUT\" = \"auto\" ]; then "
+        + "for CANDIDATE in develop main master; do "
+        + "if git show-ref --verify --quiet \"refs/remotes/origin/$CANDIDATE\"; then BASE_BRANCH=\"$CANDIDATE\"; DETECTION_METHOD=\"fallback-existing\"; break; fi; "
+        + "done; "
+        + "fi"
+        + " && if [ \"$BASE_INPUT\" != \"auto\" ]; then BASE_BRANCH=\"$BASE_INPUT\"; fi"
+        + " && if [ -z \"$BASE_BRANCH\" ]; then BASE_BRANCH=\"$TARGET_BRANCH\"; DETECTION_METHOD=\"target-fallback\"; fi"
+        + " && printf \"branch-sync: target=%s, base=%s, method=%s\\n\" \"$TARGET_BRANCH\" \"$BASE_BRANCH\" \"$DETECTION_METHOD\""
+        + " && git checkout \"$TARGET_BRANCH\""
+        + " && git pull --ff-only origin \"$TARGET_BRANCH\""
+        + " && git pull --no-rebase origin \"$BASE_BRANCH\""
     )
+
+
+def run_front_setup(host: str, port: str, branch: str, base_branch: str) -> None:
+    sync_script = _build_branch_sync_script(branch, base_branch)
+    front_command = f"bash -ic 'ktr && {sync_script} && rm -rf ~/.cache/node && ./scripts/bin/build.sh'"
+    print(f"[front] uruchamiam: {front_command}")
+    returncode = run_ssh_stream(host, port, front_command, prefix="front", timeout_s=3600)
+    if returncode != 0:
+        raise RuntimeError(f"Front setup zakonczyl sie bledem (kod={returncode})")
+
+
+def run_backend_setup(host: str, port: str, branch: str, base_branch: str, run_indexer: bool = True) -> None:
+    sync_script = _build_branch_sync_script(branch, base_branch)
+    backend_command = f"bash -ic 'ktr && {sync_script} && gulp deploy-local"
+    if run_indexer:
+        backend_command += " && ./symfony crontab:cron:solr-product-indexer"
+    backend_command += "'"
     print(f"[backend] uruchamiam: {backend_command}")
-    result = run_ssh(host, port, backend_command, timeout_s=5400)
-    if result.stdout.strip():
-        print(result.stdout.strip())
-    if result.stderr.strip():
-        print(result.stderr.strip())
-    if result.returncode != 0:
-        raise RuntimeError(f"Backend setup zakonczyl sie bledem (kod={result.returncode})")
+    returncode = run_ssh_stream(host, port, backend_command, prefix="backend", timeout_s=5400)
+    if returncode != 0:
+        raise RuntimeError(f"Backend setup zakonczyl sie bledem (kod={returncode})")
+
+
+def run_backend_indexer(host: str, port: str) -> None:
+    indexer_command = "bash -ic 'ktr && ./symfony crontab:cron:solr-product-indexer'"
+    print(f"[backend] uruchamiam: {indexer_command}")
+    returncode = run_ssh_stream(host, port, indexer_command, prefix="backend-indexer", timeout_s=3600)
+    if returncode != 0:
+        raise RuntimeError(f"Backend indeksacja zakonczona bledem (kod={returncode})")
+
+
+def print_execution_plan(args: argparse.Namespace, server_name: str, vm_name: str) -> None:
+    full_setup_mode = not args.index_only
+    selected_front_branch = args.front_branch
+    selected_backend_branch = args.backend_branch
+    selected_front_base_branch = args.front_base_branch
+    selected_backend_base_branch = args.backend_base_branch
+
+    print("--- Plan wykonania ---")
+    print(f"host/server_name: {server_name}")
+    print(f"vm_name: {vm_name}")
+    print(f"tryb: {'index-only' if args.index_only else 'full-setup'}")
+    print(f"skip-indexer: {'tak' if args.skip_indexer else 'nie'}")
+    print(f"front-branch: {selected_front_branch}")
+    print(f"backend-branch: {selected_backend_branch}")
+    print(f"front-base-branch: {selected_front_base_branch}")
+    print(f"backend-base-branch: {selected_backend_base_branch}")
+
+    full_flow_enabled = os.environ.get("TEST_SETUP_FULL_FLOW") == "1"
+    full_flow_stage = os.environ.get("TEST_SETUP_FLOW_STAGE", "")
+
+    if args.index_only:
+        print("kroki: backend verify_connection -> backend indexer")
+    else:
+        backend_step = (
+            "backend setup (bez indexera w tym kroku; indeksacja moze byc odpalona pozniej)"
+            if args.skip_indexer
+            else "backend setup + indexer"
+        )
+        print(f"kroki: backend verify_connection -> front verify_connection -> front setup -> {backend_step}")
+
+    if full_flow_enabled and full_flow_stage == "1" and args.skip_indexer:
+        print(
+            "plan FULL=1: po tym kroku poleca testy qa/e2e/netcorner/setup/tests, "
+            "a potem osobny krok indeksacji backend (index-only)"
+        )
+    if full_flow_enabled and full_flow_stage == "3" and args.index_only:
+        print("plan FULL=1: to jest finalny krok indeksacji po testach qa/e2e/netcorner/setup/tests")
+
+    if full_setup_mode:
+        print("uwaga: front/backend branch beda checkoutowane i pullowane podczas setupu")
+    else:
+        print("uwaga: w trybie index-only branche nie sa checkoutowane")
+    print("----------------------")
 
 
 if __name__ == "__main__":
     args = parse_args()
     resolved_server_name = args.server_name.strip() if args.server_name else load_server_name()
     resolved_vm_name = vm_name_from_server_name(resolved_server_name)
+    print_execution_plan(args, resolved_server_name, resolved_vm_name)
     print(f"server_name={resolved_server_name}")
     print(f"vm_name={resolved_vm_name}")
 
@@ -236,8 +394,24 @@ if __name__ == "__main__":
     print(f"backend ssh: nc@{backend_host}:{backend_port}")
     print(f"front ssh:   nc@{front_host}:{front_port}")
 
+    print("[setup] Krok: weryfikacja polaczenia backend")
     verify_connection("backend", backend_host, backend_port)
+    if args.index_only:
+        print("[setup] Krok: uruchomienie indeksacji backend (index-only)")
+        run_backend_indexer(backend_host, backend_port)
+        print("Indeksacja zakonczona pomyslnie.")
+        raise SystemExit(0)
+
+    print("[setup] Krok: weryfikacja polaczenia front")
     verify_connection("front", front_host, front_port)
-    run_front_setup(front_host, front_port, args.front_branch)
-    run_backend_setup(backend_host, backend_port, args.backend_branch)
+    print("[setup] Krok: setup front")
+    run_front_setup(front_host, front_port, args.front_branch, args.front_base_branch)
+    print("[setup] Krok: setup backend")
+    run_backend_setup(
+        backend_host,
+        backend_port,
+        args.backend_branch,
+        args.backend_base_branch,
+        run_indexer=not args.skip_indexer,
+    )
     print("Setup zakonczony pomyslnie.")

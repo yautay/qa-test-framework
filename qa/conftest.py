@@ -1513,10 +1513,20 @@ def pytest_configure_node(node) -> None:
 
 
 def pytest_sessionstart(session: pytest.Session) -> None:
+    reporter = session.config.pluginmanager.getplugin("terminalreporter")
+    env: RuntimeEnv = session.config._runtime_env
+    worker_id = _current_worker_id()
+    if reporter is not None and worker_id in {"master", "controller"}:
+        reporter.write_line("=== Test Environment ===")
+        reporter.write_line(f"server_name: {env.server_name}")
+        reporter.write_line(f"base_url: {env.base_url}")
+        reporter.write_line(f"browser: {env.browser}")
+        reporter.write_line(f"headless: {str(bool(env.headless)).lower()}")
+        reporter.write_line(f"grid: {str(bool(env.is_grid_available)).lower()}")
+
     if getattr(session.config, "_reporting_suspended", False):
         return
 
-    env: RuntimeEnv = session.config._runtime_env
     artifacts: RunArtifacts = session.config._run_artifacts
     run_uid = str(getattr(session.config, "_run_uid", "") or "")
     worker_id = os.getenv("PYTEST_XDIST_WORKER", "master")

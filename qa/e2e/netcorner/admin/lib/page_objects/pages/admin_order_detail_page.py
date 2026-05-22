@@ -152,6 +152,12 @@ class AdminOrderDetailPage(AdminBasePage):
             return loc.inner_text(timeout=QUICK_PROBE_MS).strip()
         return ""
 
+    def get_order_products_raw_text(self) -> str:
+        loc = self.page.locator("#order_products")
+        if loc.count() > 0:
+            return loc.first.inner_text(timeout=ELEMENT_VISIBLE_MS).strip()
+        return ""
+
     def get_all_data(self, order_number: str = "") -> AdminOrderData:
         """Collect all readable order data into an AdminOrderData instance."""
         return AdminOrderData(
