@@ -8,6 +8,12 @@
       "tools/ai_test_tools/skills"
     ]
   },
+  "plugin": [
+    "./.opencode/plugins/python-venv-guard.js",
+    "./.opencode/plugins/e2e-anti-pattern-guard.js",
+    "./.opencode/plugins/agents-context-guard.js",
+    "./.opencode/plugins/repo-context-cache.js"
+  ],
   "command": {
     "new_test_prepare": {
       "description": "Prepare new E2E test blueprint from Playwright trace artifacts",

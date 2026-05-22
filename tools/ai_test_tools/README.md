@@ -172,3 +172,13 @@ If you already have multiple recording runs and want one coherent suite (shared 
 - Do not hardcode hosts/domains in generated plans/tests.
 - Use runtime-provided base URL and path semantics.
 - Paths/endpoints can be used as hints, but keep solutions portable across test environments.
+
+## OpenCode token optimization
+
+Repository-level OpenCode plugins can reduce repeated repository scanning cost:
+
+- `.opencode/plugins/repo-context-cache.js` builds and refreshes compact map file:
+  - `artifacts/ai-test-tools/repo_map.json`
+- The plugin injects compact repo context into chat system prompt, so commands do less broad rediscovery.
+
+After changing `opencode.json` or `.opencode/plugins/*`, restart OpenCode to load updates.
