@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from playwright.sync_api import Locator, Page
+from playwright.sync_api import Locator, Page, expect
 
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import SLOW_OPERATION_MS
 
 
 class HeaderActionsComponent(BaseComponent):
@@ -19,8 +20,13 @@ class HeaderActionsComponent(BaseComponent):
     def open_login(self) -> None:
         self.pointer_click(self.__login)
 
+    @step("Czekam na widoczność linku do panelu klienta")
+    def wait_for_account_visible(self) -> None:
+        expect(self.__my_account).to_be_visible(timeout=SLOW_OPERATION_MS)
+
     @step("Przechodzę do panelu klienta")
     def open_account(self) -> None:
+        self.wait_for_account_visible()
         self.pointer_click(self.__my_account)
 
     @step("Otwieram mini koszyk")
