@@ -9,8 +9,11 @@ Generate final E2E test code using prepared payload from `new-test-prepare`.
 
 ## Inputs
 
-- `generation_payload` from prepare stage
+- `generation_payload` from prepare stage, or
+- `generation_payload_path` pointing to JSON file produced by prepare stage
 - optional constraints (file names, parametrization preferences)
+
+When both payload object and path are provided, path is source of truth.
 
 ## Core rules
 
@@ -24,16 +27,29 @@ Generate final E2E test code using prepared payload from `new-test-prepare`.
 
 ## Implementation protocol
 
-1. Resolve target test location and marker conventions.
-2. Implement or extend required test data builders.
-3. Implement/extend POM reads/actions only when missing.
-4. Create test in Arrange-Act-Assert structure.
-5. Add explicit business assertions from payload.
-6. Verify imports/constants/markers follow local standards.
+1. Read `AGENTS.md` at repository root.
+2. Resolve and read relevant nested `AGENTS.md` files for target domain/path before implementation:
+   - `nuxt`: include guides under `qa/e2e/netcorner/nuxt/pl/**`.
+   - `admin`: include guides under `qa/e2e/netcorner/admin/**`.
+   - `mailhog`: include guides under `qa/e2e/netcorner/mailhog/**`.
+   - `setup`: include setup-relevant guidance plus root rules.
+   - `custom`: locate nearest `AGENTS.md` files on the candidate path and include root rules.
+3. Load and validate `generation_payload` (schema version, required keys, artifact references).
+4. Resolve target test location and marker conventions.
+5. Implement or extend required test data builders.
+6. Implement/extend POM reads/actions only when missing.
+7. Create test in Arrange-Act-Assert structure.
+8. Add explicit business assertions from payload.
+9. Verify imports/constants/markers follow local standards.
 
 ## Mandatory output sections
 
 1. Files created/updated
 2. Rationale for key implementation decisions
-3. Verification commands to run
-4. Any remaining risks or follow-up tasks
+3. AGENTS context used (root + nested paths, plus key applied rules)
+4. Verification commands to run
+5. Any remaining risks or follow-up tasks
+
+## Output quality gate
+
+- If root `AGENTS.md` or relevant nested `AGENTS.md` files were not read, stop and return `needs-input` with missing guide paths.

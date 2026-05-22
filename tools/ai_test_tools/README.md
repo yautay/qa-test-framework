@@ -8,6 +8,8 @@ Tools for collecting user-flow artifacts and preparing new automated E2E tests w
 - `examples/checkpoints.sample.json` - example checkpoint schema.
 - `skills/new-test-prepare/SKILL.md` - agentic pre-prompt skill for scenario preparation.
 - `skills/new-test-generate/SKILL.md` - follow-up skill for generating test code from prepared payload.
+- `skills/new-test-suite-prepare/SKILL.md` - research/planning for multi-scenario suite from many recordings.
+- `skills/new-test-suite-generate/SKILL.md` - multi-scenario suite generator from many recording sets.
 - `opencode.snippets.md` - snippets for registering commands/skills in `opencode.json`.
 
 ## Why this flow
@@ -128,7 +130,42 @@ npx playwright show-trace "artifacts/manual-traces/<run>/trace.zip"
 ```
 
 3. Feed `trace.zip + checkpoints.json + metadata.json` into `/new_test_prepare`
-4. Use generated payload in `/new_test_generate`
+4. `/new_test_prepare` writes deterministic payload file to `artifacts/ai-test-tools/prepared/*.json`
+5. Use `generation_payload_path` from step 4 in `/new_test_generate`
+
+### Deterministic research output contract
+
+Research commands always produce fixed-order output and save a payload file for handoff:
+
+- single test flow:
+  - command: `/new_test_prepare`
+  - payload: `generation_payload`
+  - output file: `artifacts/ai-test-tools/prepared/<timestamp>_<scenario>_generation_payload.json`
+- multi-scenario suite flow:
+  - command: `/new_test_suite_prepare`
+  - payload: `suite_generation_payload`
+  - output file: `artifacts/ai-test-tools/prepared/<timestamp>_<suite>_suite_generation_payload.json`
+
+## Build suite from many recordings
+
+If you already have multiple recording runs and want one coherent suite (shared architecture + builders + parametrization):
+
+1. Prepare a `recording_sets` list where each entry contains:
+   - `scenario_name`
+   - `trace_zip_path`
+   - `checkpoints_json_path`
+   - optional `metadata_json_path`
+2. Run `/new_test_suite_prepare` with:
+   - `suite_name`
+   - `target_domain`
+   - `recording_sets`
+3. Save and copy `suite_generation_payload_path` from prepare output.
+4. Run `/new_test_suite_generate` using `suite_generation_payload_path`.
+5. Expected generator behavior:
+   - one consistent suite architecture across scenarios,
+   - stable case objects (`case_id`) and parametrization,
+   - shared test data builders where practical,
+   - explicit business assertions in tests only.
 
 ## URL policy
 
