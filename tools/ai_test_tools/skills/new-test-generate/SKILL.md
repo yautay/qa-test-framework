@@ -15,6 +15,17 @@ Generate final E2E test code using prepared payload from `new-test-prepare`.
 
 When both payload object and path are provided, path is source of truth.
 
+## User confirmation gate
+
+Before any code changes, confirm with user (or apply explicit user-provided values) for:
+
+- test name (`test_name`)
+- marker set (`pytestmark`/scenario marker plan)
+- allure severity (or "keep existing convention" when not used nearby)
+- target file path (create new vs update existing)
+
+If payload fields conflict with user preference, user preference is source of truth.
+
 ## Core rules
 
 - Respect repository test architecture and neighboring suite style.
@@ -35,12 +46,13 @@ When both payload object and path are provided, path is source of truth.
    - `setup`: include setup-relevant guidance plus root rules.
    - `custom`: locate nearest `AGENTS.md` files on the candidate path and include root rules.
 3. Load and validate `generation_payload` (schema version, required keys, artifact references).
-4. Resolve target test location and marker conventions.
-5. Implement or extend required test data builders.
-6. Implement/extend POM reads/actions only when missing.
-7. Create test in Arrange-Act-Assert structure.
-8. Add explicit business assertions from payload.
-9. Verify imports/constants/markers follow local standards.
+4. Confirm with user: test name, markers, severity, and target file path.
+5. Resolve target test location and marker conventions.
+6. Implement or extend required test data builders.
+7. Implement/extend POM reads/actions only when missing.
+8. Create test in Arrange-Act-Assert structure.
+9. Add explicit business assertions from payload.
+10. Verify imports/constants/markers follow local standards.
 
 ## Mandatory output sections
 

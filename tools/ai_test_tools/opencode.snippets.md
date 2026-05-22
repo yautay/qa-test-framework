@@ -35,7 +35,7 @@ Use these snippets in project `opencode.json`.
   "command": {
     "new_test_generate": {
       "description": "Generate new E2E test code from prepare payload",
-      "prompt": "Use skill new-test-generate. Consume generation_payload or generation_payload_path from /new_test_prepare and implement test code in this repository. Prefer payload file path when provided. Before code changes, read repository guidance in AGENTS.md at repo root and all relevant nested AGENTS.md files for the target domain/path; treat them as mandatory source of truth and list exactly which guides were used. Keep base hosts non-hardcoded, preserve repository contracts, put assertions in tests only, avoid sleeps and retry ladders, and use timeout constants. Reuse existing POM/flows/builders where possible."
+      "prompt": "Use skill new-test-generate. Consume generation_payload or generation_payload_path from /new_test_prepare and implement test code in this repository. Prefer payload file path when provided. Before code changes, read repository guidance in AGENTS.md at repo root and all relevant nested AGENTS.md files for the target domain/path; treat them as mandatory source of truth and list exactly which guides were used. Before implementation, confirm with user: test name, marker set, severity, and target file path strategy. Keep base hosts non-hardcoded, preserve repository contracts, put assertions in tests only, avoid sleeps and retry ladders, and use timeout constants. Reuse existing POM/flows/builders where possible."
     }
   }
 }
@@ -65,7 +65,7 @@ You can merge both commands under one `command` object in your final `opencode.j
   "command": {
     "new_test_suite_generate": {
       "description": "Generate a coherent multi-scenario E2E suite from prepared suite payload",
-      "prompt": "Use skill new-test-suite-generate. Consume suite_generation_payload or suite_generation_payload_path from /new_test_suite_prepare and implement one coherent suite architecture (shared builders/flows, parametrized cases with stable case_id, explicit assertions in tests). Prefer payload file path when provided. Before code changes, read repository guidance in AGENTS.md at repo root and all relevant nested AGENTS.md files for the target domain/path; treat them as mandatory source of truth and list exactly which guides were used. Keep base hosts non-hardcoded, avoid sleeps/retry ladders, and use timeout constants."
+      "prompt": "Use skill new-test-suite-generate. Consume suite_generation_payload or suite_generation_payload_path from /new_test_suite_prepare and implement one coherent suite architecture (shared builders/flows, parametrized cases with stable case_id, explicit assertions in tests). Prefer payload file path when provided. Before code changes, read repository guidance in AGENTS.md at repo root and all relevant nested AGENTS.md files for the target domain/path; treat them as mandatory source of truth and list exactly which guides were used. Before implementation, confirm with user: suite name, marker set, severity policy, and file strategy (update existing vs create new). Keep base hosts non-hardcoded, avoid sleeps/retry ladders, and use timeout constants."
     }
   }
 }

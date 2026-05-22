@@ -132,6 +132,7 @@ npx playwright show-trace "artifacts/manual-traces/<run>/trace.zip"
 3. Feed `trace.zip + checkpoints.json + metadata.json` into `/new_test_prepare`
 4. `/new_test_prepare` writes deterministic payload file to `thoughts/ai_gen/prepared/*.json`
 5. Use `generation_payload_path` from step 4 in `/new_test_generate`
+6. During generation, confirm with user: test name, markers, severity, and target file strategy.
 
 ### Deterministic research output contract
 
@@ -161,6 +162,7 @@ If you already have multiple recording runs and want one coherent suite (shared 
    - `recording_sets`
 3. Save and copy `suite_generation_payload_path` from prepare output.
 4. Run `/new_test_suite_generate` using `suite_generation_payload_path`.
+5. During generation, confirm with user: suite name, markers, severity policy, and file strategy.
 5. Expected generator behavior:
    - one consistent suite architecture across scenarios,
    - stable case objects (`case_id`) and parametrization,
