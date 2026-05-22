@@ -23,7 +23,11 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import Clie
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.listings.listings_data_models import ListingsData
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.products.products_data_models import AvailabilityStatuses
 
-pytestmark = [pytest.mark.e2e, pytest.mark.e2e_employee_program]
+pytestmark = [
+    pytest.mark.e2e,
+    pytest.mark.e2e_employee_program,
+    pytest.mark.xdist_group("employee_program_serial"),
+]
 
 _PRICE_CATEGORY_EMPLOYEE = "75"
 _MAIL_EMPLOYEE_RECIPIENT = "sklep@komputronik.pl"

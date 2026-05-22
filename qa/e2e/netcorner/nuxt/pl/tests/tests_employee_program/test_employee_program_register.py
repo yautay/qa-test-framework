@@ -15,7 +15,11 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.home_page import HomePage
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.pages.register_page import RegisterPage
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
 
-pytestmark = [pytest.mark.e2e, pytest.mark.e2e_employee_program]
+pytestmark = [
+    pytest.mark.e2e,
+    pytest.mark.e2e_employee_program,
+    pytest.mark.xdist_group("employee_program_serial"),
+]
 
 _PRICE_CATEGORY_EMPLOYEE = "75"
 _MAIL_EMPLOYEE_RECIPIENT = "sklep@komputronik.pl"
