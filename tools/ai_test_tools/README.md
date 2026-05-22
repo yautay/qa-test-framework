@@ -178,7 +178,7 @@ If you already have multiple recording runs and want one coherent suite (shared 
 Repository-level OpenCode plugins can reduce repeated repository scanning cost:
 
 - `.opencode/plugins/repo-context-cache.js` builds and refreshes compact map file:
-  - `artifacts/ai-test-tools/repo_map.json`
+  - `repo_map.json` (repository root)
 - The plugin injects compact repo context into chat system prompt, so commands do less broad rediscovery.
 
 After changing `opencode.json` or `.opencode/plugins/*`, restart OpenCode to load updates.

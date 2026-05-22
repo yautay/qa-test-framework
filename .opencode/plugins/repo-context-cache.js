@@ -2,7 +2,7 @@ import { execSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
-const CACHE_DIR = "artifacts/ai-test-tools";
+const CACHE_DIR = ".";
 const CACHE_FILE = "repo_map.json";
 const ROOT_AGENTS = "AGENTS.md";
 
