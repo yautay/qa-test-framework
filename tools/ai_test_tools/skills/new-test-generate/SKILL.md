@@ -36,6 +36,20 @@ If payload fields conflict with user preference, user preference is source of tr
 - Use timeout constants from project modules.
 - Reuse existing flows/POMs/builders first; extend only where needed.
 
+## Live verification and debugging gate
+
+- During implementation, do not stop at static code generation; verify behavior on a live run.
+- Mandatory validation loop for each affected scenario:
+  1. run focused pytest (single file/case or marker subset),
+  2. analyze first failure,
+  3. verify live DOM/locator behavior (visibility/count/text) when failure suggests selector/readiness mismatch,
+  4. apply minimal contract-safe fix,
+  5. re-run focused pytest until stable.
+- For selector issues, prefer semantically stable locators and visibility scoping (`:visible`, role-based locators, root-scoped locators) over brittle CSS chains.
+- If text is present but assertion fails, explicitly check strict-mode collisions (multiple matches) and narrow locator intent instead of adding retries.
+- No "paper fixes": do not finish with "should work" without at least one executed verification command result.
+- If live verification cannot be executed (e.g. no VPN/env access), return `needs-input` with exact blocker and the precise command/check list required from user.
+
 ## Implementation protocol
 
 1. Read `AGENTS.md` at repository root.
@@ -53,6 +67,7 @@ If payload fields conflict with user preference, user preference is source of tr
 8. Create test in Arrange-Act-Assert structure.
 9. Add explicit business assertions from payload.
 10. Verify imports/constants/markers follow local standards.
+11. Execute live validation loop (focused pytest + selector/DOM checks when needed) and finalize only after pass or explicit environment blocker.
 
 ## Mandatory output sections
 
@@ -61,6 +76,11 @@ If payload fields conflict with user preference, user preference is source of tr
 3. AGENTS context used (root + nested paths, plus key applied rules)
 4. Verification commands to run
 5. Any remaining risks or follow-up tasks
+
+Verification section must include:
+- commands actually executed,
+- pass/fail outcome,
+- for failures: diagnosed root cause and what was changed.
 
 ## Output quality gate
 

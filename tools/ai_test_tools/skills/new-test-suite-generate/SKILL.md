@@ -39,6 +39,20 @@ If payload fields conflict with user preference, user preference is source of tr
 - Use timeout constants from project modules.
 - Reuse existing flows/POMs/builders first; extend only where needed.
 
+## Live verification and debugging gate
+
+- Suite generation must include runtime verification, not only code authoring.
+- Mandatory per-scenario/per-entrypoint loop:
+  1. run focused pytest for changed suite/cases,
+  2. inspect first failing scenario,
+  3. when failure indicates locator or readiness mismatch, validate live DOM behavior (count, visibility, text, strict-mode collisions),
+  4. patch with minimal, contract-compliant fix,
+  5. re-run focused pytest until stable.
+- Prefer root-scoped semantic locators and deterministic visibility filters over fallback ladders.
+- If expected text is visible but test fails, require explicit check for duplicate matches and refine selector semantics (e.g. heading role vs generic text locator).
+- Never finalize with unverified assumptions; include at least one real test run outcome.
+- If live checks are blocked by environment (VPN, host access, credentials), return `needs-input` with exact blocker and exact commands/user actions required.
+
 ## AGENTS onboarding gate
 
 Before implementation, mandatory:
@@ -68,6 +82,7 @@ If root or relevant nested guides were not read, stop and return `needs-input` w
 7. Implement tests in Arrange-Act-Assert shape with explicit business assertions per scenario.
 8. Keep domain split strict: no business assertions in POM/flow methods.
 9. Verify markers/imports/constants align with local conventions.
+10. Run live suite validation loop and close only after pass or explicit environment blocker.
 
 ## Mandatory output sections
 
@@ -78,3 +93,8 @@ If root or relevant nested guides were not read, stop and return `needs-input` w
 5. AGENTS context used (root + nested paths, key applied rules)
 6. Verification commands to run
 7. Remaining risks/follow-ups
+
+Verification section must explicitly report:
+- commands executed,
+- per-command result,
+- root-cause notes for any non-passing scenario and applied fix.

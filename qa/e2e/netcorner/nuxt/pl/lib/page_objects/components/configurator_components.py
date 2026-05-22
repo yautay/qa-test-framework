@@ -9,14 +9,16 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseCompone
 
 
 class ConfiguratorActionsComponent(BaseComponent):
-    ROOT_SELECTOR = "[data-name='configuratorActions']"
+    ROOT_SELECTOR = "#pageContent"
 
     def __init__(self, scope: Page | Locator) -> None:
         super().__init__(self.resolve_root(scope, self.ROOT_SELECTOR), name="Configuration Actions Component")
 
         # locators (private)
-        self.__container = self.root
-        self.__text_configuration_name = self.__container.get_by_text("Nazwa konfiguracji", exact=True)
+        self.__container = self.root.locator("[data-name='configuratorActions']")
+        self.__text_configuration_title = self.root.get_by_role(
+            "heading", name="Konfigurator komputera PC", exact=True
+        )
         self.__button_clear = self.__container.get_by_role("button", name="Wyczyść", exact=True)
         self.__button_create_copy = self.__container.get_by_role("button", name="Stwórz kopię", exact=True)
         self.__button_share = self.__container.get_by_role("button", name="Udostępnij", exact=True)
@@ -40,7 +42,7 @@ class ConfiguratorActionsComponent(BaseComponent):
     # getters
     @step("Pobieram nagłówek sekcji konfiguracji")
     def get_configuration_section_title(self) -> str:
-        return (self.__text_configuration_name.text_content() or "").strip()
+        return (self.__text_configuration_title.text_content() or "").strip()
 
 
 class ConfiguratorComponentsComponent(BaseComponent):

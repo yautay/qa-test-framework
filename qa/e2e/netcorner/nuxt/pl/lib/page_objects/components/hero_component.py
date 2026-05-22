@@ -28,7 +28,7 @@ class HeroComponent(BaseComponent):
         # locators (private)
         self.__button_configure_pc = self.find("[data-name='subsidiaryBannerBtn']")
         self.__link_laptops_and_computers = self.find("a[title='Laptopy i komputery']")
-        self.__link_pc_configurator = self.find("a[title='Konfigurator PC']")
+        self.__link_pc_configurator = self.find("a[title='Konfigurator PC']:visible")
 
         self.__image_brand_samsung = self.find("img[data-role='brandLink'][alt='samsung']")
         self.__image_brand_microsoft = self.find("img[data-role='brandLink'][alt='microsoft']")
