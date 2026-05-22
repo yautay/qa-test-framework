@@ -5,6 +5,7 @@ import uuid
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.advanced_configurator.advanced_configurator_data_models import (
     AdvancedConfiguratorCase,
     AdvancedConfiguratorData,
+    ConfiguratorEntryCase,
 )
 
 
@@ -94,3 +95,37 @@ def prod_registered_advanced_configurator_client() -> AdvancedConfiguratorData:
         nip="7770020640",
         phone="791233545",
     )
+
+
+def configurator_entry_cases() -> list[ConfiguratorEntryCase]:
+    expected_path = "/advanced-configurator"
+    expected_header_text = "Konfigurator komputera PC"
+    return [
+        ConfiguratorEntryCase(
+            case_id="pl_configurator_entry_banner",
+            scenario_name="configurator_entry_banner",
+            entry_point="banner",
+            start_path="/",
+            expected_path=expected_path,
+            expected_header_text=expected_header_text,
+            requires_home_navigation=True,
+        ),
+        ConfiguratorEntryCase(
+            case_id="pl_configurator_entry_swipe",
+            scenario_name="configurator_entry_swipe",
+            entry_point="swipe",
+            start_path="/",
+            expected_path=expected_path,
+            expected_header_text=expected_header_text,
+            requires_home_navigation=True,
+        ),
+        ConfiguratorEntryCase(
+            case_id="pl_configurator_entry_url",
+            scenario_name="configurator_entry_url",
+            entry_point="url",
+            start_path="/advanced-configurator",
+            expected_path=expected_path,
+            expected_header_text=expected_header_text,
+            requires_home_navigation=False,
+        ),
+    ]
