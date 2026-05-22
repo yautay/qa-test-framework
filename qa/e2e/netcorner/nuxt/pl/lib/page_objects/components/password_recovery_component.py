@@ -6,6 +6,8 @@ from playwright.sync_api import Locator, Page, expect
 
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
+from qa.e2e.netcorner.nuxt.pl.lib.page_objects.overlays.toast_overlay import ToastInstance, ToastOverlay
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import QUICK_PROBE_MS, UI_ACTION_MS
 
 
 class PasswordRecoveryComponent(BaseComponent):
@@ -50,11 +52,18 @@ class PasswordRecoveryComponent(BaseComponent):
         checkbox = frame.locator("#recaptcha-anchor")
         expect(checkbox).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
         self.pointer_click(checkbox)
+        expect(checkbox).to_have_attribute("aria-checked", "true", timeout=UI_ACTION_MS)
         return self
 
     @step("Klikam przycisk 'Zapisz zmiany'")
     def submit_password_recovery(self) -> None:
         self.pointer_click(self.__button_save_changes)
+        toast = ToastOverlay(self.root.page).get_toast(
+            expected_instance=ToastInstance.FILL_FIELDS,
+            timeout=QUICK_PROBE_MS,
+        )
+        if toast is not None:
+            self.pointer_click(self.__button_save_changes)
 
     # ============================================================
     # ASSERTIONS / HELPERS
