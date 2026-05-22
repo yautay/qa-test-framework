@@ -11,14 +11,14 @@ log_compression = "zip"
 artifacts_dir = "artifacts"
 framework_mode = "local"  # local | server
 ignore_https_errors = True
-allure_enabled = True
-pytest_html_enabled = True
-record_video = True
+allure_enabled = False
+pytest_html_enabled = False
+record_video = False
 video_min_seconds = 15
 highlight_on_fail = False
 min_expected_tests = 1
-failed_dom_enabled = True
-trace_enabled = True
+failed_dom_enabled = False
+trace_enabled = False
 
 # Target git-info probe
 run_git_info_frontend_endpoint = "/git-info"
@@ -26,7 +26,7 @@ run_git_info_backend_endpoint = "private-api/git-info"
 run_git_info_timeout_seconds = 3
 
 # Grid
-grid_ws_endpoint = "ws://10.21.69.118:3034/pw-ws"
+grid_ws_endpoint = "ws://10.21.69.118:23034/pw-ws"
 grid_connect_timeout_ms = 30000
 
 grid_ws_auth_mode = "basic"   # none | basic | token
