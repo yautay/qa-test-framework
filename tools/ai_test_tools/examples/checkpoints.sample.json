@@ -1,0 +1,31 @@
+[
+  {
+    "name": "cart_contains_added_product",
+    "type": "ui",
+    "severity": "critical",
+    "expectation": "Cart contains product XYZ with quantity 1",
+    "automation_hint": "Pick first listing item that has 'Promocja' badge and add to cart",
+    "selection_strategy": "dynamic",
+    "url": "https://example.test.netcorner.pl/cart",
+    "path_hint": "/cart",
+    "title": "Cart",
+    "timestamp_utc": "2026-05-22T11:35:24.123456+00:00",
+    "screenshot": "screenshots/003_cart_contains_added_product.png",
+    "element": {
+      "tag": "button",
+      "id": null,
+      "text": "Przejdz do kasy",
+      "role": null,
+      "aria_label": "Przejdz do kasy",
+      "name": null,
+      "test_id": "checkout-submit",
+      "css_path": "main > section:nth-of-type(2) > button:nth-of-type(1)",
+      "selector_candidates": [
+        "[data-testid=\"checkout-submit\"]",
+        "button[aria-label=\"Przejdz do kasy\"]",
+        "main > section:nth-of-type(2) > button:nth-of-type(1)"
+      ],
+      "picked_at": "2026-05-22T11:35:20.123Z"
+    }
+  }
+]
