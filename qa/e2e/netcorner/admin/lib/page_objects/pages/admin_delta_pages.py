@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import base64
+import random
 import re
+import tempfile
+import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from playwright.sync_api import Page, expect
 
 from qa.e2e.netcorner.admin.lib.page_objects.base_page import AdminBasePage, LoadState
-from qa.e2e.netcorner.admin.lib.timeouts import ELEMENT_VISIBLE_MS, QUICK_PROBE_MS
+from qa.e2e.netcorner.admin.lib.timeouts import ELEMENT_VISIBLE_MS, HTTP_REQUEST_TIMEOUT_S, QUICK_PROBE_MS
 
 
 @dataclass(frozen=True)
@@ -434,7 +438,7 @@ class AdminCartOfferPage(AdminBasePage):
     _INPUT_EXPIRATION = "#ktr_cart_offer_cart_offer_expires_at"
     _INPUT_EMAIL = "#ktr_cart_offer_cart_offer_customer_email"
     _INPUT_SUBJECT = "#ktr_cart_offer_cart_offer_email_subject"
-    _BTN_SAVE = "input[name='save'][type='submit']"
+    _BTN_SAVE = "input[name='save'][type='submit'], input[value='zapisz']"
     # Product row: product ID used in selector
     _INPUT_PRODUCT_PRICE_TMPL = "#cartOfferProducts_{product_id}_priceGross"
     _INPUT_PRODUCT_ROW_ID_TMPL = "#cartOfferProducts_{product_id}_id"
@@ -622,11 +626,14 @@ class AdminEmployeeProgramPage(AdminBasePage):
     _INPUT_GROUP_NAME = "#ktr_partner_employee_group_group_name"
     _SELECT_PRICE_CATEGORY = "#ktr_partner_employee_group_group_price_category_id"
     _CB_ENABLE_QR = "#ktr_partner_employee_group_qr_code"
-    _INPUT_SMS_MSG = "#ktr_partner_employee_group_sms_message"
+    _INPUT_SMS_MSG = "#ktr_partner_employee_group_group_sms_text"
     _INPUT_IMPORT_PHONES = "#ktr_partner_employee_group_phone_numbers_import"
-    _BTN_SHOW_HASHES = "input[value='Pokaż hashe']"
-    _ELEMENTS_HASHES = ".hash-list li, #hashList li, td.hash"
-    _BTN_GENERATE_QR = "input[value='Generuj nowy kod QR']"
+    _BTN_SHOW_HASHES = "a[title*='Pokaż numery telefonów']"
+    _ELEMENTS_HASHES = "tbody tr td:nth-child(4)"
+    _BTN_GENERATE_QR = "a[title='Generuj nowy kod QR ']"
+    _LINK_QR_DOWNLOAD = "a[title*='Pobierz kod QR']"
+    _IMG_QR_CODE = "img[alt='QR Code']"
+    _BTN_UNLINK_PHONES = "a[title*='Usuń numery telefonów']"
     _BTN_SAVE = "input[name='save'][type='submit']"
     # Delete button in list
     _BTN_DELETE_IN_LIST = "a[href*='partnerEmployeeGroup/delete']"
@@ -644,7 +651,7 @@ class AdminEmployeeProgramPage(AdminBasePage):
         return self
 
     def navigate_to_edit(self, group_id: str) -> AdminEmployeeProgramPage:
-        self.page.goto(f"{self.base_url}/admin.php/partnerEmployeeGroup/edit/pl/id/{group_id}")
+        self.page.goto(f"{self.base_url}/admin.php/partnerEmployeeGroup/edit/pl/group_id/{group_id}")
         return self.wait_loaded()
 
     def wait_loaded(
@@ -673,29 +680,52 @@ class AdminEmployeeProgramPage(AdminBasePage):
             qr_cb = self.page.locator(self._CB_ENABLE_QR)
             if qr_cb.count() and not qr_cb.is_checked():
                 qr_cb.check()
+        else:
+            sms_message = self.page.locator(self._INPUT_SMS_MSG)
+            if sms_message.count() > 0:
+                sms_message.first.fill("Link do zalogowania:")
 
-        if data.phone_numbers:
+        phone_numbers = data.phone_numbers
+        if phone_numbers is None and not data.enable_qr:
+            phone_numbers = [f"{random.choice((50, 51, 53, 57, 60, 66, 69, 72, 73, 78, 79, 88))}{random.randint(0, 9_999_999):07d}" for _ in range(10)]
+
+        if phone_numbers:
             phone_inp = self.page.locator(self._INPUT_IMPORT_PHONES)
             if phone_inp.count():
-                phone_inp.fill("\n".join(data.phone_numbers))
+                with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", suffix=".txt", delete=False) as fp:
+                    fp.write("\n".join(phone_numbers))
+                    temp_path = fp.name
+                phone_inp.set_input_files(temp_path)
 
-        self.page.locator(self._BTN_SAVE).first.click()
+        self.page.locator(self._BTN_SAVE).first.click(force=True)
         self.page.wait_for_load_state("domcontentloaded")
 
-        return self.get_group_id_from_url() or ""
+        group_id = self.get_group_id_from_url()
+        if group_id:
+            return group_id
+
+        group_id_from_field = (self.page.locator("#ktr_partner_employee_group_id").first.input_value() or "").strip()
+        if group_id_from_field.isdigit():
+            return group_id_from_field
+
+        return ""
 
     def get_group_id_from_url(self) -> str | None:
         """Extract the group id from the current admin URL."""
         url = self.page.url
-        match = re.search(r"/partnerEmployeeGroup/edit/pl/id/(\d+)", url)
-        return match.group(1) if match else None
+        for pattern in (r"/partnerEmployeeGroup/edit/pl/group_id/(\d+)", r"/partnerEmployeeGroup/edit/pl/id/(\d+)"):
+            match = re.search(pattern, url)
+            if match:
+                return match.group(1)
+        return None
 
     def get_sms_hashes(self) -> list[str]:
         """Click 'Pokaż hashe' and return the list of SMS hash codes."""
         btn = self.page.locator(self._BTN_SHOW_HASHES)
-        if btn.count():
-            btn.first.click()
-            self.page.wait_for_timeout(QUICK_PROBE_MS)
+        if btn.count() == 0:
+            return []
+        btn.first.click()
+        self.page.wait_for_timeout(QUICK_PROBE_MS)
         hashes_el = self.page.locator(self._ELEMENTS_HASHES)
         return [
             hashes_el.nth(i).inner_text().strip()
@@ -703,20 +733,125 @@ class AdminEmployeeProgramPage(AdminBasePage):
             if hashes_el.nth(i).inner_text().strip()
         ]
 
+    def get_qr_code_value(self) -> str:
+        """Return decoded QR payload URL when possible, otherwise raw QR source."""
+        qr_img = self.page.locator(self._IMG_QR_CODE).first
+        if qr_img.count() > 0:
+            src = (qr_img.get_attribute("src") or "").strip()
+            if src.startswith("data:image"):
+                decoded = self._decode_qr_from_data_uri(src)
+                if decoded:
+                    return decoded
+            if src:
+                return src
+
+        download_link = self.page.locator(self._LINK_QR_DOWNLOAD).first
+        if download_link.count() > 0:
+            href = (download_link.get_attribute("href") or "").strip()
+            if href:
+                resolved = href if href.startswith("http") else f"{self.base_url}{href}"
+                decoded = self._decode_qr_from_image_url(resolved)
+                if decoded:
+                    return decoded
+                return resolved
+        return ""
+
+    @staticmethod
+    def _decode_qr_payload(raw_image: bytes) -> str | None:
+        try:
+            import cv2  # type: ignore[import-not-found]
+            import numpy as np  # type: ignore[import-not-found]
+        except ImportError:
+            return None
+
+        matrix = np.frombuffer(raw_image, np.uint8)
+        img = cv2.imdecode(matrix, cv2.IMREAD_COLOR)
+        if img is None:
+            return None
+
+        detector = cv2.QRCodeDetector()
+
+        payload, _, _ = detector.detectAndDecode(img)
+        payload_text = str(payload or "").strip()
+        if payload_text:
+            return payload_text
+
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray_with_border = cv2.copyMakeBorder(
+            gray,
+            40,
+            40,
+            40,
+            40,
+            cv2.BORDER_CONSTANT,
+            value=255,
+        )
+
+        payload, _, _ = detector.detectAndDecode(gray_with_border)
+        payload_text = str(payload or "").strip()
+        if payload_text:
+            return payload_text
+
+        _, bw = cv2.threshold(gray_with_border, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        enlarged = cv2.resize(bw, None, fx=2.0, fy=2.0, interpolation=cv2.INTER_CUBIC)
+
+        payload, _, _ = detector.detectAndDecode(enlarged)
+        payload_text = str(payload or "").strip()
+        if payload_text:
+            return payload_text
+
+        detected, decoded_info, _, _ = detector.detectAndDecodeMulti(enlarged)
+        if detected and decoded_info:
+            for item in decoded_info:
+                item_text = str(item or "").strip()
+                if item_text:
+                    return item_text
+
+        return None
+
+    def _decode_qr_from_data_uri(self, src: str) -> str | None:
+        if "," not in src:
+            return None
+        _, encoded = src.split(",", 1)
+        try:
+            raw_image = base64.b64decode(encoded)
+        except Exception:
+            return None
+        return self._decode_qr_payload(raw_image)
+
+    def _decode_qr_from_image_url(self, url: str) -> str | None:
+        try:
+            with urllib.request.urlopen(url, timeout=HTTP_REQUEST_TIMEOUT_S) as response:
+                raw_image = response.read()
+        except Exception:
+            return None
+        return self._decode_qr_payload(raw_image)
+
     def generate_new_qr_code(self) -> None:
         """Click 'Generuj nowy kod QR' and wait for it."""
         btn = self.page.locator(self._BTN_GENERATE_QR)
-        if btn.count():
-            btn.first.click()
-            self.page.wait_for_load_state("domcontentloaded")
+        if btn.count() == 0:
+            raise AssertionError("Nie znaleziono przycisku 'Generuj nowy kod QR'.")
+        self.page.once("dialog", lambda dialog: dialog.accept())
+        btn.first.click()
+        self.page.wait_for_load_state("domcontentloaded")
 
     def delete_group(self, group_id: str) -> None:
         """Navigate to list and delete the group with the given ID."""
-        self.navigate_to_list()
-        delete_link = self.page.locator(f"a[href*='partnerEmployeeGroup/delete/pl/id/{group_id}']")
-        if delete_link.count():
-            delete_link.first.click()
+        self.navigate_to_edit(group_id)
+
+        unlink_button = self.page.locator(self._BTN_UNLINK_PHONES).first
+        if unlink_button.count() > 0 and unlink_button.is_visible(timeout=QUICK_PROBE_MS):
+            self.page.once("dialog", lambda dialog: dialog.accept())
+            unlink_button.click()
             self.page.wait_for_load_state("domcontentloaded")
+
+        delete_button = self.page.locator("input.sf_admin_action_delete, input[value='usuń']").first
+        if delete_button.count() == 0:
+            raise AssertionError(f"Nie znaleziono przycisku usuwania dla grupy id={group_id}.")
+        self.page.once("dialog", lambda dialog: dialog.accept())
+        delete_button.click()
+        self.page.wait_for_load_state("domcontentloaded")
 
     def is_group_registered(self, email: str) -> bool:
         """Check if a user email appears in the group member list on the edit page."""
