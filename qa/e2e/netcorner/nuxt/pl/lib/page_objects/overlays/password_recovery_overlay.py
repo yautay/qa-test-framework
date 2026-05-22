@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from playwright.sync_api import Page
+from playwright.sync_api import Page, expect
 
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import SLOW_OPERATION_MS, UI_ACTION_MS
 
 
 class PasswordRecoveryOverlay(BaseComponent):
@@ -22,11 +23,14 @@ class PasswordRecoveryOverlay(BaseComponent):
 
     @step("Klikam reCAPTCHA w odzyskiwaniu hasła")
     def __solve_captcha(self) -> None:
-        frame = self.root.page.frame_locator('iframe[title="reCAPTCHA"]')
+        frame = self.root.page.frame_locator('#recaptcha-password-reset iframe[title="reCAPTCHA"]')
         checkbox = frame.locator("#recaptcha-anchor")
+        expect(checkbox).to_be_visible(timeout=UI_ACTION_MS)
         self.pointer_click(checkbox)
+        expect(checkbox).to_have_attribute("aria-checked", "true", timeout=UI_ACTION_MS)
 
     @step("Wysyłam formularz odzyskiwania hasła")
     def __submit_form(self) -> None:
         self.pointer_click(self.__button_request_recovery)
+        expect(self.__button_request_recovery).not_to_be_visible(timeout=SLOW_OPERATION_MS)
         self.pointer_click(self.__button_confirm)

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import time
 from typing import Self
 
 from playwright.sync_api import Locator, Page, expect
 
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import SLOW_OPERATION_MS, UI_ACTION_MS
 
 
 class RegisterClientComponent(BaseComponent):
@@ -88,9 +90,30 @@ class RegisterClientComponent(BaseComponent):
     def go_to_login(self) -> None:
         self.pointer_click(self.__button_login_redirect)
 
+    def _has_gus_autofill(self) -> bool:
+        return any(
+            (locator.first.input_value() or "").strip() != ""
+            for locator in (
+                self.__input_company_name,
+                self.__input_street_name,
+                self.__input_postal_code,
+                self.__input_city,
+            )
+        )
+
+    @step("Czekam na dane firmy z GUS po wpisaniu NIP")
+    def _wait_for_gus_autofill(self, timeout_ms: int = SLOW_OPERATION_MS) -> Self:
+        deadline = time.monotonic() + (timeout_ms / 1000)
+        while time.monotonic() < deadline:
+            if self._has_gus_autofill():
+                break
+            self.sleep(200)
+        return self
+
     @step("Wpisuję dane firmowe NIP={nip}, tel={phone}, email={email}")
     def fill_business_personal_data(self, nip: str, phone: str, email: str) -> Self:
         self.safe_type(self.__input_tax_id, nip)
+        self._wait_for_gus_autofill()
         self.safe_type(self.__input_phone, phone)
         self.safe_type(self.__input_business_email, email)
         return self
@@ -101,6 +124,7 @@ class RegisterClientComponent(BaseComponent):
         checkbox = frame.locator("#recaptcha-anchor")
         expect(checkbox).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
         self.pointer_click(checkbox)
+        expect(checkbox).to_have_attribute("aria-checked", "true", timeout=UI_ACTION_MS)
         return self
 
     # --- layout assertions ---
