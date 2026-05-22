@@ -31,10 +31,17 @@ function listTracked(repoRoot, pattern) {
 }
 
 function detectKeyAreas(repoRoot) {
+  const flowFiles = Array.from(
+    new Set([
+      ...listTracked(repoRoot, "qa/e2e/netcorner/**/lib/flows/*.py"),
+      ...listTracked(repoRoot, "qa/e2e/netcorner/**/lib/flows/**/*.py"),
+    ]),
+  );
+
   return {
     e2e_tests: listTracked(repoRoot, "qa/e2e/netcorner/**/tests/**/*.py").slice(0, 80),
     page_objects: listTracked(repoRoot, "qa/e2e/netcorner/**/lib/page_objects/**/*.py").slice(0, 120),
-    flows: listTracked(repoRoot, "qa/e2e/netcorner/**/lib/flows/**/*.py").slice(0, 120),
+    flows: flowFiles.slice(0, 120),
     test_data: listTracked(repoRoot, "qa/e2e/netcorner/**/lib/test_data/**/*.py").slice(0, 120),
     aso_tests: listTracked(repoRoot, "qa/aso/framework/**/*.py").slice(0, 80),
     visual_ui: listTracked(repoRoot, "framework/visual/ui/**/*").slice(0, 80),
