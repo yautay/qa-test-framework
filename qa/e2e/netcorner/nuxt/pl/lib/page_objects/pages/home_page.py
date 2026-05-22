@@ -8,7 +8,6 @@ from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.content_section import H
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.footer_section import FooterSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.header_section import HeaderSection
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.sections.navigation_section import NavigationSection
-from qa.e2e.netcorner.nuxt.pl.lib.timeouts import UI_ACTION_MS
 
 
 class HomePage(BasePage):
@@ -28,23 +27,8 @@ class HomePage(BasePage):
         self.navigation.wait_visible()
         self.content.wait_visible()
         self.footer.wait_visible()
-        self._wait_for_vue_hydration()
         self.capture_dom_snapshot(event="page_loaded")
         return self
-
-    def _wait_for_vue_hydration(self, timeout: int = UI_ACTION_MS) -> None:
-        """Wait until Vue/Nuxt client-side hydration is complete.
-
-        After domcontentloaded the Nuxt SSR page is static HTML — Vue event
-        handlers (e.g. the login overlay trigger) are not yet registered.
-        Hydration completes when ``window.__vue_app__`` is defined.
-        Without this wait, clicks on Vue-driven elements (loginDialogTrigger)
-        fire before the component is reactive and have no effect.
-        """
-        try:
-            self.page.wait_for_function("() => typeof window.__vue_app__ !== 'undefined'", timeout=timeout)
-        except Exception:
-            pass
 
     @property
     def header(self) -> HeaderSection:
