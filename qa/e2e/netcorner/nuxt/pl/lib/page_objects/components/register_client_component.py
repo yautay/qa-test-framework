@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import time
 from typing import Self
 
 from playwright.sync_api import Locator, Page, expect
@@ -90,24 +89,32 @@ class RegisterClientComponent(BaseComponent):
     def go_to_login(self) -> None:
         self.pointer_click(self.__button_login_redirect)
 
-    def _has_gus_autofill(self) -> bool:
-        return any(
-            (locator.first.input_value() or "").strip() != ""
-            for locator in (
-                self.__input_company_name,
-                self.__input_street_name,
-                self.__input_postal_code,
-                self.__input_city,
-            )
-        )
-
     @step("Czekam na dane firmy z GUS po wpisaniu NIP")
     def _wait_for_gus_autofill(self, timeout_ms: int = SLOW_OPERATION_MS) -> Self:
-        deadline = time.monotonic() + (timeout_ms / 1000)
-        while time.monotonic() < deadline:
-            if self._has_gus_autofill():
-                break
-            self.sleep(200)
+        self.root.page.wait_for_function(
+            """
+            (selectors) => selectors.every((selector) => {
+                const el = document.querySelector(selector);
+                return !!el && (el.value || '').trim().length > 0;
+            })
+            """,
+            arg=["#companyName", "#streetName", "#postalCode", "#city"],
+            polling=250,
+            timeout=timeout_ms,
+        )
+
+        missing_fields = [
+            name
+            for name, locator in (
+                ("company_name", self.__input_company_name),
+                ("street_name", self.__input_street_name),
+                ("postal_code", self.__input_postal_code),
+                ("city", self.__input_city),
+            )
+            if (locator.first.input_value() or "").strip() == ""
+        ]
+        if missing_fields:
+            raise AssertionError(f"GUS autofill incomplete, missing fields: {', '.join(missing_fields)}")
         return self
 
     @step("Wpisuję dane firmowe NIP={nip}, tel={phone}, email={email}")
