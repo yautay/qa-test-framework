@@ -39,7 +39,7 @@ Before analysis, mandatory:
 - Always return output in exactly the same section order defined below.
 - Always produce a machine-readable payload JSON object named `suite_generation_payload`.
 - Always save payload to file before final response:
-  - default directory: `artifacts/ai-test-tools/prepared/`
+  - default directory: `thoughts/ai_gen/prepared/`
   - filename: `<timestamp_utc>_<suite_name>_suite_generation_payload.json`
 - If user provides explicit output path, use it.
 - Include `payload_file_path` in final response.

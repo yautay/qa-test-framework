@@ -22,7 +22,7 @@ Use these snippets in project `opencode.json`.
   "command": {
     "new_test_prepare": {
       "description": "Prepare new E2E test blueprint from Playwright trace artifacts",
-      "prompt": "Use skill new-test-prepare. Ask user for: scenario_name, target_domain, trace_zip_path, checkpoints_json_path, optional metadata_json_path. Before any planning, read repository guidance in AGENTS.md at repo root and all relevant nested AGENTS.md files for the target domain/path; treat them as mandatory source of truth and list exactly which guides were used. Analyze artifacts and repository context. Do not generate final test code. Keep host/domain environment-agnostic and avoid hardcoded base URLs. Focus on path semantics, business intent, stable locator strategy, and Arrange-Act-Assert blueprint. Return deterministic mandatory output sections in fixed order, create generation_payload JSON, and save it to artifacts/ai-test-tools/prepared/ for handoff to /new_test_generate."
+      "prompt": "Use skill new-test-prepare. Ask user for: scenario_name, target_domain, trace_zip_path, checkpoints_json_path, optional metadata_json_path. Before any planning, read repository guidance in AGENTS.md at repo root and all relevant nested AGENTS.md files for the target domain/path; treat them as mandatory source of truth and list exactly which guides were used. Analyze artifacts and repository context. Do not generate final test code. Keep host/domain environment-agnostic and avoid hardcoded base URLs. Focus on path semantics, business intent, stable locator strategy, and Arrange-Act-Assert blueprint. Return deterministic mandatory output sections in fixed order, create generation_payload JSON, and save it to thoughts/ai_gen/prepared/ for handoff to /new_test_generate."
     }
   }
 }
@@ -52,7 +52,7 @@ You can merge both commands under one `command` object in your final `opencode.j
   "command": {
     "new_test_suite_prepare": {
       "description": "Research and prepare deterministic payload for multi-scenario E2E suite generation",
-      "prompt": "Use skill new-test-suite-prepare. Ask user for: suite_name, target_domain, and recording_sets[] where each set contains scenario_name, trace_zip_path, checkpoints_json_path, optional metadata_json_path. Do research/planning only (no final code). Before analysis, read AGENTS.md at repo root and all relevant nested AGENTS.md files for target domain/path. Return deterministic mandatory output sections in fixed order, create suite_generation_payload JSON, and save it to artifacts/ai-test-tools/prepared/ for handoff to /new_test_suite_generate."
+      "prompt": "Use skill new-test-suite-prepare. Ask user for: suite_name, target_domain, and recording_sets[] where each set contains scenario_name, trace_zip_path, checkpoints_json_path, optional metadata_json_path. Do research/planning only (no final code). Before analysis, read AGENTS.md at repo root and all relevant nested AGENTS.md files for target domain/path. Return deterministic mandatory output sections in fixed order, create suite_generation_payload JSON, and save it to thoughts/ai_gen/prepared/ for handoff to /new_test_suite_generate."
     }
   }
 }

@@ -20,7 +20,7 @@ Prepare implementation blueprint for a NEW E2E test in this repository from manu
 - Always return output in exactly the same section order defined below.
 - Always produce a machine-readable payload JSON object named `generation_payload`.
 - Always save `generation_payload` to file before final response:
-  - default directory: `artifacts/ai-test-tools/prepared/`
+  - default directory: `thoughts/ai_gen/prepared/`
   - filename: `<timestamp_utc>_<scenario_name>_generation_payload.json`
 - If user provides explicit output path, use it instead.
 - In final response, include `payload_file_path` (absolute or workspace-relative path).

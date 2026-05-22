@@ -130,7 +130,7 @@ npx playwright show-trace "artifacts/manual-traces/<run>/trace.zip"
 ```
 
 3. Feed `trace.zip + checkpoints.json + metadata.json` into `/new_test_prepare`
-4. `/new_test_prepare` writes deterministic payload file to `artifacts/ai-test-tools/prepared/*.json`
+4. `/new_test_prepare` writes deterministic payload file to `thoughts/ai_gen/prepared/*.json`
 5. Use `generation_payload_path` from step 4 in `/new_test_generate`
 
 ### Deterministic research output contract
@@ -140,11 +140,11 @@ Research commands always produce fixed-order output and save a payload file for 
 - single test flow:
   - command: `/new_test_prepare`
   - payload: `generation_payload`
-  - output file: `artifacts/ai-test-tools/prepared/<timestamp>_<scenario>_generation_payload.json`
+  - output file: `thoughts/ai_gen/prepared/<timestamp>_<scenario>_generation_payload.json`
 - multi-scenario suite flow:
   - command: `/new_test_suite_prepare`
   - payload: `suite_generation_payload`
-  - output file: `artifacts/ai-test-tools/prepared/<timestamp>_<suite>_suite_generation_payload.json`
+  - output file: `thoughts/ai_gen/prepared/<timestamp>_<suite>_suite_generation_payload.json`
 
 ## Build suite from many recordings
 
