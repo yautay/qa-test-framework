@@ -7,7 +7,7 @@ from playwright.sync_api import Locator, Page, expect
 
 from qa.e2e.netcorner.lib.step_api import step
 from qa.e2e.netcorner.nuxt.pl.lib.page_objects.base_component import BaseComponent
-from qa.e2e.netcorner.nuxt.pl.lib.timeouts import SLOW_OPERATION_MS
+from qa.e2e.netcorner.nuxt.pl.lib.timeouts import SLOW_OPERATION_MS, UI_ACTION_MS
 
 
 class RegisterClientComponent(BaseComponent):
@@ -124,6 +124,7 @@ class RegisterClientComponent(BaseComponent):
         checkbox = frame.locator("#recaptcha-anchor")
         expect(checkbox).to_be_visible(timeout=self.DEFAULT_TIMEOUT)
         self.pointer_click(checkbox)
+        expect(checkbox).to_have_attribute("aria-checked", "true", timeout=UI_ACTION_MS)
         return self
 
     # --- layout assertions ---
