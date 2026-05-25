@@ -152,8 +152,7 @@ class ProductPriceComponent(BaseComponent):
         text = limited_sale.inner_text()
         # DOM: "Pozostało X szt. z Y szt."
         match = re.search(r"Pozostało\s+(\d+)\s+szt\.\s+z\s+(\d+)\s+szt\.", text)
-        if not match:
-            return None
+        expect(match, f"Limited sale text format has changed: '{text}'").not_to_be_none()
         remaining = int(match.group(1))
         total = int(match.group(2))
         sold = total - remaining

@@ -5,7 +5,7 @@
             "name": "Pytest: Debug Test (breakpoint-friendly)",
             "type": "debugpy",
             "request": "launch",
-            "python": "${workspaceFolder}/.venv/bin/python",
+            "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
             "subProcess": true,
             "purpose": [
                 "debug-test"
@@ -30,7 +30,7 @@
             "name": "Pytest: Debug Test (framework step-in)",
             "type": "debugpy",
             "request": "launch",
-            "python": "${workspaceFolder}/.venv/bin/python",
+            "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
             "subProcess": true,
             "console": "integratedTerminal",
             "justMyCode": false,
@@ -52,7 +52,7 @@
             "name": "Pytest: Debug Netcorner E2E (current file)",
             "type": "debugpy",
             "request": "launch",
-            "python": "${workspaceFolder}/.venv/bin/python",
+            "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
             "module": "pytest",
             "subProcess": true,
             "args": [
@@ -80,7 +80,7 @@
             "name": "Pytest: Debug Netcorner E2E (nuxt/pl suite)",
             "type": "debugpy",
             "request": "launch",
-            "python": "${workspaceFolder}/.venv/bin/python",
+            "python": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
             "module": "pytest",
             "subProcess": true,
             "args": [
