@@ -16,8 +16,8 @@ from qa.e2e.netcorner.nuxt.pl.lib.test_data.checkout.checkouts_generators import
     private_person_delivery_courier_receiver,
 )
 from qa.e2e.netcorner.nuxt.pl.lib.test_data.client.client_generators import ClientDataBuilder
-from qa.e2e.netcorner.nuxt.pl.tests.helpers import poll_until
 from qa.e2e.netcorner.nuxt.pl.lib.timeouts import ELEMENT_VISIBLE_MS, UI_ACTION_MS
+from qa.e2e.netcorner.nuxt.pl.tests.helpers import poll_until
 
 _CART_PATH = "/cart"
 
@@ -86,18 +86,28 @@ def test_orders_ozo_limited_sale(page, context, runtime_env, admin_panel: AdminW
         checkout_payment_blik_required_terms(),
     )
 
-    # Odczyt stanu licznika PO zamówieniu — polling karty produktu do propagacji backendu.
-    _product_page_after, limited_sale = _wait_for_limited_sale_status(page, runtime_env, _OZO_PRODUCT_PATH)
+    expected_sold = box_before.sold_amount + 1
+    expected_left = box_before.remaining_amount - 1
+
+    # Odczyt stanu licznika PO zamówieniu — polling karty produktu do propagacji backendu
+    # aż do oczekiwanej wartości (+1 / -1 względem stanu before).
+    _product_page_after, limited_sale = _wait_for_limited_sale_status(
+        page,
+        runtime_env,
+        _OZO_PRODUCT_PATH,
+        expected_sold=expected_sold,
+        expected_left=expected_left,
+    )
 
     if limited_sale is None:
         pytest.skip("Komponent limitowanej sprzedaży nie jest widoczny na karcie produktu po złożeniu zamówienia.")
 
     # Weryfikacja licznika — karta produktu (wzorzec Selenium: before ze strony głównej, after z karty produktu).
-    assert limited_sale["limited_sale_sold"] == box_before.sold_amount + 1, (
+    assert limited_sale["limited_sale_sold"] == expected_sold, (
         f"Licznik sprzedanych OZO na karcie produktu nie wzrósł o 1. "
         f"Przed (strona główna)={box_before.sold_amount}, po (karta produktu)={limited_sale['limited_sale_sold']}."
     )
-    assert limited_sale["limited_sale_left"] == box_before.remaining_amount - 1, (
+    assert limited_sale["limited_sale_left"] == expected_left, (
         f"Licznik pozostałych OZO na karcie produktu nie zmniejszył się o 1. "
         f"Przed (strona główna)={box_before.remaining_amount}, po (karta produktu)={limited_sale['limited_sale_left']}."
     )
@@ -259,13 +269,19 @@ def _wait_for_limited_sale_status(
     runtime_env,
     product_path: str,
     *,
+    expected_sold: int | None = None,
+    expected_left: int | None = None,
     max_wait_s: float = _OZO_COUNTER_MAX_WAIT_SECS,
     poll_s: float = _OZO_COUNTER_POLL_SECS,
 ) -> tuple[ProductPage, dict | None]:
-    """Polluje kartę produktu aż komponent limited_sale stanie się widoczny lub minie timeout.
+    """Polluje kartę produktu do oczekiwanego stanu licznika lub minie timeout.
 
     Zwraca krotkę (ProductPage, status) — ProductPage jest ostatnią otwartą instancją,
-    gotową do dalszych interakcji. Status może być None jeśli nie pojawił się w max_wait_s.
+    gotową do dalszych interakcji.
+
+    Gdy expected_sold i expected_left są podane, polling kończy się dopiero po osiągnięciu
+    dokładnie tych wartości. W przeciwnym razie (wsteczna kompatybilność) wystarczy,
+    że komponent limited_sale będzie widoczny (status != None).
     """
     last_page: list[ProductPage] = []
 
@@ -275,9 +291,19 @@ def _wait_for_limited_sale_status(
         last_page.append(p)
         return p.content.price.get_limited_sale_status()
 
+    def condition(status: dict | None) -> bool:
+        if status is None:
+            return False
+        if expected_sold is None or expected_left is None:
+            return True
+        return (
+            status.get("limited_sale_sold") == expected_sold
+            and status.get("limited_sale_left") == expected_left
+        )
+
     status = poll_until(
         fetch,
-        condition=lambda s: s is not None,
+        condition=condition,
         timeout_s=max_wait_s,
         poll_s=poll_s,
         default=None,
